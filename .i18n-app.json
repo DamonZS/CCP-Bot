@@ -1,0 +1,6284 @@
+{
+  "root": "app/src",
+  "files": 299,
+  "filesWithHits": 204,
+  "wraps": 2040,
+  "unique": 1514,
+  "byKind": {
+    "jsx-text": 1035,
+    "jsx-expression": 433,
+    "attribute": 572
+  },
+  "perFile": [
+    "app\\src\\components\\admin\\admin-sidebar.tsx",
+    "app\\src\\components\\agents\\agent-card.tsx",
+    "app\\src\\components\\agents\\agent-profile.tsx",
+    "app\\src\\components\\agents\\callback-token-panel.tsx",
+    "app\\src\\components\\agents\\handoff-panel.tsx",
+    "app\\src\\components\\agents\\new-bot-sheet.tsx",
+    "app\\src\\components\\agents\\proposed-bot.tsx",
+    "app\\src\\components\\app-sidebar\\app-sidebar.tsx",
+    "app\\src\\components\\app-sidebar\\channel-pagination.tsx",
+    "app\\src\\components\\app-sidebar\\channel.tsx",
+    "app\\src\\components\\approvals\\bot-rules.tsx",
+    "app\\src\\components\\approvals\\inline-approval.tsx",
+    "app\\src\\components\\approvals\\rules.tsx",
+    "app\\src\\components\\approvals\\settings.tsx",
+    "app\\src\\components\\approvals\\shared-use-requests.tsx",
+    "app\\src\\components\\approvals\\team-settings.tsx",
+    "app\\src\\components\\approvals\\waiting.tsx",
+    "app\\src\\components\\audit\\audit-table.tsx",
+    "app\\src\\components\\bot-profile\\access.tsx",
+    "app\\src\\components\\bot-profile\\activity.tsx",
+    "app\\src\\components\\bot-profile\\attention.tsx",
+    "app\\src\\components\\bot-profile\\bot-subpage.tsx",
+    "app\\src\\components\\bot-profile\\manage.tsx",
+    "app\\src\\components\\bot-profile\\pause-banner.tsx",
+    "app\\src\\components\\bot-profile\\profile.tsx",
+    "app\\src\\components\\bot-profile\\settings-rows.tsx",
+    "app\\src\\components\\bot-profile\\setup.tsx",
+    "app\\src\\components\\bot-profile\\sharing.tsx",
+    "app\\src\\components\\bots\\bot-roster.tsx",
+    "app\\src\\components\\boundaries\\dry-run-changes.tsx",
+    "app\\src\\components\\browser\\browser-bar.tsx",
+    "app\\src\\components\\browser\\browser-nav-item.tsx",
+    "app\\src\\components\\browser\\browser-page.tsx",
+    "app\\src\\components\\browser\\browser-screen.tsx",
+    "app\\src\\components\\browser\\narration-choice.tsx",
+    "app\\src\\components\\browser\\narration.tsx",
+    "app\\src\\components\\browser\\recorder-here-popover.tsx",
+    "app\\src\\components\\browser\\recording.tsx",
+    "app\\src\\components\\capabilities\\capabilities-shell.tsx",
+    "app\\src\\components\\channels\\app-access-card.tsx",
+    "app\\src\\components\\channels\\avatar.tsx",
+    "app\\src\\components\\channels\\channel-chat.tsx",
+    "app\\src\\components\\channels\\chat-transcript.tsx",
+    "app\\src\\components\\channels\\composer\\attachment-strip.tsx",
+    "app\\src\\components\\channels\\composer\\composer.tsx",
+    "app\\src\\components\\channels\\composer\\dictation-controls.tsx",
+    "app\\src\\components\\channels\\composer\\rejected-files.tsx",
+    "app\\src\\components\\channels\\connect-app-card.tsx",
+    "app\\src\\components\\channels\\conversation-actions.tsx",
+    "app\\src\\components\\channels\\delete-conversation-dialog.tsx",
+    "app\\src\\components\\channels\\group-chat.tsx",
+    "app\\src\\components\\channels\\group-people.tsx",
+    "app\\src\\components\\channels\\recipient-field.tsx",
+    "app\\src\\components\\channels\\team-bot-consent.tsx",
+    "app\\src\\components\\channels\\tool-activity.tsx",
+    "app\\src\\components\\channels\\tool-boundary.tsx",
+    "app\\src\\components\\channels\\transcript-rail.tsx",
+    "app\\src\\components\\channels\\voice-call-widget.tsx",
+    "app\\src\\components\\channels\\voice-chat-card.tsx",
+    "app\\src\\components\\component-preview.tsx",
+    "app\\src\\components\\computer\\activity-log.tsx",
+    "app\\src\\components\\computer\\bot-browser.tsx",
+    "app\\src\\components\\computer\\command-output.tsx",
+    "app\\src\\components\\computer\\computer-controls.tsx",
+    "app\\src\\components\\computer\\computer-panel.tsx",
+    "app\\src\\components\\computer\\computer-view.tsx",
+    "app\\src\\components\\computer\\handoff-resume-notice.tsx",
+    "app\\src\\components\\computer\\help-request-card.tsx",
+    "app\\src\\components\\computer\\live-screen.tsx",
+    "app\\src\\components\\connections\\identity-connection-page.tsx",
+    "app\\src\\components\\delivery\\reaching-you.tsx",
+    "app\\src\\components\\gallery\\activity.tsx",
+    "app\\src\\components\\gallery\\cards.tsx",
+    "app\\src\\components\\gallery\\charts.tsx",
+    "app\\src\\components\\gallery\\decisions.tsx",
+    "app\\src\\components\\gallery\\form.tsx",
+    "app\\src\\components\\gallery\\preview.tsx",
+    "app\\src\\components\\gallery\\quote.tsx",
+    "app\\src\\components\\gallery\\refused.tsx",
+    "app\\src\\components\\gallery\\table.tsx",
+    "app\\src\\components\\layout\\detail-panel.tsx",
+    "app\\src\\components\\layout\\self-host-banner.tsx",
+    "app\\src\\components\\memory\\memories.tsx",
+    "app\\src\\components\\memory\\sources.tsx",
+    "app\\src\\components\\onboarding\\intro-animation.tsx",
+    "app\\src\\components\\passwords\\sign-in-form.tsx",
+    "app\\src\\components\\plugins\\access-requests.tsx",
+    "app\\src\\components\\plugins\\account-mode-dialog.tsx",
+    "app\\src\\components\\plugins\\app-access-action.tsx",
+    "app\\src\\components\\plugins\\broker-directory.tsx",
+    "app\\src\\components\\plugins\\brokered-account-row.tsx",
+    "app\\src\\components\\plugins\\connection-fields.tsx",
+    "app\\src\\components\\plugins\\grant-list.tsx",
+    "app\\src\\components\\plugins\\shared-app-notice.tsx",
+    "app\\src\\components\\plugins\\shared-approval-fields.tsx",
+    "app\\src\\components\\plugins\\skipped-tools-notice.tsx",
+    "app\\src\\components\\responsibilities\\new-responsibility-dialog.tsx",
+    "app\\src\\components\\responsibilities\\responsibilities.tsx",
+    "app\\src\\components\\responsibilities\\responsibility-dialog.tsx",
+    "app\\src\\components\\responsibilities\\triggers.tsx",
+    "app\\src\\components\\routines\\routines-list.tsx",
+    "app\\src\\components\\settings\\browsers\\connected-browsers.tsx",
+    "app\\src\\components\\settings\\browsers\\this-browser.tsx",
+    "app\\src\\components\\settings\\devices.tsx",
+    "app\\src\\components\\settings\\github-sources.tsx",
+    "app\\src\\components\\settings\\learning-sharing.tsx",
+    "app\\src\\components\\settings\\linked-accounts.tsx",
+    "app\\src\\components\\settings\\message-list-preference.tsx",
+    "app\\src\\components\\settings\\profile.tsx",
+    "app\\src\\components\\settings\\settings-sidebar.tsx",
+    "app\\src\\components\\settings\\standing-instructions.tsx",
+    "app\\src\\components\\settings\\team-bot-consents.tsx",
+    "app\\src\\components\\settings\\update-routing.tsx",
+    "app\\src\\components\\skills\\edit-skill.tsx",
+    "app\\src\\components\\skills\\new-skill.tsx",
+    "app\\src\\components\\skills\\proposed-skill.tsx",
+    "app\\src\\components\\skills\\skill-agents.tsx",
+    "app\\src\\components\\skills\\skill-fields.tsx",
+    "app\\src\\components\\skills\\skill-tools.tsx",
+    "app\\src\\components\\suggestions\\proactive-panel.tsx",
+    "app\\src\\components\\ui\\carousel.tsx",
+    "app\\src\\components\\ui\\dialog.tsx",
+    "app\\src\\components\\ui\\live-waveform.tsx",
+    "app\\src\\components\\ui\\message-scroller.tsx",
+    "app\\src\\components\\ui\\sheet.tsx",
+    "app\\src\\components\\ui\\sidebar.tsx",
+    "app\\src\\components\\ui\\toast.tsx",
+    "app\\src\\lib\\copilot\\computer-tools.tsx",
+    "app\\src\\lib\\copilot\\escalation-tool.tsx",
+    "app\\src\\lib\\copilot\\handoff-tool.tsx",
+    "app\\src\\lib\\copilot\\sandboxed-tools.tsx",
+    "app\\src\\lib\\copilot\\sign-in-tool.tsx",
+    "app\\src\\routes\\_authed\\_app\\bot.tsx",
+    "app\\src\\routes\\_authed\\_app\\bots.$agentId.access.tsx",
+    "app\\src\\routes\\_authed\\_app\\bots.$agentId.activity.tsx",
+    "app\\src\\routes\\_authed\\_app\\bots.$agentId.approvals.tsx",
+    "app\\src\\routes\\_authed\\_app\\bots.$agentId.index.tsx",
+    "app\\src\\routes\\_authed\\_app\\bots.$agentId.memory.tsx",
+    "app\\src\\routes\\_authed\\_app\\bots.$agentId.reach.tsx",
+    "app\\src\\routes\\_authed\\_app\\bots.$agentId.responsibilities.tsx",
+    "app\\src\\routes\\_authed\\_app\\bots.$agentId.routines.tsx",
+    "app\\src\\routes\\_authed\\_app\\bots.$agentId.setup.tsx",
+    "app\\src\\routes\\_authed\\_app\\bots.$agentId.sharing.tsx",
+    "app\\src\\routes\\_authed\\_app\\bots.index.tsx",
+    "app\\src\\routes\\_authed\\_app\\capabilities.memory.tsx",
+    "app\\src\\routes\\_authed\\_app\\capabilities.skills.tsx",
+    "app\\src\\routes\\_authed\\_app\\channel\\$channelId.tsx",
+    "app\\src\\routes\\_authed\\_app\\channel\\new.tsx",
+    "app\\src\\routes\\_authed\\_app\\connections.$key.tsx",
+    "app\\src\\routes\\_authed\\_app\\connections.index.tsx",
+    "app\\src\\routes\\_authed\\_app\\index.tsx",
+    "app\\src\\routes\\_authed\\_app\\routines.tsx",
+    "app\\src\\routes\\_authed\\admin\\approvals.tsx",
+    "app\\src\\routes\\_authed\\admin\\audit.tsx",
+    "app\\src\\routes\\_authed\\admin\\boundaries.tsx",
+    "app\\src\\routes\\_authed\\admin\\boundaries_.$index.tsx",
+    "app\\src\\routes\\_authed\\admin\\boundaries_.new.tsx",
+    "app\\src\\routes\\_authed\\admin\\components\\$name.tsx",
+    "app\\src\\routes\\_authed\\admin\\components\\index.tsx",
+    "app\\src\\routes\\_authed\\admin\\computers.tsx",
+    "app\\src\\routes\\_authed\\admin\\credentials.tsx",
+    "app\\src\\routes\\_authed\\admin\\credentials_.new.tsx",
+    "app\\src\\routes\\_authed\\admin\\enterprise.tsx",
+    "app\\src\\routes\\_authed\\admin\\identity-providers.tsx",
+    "app\\src\\routes\\_authed\\admin\\index.tsx",
+    "app\\src\\routes\\_authed\\admin\\learning.tsx",
+    "app\\src\\routes\\_authed\\admin\\people.tsx",
+    "app\\src\\routes\\_authed\\admin\\playground.tsx",
+    "app\\src\\routes\\_authed\\admin\\plugins\\$key.tsx",
+    "app\\src\\routes\\_authed\\admin\\plugins\\$key_.bots.$agentId.tsx",
+    "app\\src\\routes\\_authed\\admin\\plugins\\$key_.tools.$tool.tsx",
+    "app\\src\\routes\\_authed\\admin\\plugins\\arcade.tsx",
+    "app\\src\\routes\\_authed\\admin\\plugins\\composio.tsx",
+    "app\\src\\routes\\_authed\\admin\\plugins\\index.tsx",
+    "app\\src\\routes\\_authed\\admin\\skills.tsx",
+    "app\\src\\routes\\_authed\\onboarding.tsx",
+    "app\\src\\routes\\_authed\\settings\\approvals.tsx",
+    "app\\src\\routes\\_authed\\settings\\browsers.tsx",
+    "app\\src\\routes\\_authed\\settings\\components-gallery\\$name.tsx",
+    "app\\src\\routes\\_authed\\settings\\components-gallery\\index.tsx",
+    "app\\src\\routes\\_authed\\settings\\index.tsx",
+    "app\\src\\routes\\_authed\\settings\\learning.tsx",
+    "app\\src\\routes\\_authed\\settings\\notifications.tsx",
+    "app\\src\\routes\\_authed\\settings\\passwords.tsx",
+    "app\\src\\routes\\_authed\\sign-in\\$requestId.tsx",
+    "app\\src\\routes\\sign.tsx",
+    "app\\src\\skins\\opendots\\computer-pane.tsx",
+    "app\\src\\skins\\opendots\\frame.tsx",
+    "app\\src\\skins\\opendots\\persona.tsx",
+    "app\\src\\skins\\opendots\\screens.tsx",
+    "app\\src\\skins\\opendots\\sidebar.tsx",
+    "app\\src\\skins\\openduet\\header.tsx",
+    "app\\src\\skins\\openduet\\menu-sheet.tsx",
+    "app\\src\\skins\\openduet\\tab-bar.tsx",
+    "app\\src\\skins\\openduet\\tasks-screen.tsx",
+    "app\\src\\skins\\openmuse\\bots-sheet.tsx",
+    "app\\src\\skins\\openmuse\\frame.tsx",
+    "app\\src\\skins\\openmuse\\menu-sheet.tsx",
+    "app\\src\\skins\\openmuse\\notifications-sheet.tsx",
+    "app\\src\\skins\\openmuse\\screens\\activity.tsx",
+    "app\\src\\skins\\openmuse\\screens\\goals.tsx",
+    "app\\src\\skins\\openmuse\\screens\\ideas.tsx",
+    "app\\src\\skins\\openmuse\\ui.tsx",
+    "app\\src\\skins\\skin-picker.tsx"
+  ],
+  "entries": [
+    {
+      "source": "Cancel",
+      "count": 40
+    },
+    {
+      "source": "Remove",
+      "count": 14
+    },
+    {
+      "source": "Delete",
+      "count": 10
+    },
+    {
+      "source": "Open",
+      "count": 9
+    },
+    {
+      "source": "Saving…",
+      "count": 9
+    },
+    {
+      "source": "Save",
+      "count": 9
+    },
+    {
+      "source": "Record a task",
+      "count": 9
+    },
+    {
+      "source": "Connect",
+      "count": 9
+    },
+    {
+      "source": "Routines",
+      "count": 8
+    },
+    {
+      "source": "Done",
+      "count": 7
+    },
+    {
+      "source": "Close",
+      "count": 7
+    },
+    {
+      "source": "Connected",
+      "count": 7
+    },
+    {
+      "source": "Disconnect",
+      "count": 7
+    },
+    {
+      "source": "Title",
+      "count": 7
+    },
+    {
+      "source": "New Bot",
+      "count": 6
+    },
+    {
+      "source": "Name",
+      "count": 6
+    },
+    {
+      "source": "No matches",
+      "count": 6
+    },
+    {
+      "source": "Reset",
+      "count": 6
+    },
+    {
+      "source": "Pinned",
+      "count": 6
+    },
+    {
+      "source": "Choose a Bot",
+      "count": 6
+    },
+    {
+      "source": "Bot",
+      "count": 6
+    },
+    {
+      "source": "Waiting on you",
+      "count": 5
+    },
+    {
+      "source": "Search conversations",
+      "count": 5
+    },
+    {
+      "source": "Sign out",
+      "count": 5
+    },
+    {
+      "source": "Stop",
+      "count": 5
+    },
+    {
+      "source": "Activity",
+      "count": 5
+    },
+    {
+      "source": "Active",
+      "count": 5
+    },
+    {
+      "source": "Off",
+      "count": 5
+    },
+    {
+      "source": "Try again",
+      "count": 5
+    },
+    {
+      "source": "Narration",
+      "count": 5
+    },
+    {
+      "source": "Retry",
+      "count": 5
+    },
+    {
+      "source": "You",
+      "count": 5
+    },
+    {
+      "source": "Your account",
+      "count": 5
+    },
+    {
+      "source": "Bots",
+      "count": 5
+    },
+    {
+      "source": "New chat",
+      "count": 5
+    },
+    {
+      "source": "Details",
+      "count": 4
+    },
+    {
+      "source": "New conversation",
+      "count": 4
+    },
+    {
+      "source": "of",
+      "count": 4
+    },
+    {
+      "source": "Back",
+      "count": 4
+    },
+    {
+      "source": "Instructions",
+      "count": 4
+    },
+    {
+      "source": "Unpin conversation",
+      "count": 4
+    },
+    {
+      "source": "Pin conversation",
+      "count": 4
+    },
+    {
+      "source": "Delete conversation…",
+      "count": 4
+    },
+    {
+      "source": "Needs you",
+      "count": 4
+    },
+    {
+      "source": "On",
+      "count": 4
+    },
+    {
+      "source": "Copied",
+      "count": 4
+    },
+    {
+      "source": "Capabilities",
+      "count": 4
+    },
+    {
+      "source": "Sending…",
+      "count": 4
+    },
+    {
+      "source": "Adding…",
+      "count": 4
+    },
+    {
+      "source": "Run now",
+      "count": 4
+    },
+    {
+      "source": "Add rule",
+      "count": 4
+    },
+    {
+      "source": "Rule",
+      "count": 4
+    },
+    {
+      "source": "Couldn't load components. Reload the page.",
+      "count": 4
+    },
+    {
+      "source": "Couldn't load plugins. Reload the page.",
+      "count": 4
+    },
+    {
+      "source": "Computer",
+      "count": 4
+    },
+    {
+      "source": "Explore Bots",
+      "count": 4
+    },
+    {
+      "source": "Private",
+      "count": 3
+    },
+    {
+      "source": "Public",
+      "count": 3
+    },
+    {
+      "source": "Checking…",
+      "count": 3
+    },
+    {
+      "source": "Creating…",
+      "count": 3
+    },
+    {
+      "source": "Connections",
+      "count": 3
+    },
+    {
+      "source": "Write a skill",
+      "count": 3
+    },
+    {
+      "source": "Stopping…",
+      "count": 3
+    },
+    {
+      "source": "Hidden",
+      "count": 3
+    },
+    {
+      "source": "Deleting…",
+      "count": 3
+    },
+    {
+      "source": "Notifications",
+      "count": 3
+    },
+    {
+      "source": "Message",
+      "count": 3
+    },
+    {
+      "source": "Connection",
+      "count": 3
+    },
+    {
+      "source": "Published",
+      "count": 3
+    },
+    {
+      "source": "Publish",
+      "count": 3
+    },
+    {
+      "source": "Couldn't load your Bots. Reload the page.",
+      "count": 3
+    },
+    {
+      "source": "Browser",
+      "count": 3
+    },
+    {
+      "source": "Opening…",
+      "count": 3
+    },
+    {
+      "source": "Task name",
+      "count": 3
+    },
+    {
+      "source": "Starting…",
+      "count": 3
+    },
+    {
+      "source": "Record",
+      "count": 3
+    },
+    {
+      "source": "Continue",
+      "count": 3
+    },
+    {
+      "source": "This browser blocked the tab.",
+      "count": 3
+    },
+    {
+      "source": "'s sign-in",
+      "count": 3
+    },
+    {
+      "source": "account.",
+      "count": 3
+    },
+    {
+      "source": "Add",
+      "count": 3
+    },
+    {
+      "source": "Dismiss",
+      "count": 3
+    },
+    {
+      "source": "Actions",
+      "count": 3
+    },
+    {
+      "source": "New responsibility",
+      "count": 3
+    },
+    {
+      "source": "Goals",
+      "count": 3
+    },
+    {
+      "source": "Open conversation",
+      "count": 3
+    },
+    {
+      "source": "Add a repository",
+      "count": 3
+    },
+    {
+      "source": "Toggle Sidebar",
+      "count": 3
+    },
+    {
+      "source": "Description",
+      "count": 3
+    },
+    {
+      "source": "No Bots yet",
+      "count": 3
+    },
+    {
+      "source": "Add credential",
+      "count": 3
+    },
+    {
+      "source": "Plugins",
+      "count": 3
+    },
+    {
+      "source": "Unread",
+      "count": 3
+    },
+    {
+      "source": "Back to app",
+      "count": 2
+    },
+    {
+      "source": "System owned",
+      "count": 2
+    },
+    {
+      "source": "What it does",
+      "count": 2
+    },
+    {
+      "source": "Revoking…",
+      "count": 2
+    },
+    {
+      "source": "Connect a custom agent",
+      "count": 2
+    },
+    {
+      "source": "Optional",
+      "count": 2
+    },
+    {
+      "source": "Isolated",
+      "count": 2
+    },
+    {
+      "source": "Key",
+      "count": 2
+    },
+    {
+      "source": "Skills",
+      "count": 2
+    },
+    {
+      "source": " An admin has turned off personal rules. Yours are kept but don't apply.",
+      "count": 2
+    },
+    {
+      "source": "Add a rule",
+      "count": 2
+    },
+    {
+      "source": "Waiting for your approval",
+      "count": 2
+    },
+    {
+      "source": "Ask before making changes",
+      "count": 2
+    },
+    {
+      "source": "Commands on your computer",
+      "count": 2
+    },
+    {
+      "source": "No rules yet",
+      "count": 2
+    },
+    {
+      "source": "account",
+      "count": 2
+    },
+    {
+      "source": "Not approved",
+      "count": 2
+    },
+    {
+      "source": "Approve",
+      "count": 2
+    },
+    {
+      "source": "Decline",
+      "count": 2
+    },
+    {
+      "source": "Commands on members' computers, at most",
+      "count": 2
+    },
+    {
+      "source": "Your answer",
+      "count": 2
+    },
+    {
+      "source": "Allow once",
+      "count": 2
+    },
+    {
+      "source": "Your skills",
+      "count": 2
+    },
+    {
+      "source": "Couldn't load your skills. Reload the page.",
+      "count": 2
+    },
+    {
+      "source": "No skills yet",
+      "count": 2
+    },
+    {
+      "source": "No apps yet",
+      "count": 2
+    },
+    {
+      "source": "Skill",
+      "count": 2
+    },
+    {
+      "source": "In progress",
+      "count": 2
+    },
+    {
+      "source": "Unread messages",
+      "count": 2
+    },
+    {
+      "source": "Couldn't open this Bot. It may not be shared with you.",
+      "count": 2
+    },
+    {
+      "source": "Resetting…",
+      "count": 2
+    },
+    {
+      "source": "Manage",
+      "count": 2
+    },
+    {
+      "source": "Turn on",
+      "count": 2
+    },
+    {
+      "source": "Built in",
+      "count": 2
+    },
+    {
+      "source": "Publishing doesn't change its visibility. You can unpublish at any time.",
+      "count": 2
+    },
+    {
+      "source": "Who it is published to",
+      "count": 2
+    },
+    {
+      "source": "Comma separated",
+      "count": 2
+    },
+    {
+      "source": "Update",
+      "count": 2
+    },
+    {
+      "source": "Assign",
+      "count": 2
+    },
+    {
+      "source": "Show",
+      "count": 2
+    },
+    {
+      "source": "Clear browser data",
+      "count": 2
+    },
+    {
+      "source": "Listening",
+      "count": 2
+    },
+    {
+      "source": "Name the task to record",
+      "count": 2
+    },
+    {
+      "source": "Working…",
+      "count": 2
+    },
+    {
+      "source": "Thinking",
+      "count": 2
+    },
+    {
+      "source": "Attachment",
+      "count": 2
+    },
+    {
+      "source": "Attach a file",
+      "count": 2
+    },
+    {
+      "source": "Ask anything",
+      "count": 2
+    },
+    {
+      "source": "Dictate a message",
+      "count": 2
+    },
+    {
+      "source": "Cancel dictation",
+      "count": 2
+    },
+    {
+      "source": "Transcribe and send",
+      "count": 2
+    },
+    {
+      "source": "Unpin",
+      "count": 2
+    },
+    {
+      "source": "Pin",
+      "count": 2
+    },
+    {
+      "source": "To:",
+      "count": 2
+    },
+    {
+      "source": "Choose a Bot…",
+      "count": 2
+    },
+    {
+      "source": "End voice call",
+      "count": 2
+    },
+    {
+      "source": "End call",
+      "count": 2
+    },
+    {
+      "source": "Call settings",
+      "count": 2
+    },
+    {
+      "source": "Unmute your microphone",
+      "count": 2
+    },
+    {
+      "source": "Finishing the current action…",
+      "count": 2
+    },
+    {
+      "source": "The Bot needs you.",
+      "count": 2
+    },
+    {
+      "source": "Tools",
+      "count": 2
+    },
+    {
+      "source": "Slack",
+      "count": 2
+    },
+    {
+      "source": "Conversation",
+      "count": 2
+    },
+    {
+      "source": "Choose a conversation",
+      "count": 2
+    },
+    {
+      "source": "Load more conversations",
+      "count": 2
+    },
+    {
+      "source": "Verification code",
+      "count": 2
+    },
+    {
+      "source": "Copy",
+      "count": 2
+    },
+    {
+      "source": "A reason, if you want to give one",
+      "count": 2
+    },
+    {
+      "source": "Quotation",
+      "count": 2
+    },
+    {
+      "source": "Talk to an engineer",
+      "count": 2
+    },
+    {
+      "source": "Remember a fact",
+      "count": 2
+    },
+    {
+      "source": "From",
+      "count": 2
+    },
+    {
+      "source": "Open record",
+      "count": 2
+    },
+    {
+      "source": "Edit",
+      "count": 2
+    },
+    {
+      "source": "Memory",
+      "count": 2
+    },
+    {
+      "source": "Add source",
+      "count": 2
+    },
+    {
+      "source": "Meet OpenBot",
+      "count": 2
+    },
+    {
+      "source": "Sign in",
+      "count": 2
+    },
+    {
+      "source": "Requests",
+      "count": 2
+    },
+    {
+      "source": "Finish in the tab that opened.",
+      "count": 2
+    },
+    {
+      "source": "Allowing…",
+      "count": 2
+    },
+    {
+      "source": "actions",
+      "count": 2
+    },
+    {
+      "source": "Couldn't read what this account allows right now.",
+      "count": 2
+    },
+    {
+      "source": "Search actions",
+      "count": 2
+    },
+    {
+      "source": "more",
+      "count": 2
+    },
+    {
+      "source": "Instruction",
+      "count": 2
+    },
+    {
+      "source": "Success criteria",
+      "count": 2
+    },
+    {
+      "source": "Event type",
+      "count": 2
+    },
+    {
+      "source": "No runs yet.",
+      "count": 2
+    },
+    {
+      "source": "Add trigger",
+      "count": 2
+    },
+    {
+      "source": "Disconnecting…",
+      "count": 2
+    },
+    {
+      "source": "Not set up yet",
+      "count": 2
+    },
+    {
+      "source": "Message list emphasis",
+      "count": 2
+    },
+    {
+      "source": "Loading…",
+      "count": 2
+    },
+    {
+      "source": "Standing instructions",
+      "count": 2
+    },
+    {
+      "source": "Saved",
+      "count": 2
+    },
+    {
+      "source": "New skill",
+      "count": 2
+    },
+    {
+      "source": "Command",
+      "count": 2
+    },
+    {
+      "source": "One-liner",
+      "count": 2
+    },
+    {
+      "source": "Turn on research",
+      "count": 2
+    },
+    {
+      "source": "Background research",
+      "count": 2
+    },
+    {
+      "source": "Turn on background research",
+      "count": 2
+    },
+    {
+      "source": "How often",
+      "count": 2
+    },
+    {
+      "source": "Sidebar",
+      "count": 2
+    },
+    {
+      "source": "Sign in to",
+      "count": 2
+    },
+    {
+      "source": "Approvals",
+      "count": 2
+    },
+    {
+      "source": "Audit",
+      "count": 2
+    },
+    {
+      "source": "View",
+      "count": 2
+    },
+    {
+      "source": "Boundaries",
+      "count": 2
+    },
+    {
+      "source": "Trial mode",
+      "count": 2
+    },
+    {
+      "source": "No such component",
+      "count": 2
+    },
+    {
+      "source": "Available to",
+      "count": 2
+    },
+    {
+      "source": "Can read",
+      "count": 2
+    },
+    {
+      "source": "Kind",
+      "count": 2
+    },
+    {
+      "source": "Called as",
+      "count": 2
+    },
+    {
+      "source": "Computers",
+      "count": 2
+    },
+    {
+      "source": "Update computer",
+      "count": 2
+    },
+    {
+      "source": "Revoke",
+      "count": 2
+    },
+    {
+      "source": "Type",
+      "count": 2
+    },
+    {
+      "source": "Require SSO",
+      "count": 2
+    },
+    {
+      "source": "Role and group overrides",
+      "count": 2
+    },
+    {
+      "source": "Learning",
+      "count": 2
+    },
+    {
+      "source": "Skill sharing",
+      "count": 2
+    },
+    {
+      "source": "Model allowlist",
+      "count": 2
+    },
+    {
+      "source": "Allowed models",
+      "count": 2
+    },
+    {
+      "source": "Action Recording",
+      "count": 2
+    },
+    {
+      "source": "Stop inactive computers",
+      "count": 2
+    },
+    {
+      "source": "Stopped",
+      "count": 2
+    },
+    {
+      "source": "Grant",
+      "count": 2
+    },
+    {
+      "source": "Group",
+      "count": 2
+    },
+    {
+      "source": "Mode",
+      "count": 2
+    },
+    {
+      "source": "Add a provider",
+      "count": 2
+    },
+    {
+      "source": "Registered",
+      "count": 2
+    },
+    {
+      "source": "Client ID",
+      "count": 2
+    },
+    {
+      "source": "Client secret",
+      "count": 2
+    },
+    {
+      "source": "Access token",
+      "count": 2
+    },
+    {
+      "source": "OAuth client",
+      "count": 2
+    },
+    {
+      "source": "Instance host",
+      "count": 2
+    },
+    {
+      "source": "changes things",
+      "count": 2
+    },
+    {
+      "source": "reads",
+      "count": 2
+    },
+    {
+      "source": "Reads",
+      "count": 2
+    },
+    {
+      "source": "Select all",
+      "count": 2
+    },
+    {
+      "source": "Changes things",
+      "count": 2
+    },
+    {
+      "source": "Couldn't load the plugin settings. Reload the page.",
+      "count": 2
+    },
+    {
+      "source": "Components gallery",
+      "count": 2
+    },
+    {
+      "source": "Dark theme",
+      "count": 2
+    },
+    {
+      "source": "Approval rules",
+      "count": 2
+    },
+    {
+      "source": "Account",
+      "count": 2
+    },
+    {
+      "source": "Team account",
+      "count": 2
+    },
+    {
+      "source": "Search connections",
+      "count": 2
+    },
+    {
+      "source": "Expand sidebar",
+      "count": 2
+    },
+    {
+      "source": "Collapse sidebar",
+      "count": 2
+    },
+    {
+      "source": "Memories",
+      "count": 2
+    },
+    {
+      "source": "Your Bots",
+      "count": 2
+    },
+    {
+      "source": "Couldn't load your conversations. Reload the page.",
+      "count": 2
+    },
+    {
+      "source": "Menu",
+      "count": 2
+    },
+    {
+      "source": "Conversations",
+      "count": 2
+    },
+    {
+      "source": "Ideas",
+      "count": 2
+    },
+    {
+      "source": "Skin",
+      "count": 2
+    },
+    {
+      "source": "Overview",
+      "count": 1
+    },
+    {
+      "source": "Couldn't load this Bot.",
+      "count": 1
+    },
+    {
+      "source": "Key for tools",
+      "count": 1
+    },
+    {
+      "source": "This Bot has a key, so it can use its tools. If you make a new key, the old one stops working right away.",
+      "count": 1
+    },
+    {
+      "source": "This Bot has no key yet. It can talk but can't use tools. Generate a key and add it to your agent's configuration.",
+      "count": 1
+    },
+    {
+      "source": "Copy this key now. You won't see it again.",
+      "count": 1
+    },
+    {
+      "source": "If you lose it, make a new one.",
+      "count": 1
+    },
+    {
+      "source": "Generating…",
+      "count": 1
+    },
+    {
+      "source": "Revoke key",
+      "count": 1
+    },
+    {
+      "source": "Choose which Bots this Bot can ask for help. Their answers appear in the same conversation under their own names. This does not change who can ask this Bot for help.",
+      "count": 1
+    },
+    {
+      "source": "Bots it can ask",
+      "count": 1
+    },
+    {
+      "source": "Handoffs are off",
+      "count": 1
+    },
+    {
+      "source": "An admin turned off handing work between Bots. These settings are kept, and they apply again once it's back on.",
+      "count": 1
+    },
+    {
+      "source": "Can't hand off work",
+      "count": 1
+    },
+    {
+      "source": "This Bot can't hand work to other Bots. Other Bots can still hand work to it.",
+      "count": 1
+    },
+    {
+      "source": "No other Bots yet",
+      "count": 1
+    },
+    {
+      "source": "When there are more, you can let this Bot ask them here.",
+      "count": 1
+    },
+    {
+      "source": "Set by an admin",
+      "count": 1
+    },
+    {
+      "source": "An admin decides which Bots this one can ask.",
+      "count": 1
+    },
+    {
+      "source": "An admin must enable built-in hosting before you can run a Bot here.",
+      "count": 1
+    },
+    {
+      "source": "is ready",
+      "count": 1
+    },
+    {
+      "source": "Taking you to it…",
+      "count": 1
+    },
+    {
+      "source": "Expense Review",
+      "count": 1
+    },
+    {
+      "source": "Review receipts, categorize expenses, and prepare reimbursement reports.",
+      "count": 1
+    },
+    {
+      "source": "Who can see it",
+      "count": 1
+    },
+    {
+      "source": "Apps it can use",
+      "count": 1
+    },
+    {
+      "source": "It always uses the account of whoever is asking.",
+      "count": 1
+    },
+    {
+      "source": "Its computer",
+      "count": 1
+    },
+    {
+      "source": "What Isolated means",
+      "count": 1
+    },
+    {
+      "source": "Where can it be reached?",
+      "count": 1
+    },
+    {
+      "source": "Agent address",
+      "count": 1
+    },
+    {
+      "source": "https://your-agent.example.com/ag-ui",
+      "count": 1
+    },
+    {
+      "source": "Any agent that speaks AG-UI works. OpenBot connects to it, so it has to be reachable from OpenBot's server.",
+      "count": 1
+    },
+    {
+      "source": "Bearer …",
+      "count": 1
+    },
+    {
+      "source": "Sent as an",
+      "count": 1
+    },
+    {
+      "source": "Authorization",
+      "count": 1
+    },
+    {
+      "source": "header with every request, and stored encrypted.",
+      "count": 1
+    },
+    {
+      "source": "Writing the Bot…",
+      "count": 1
+    },
+    {
+      "source": "Job",
+      "count": 1
+    },
+    {
+      "source": "None",
+      "count": 1
+    },
+    {
+      "source": "Its instructions. It follows these every time it replies.",
+      "count": 1
+    },
+    {
+      "source": "It starts private, with no apps. Apps are added on its page afterwards.",
+      "count": 1
+    },
+    {
+      "source": "Create it",
+      "count": 1
+    },
+    {
+      "source": "Don't create",
+      "count": 1
+    },
+    {
+      "source": "Not created",
+      "count": 1
+    },
+    {
+      "source": "Create a Bot",
+      "count": 1
+    },
+    {
+      "source": "This Bot couldn't be created as written. It's being rewritten.",
+      "count": 1
+    },
+    {
+      "source": "Search…",
+      "count": 1
+    },
+    {
+      "source": "No loaded conversations match your search",
+      "count": 1
+    },
+    {
+      "source": "No conversations match your search",
+      "count": 1
+    },
+    {
+      "source": "Load older conversations to search more of your history.",
+      "count": 1
+    },
+    {
+      "source": "No conversations yet",
+      "count": 1
+    },
+    {
+      "source": "Start a conversation with a Bot and it shows up here.",
+      "count": 1
+    },
+    {
+      "source": "Couldn't load older conversations.",
+      "count": 1
+    },
+    {
+      "source": "Loading older conversations…",
+      "count": 1
+    },
+    {
+      "source": "The strictest matching rule wins. An \"ask\" rule beats an \"allow\" rule. Rules for every Bot are in",
+      "count": 1
+    },
+    {
+      "source": "Settings → Approvals",
+      "count": 1
+    },
+    {
+      "source": "Rules",
+      "count": 1
+    },
+    {
+      "source": "No rules for this Bot",
+      "count": 1
+    },
+    {
+      "source": "This needs you",
+      "count": 1
+    },
+    {
+      "source": "on",
+      "count": 1
+    },
+    {
+      "source": "Locked",
+      "count": 1
+    },
+    {
+      "source": "A tool or app, and what a Bot does before using it.",
+      "count": 1
+    },
+    {
+      "source": "Use * to match anything. mcp/gmail/* means every Gmail tool. A target of *.example.com means every page on that site.",
+      "count": 1
+    },
+    {
+      "source": "Behaviour",
+      "count": 1
+    },
+    {
+      "source": "Save rule",
+      "count": 1
+    },
+    {
+      "source": "Team settings and shared account requests are in",
+      "count": 1
+    },
+    {
+      "source": "Admin → Approvals",
+      "count": 1
+    },
+    {
+      "source": "Before a Bot acts",
+      "count": 1
+    },
+    {
+      "source": "Review a Bot's changes to websites, connected apps, and files.",
+      "count": 1
+    },
+    {
+      "source": "Auto-review",
+      "count": 1
+    },
+    {
+      "source": "An admin requires this. ",
+      "count": 1
+    },
+    {
+      "source": "Before a Bot does something that could affect your accounts or share information, OpenBot checks it against your request and your rules. If it can't tell, it asks you.",
+      "count": 1
+    },
+    {
+      "source": "The OpenBot desktop app still shows you each command before it runs.",
+      "count": 1
+    },
+    {
+      "source": "The strictest matching rule wins. An \"ask\" rule beats an \"allow\" rule. Team rules are locked. Passwords, security settings and payments are always handed to you. Rules for one Bot are on",
+      "count": 1
+    },
+    {
+      "source": "that Bot's page",
+      "count": 1
+    },
+    {
+      "source": "Rules for every Bot",
+      "count": 1
+    },
+    {
+      "source": "These don't match a Bot you can open. They still apply to any Bot they match. Remove the ones you don't want.",
+      "count": 1
+    },
+    {
+      "source": "Rules for other Bots",
+      "count": 1
+    },
+    {
+      "source": "Shared account requests",
+      "count": 1
+    },
+    {
+      "source": "wants the shared",
+      "count": 1
+    },
+    {
+      "source": "Now:",
+      "count": 1
+    },
+    {
+      "source": "Asked:",
+      "count": 1
+    },
+    {
+      "source": "Team settings",
+      "count": 1
+    },
+    {
+      "source": "Require auto-review for everyone",
+      "count": 1
+    },
+    {
+      "source": "Let members set personal rules",
+      "count": 1
+    },
+    {
+      "source": "A member's own stricter setting still applies.",
+      "count": 1
+    },
+    {
+      "source": "These apply to every member's Bots. Members can't change them.",
+      "count": 1
+    },
+    {
+      "source": "Team rules",
+      "count": 1
+    },
+    {
+      "source": "No team rules",
+      "count": 1
+    },
+    {
+      "source": "Add a team rule",
+      "count": 1
+    },
+    {
+      "source": "asks:",
+      "count": 1
+    },
+    {
+      "source": "Send answer",
+      "count": 1
+    },
+    {
+      "source": "wants to",
+      "count": 1
+    },
+    {
+      "source": "Handed to you: ",
+      "count": 1
+    },
+    {
+      "source": "I did it myself",
+      "count": 1
+    },
+    {
+      "source": "Don't do it",
+      "count": 1
+    },
+    {
+      "source": "Always allow here",
+      "count": 1
+    },
+    {
+      "source": "Deny",
+      "count": 1
+    },
+    {
+      "source": "Nothing loaded matches this search and these filters.",
+      "count": 1
+    },
+    {
+      "source": "Clear filter",
+      "count": 1
+    },
+    {
+      "source": "Outcome",
+      "count": 1
+    },
+    {
+      "source": "When",
+      "count": 1
+    },
+    {
+      "source": ", oldest first",
+      "count": 1
+    },
+    {
+      "source": ", newest first",
+      "count": 1
+    },
+    {
+      "source": "Your apps",
+      "count": 1
+    },
+    {
+      "source": "Couldn't load your apps. Reload the page.",
+      "count": 1
+    },
+    {
+      "source": "No apps to give yet",
+      "count": 1
+    },
+    {
+      "source": "Connect an app to let your Bots use it.",
+      "count": 1
+    },
+    {
+      "source": "An admin gave it to this Bot.",
+      "count": 1
+    },
+    {
+      "source": "Turn on a skill to use it with this Bot. Type / in a conversation to run it.",
+      "count": 1
+    },
+    {
+      "source": "Skills you write show up here.",
+      "count": 1
+    },
+    {
+      "source": "Couldn't load what this Bot can use. Reload the page.",
+      "count": 1
+    },
+    {
+      "source": "Review this Bot’s available apps and skills, and check which apps are ready to use. The Bot cannot use apps or skills outside this list.",
+      "count": 1
+    },
+    {
+      "source": "What it can use",
+      "count": 1
+    },
+    {
+      "source": "Couldn't check whether each app is ready for you. Reload the page.",
+      "count": 1
+    },
+    {
+      "source": "Turn one on under Your apps, or ask an admin. Until then this Bot can only talk with you.",
+      "count": 1
+    },
+    {
+      "source": "An admin has to add them. Until then this Bot can only talk with you.",
+      "count": 1
+    },
+    {
+      "source": "tool",
+      "count": 1
+    },
+    {
+      "source": "tools",
+      "count": 1
+    },
+    {
+      "source": "Cancelling…",
+      "count": 1
+    },
+    {
+      "source": "needs you",
+      "count": 1
+    },
+    {
+      "source": "All activity",
+      "count": 1
+    },
+    {
+      "source": "Couldn't load this Bot's activity.",
+      "count": 1
+    },
+    {
+      "source": "Couldn't load this Bot's activity. Reload the page.",
+      "count": 1
+    },
+    {
+      "source": "Scheduled",
+      "count": 1
+    },
+    {
+      "source": "Completed",
+      "count": 1
+    },
+    {
+      "source": "This deletes what",
+      "count": 1
+    },
+    {
+      "source": "has with you. Other people's conversations and data stay. You can't undo this.",
+      "count": 1
+    },
+    {
+      "source": "Couldn't check what a reset would delete. Try again.",
+      "count": 1
+    },
+    {
+      "source": "Done.",
+      "count": 1
+    },
+    {
+      "source": "starts fresh with you.",
+      "count": 1
+    },
+    {
+      "source": "There's nothing of yours to delete.",
+      "count": 1
+    },
+    {
+      "source": "This will delete:",
+      "count": 1
+    },
+    {
+      "source": "conversation",
+      "count": 1
+    },
+    {
+      "source": " is",
+      "count": 1
+    },
+    {
+      "source": "s are",
+      "count": 1
+    },
+    {
+      "source": "shared with other people or Bots and will be kept.",
+      "count": 1
+    },
+    {
+      "source": "Memories you told a Bot yourself are kept.",
+      "count": 1
+    },
+    {
+      "source": "Delete and reset",
+      "count": 1
+    },
+    {
+      "source": "An admin assigned it to you. It stays at the top of your Bots list.",
+      "count": 1
+    },
+    {
+      "source": "An admin assigned it to you. You can't hide it.",
+      "count": 1
+    },
+    {
+      "source": "Duplicate",
+      "count": 1
+    },
+    {
+      "source": "Make your own copy. Its conversations and keys aren't copied.",
+      "count": 1
+    },
+    {
+      "source": "Delete your conversations with it, what it remembers for you, and its scheduled work. You'll see the list first.",
+      "count": 1
+    },
+    {
+      "source": "Deletes it for everyone. You can't undo this.",
+      "count": 1
+    },
+    {
+      "source": "It's deleted for everyone. You can't undo this.",
+      "count": 1
+    },
+    {
+      "source": "Resuming…",
+      "count": 1
+    },
+    {
+      "source": "Paused. Resume",
+      "count": 1
+    },
+    {
+      "source": "For you",
+      "count": 1
+    },
+    {
+      "source": "Couldn't load this Bot's settings. Reload the page.",
+      "count": 1
+    },
+    {
+      "source": "Paused. Nothing runs for you until you turn it back on.",
+      "count": 1
+    },
+    {
+      "source": "Runs its routines, responsibilities, hand-offs and follow-ups for you.",
+      "count": 1
+    },
+    {
+      "source": ". Sidebar badges always show.",
+      "count": 1
+    },
+    {
+      "source": "Browser notifications",
+      "count": 1
+    },
+    {
+      "source": "Off in this browser. Turn them on to hear when a Bot needs you.",
+      "count": 1
+    },
+    {
+      "source": "Start a conversation.",
+      "count": 1
+    },
+    {
+      "source": "Settings for this Bot",
+      "count": 1
+    },
+    {
+      "source": "Identity",
+      "count": 1
+    },
+    {
+      "source": "Comes with OpenBot. It doesn't belong to a person.",
+      "count": 1
+    },
+    {
+      "source": "Visibility",
+      "count": 1
+    },
+    {
+      "source": "Agent URL",
+      "count": 1
+    },
+    {
+      "source": "Runs inside OpenBot. There's nothing to connect.",
+      "count": 1
+    },
+    {
+      "source": "To the whole team",
+      "count": 1
+    },
+    {
+      "source": "Each person's conversations with it are private.",
+      "count": 1
+    },
+    {
+      "source": "Teammates can't see it until it has a real name and a description.",
+      "count": 1
+    },
+    {
+      "source": "Unpublish",
+      "count": 1
+    },
+    {
+      "source": "Link",
+      "count": 1
+    },
+    {
+      "source": "Opens a private conversation with it.",
+      "count": 1
+    },
+    {
+      "source": "Copy link",
+      "count": 1
+    },
+    {
+      "source": "Not published to the team",
+      "count": 1
+    },
+    {
+      "source": "Not published",
+      "count": 1
+    },
+    {
+      "source": "It's public, so everyone on OpenBot can already use it.",
+      "count": 1
+    },
+    {
+      "source": "Audience",
+      "count": 1
+    },
+    {
+      "source": "Pins this Bot at the top of every group member's Bots list. Use * for the whole team.",
+      "count": 1
+    },
+    {
+      "source": "Assign to groups",
+      "count": 1
+    },
+    {
+      "source": "Published to",
+      "count": 1
+    },
+    {
+      "source": "People, by email",
+      "count": 1
+    },
+    {
+      "source": "Groups",
+      "count": 1
+    },
+    {
+      "source": "Publish to team",
+      "count": 1
+    },
+    {
+      "source": "Not assigned to any group",
+      "count": 1
+    },
+    {
+      "source": "Whole team",
+      "count": 1
+    },
+    {
+      "source": "Assign to a group",
+      "count": 1
+    },
+    {
+      "source": "to a group",
+      "count": 1
+    },
+    {
+      "source": "It's pinned at the top of every member's Bots list.",
+      "count": 1
+    },
+    {
+      "source": "Group, or *",
+      "count": 1
+    },
+    {
+      "source": "* for the whole team",
+      "count": 1
+    },
+    {
+      "source": "Yours",
+      "count": 1
+    },
+    {
+      "source": "All pinned",
+      "count": 1
+    },
+    {
+      "source": "Your Bots are all pinned above.",
+      "count": 1
+    },
+    {
+      "source": "Shared with you",
+      "count": 1
+    },
+    {
+      "source": "Nothing shared yet",
+      "count": 1
+    },
+    {
+      "source": "Bots somebody shares with you show up here.",
+      "count": 1
+    },
+    {
+      "source": "Hide",
+      "count": 1
+    },
+    {
+      "source": "on “",
+      "count": 1
+    },
+    {
+      "source": "running",
+      "count": 1
+    },
+    {
+      "source": "touching",
+      "count": 1
+    },
+    {
+      "source": "Showing the first",
+      "count": 1
+    },
+    {
+      "source": "Tabs",
+      "count": 1
+    },
+    {
+      "source": "New tab",
+      "count": 1
+    },
+    {
+      "source": "Address bar",
+      "count": 1
+    },
+    {
+      "source": "Forward",
+      "count": 1
+    },
+    {
+      "source": "Reload",
+      "count": 1
+    },
+    {
+      "source": "Address",
+      "count": 1
+    },
+    {
+      "source": "Search or type an address",
+      "count": 1
+    },
+    {
+      "source": "Clear this browser?",
+      "count": 1
+    },
+    {
+      "source": "Cookies, saved passwords and history are wiped. You'll have to sign in everywhere again.",
+      "count": 1
+    },
+    {
+      "source": "Clearing…",
+      "count": 1
+    },
+    {
+      "source": "Clear",
+      "count": 1
+    },
+    {
+      "source": "Couldn't load your browser. Reload the page.",
+      "count": 1
+    },
+    {
+      "source": "Your browser",
+      "count": 1
+    },
+    {
+      "source": "Bring to front",
+      "count": 1
+    },
+    {
+      "source": "Your browser. Click it to type into it, and press Escape to leave it.",
+      "count": 1
+    },
+    {
+      "source": "Your browser is closed.",
+      "count": 1
+    },
+    {
+      "source": "Open it again",
+      "count": 1
+    },
+    {
+      "source": "Narrate while you record?",
+      "count": 1
+    },
+    {
+      "source": "Talk through the task as you do it, and the recording keeps what you say as text, so your Bots learn why you did each step.",
+      "count": 1
+    },
+    {
+      "source": "Your browser turns your speech into text on your own computer. Your voice never leaves it, and no recording of it is kept.",
+      "count": 1
+    },
+    {
+      "source": "OpenBot keeps your answer for every recording. You can change it any time with the Narration switch on this page.",
+      "count": 1
+    },
+    {
+      "source": "Record without narration",
+      "count": 1
+    },
+    {
+      "source": "Record with narration",
+      "count": 1
+    },
+    {
+      "source": "What you do in this browser goes into your own Learning space, in every tab you use, until you stop: your steps, what each step saves, AI assistant conversations, and your narration when it's on.",
+      "count": 1
+    },
+    {
+      "source": "Name the task, like Submit an expense report",
+      "count": 1
+    },
+    {
+      "source": "Connect the OpenBot Recorder",
+      "count": 1
+    },
+    {
+      "source": "'s status couldn't be loaded. Try again in a moment.",
+      "count": 1
+    },
+    {
+      "source": "Couldn’t load voice chats. Reload the page.",
+      "count": 1
+    },
+    {
+      "source": "This Bot was deleted. You can still read this conversation, but the Bot can't reply.",
+      "count": 1
+    },
+    {
+      "source": "Loading this conversation",
+      "count": 1
+    },
+    {
+      "source": "Queued",
+      "count": 1
+    },
+    {
+      "source": "Routine ran.",
+      "count": 1
+    },
+    {
+      "source": "Responsibility ran.",
+      "count": 1
+    },
+    {
+      "source": "Trigger:",
+      "count": 1
+    },
+    {
+      "source": "via",
+      "count": 1
+    },
+    {
+      "source": "Attachments",
+      "count": 1
+    },
+    {
+      "source": "Uploading…",
+      "count": 1
+    },
+    {
+      "source": "The Bot reads only the first 120,000 characters of this file.",
+      "count": 1
+    },
+    {
+      "source": " · may be cut",
+      "count": 1
+    },
+    {
+      "source": "Stop the Bot",
+      "count": 1
+    },
+    {
+      "source": "Show voice call",
+      "count": 1
+    },
+    {
+      "source": "Start voice call",
+      "count": 1
+    },
+    {
+      "source": "Voice calls need a microphone and a secure (HTTPS) connection",
+      "count": 1
+    },
+    {
+      "source": "More message options unavailable",
+      "count": 1
+    },
+    {
+      "source": "Dictation needs a supported browser and a secure (HTTPS) connection",
+      "count": 1
+    },
+    {
+      "source": "Waiting for microphone permission…",
+      "count": 1
+    },
+    {
+      "source": "Transcribing…",
+      "count": 1
+    },
+    {
+      "source": "Recording duration",
+      "count": 1
+    },
+    {
+      "source": "Record again",
+      "count": 1
+    },
+    {
+      "source": "Stop and transcribe",
+      "count": 1
+    },
+    {
+      "source": "Stop and add to draft",
+      "count": 1
+    },
+    {
+      "source": "Dismiss this refusal",
+      "count": 1
+    },
+    {
+      "source": "needs a key from you.",
+      "count": 1
+    },
+    {
+      "source": "Enter it on",
+      "count": 1
+    },
+    {
+      "source": "'s page",
+      "count": 1
+    },
+    {
+      "source": ", then ask again.",
+      "count": 1
+    },
+    {
+      "source": "Finish in the tab that opened, then come back here.",
+      "count": 1
+    },
+    {
+      "source": "This conversation",
+      "count": 1
+    },
+    {
+      "source": "Delete…",
+      "count": 1
+    },
+    {
+      "source": "It disappears for everyone in the conversation.",
+      "count": 1
+    },
+    {
+      "source": "Say something to",
+      "count": 1
+    },
+    {
+      "source": ". Every Bot answers in turn; start with @Name to ask just one.",
+      "count": 1
+    },
+    {
+      "source": "Asked a teammate for permission to use their own",
+      "count": 1
+    },
+    {
+      "source": "People in this group",
+      "count": 1
+    },
+    {
+      "source": "Everyone here sees the whole conversation. Every Bot in it answers them.",
+      "count": 1
+    },
+    {
+      "source": "Started this group",
+      "count": 1
+    },
+    {
+      "source": "Leave this group",
+      "count": 1
+    },
+    {
+      "source": "Leave",
+      "count": 1
+    },
+    {
+      "source": "Their email",
+      "count": 1
+    },
+    {
+      "source": "Add someone by email",
+      "count": 1
+    },
+    {
+      "source": "No Bot by that name.",
+      "count": 1
+    },
+    {
+      "source": "Skipped. Nothing of yours was used.",
+      "count": 1
+    },
+    {
+      "source": "Always allow for this Bot",
+      "count": 1
+    },
+    {
+      "source": "Always allow for all Team Bots",
+      "count": 1
+    },
+    {
+      "source": "Skip",
+      "count": 1
+    },
+    {
+      "source": "Not completed",
+      "count": 1
+    },
+    {
+      "source": "Blocked",
+      "count": 1
+    },
+    {
+      "source": "Didn't work",
+      "count": 1
+    },
+    {
+      "source": "Couldn't show",
+      "count": 1
+    },
+    {
+      "source": ". The rest of the conversation is fine.",
+      "count": 1
+    },
+    {
+      "source": "Turns",
+      "count": 1
+    },
+    {
+      "source": "Call duration",
+      "count": 1
+    },
+    {
+      "source": "Expand voice call",
+      "count": 1
+    },
+    {
+      "source": "Expand call",
+      "count": 1
+    },
+    {
+      "source": "You · microphone muted",
+      "count": 1
+    },
+    {
+      "source": "Your microphone is muted",
+      "count": 1
+    },
+    {
+      "source": "Show live captions",
+      "count": 1
+    },
+    {
+      "source": "Return to chat",
+      "count": 1
+    },
+    {
+      "source": "Return to chat · keep call open",
+      "count": 1
+    },
+    {
+      "source": "Mute your microphone",
+      "count": 1
+    },
+    {
+      "source": "Mute your microphone · you’ll still hear the Bot",
+      "count": 1
+    },
+    {
+      "source": "Voice chat",
+      "count": 1
+    },
+    {
+      "source": "Saving voice chat",
+      "count": 1
+    },
+    {
+      "source": "Retry save",
+      "count": 1
+    },
+    {
+      "source": "Retry summary",
+      "count": 1
+    },
+    {
+      "source": "Preview could not be loaded.",
+      "count": 1
+    },
+    {
+      "source": "Publish in the playground to see a preview.",
+      "count": 1
+    },
+    {
+      "source": "Published component with saved sample arguments",
+      "count": 1
+    },
+    {
+      "source": "This one is only drawn in a conversation.",
+      "count": 1
+    },
+    {
+      "source": "Nothing yet. Commands the Bot runs and files it reads appear here.",
+      "count": 1
+    },
+    {
+      "source": "Recording isn't available here",
+      "count": 1
+    },
+    {
+      "source": "Do the task in the Bot's browser while you have control. Only what you do is recorded, and it goes to your own Learning space.",
+      "count": 1
+    },
+    {
+      "source": "Someone is recording",
+      "count": 1
+    },
+    {
+      "source": "You can record once they stop.",
+      "count": 1
+    },
+    {
+      "source": "The output was too long. This is the end of it.",
+      "count": 1
+    },
+    {
+      "source": "It printed nothing.",
+      "count": 1
+    },
+    {
+      "source": "It ran too long and was stopped.",
+      "count": 1
+    },
+    {
+      "source": "Exit code",
+      "count": 1
+    },
+    {
+      "source": "Hand back",
+      "count": 1
+    },
+    {
+      "source": "Take control",
+      "count": 1
+    },
+    {
+      "source": "Close Computer",
+      "count": 1
+    },
+    {
+      "source": "Open Computer",
+      "count": 1
+    },
+    {
+      "source": "Computer sidebar",
+      "count": 1
+    },
+    {
+      "source": "Opened during this turn. The screen has moved on since.",
+      "count": 1
+    },
+    {
+      "source": "This turn did not open a page.",
+      "count": 1
+    },
+    {
+      "source": "Can't show the screen right now",
+      "count": 1
+    },
+    {
+      "source": "The Bot may still be working. If this keeps happening, ask an admin to check its Computer.",
+      "count": 1
+    },
+    {
+      "source": "Starting",
+      "count": 1
+    },
+    {
+      "source": "computer. The first start takes about a minute.",
+      "count": 1
+    },
+    {
+      "source": "computer is off. It starts when the Bot next uses it.",
+      "count": 1
+    },
+    {
+      "source": "The Bot hasn't opened a page yet.",
+      "count": 1
+    },
+    {
+      "source": "Waiting for the Bot's screen…",
+      "count": 1
+    },
+    {
+      "source": "What the Bot is looking at",
+      "count": 1
+    },
+    {
+      "source": "Open the Bot's screen full size",
+      "count": 1
+    },
+    {
+      "source": "You have control",
+      "count": 1
+    },
+    {
+      "source": "Cancel request",
+      "count": 1
+    },
+    {
+      "source": "Finishing the Bot's current action…",
+      "count": 1
+    },
+    {
+      "source": "Finishing the Bot's current action before giving you control…",
+      "count": 1
+    },
+    {
+      "source": "The Computer stopped while you had control. Take control to check the page, then hand it back to the Bot.",
+      "count": 1
+    },
+    {
+      "source": "The Computer stopped before anyone took control. The Bot will ask again if it still needs you.",
+      "count": 1
+    },
+    {
+      "source": "The Bot needs",
+      "count": 1
+    },
+    {
+      "source": "Never shown to the Bot",
+      "count": 1
+    },
+    {
+      "source": "Send to the page",
+      "count": 1
+    },
+    {
+      "source": "This goes straight to the page. It isn't shown in the conversation, and the Bot never sees it.",
+      "count": 1
+    },
+    {
+      "source": "Checking who has control…",
+      "count": 1
+    },
+    {
+      "source": "The Bot's screen",
+      "count": 1
+    },
+    {
+      "source": "Close the Bot's screen",
+      "count": 1
+    },
+    {
+      "source": "What this turn had open",
+      "count": 1
+    },
+    {
+      "source": "Reconnecting…",
+      "count": 1
+    },
+    {
+      "source": "Finishing the current action before giving you control…",
+      "count": 1
+    },
+    {
+      "source": "You have control. Click and type on the page.",
+      "count": 1
+    },
+    {
+      "source": "Someone else has control.",
+      "count": 1
+    },
+    {
+      "source": "Couldn't load the Bot's browser. Close this and open it again.",
+      "count": 1
+    },
+    {
+      "source": "Stop waiting",
+      "count": 1
+    },
+    {
+      "source": "Resume task",
+      "count": 1
+    },
+    {
+      "source": "The Bot asked: “",
+      "count": 1
+    },
+    {
+      "source": " The Bot is carrying on.",
+      "count": 1
+    },
+    {
+      "source": " The Bot stopped here without saying what it does next.",
+      "count": 1
+    },
+    {
+      "source": "Carry on",
+      "count": 1
+    },
+    {
+      "source": "The Bot's screen, live",
+      "count": 1
+    },
+    {
+      "source": "Lets your Bots read and change your repositories as you. You connect this separately from your account above.",
+      "count": 1
+    },
+    {
+      "source": "GitHub tools",
+      "count": 1
+    },
+    {
+      "source": "Not connected",
+      "count": 1
+    },
+    {
+      "source": "Your devices, recent deliveries, and where each kind of update goes are in",
+      "count": 1
+    },
+    {
+      "source": "Settings → Notifications",
+      "count": 1
+    },
+    {
+      "source": "Connected destinations",
+      "count": 1
+    },
+    {
+      "source": "No destinations connected",
+      "count": 1
+    },
+    {
+      "source": " · You texted STOP. Text START to resume.",
+      "count": 1
+    },
+    {
+      "source": "In a Slack or Teams channel that others can read, the Bot replies to you in a direct message.",
+      "count": 1
+    },
+    {
+      "source": "Connect a conversation",
+      "count": 1
+    },
+    {
+      "source": "Each account or phone number works with one conversation at a time. Linking it here moves it from the one it's linked to now.",
+      "count": 1
+    },
+    {
+      "source": "Phone number",
+      "count": 1
+    },
+    {
+      "source": "Send verification code",
+      "count": 1
+    },
+    {
+      "source": "Confirm phone",
+      "count": 1
+    },
+    {
+      "source": "Send this message to the OpenBot app in",
+      "count": 1
+    },
+    {
+      "source": "Microsoft Teams",
+      "count": 1
+    },
+    {
+      "source": "within",
+      "count": 1
+    },
+    {
+      "source": "minutes. It links that account to this conversation and Bot.",
+      "count": 1
+    },
+    {
+      "source": "Report",
+      "count": 1
+    },
+    {
+      "source": "Choosing a report…",
+      "count": 1
+    },
+    {
+      "source": "Reading…",
+      "count": 1
+    },
+    {
+      "source": "Not shown",
+      "count": 1
+    },
+    {
+      "source": "No Bot has done anything in the last",
+      "count": 1
+    },
+    {
+      "source": "days.",
+      "count": 1
+    },
+    {
+      "source": "Ask about the busiest",
+      "count": 1
+    },
+    {
+      "source": "OpenBot hasn't refused anything.",
+      "count": 1
+    },
+    {
+      "source": "Explain the latest",
+      "count": 1
+    },
+    {
+      "source": "From the Bot's own knowledge. Not checked against a source.",
+      "count": 1
+    },
+    {
+      "source": "Sources: ",
+      "count": 1
+    },
+    {
+      "source": "There is no data to chart.",
+      "count": 1
+    },
+    {
+      "source": "Preparing the request…",
+      "count": 1
+    },
+    {
+      "source": "Approved",
+      "count": 1
+    },
+    {
+      "source": "Declined",
+      "count": 1
+    },
+    {
+      "source": "Preparing the question…",
+      "count": 1
+    },
+    {
+      "source": "Answered",
+      "count": 1
+    },
+    {
+      "source": "Preparing your form…",
+      "count": 1
+    },
+    {
+      "source": "The Bot is putting the questions together.",
+      "count": 1
+    },
+    {
+      "source": "Form unavailable",
+      "count": 1
+    },
+    {
+      "source": "The form had invalid questions. The Bot can send a corrected form.",
+      "count": 1
+    },
+    {
+      "source": "The form has invalid questions, so it can't be shown.",
+      "count": 1
+    },
+    {
+      "source": "Return to the Bot",
+      "count": 1
+    },
+    {
+      "source": "Submitted",
+      "count": 1
+    },
+    {
+      "source": "Not provided",
+      "count": 1
+    },
+    {
+      "source": "This form has been completed. Its saved answers are unavailable.",
+      "count": 1
+    },
+    {
+      "source": "Fields marked * are required. Your answers will be shared with the Bot.",
+      "count": 1
+    },
+    {
+      "source": "Choose an option",
+      "count": 1
+    },
+    {
+      "source": "Couldn't send your answers. Try again.",
+      "count": 1
+    },
+    {
+      "source": "Loading what it can draw…",
+      "count": 1
+    },
+    {
+      "source": "This Bot can't use any components yet. It answers in text.",
+      "count": 1
+    },
+    {
+      "source": "Shows OpenBot's own records. There's nothing to show until a Bot asks for it.",
+      "count": 1
+    },
+    {
+      "source": "There is nothing to quote.",
+      "count": 1
+    },
+    {
+      "source": "Not shown:",
+      "count": 1
+    },
+    {
+      "source": "Table",
+      "count": 1
+    },
+    {
+      "source": "Waiting for complete table data…",
+      "count": 1
+    },
+    {
+      "source": "row",
+      "count": 1
+    },
+    {
+      "source": "rows",
+      "count": 1
+    },
+    {
+      "source": ". Select a column heading to sort.",
+      "count": 1
+    },
+    {
+      "source": "Empty",
+      "count": 1
+    },
+    {
+      "source": "No rows to show.",
+      "count": 1
+    },
+    {
+      "source": "Select a column heading to sort.",
+      "count": 1
+    },
+    {
+      "source": "Close details",
+      "count": 1
+    },
+    {
+      "source": "Self-host OpenBot",
+      "count": 1
+    },
+    {
+      "source": "Self-host OpenBot for your organization.",
+      "count": 1
+    },
+    {
+      "source": "All your Bots will know it.",
+      "count": 1
+    },
+    {
+      "source": "Something you want your Bots to know",
+      "count": 1
+    },
+    {
+      "source": "I prefer meetings in the morning.",
+      "count": 1
+    },
+    {
+      "source": "Remember",
+      "count": 1
+    },
+    {
+      "source": "Your memories",
+      "count": 1
+    },
+    {
+      "source": "No memories yet",
+      "count": 1
+    },
+    {
+      "source": "Add one with Remember a fact.",
+      "count": 1
+    },
+    {
+      "source": "Confirm",
+      "count": 1
+    },
+    {
+      "source": "Forget",
+      "count": 1
+    },
+    {
+      "source": "Edit memory",
+      "count": 1
+    },
+    {
+      "source": "Apps you connected that this Bot can read show up here, and you can add more. Sources refresh every 15 minutes. Only this Bot sees what they hold.",
+      "count": 1
+    },
+    {
+      "source": "App sources",
+      "count": 1
+    },
+    {
+      "source": "No sources yet",
+      "count": 1
+    },
+    {
+      "source": "Apps this Bot can read from show up here.",
+      "count": 1
+    },
+    {
+      "source": "Turned off",
+      "count": 1
+    },
+    {
+      "source": "Sync now",
+      "count": 1
+    },
+    {
+      "source": "Add a source",
+      "count": 1
+    },
+    {
+      "source": "OpenBot reads it now, then every 15 minutes while it's on.",
+      "count": 1
+    },
+    {
+      "source": "What to read",
+      "count": 1
+    },
+    {
+      "source": "Choose what to read",
+      "count": 1
+    },
+    {
+      "source": "Source name",
+      "count": 1
+    },
+    {
+      "source": "My project documents",
+      "count": 1
+    },
+    {
+      "source": "Choose a value",
+      "count": 1
+    },
+    {
+      "source": "Reading source…",
+      "count": 1
+    },
+    {
+      "source": "Add and sync source",
+      "count": 1
+    },
+    {
+      "source": "Signed in",
+      "count": 1
+    },
+    {
+      "source": "Closed",
+      "count": 1
+    },
+    {
+      "source": "Enter the verification code",
+      "count": 1
+    },
+    {
+      "source": "The site sent a verification code. Enter it to finish signing in.",
+      "count": 1
+    },
+    {
+      "source": "Finish signing in",
+      "count": 1
+    },
+    {
+      "source": "Take over to finish",
+      "count": 1
+    },
+    {
+      "source": "Sign in by hand",
+      "count": 1
+    },
+    {
+      "source": "Open the Bot's browser and sign in yourself. Then choose I've signed in and the Bot carries on.",
+      "count": 1
+    },
+    {
+      "source": "Open the Bot's browser",
+      "count": 1
+    },
+    {
+      "source": "Finishing…",
+      "count": 1
+    },
+    {
+      "source": "I've signed in",
+      "count": 1
+    },
+    {
+      "source": "Use a saved login",
+      "count": 1
+    },
+    {
+      "source": "Confirm and sign in",
+      "count": 1
+    },
+    {
+      "source": "Enter your login",
+      "count": 1
+    },
+    {
+      "source": "This goes straight into the Bot's browser. The Bot only learns whether it worked.",
+      "count": 1
+    },
+    {
+      "source": "Username or email",
+      "count": 1
+    },
+    {
+      "source": "Password",
+      "count": 1
+    },
+    {
+      "source": "Save to Passwords",
+      "count": 1
+    },
+    {
+      "source": "Signing in…",
+      "count": 1
+    },
+    {
+      "source": "Take over to sign in",
+      "count": 1
+    },
+    {
+      "source": "Couldn't load access requests. Reload the page.",
+      "count": 1
+    },
+    {
+      "source": "People asking for this app. Approve does what they asked, right away.",
+      "count": 1
+    },
+    {
+      "source": "People asking for an app to be turned on, given to a Bot, or connected. Approve does what they asked, right away.",
+      "count": 1
+    },
+    {
+      "source": "asked",
+      "count": 1
+    },
+    {
+      "source": "Dismissing…",
+      "count": 1
+    },
+    {
+      "source": "Approving…",
+      "count": 1
+    },
+    {
+      "source": "Approving gives",
+      "count": 1
+    },
+    {
+      "source": "only",
+      "count": 1
+    },
+    {
+      "source": "'s read-only actions. Choose any others on",
+      "count": 1
+    },
+    {
+      "source": "Checking what this would change…",
+      "count": 1
+    },
+    {
+      "source": "Everyone using a Bot with this app will act as this one account.",
+      "count": 1
+    },
+    {
+      "source": "Requested",
+      "count": 1
+    },
+    {
+      "source": "Withdrawing…",
+      "count": 1
+    },
+    {
+      "source": "Withdraw",
+      "count": 1
+    },
+    {
+      "source": "Requesting…",
+      "count": 1
+    },
+    {
+      "source": "Request access",
+      "count": 1
+    },
+    {
+      "source": "Search by name. Nobody here has reviewed these apps.",
+      "count": 1
+    },
+    {
+      "source": "Apps",
+      "count": 1
+    },
+    {
+      "source": "Search by app name",
+      "count": 1
+    },
+    {
+      "source": "No apps",
+      "count": 1
+    },
+    {
+      "source": "Added",
+      "count": 1
+    },
+    {
+      "source": "Key missing",
+      "count": 1
+    },
+    {
+      "source": "Re-check",
+      "count": 1
+    },
+    {
+      "source": "Approved per action",
+      "count": 1
+    },
+    {
+      "source": "Connect your account",
+      "count": 1
+    },
+    {
+      "source": "Checking what the app needs…",
+      "count": 1
+    },
+    {
+      "source": "Couldn't find out what this app needs. Close this and try again.",
+      "count": 1
+    },
+    {
+      "source": "Connecting…",
+      "count": 1
+    },
+    {
+      "source": "Grouped by the permission each action asks for. This matches what the consent screen shows.",
+      "count": 1
+    },
+    {
+      "source": "Everything in this app, approved together",
+      "count": 1
+    },
+    {
+      "source": "Authorize",
+      "count": 1
+    },
+    {
+      "source": "action",
+      "count": 1
+    },
+    {
+      "source": "not yet authorized. Search to find",
+      "count": 1
+    },
+    {
+      "source": "it",
+      "count": 1
+    },
+    {
+      "source": "one",
+      "count": 1
+    },
+    {
+      "source": "No action matches that search.",
+      "count": 1
+    },
+    {
+      "source": "Continue to consent",
+      "count": 1
+    },
+    {
+      "source": "Saving also lets everyone who can use this Bot use the shared",
+      "count": 1
+    },
+    {
+      "source": "Waiting for an admin to approve the shared",
+      "count": 1
+    },
+    {
+      "source": "This Bot can't use the shared",
+      "count": 1
+    },
+    {
+      "source": "account until an admin approves who can use the Bot.",
+      "count": 1
+    },
+    {
+      "source": "Request approval",
+      "count": 1
+    },
+    {
+      "source": "Who can use the shared account through this Bot",
+      "count": 1
+    },
+    {
+      "source": "Messages from outside (email, Slack, webhooks) can use it",
+      "count": 1
+    },
+    {
+      "source": "One action this app lists was left out, because a tool name may only use letters, digits, underscores and hyphens: ",
+      "count": 1
+    },
+    {
+      "source": "An ongoing goal. The Bot works on it in the conversation you pick.",
+      "count": 1
+    },
+    {
+      "source": "Keep the customer report up to date",
+      "count": 1
+    },
+    {
+      "source": "The report contains the current quarter's graph and a source link.",
+      "count": 1
+    },
+    {
+      "source": "Event source",
+      "count": 1
+    },
+    {
+      "source": "Events come from the repositories you connected in",
+      "count": 1
+    },
+    {
+      "source": "issues.opened",
+      "count": 1
+    },
+    {
+      "source": "Create responsibility",
+      "count": 1
+    },
+    {
+      "source": "No responsibilities yet",
+      "count": 1
+    },
+    {
+      "source": "Work you give this Bot to keep doing shows up here.",
+      "count": 1
+    },
+    {
+      "source": "Work you give your Bots to keep doing shows up here.",
+      "count": 1
+    },
+    {
+      "source": "Its events and triggers start it.",
+      "count": 1
+    },
+    {
+      "source": "Paused. Its triggers won't start it.",
+      "count": 1
+    },
+    {
+      "source": "Runs it now, for real. The Bot does the work and can post and take actions.",
+      "count": 1
+    },
+    {
+      "source": "Complete",
+      "count": 1
+    },
+    {
+      "source": "Mark it done. Nothing starts it after this.",
+      "count": 1
+    },
+    {
+      "source": "Events",
+      "count": 1
+    },
+    {
+      "source": "Runs",
+      "count": 1
+    },
+    {
+      "source": "Hide runs",
+      "count": 1
+    },
+    {
+      "source": "View runs",
+      "count": 1
+    },
+    {
+      "source": "Waiting for",
+      "count": 1
+    },
+    {
+      "source": ". Answer at the top of this Bot's page or in the conversation.",
+      "count": 1
+    },
+    {
+      "source": "Triggers",
+      "count": 1
+    },
+    {
+      "source": "This responsibility is",
+      "count": 1
+    },
+    {
+      "source": ". Its triggers won't start it.",
+      "count": 1
+    },
+    {
+      "source": "No triggers. It runs when you press Run now, or on the events above.",
+      "count": 1
+    },
+    {
+      "source": " · Paused",
+      "count": 1
+    },
+    {
+      "source": "Remove for good",
+      "count": 1
+    },
+    {
+      "source": "Keep",
+      "count": 1
+    },
+    {
+      "source": "POST to",
+      "count": 1
+    },
+    {
+      "source": "Copy URL",
+      "count": 1
+    },
+    {
+      "source": "Copy address",
+      "count": 1
+    },
+    {
+      "source": "Email isn't set up on OpenBot yet, so this address can't receive mail. An admin has to turn it on.",
+      "count": 1
+    },
+    {
+      "source": "Copy key",
+      "count": 1
+    },
+    {
+      "source": "Copy header",
+      "count": 1
+    },
+    {
+      "source": "Show key",
+      "count": 1
+    },
+    {
+      "source": "Replace key",
+      "count": 1
+    },
+    {
+      "source": "Signing secret saved",
+      "count": 1
+    },
+    {
+      "source": "Waiting for the signing secret",
+      "count": 1
+    },
+    {
+      "source": "Signing secret",
+      "count": 1
+    },
+    {
+      "source": "Paste a new secret to replace it",
+      "count": 1
+    },
+    {
+      "source": "Paste the signing secret",
+      "count": 1
+    },
+    {
+      "source": "Save secret",
+      "count": 1
+    },
+    {
+      "source": "Something outside OpenBot that starts this responsibility.",
+      "count": 1
+    },
+    {
+      "source": "Trigger",
+      "count": 1
+    },
+    {
+      "source": "Slack team ID",
+      "count": 1
+    },
+    {
+      "source": "T0123ABCD",
+      "count": 1
+    },
+    {
+      "source": "Fire on",
+      "count": 1
+    },
+    {
+      "source": "Phrases (comma separated)",
+      "count": 1
+    },
+    {
+      "source": "Reactions (blank: any)",
+      "count": 1
+    },
+    {
+      "source": "eyes, rotating_light",
+      "count": 1
+    },
+    {
+      "source": "Channel IDs (blank: all the Bot is in)",
+      "count": 1
+    },
+    {
+      "source": "C0123ABCD",
+      "count": 1
+    },
+    {
+      "source": "Event types",
+      "count": 1
+    },
+    {
+      "source": "Only when field",
+      "count": 1
+    },
+    {
+      "source": "data.team.key",
+      "count": 1
+    },
+    {
+      "source": "equals",
+      "count": 1
+    },
+    {
+      "source": "ENG",
+      "count": 1
+    },
+    {
+      "source": "Repository (optional)",
+      "count": 1
+    },
+    {
+      "source": "owner/name",
+      "count": 1
+    },
+    {
+      "source": "Allowed senders (blank: anyone)",
+      "count": 1
+    },
+    {
+      "source": "ops@example.com, example.com",
+      "count": 1
+    },
+    {
+      "source": "Signing secret (can be added later)",
+      "count": 1
+    },
+    {
+      "source": "Routines aren't running.",
+      "count": 1
+    },
+    {
+      "source": "OpenBot hasn't started running routines yet, so none of these will run. Ask an admin to set this up.",
+      "count": 1
+    },
+    {
+      "source": "Couldn't load your routines. Reload the page.",
+      "count": 1
+    },
+    {
+      "source": "No routines for this Bot yet",
+      "count": 1
+    },
+    {
+      "source": "No routines yet",
+      "count": 1
+    },
+    {
+      "source": "Ask it something like \"every weekday at 9, send me…\" and it shows up here.",
+      "count": 1
+    },
+    {
+      "source": "Ask a Bot something like \"every weekday at 9, send me…\" and it shows up here.",
+      "count": 1
+    },
+    {
+      "source": "Conversation deleted",
+      "count": 1
+    },
+    {
+      "source": "Paused",
+      "count": 1
+    },
+    {
+      "source": "Due",
+      "count": 1
+    },
+    {
+      "source": "Next",
+      "count": 1
+    },
+    {
+      "source": "Runs it now, for real. The Bot does the work and posts in the conversation.",
+      "count": 1
+    },
+    {
+      "source": "This routine is paused. Turn it on first.",
+      "count": 1
+    },
+    {
+      "source": "History",
+      "count": 1
+    },
+    {
+      "source": "Delete \"",
+      "count": 1
+    },
+    {
+      "source": "This routine stops for good. You can't undo this.",
+      "count": 1
+    },
+    {
+      "source": "Connected browsers",
+      "count": 1
+    },
+    {
+      "source": "Couldn't load your connected browsers. Reload the page.",
+      "count": 1
+    },
+    {
+      "source": "No browsers connected yet.",
+      "count": 1
+    },
+    {
+      "source": "Your OpenBot browser, connected ",
+      "count": 1
+    },
+    {
+      "source": "Connected ",
+      "count": 1
+    },
+    {
+      "source": " from OpenBot Desktop",
+      "count": 1
+    },
+    {
+      "source": "recording now",
+      "count": 1
+    },
+    {
+      "source": "OpenBot signs the Recorder in",
+      "count": 1
+    },
+    {
+      "source": "out. It records nothing for you until you connect it again, and a recording running there stops.",
+      "count": 1
+    },
+    {
+      "source": "This browser",
+      "count": 1
+    },
+    {
+      "source": "Couldn't check whether this browser is connected. Reload the page.",
+      "count": 1
+    },
+    {
+      "source": "OpenBot Recorder",
+      "count": 1
+    },
+    {
+      "source": "Connect this browser",
+      "count": 1
+    },
+    {
+      "source": "Sign in to the OpenBot app on your phone and turn on notifications to add it here.",
+      "count": 1
+    },
+    {
+      "source": "Your devices",
+      "count": 1
+    },
+    {
+      "source": "No devices yet",
+      "count": 1
+    },
+    {
+      "source": "Phones and computers you sign in on show up here.",
+      "count": 1
+    },
+    {
+      "source": "Recent deliveries",
+      "count": 1
+    },
+    {
+      "source": "No deliveries yet",
+      "count": 1
+    },
+    {
+      "source": "Notifications sent to your devices show up here.",
+      "count": 1
+    },
+    {
+      "source": "Add a repository here, then add a webhook in GitHub with the address below and the same secret. Its events, like issues.opened, can then start a responsibility.",
+      "count": 1
+    },
+    {
+      "source": "Repositories",
+      "count": 1
+    },
+    {
+      "source": "No repositories yet",
+      "count": 1
+    },
+    {
+      "source": "Repositories you add show up here with their webhook address.",
+      "count": 1
+    },
+    {
+      "source": "/api/events/github/",
+      "count": 1
+    },
+    {
+      "source": "Use the same secret when you add the webhook in GitHub.",
+      "count": 1
+    },
+    {
+      "source": "Repository",
+      "count": 1
+    },
+    {
+      "source": "owner/repository",
+      "count": 1
+    },
+    {
+      "source": "Webhook secret",
+      "count": 1
+    },
+    {
+      "source": "Connect events",
+      "count": 1
+    },
+    {
+      "source": "Who else's Bots use your Skills",
+      "count": 1
+    },
+    {
+      "source": "Your Skills",
+      "count": 1
+    },
+    {
+      "source": "Open a Skill to let every Bot on OpenBot use it.",
+      "count": 1
+    },
+    {
+      "source": "Every Bot may use it.",
+      "count": 1
+    },
+    {
+      "source": "Only your Bots use it.",
+      "count": 1
+    },
+    {
+      "source": "You can't link a",
+      "count": 1
+    },
+    {
+      "source": "account yet. An admin has to set it up first.",
+      "count": 1
+    },
+    {
+      "source": "Couldn't load your account:",
+      "count": 1
+    },
+    {
+      "source": "Couldn't check whether you can link this account:",
+      "count": 1
+    },
+    {
+      "source": "Couldn't create a Slack code:",
+      "count": 1
+    },
+    {
+      "source": "Couldn't connect GitHub:",
+      "count": 1
+    },
+    {
+      "source": "Link your Slack account",
+      "count": 1
+    },
+    {
+      "source": "link",
+      "count": 1
+    },
+    {
+      "source": "Couldn't copy. Select the code and copy it yourself.",
+      "count": 1
+    },
+    {
+      "source": "The code works once and expires in 10 minutes.",
+      "count": 1
+    },
+    {
+      "source": "Not linked",
+      "count": 1
+    },
+    {
+      "source": "Couldn't disconnect",
+      "count": 1
+    },
+    {
+      "source": "Choose which line stands out in the sidebar.",
+      "count": 1
+    },
+    {
+      "source": "Conversation title",
+      "count": 1
+    },
+    {
+      "source": "Bot name",
+      "count": 1
+    },
+    {
+      "source": "Message list preview",
+      "count": 1
+    },
+    {
+      "source": "Plan next week",
+      "count": 1
+    },
+    {
+      "source": "Your name has been saved.",
+      "count": 1
+    },
+    {
+      "source": "Profile",
+      "count": 1
+    },
+    {
+      "source": "Choose the name OpenBot displays for you.",
+      "count": 1
+    },
+    {
+      "source": "Let's get to it.",
+      "count": 1
+    },
+    {
+      "source": "What should we call you? You can change your name later in Settings.",
+      "count": 1
+    },
+    {
+      "source": "Applies to every Bot in every conversation. A Bot's role says what it does. This says how you want it done, like your writing style.",
+      "count": 1
+    },
+    {
+      "source": "We are two people, not a team. Write in British English, and never call our product a platform.",
+      "count": 1
+    },
+    {
+      "source": "characters",
+      "count": 1
+    },
+    {
+      "source": "A Bot shared with you uses its owner's apps. It uses yours only where you said yes in a conversation.",
+      "count": 1
+    },
+    {
+      "source": "Shared Bots",
+      "count": 1
+    },
+    {
+      "source": "Apps you let shared Bots use",
+      "count": 1
+    },
+    {
+      "source": "Reset. Each shared Bot will ask again.",
+      "count": 1
+    },
+    {
+      "source": "Forget every answer, so each shared Bot asks again.",
+      "count": 1
+    },
+    {
+      "source": "Choose where to receive each type of update when you’re away. All updates remain available in the web app.",
+      "count": 1
+    },
+    {
+      "source": "Where updates go",
+      "count": 1
+    },
+    {
+      "source": "Couldn't load where your updates go. Reload the page.",
+      "count": 1
+    },
+    {
+      "source": "Not set up",
+      "count": 1
+    },
+    {
+      "source": "Couldn't load this skill. Reload the page.",
+      "count": 1
+    },
+    {
+      "source": "This skill was deleted, or it isn't yours to edit.",
+      "count": 1
+    },
+    {
+      "source": "Edit skill",
+      "count": 1
+    },
+    {
+      "source": "Changes apply the next time someone uses",
+      "count": 1
+    },
+    {
+      "source": ". Bots that have it keep it.",
+      "count": 1
+    },
+    {
+      "source": "An instruction you start with",
+      "count": 1
+    },
+    {
+      "source": ". Only you see it, and it works on Bots you own.",
+      "count": 1
+    },
+    {
+      "source": "Writing the skill…",
+      "count": 1
+    },
+    {
+      "source": "Needs",
+      "count": 1
+    },
+    {
+      "source": "Naming a tool doesn't give access. A Bot can only use these if it already has them.",
+      "count": 1
+    },
+    {
+      "source": "Don't save",
+      "count": 1
+    },
+    {
+      "source": "Put it on a Bot",
+      "count": 1
+    },
+    {
+      "source": "Not saved",
+      "count": 1
+    },
+    {
+      "source": "The Bot's draft wasn't a valid skill. Nothing was saved, and the Bot knows what to fix.",
+      "count": 1
+    },
+    {
+      "source": "You don't have a Bot of your own yet.",
+      "count": 1
+    },
+    {
+      "source": "Bots you pick here offer",
+      "count": 1
+    },
+    {
+      "source": "when you type",
+      "count": 1
+    },
+    {
+      "source": "standup",
+      "count": 1
+    },
+    {
+      "source": "What you type after a slash.",
+      "count": 1
+    },
+    {
+      "source": "command",
+      "count": 1
+    },
+    {
+      "source": "My standup skill",
+      "count": 1
+    },
+    {
+      "source": "Turns yesterday's work into a standup update",
+      "count": 1
+    },
+    {
+      "source": "Shown beside the command in this list and in the",
+      "count": 1
+    },
+    {
+      "source": "menu. Optional.",
+      "count": 1
+    },
+    {
+      "source": "Summarise what I did yesterday in this conversation, then list what is left.",
+      "count": 1
+    },
+    {
+      "source": "What the Bot is told when you use the command. Write it as instructions to the Bot.",
+      "count": 1
+    },
+    {
+      "source": "Tools it needs",
+      "count": 1
+    },
+    {
+      "source": "Couldn't load the tools. Reload the page.",
+      "count": 1
+    },
+    {
+      "source": "No app offers tools yet. You can still write the skill. Most skills are only instructions.",
+      "count": 1
+    },
+    {
+      "source": "changes something",
+      "count": 1
+    },
+    {
+      "source": "Public-web research",
+      "count": 1
+    },
+    {
+      "source": "Not available here",
+      "count": 1
+    },
+    {
+      "source": "This skill asks for these, but no app here offers them. They do nothing until an admin adds the app. Click one to remove it.",
+      "count": 1
+    },
+    {
+      "source": "Using this skill loads these tools for that reply. It doesn't give access. A Bot can only use tools it already has.",
+      "count": 1
+    },
+    {
+      "source": "Suggested next steps",
+      "count": 1
+    },
+    {
+      "source": "Start as task",
+      "count": 1
+    },
+    {
+      "source": "No suggestions right now",
+      "count": 1
+    },
+    {
+      "source": "Bots with background research on will suggest next steps here.",
+      "count": 1
+    },
+    {
+      "source": "On by default once you start a conversation with just this Bot: it looks through the apps it can already read every four hours, forms memories for you to review and suggests next steps. It can only read: it cannot send messages, change anything in an app, or use a browser or computer. Turn it off or remove it and it stays that way.",
+      "count": 1
+    },
+    {
+      "source": "Background research is off",
+      "count": 1
+    },
+    {
+      "source": "It reads on a schedule and delivers what it suggests to a channel it is in.",
+      "count": 1
+    },
+    {
+      "source": "Deliver suggestions to",
+      "count": 1
+    },
+    {
+      "source": "Choose a channel",
+      "count": 1
+    },
+    {
+      "source": "What to look for (optional)",
+      "count": 1
+    },
+    {
+      "source": "Open issues assigned to me and questions waiting on me",
+      "count": 1
+    },
+    {
+      "source": "Last ran",
+      "count": 1
+    },
+    {
+      "source": "Turn off",
+      "count": 1
+    },
+    {
+      "source": "Previous slide",
+      "count": 1
+    },
+    {
+      "source": "Next slide",
+      "count": 1
+    },
+    {
+      "source": "Waveform unavailable; recording continues",
+      "count": 1
+    },
+    {
+      "source": "Recording · waveform unavailable",
+      "count": 1
+    },
+    {
+      "source": "Scroll to end",
+      "count": 1
+    },
+    {
+      "source": "Scroll to start",
+      "count": 1
+    },
+    {
+      "source": "Displays the mobile sidebar.",
+      "count": 1
+    },
+    {
+      "source": "Read the page",
+      "count": 1
+    },
+    {
+      "source": "Filled in",
+      "count": 1
+    },
+    {
+      "source": "Clicked",
+      "count": 1
+    },
+    {
+      "source": "Pressed",
+      "count": 1
+    },
+    {
+      "source": "Listed files",
+      "count": 1
+    },
+    {
+      "source": "Read file",
+      "count": 1
+    },
+    {
+      "source": "Ran a command",
+      "count": 1
+    },
+    {
+      "source": "Added to file",
+      "count": 1
+    },
+    {
+      "source": "Saved file",
+      "count": 1
+    },
+    {
+      "source": "Scrolled",
+      "count": 1
+    },
+    {
+      "source": "Asked you",
+      "count": 1
+    },
+    {
+      "source": "Asked another Bot",
+      "count": 1
+    },
+    {
+      "source": "Constraints:",
+      "count": 1
+    },
+    {
+      "source": "Wanted back:",
+      "count": 1
+    },
+    {
+      "source": "Drawing",
+      "count": 1
+    },
+    {
+      "source": "Waiting for you to sign in",
+      "count": 1
+    },
+    {
+      "source": "Open private sign-in",
+      "count": 1
+    },
+    {
+      "source": "Goes to your Bot's browser, not into this conversation.",
+      "count": 1
+    },
+    {
+      "source": "Your organization requires you to sign in with your company account.",
+      "count": 1
+    },
+    {
+      "source": "Sign-in isn't set up yet. An admin has to set it up first.",
+      "count": 1
+    },
+    {
+      "source": "or",
+      "count": 1
+    },
+    {
+      "source": "you@company.com",
+      "count": 1
+    },
+    {
+      "source": "Continue with your company account",
+      "count": 1
+    },
+    {
+      "source": "Admin sign-in",
+      "count": 1
+    },
+    {
+      "source": "Set approval rules for members’ Bots and review requests to use shared accounts.",
+      "count": 1
+    },
+    {
+      "source": "Review Bot actions and actions blocked by this deployment’s policy.",
+      "count": 1
+    },
+    {
+      "source": "Couldn't load the audit log. Reload the page.",
+      "count": 1
+    },
+    {
+      "source": "Search events",
+      "count": 1
+    },
+    {
+      "source": "Search events…",
+      "count": 1
+    },
+    {
+      "source": "Refresh",
+      "count": 1
+    },
+    {
+      "source": "Exporting…",
+      "count": 1
+    },
+    {
+      "source": "Export CSV",
+      "count": 1
+    },
+    {
+      "source": "The file has the newest",
+      "count": 1
+    },
+    {
+      "source": "events, not all of them. Narrow the filter or dates to export the rest.",
+      "count": 1
+    },
+    {
+      "source": "No events match this filter yet.",
+      "count": 1
+    },
+    {
+      "source": "Bots may never",
+      "count": 1
+    },
+    {
+      "source": "Bots can do anything their own permissions allow.",
+      "count": 1
+    },
+    {
+      "source": "How rules apply",
+      "count": 1
+    },
+    {
+      "source": "On. A matching action goes ahead and is recorded in Audit, so you can see what a rule catches before it stops anything.",
+      "count": 1
+    },
+    {
+      "source": "Off. A matching action is stopped, and the Bot is told which rule stopped it.",
+      "count": 1
+    },
+    {
+      "source": "Stopped actions",
+      "count": 1
+    },
+    {
+      "source": "In Audit, choose Blocked to see every action a rule stopped and which rule it was.",
+      "count": 1
+    },
+    {
+      "source": "Everything else",
+      "count": 1
+    },
+    {
+      "source": "Allowed. A Bot can do anything no rule above stops, within its own permissions.",
+      "count": 1
+    },
+    {
+      "source": "This rule isn't in place anymore. It may have been removed.",
+      "count": 1
+    },
+    {
+      "source": "Trial mode is on, so this rule records matching actions without stopping them.",
+      "count": 1
+    },
+    {
+      "source": "Written in CEL. It is checked before every action a Bot takes.",
+      "count": 1
+    },
+    {
+      "source": "Recently stopped",
+      "count": 1
+    },
+    {
+      "source": "No recorded actions yet. What this rule stops will show here once Bots have acted.",
+      "count": 1
+    },
+    {
+      "source": "Bots can do this again from their next action.",
+      "count": 1
+    },
+    {
+      "source": "Remove rule",
+      "count": 1
+    },
+    {
+      "source": "Remove “",
+      "count": 1
+    },
+    {
+      "source": "Every Bot can do this again from its next action.",
+      "count": 1
+    },
+    {
+      "source": "Removing…",
+      "count": 1
+    },
+    {
+      "source": "Define an action that no Bot may take. This boundary applies to every Bot’s next action.",
+      "count": 1
+    },
+    {
+      "source": "Start from",
+      "count": 1
+    },
+    {
+      "source": "Write your own",
+      "count": 1
+    },
+    {
+      "source": "Describe the action yourself, in CEL.",
+      "count": 1
+    },
+    {
+      "source": "The rule",
+      "count": 1
+    },
+    {
+      "source": "Never delete files",
+      "count": 1
+    },
+    {
+      "source": "What it stops",
+      "count": 1
+    },
+    {
+      "source": "One sentence, shown under the name in the list.",
+      "count": 1
+    },
+    {
+      "source": "Written in CEL. A rule that can't be evaluated counts as a match, so a typo stops actions rather than letting them through.",
+      "count": 1
+    },
+    {
+      "source": "tool.name == \"computer_click\" && contains(element.name, \"delete\")",
+      "count": 1
+    },
+    {
+      "source": "This rule is already in place.",
+      "count": 1
+    },
+    {
+      "source": "Testing…",
+      "count": 1
+    },
+    {
+      "source": "Test on recent activity",
+      "count": 1
+    },
+    {
+      "source": "What a rule can check",
+      "count": 1
+    },
+    {
+      "source": "A rule that names something an action doesn't have, such as",
+      "count": 1
+    },
+    {
+      "source": "key",
+      "count": 1
+    },
+    {
+      "source": "on a click, counts as a match. Name the tool first so the rest is only checked where it applies:",
+      "count": 1
+    },
+    {
+      "source": "No recorded actions to test against yet. The rule is valid; you'll see what it stops once Bots have acted.",
+      "count": 1
+    },
+    {
+      "source": "Components",
+      "count": 1
+    },
+    {
+      "source": "There is no component with that name.",
+      "count": 1
+    },
+    {
+      "source": "It may have been renamed, or this deployment no longer ships it.",
+      "count": 1
+    },
+    {
+      "source": "Back to components",
+      "count": 1
+    },
+    {
+      "source": "Describe this component and choose which Bots can display it.",
+      "count": 1
+    },
+    {
+      "source": "Configuration",
+      "count": 1
+    },
+    {
+      "source": "Not in this build",
+      "count": 1
+    },
+    {
+      "source": "OpenBot can't draw it. The settings below have no effect.",
+      "count": 1
+    },
+    {
+      "source": "Bots can answer with it.",
+      "count": 1
+    },
+    {
+      "source": "No Bot can use it.",
+      "count": 1
+    },
+    {
+      "source": " The description has unpublished changes.",
+      "count": 1
+    },
+    {
+      "source": "Last changed",
+      "count": 1
+    },
+    {
+      "source": "What the model reads when it decides to use this. It has no effect until the component is published.",
+      "count": 1
+    },
+    {
+      "source": "Turn a Bot off and it never learns this component exists. Changes apply right away.",
+      "count": 1
+    },
+    {
+      "source": "No Bots yet.",
+      "count": 1
+    },
+    {
+      "source": "The data this component can fetch to draw itself. This is separate from Available to. With all of these off, it shows only what the Bot passes it. Every read shows in Audit. Changes apply right away.",
+      "count": 1
+    },
+    {
+      "source": "This deployment has no data functions.",
+      "count": 1
+    },
+    {
+      "source": "Choose which components each Bot can display. Published components are available to all Bots by default. Changes and blocked requests appear in Audit.",
+      "count": 1
+    },
+    {
+      "source": "UI components",
+      "count": 1
+    },
+    {
+      "source": "No components yet",
+      "count": 1
+    },
+    {
+      "source": "Components your Bots can use will show here.",
+      "count": 1
+    },
+    {
+      "source": "Each person's computer, and each isolated Bot's. Every Bot keeps its own browser profile on it, which keeps that Bot signed in. Resetting a computer signs every Bot on it out of everything.",
+      "count": 1
+    },
+    {
+      "source": "Every person's Bots run on one computer.",
+      "count": 1
+    },
+    {
+      "source": "Each person keeps their own browser profile and folder for each Bot, so logins aren't shared. A command one Bot runs can still read another's files. Set",
+      "count": 1
+    },
+    {
+      "source": "COMPUTER_SUPERVISOR_URL",
+      "count": 1
+    },
+    {
+      "source": "to give each person a computer of their own.",
+      "count": 1
+    },
+    {
+      "source": "Each person has their own computer, and every Bot they use runs on it, public Bots made by other people included. Each Bot keeps its own browser profile and folder there, but a command one Bot runs can reach anything else on that person's computer. An isolated Bot has a computer of its own.",
+      "count": 1
+    },
+    {
+      "source": "Computers in this deployment",
+      "count": 1
+    },
+    {
+      "source": "Couldn't load the list",
+      "count": 1
+    },
+    {
+      "source": "No computers yet",
+      "count": 1
+    },
+    {
+      "source": "One shows up the first time a Bot opens a page.",
+      "count": 1
+    },
+    {
+      "source": "No browser running. It starts when the Bot next needs it.",
+      "count": 1
+    },
+    {
+      "source": "Egress not reported",
+      "count": 1
+    },
+    {
+      "source": " · Update available",
+      "count": 1
+    },
+    {
+      "source": "Stop browser",
+      "count": 1
+    },
+    {
+      "source": "Every Bot's profile on this person's computer is deleted. Each is signed out of every service and starts clean.",
+      "count": 1
+    },
+    {
+      "source": "Its profile is deleted. The Bot is signed out of every service and starts clean.",
+      "count": 1
+    },
+    {
+      "source": "You can't undo this.",
+      "count": 1
+    },
+    {
+      "source": "Reset it",
+      "count": 1
+    },
+    {
+      "source": "It moves to the computer image this deployment now runs. Its files and sign-ins are kept. If it's running, it restarts and stops what it's doing.",
+      "count": 1
+    },
+    {
+      "source": "Updating…",
+      "count": 1
+    },
+    {
+      "source": "Update it",
+      "count": 1
+    },
+    {
+      "source": "closes the computer's browsers and keeps their logins. It starts again the next time a Bot needs it.",
+      "count": 1
+    },
+    {
+      "source": "deletes the profiles and signs every Bot on it out of everything.",
+      "count": 1
+    },
+    {
+      "source": "shows when a computer runs an older image. It moves the computer to the new one and keeps its files and sign-ins. All three show in",
+      "count": 1
+    },
+    {
+      "source": "Choose folders a Bot can read on this computer. The desktop app asks before each edit or command. Access ends when you stop OpenBot.",
+      "count": 1
+    },
+    {
+      "source": "Folders on this computer",
+      "count": 1
+    },
+    {
+      "source": "The desktop app is offline. Open it to approve folders or run commands.",
+      "count": 1
+    },
+    {
+      "source": "Create one, then choose its folders.",
+      "count": 1
+    },
+    {
+      "source": "Waiting…",
+      "count": 1
+    },
+    {
+      "source": "Choose folder",
+      "count": 1
+    },
+    {
+      "source": "Folders are read-only. When a Bot needs to write, the desktop app asks you first.",
+      "count": 1
+    },
+    {
+      "source": "Stop folder access",
+      "count": 1
+    },
+    {
+      "source": "View audit",
+      "count": 1
+    },
+    {
+      "source": "· Read-only",
+      "count": 1
+    },
+    {
+      "source": "from",
+      "count": 1
+    },
+    {
+      "source": "Manage this deployment’s keys and tokens. Saved secrets cannot be viewed again.",
+      "count": 1
+    },
+    {
+      "source": "Credentials",
+      "count": 1
+    },
+    {
+      "source": "Saved credentials",
+      "count": 1
+    },
+    {
+      "source": "Couldn't load credentials. Reload the page.",
+      "count": 1
+    },
+    {
+      "source": "No credentials yet",
+      "count": 1
+    },
+    {
+      "source": "Keys and tokens for models and connectors are kept here.",
+      "count": 1
+    },
+    {
+      "source": "revoked",
+      "count": 1
+    },
+    {
+      "source": "active",
+      "count": 1
+    },
+    {
+      "source": "Save a credential for this deployment. You won’t be able to view the secret after saving it.",
+      "count": 1
+    },
+    {
+      "source": "Save credential",
+      "count": 1
+    },
+    {
+      "source": "A model provider's key, or one a connector signs in with.",
+      "count": 1
+    },
+    {
+      "source": "Model",
+      "count": 1
+    },
+    {
+      "source": "Connector",
+      "count": 1
+    },
+    {
+      "source": "Provider",
+      "count": 1
+    },
+    {
+      "source": "OpenAI",
+      "count": 1
+    },
+    {
+      "source": "Key ID",
+      "count": 1
+    },
+    {
+      "source": "Tells this key apart from others for the same provider.",
+      "count": 1
+    },
+    {
+      "source": "production",
+      "count": 1
+    },
+    {
+      "source": "Secret",
+      "count": 1
+    },
+    {
+      "source": "This key already has an active credential. Saving replaces it and revokes the old one.",
+      "count": 1
+    },
+    {
+      "source": "Couldn't save the credential. Try again.",
+      "count": 1
+    },
+    {
+      "source": "Manage member permissions, network access for Bot computers, and recording settings. All changes appear in Audit.",
+      "count": 1
+    },
+    {
+      "source": "Enterprise controls",
+      "count": 1
+    },
+    {
+      "source": "Couldn't load enterprise controls. Reload the page.",
+      "count": 1
+    },
+    {
+      "source": "Addresses in INITIAL_ADMIN_EMAILS can always use social sign-in as an emergency way in. Each of those sign-ins shows in Audit.",
+      "count": 1
+    },
+    {
+      "source": "Sign-in",
+      "count": 1
+    },
+    {
+      "source": "People can only sign in through a registered SAML or OpenID Connect provider.",
+      "count": 1
+    },
+    {
+      "source": "People can also sign in with Google, Microsoft or Okta.",
+      "count": 1
+    },
+    {
+      "source": "SCIM provisioning",
+      "count": 1
+    },
+    {
+      "source": "Off. Set SCIM_BEARER_TOKEN to accept provisioning from Okta, Entra or another directory.",
+      "count": 1
+    },
+    {
+      "source": "Each switch applies to the whole organization. A role can override it, and a directory group can get a capability the organization has off.",
+      "count": 1
+    },
+    {
+      "source": "Off for everybody, unless a role or group turns it on.",
+      "count": 1
+    },
+    {
+      "source": "None. Everybody gets the switches above",
+      "count": 1
+    },
+    {
+      "source": "Each person's recordings teach Skills in their own Learning space, and those Skills reach the Bots that person uses. A shared Skill puts its person's recorded and narrated text in front of everybody's Bots.",
+      "count": 1
+    },
+    {
+      "source": "People may open their Skills to every Bot in Settings, Learning.",
+      "count": 1
+    },
+    {
+      "source": "Off. Each person's Skills reach only the Bots they use, even Skills they opened before.",
+      "count": 1
+    },
+    {
+      "source": "Control where Bot computers can connect. Changes apply within seconds without a restart. Group policies override the organization’s policy unless it is locked.",
+      "count": 1
+    },
+    {
+      "source": "Network",
+      "count": 1
+    },
+    {
+      "source": "Organization",
+      "count": 1
+    },
+    {
+      "source": "Group:",
+      "count": 1
+    },
+    {
+      "source": "Add a group policy",
+      "count": 1
+    },
+    {
+      "source": "With the allowlist on, Bots can only call tools on the MCP servers approved here. Calls to any other server are refused.",
+      "count": 1
+    },
+    {
+      "source": "MCP servers",
+      "count": 1
+    },
+    {
+      "source": "Only approved servers",
+      "count": 1
+    },
+    {
+      "source": "Off. Bots can use any registered server they have access to.",
+      "count": 1
+    },
+    {
+      "source": "Only approved MCP servers",
+      "count": 1
+    },
+    {
+      "source": "Models",
+      "count": 1
+    },
+    {
+      "source": "A built-in Bot on an unlisted model is refused before it runs.",
+      "count": 1
+    },
+    {
+      "source": "Off. Any model can be used.",
+      "count": 1
+    },
+    {
+      "source": "None listed",
+      "count": 1
+    },
+    {
+      "source": "Set OTEL_EXPORTER_OTLP_ENDPOINT to stream audit events and Bot actions to your OpenTelemetry collector or SIEM. They are tagged openbot.surface.",
+      "count": 1
+    },
+    {
+      "source": "Recording and export",
+      "count": 1
+    },
+    {
+      "source": "Off. Commands show in Audit only.",
+      "count": 1
+    },
+    {
+      "source": "OpenTelemetry export",
+      "count": 1
+    },
+    {
+      "source": "Exporting over OTLP/HTTP.",
+      "count": 1
+    },
+    {
+      "source": "Not set up. Set OTEL_EXPORTER_OTLP_ENDPOINT on the server.",
+      "count": 1
+    },
+    {
+      "source": "Stopping a computer ends its running Bots and keeps its disk. The Bot gets a fresh computer next session. To stop one person's computers, go to People.",
+      "count": 1
+    },
+    {
+      "source": "Enter one model per line as provider/model, for example openai/gpt-5.6-terra.",
+      "count": 1
+    },
+    {
+      "source": "Couldn't load model usage. Reload the page.",
+      "count": 1
+    },
+    {
+      "source": "No recent runs",
+      "count": 1
+    },
+    {
+      "source": "No Bot runs in the last 30 days.",
+      "count": 1
+    },
+    {
+      "source": "runs by",
+      "count": 1
+    },
+    {
+      "source": "person",
+      "count": 1
+    },
+    {
+      "source": "people",
+      "count": 1
+    },
+    {
+      "source": "in 30 days",
+      "count": 1
+    },
+    {
+      "source": "Couldn't load recorded actions. Reload the page.",
+      "count": 1
+    },
+    {
+      "source": "No commands recorded yet",
+      "count": 1
+    },
+    {
+      "source": "Member's machine",
+      "count": 1
+    },
+    {
+      "source": "Stop inactive computers now",
+      "count": 1
+    },
+    {
+      "source": "Scope",
+      "count": 1
+    },
+    {
+      "source": "A group can only add. Grant gives its members the capability even when the organization has it off.",
+      "count": 1
+    },
+    {
+      "source": "A role's setting replaces the organization switch for everybody with that role.",
+      "count": 1
+    },
+    {
+      "source": "Inherit",
+      "count": 1
+    },
+    {
+      "source": "Organization network policy",
+      "count": 1
+    },
+    {
+      "source": "Group network policy",
+      "count": 1
+    },
+    {
+      "source": "Allowlist",
+      "count": 1
+    },
+    {
+      "source": "example.com\n*.corp.example\n10.0.0.0/8 443,5432",
+      "count": 1
+    },
+    {
+      "source": "One per line. A domain covers its subdomains. *.name covers only subdomains. An IP range can list ports. Defaults are",
+      "count": 1
+    },
+    {
+      "source": "and",
+      "count": 1
+    },
+    {
+      "source": "more package and source hosts.",
+      "count": 1
+    },
+    {
+      "source": "Lock so groups can't replace this policy",
+      "count": 1
+    },
+    {
+      "source": "Remove policy",
+      "count": 1
+    },
+    {
+      "source": "Days without use",
+      "count": 1
+    },
+    {
+      "source": "0 turns it off. Checked hourly.",
+      "count": 1
+    },
+    {
+      "source": "Configure your company’s SAML or OpenID Connect provider. Email domains determine which provider people use to sign in.",
+      "count": 1
+    },
+    {
+      "source": "Identity providers",
+      "count": 1
+    },
+    {
+      "source": "Google, Microsoft and Okta are set in the environment. They don't show here.",
+      "count": 1
+    },
+    {
+      "source": "Couldn't load identity providers. Reload the page.",
+      "count": 1
+    },
+    {
+      "source": "No identity providers yet",
+      "count": 1
+    },
+    {
+      "source": "Use the metadata from your identity team.",
+      "count": 1
+    },
+    {
+      "source": "Add an identity provider",
+      "count": 1
+    },
+    {
+      "source": "Email domain",
+      "count": 1
+    },
+    {
+      "source": "acme.com",
+      "count": 1
+    },
+    {
+      "source": "Anybody with an address at this domain signs in here. Separate several with commas.",
+      "count": 1
+    },
+    {
+      "source": "Issuer",
+      "count": 1
+    },
+    {
+      "source": "https://acme.okta.com",
+      "count": 1
+    },
+    {
+      "source": "Sign-on URL",
+      "count": 1
+    },
+    {
+      "source": "https://acme.okta.com/app/.../sso/saml",
+      "count": 1
+    },
+    {
+      "source": "Metadata XML",
+      "count": 1
+    },
+    {
+      "source": "<EntityDescriptor …>",
+      "count": 1
+    },
+    {
+      "source": "The file from your identity team. It includes the signing certificate.",
+      "count": 1
+    },
+    {
+      "source": "Manage settings that apply to everyone and every Bot in this deployment.",
+      "count": 1
+    },
+    {
+      "source": "Admin",
+      "count": 1
+    },
+    {
+      "source": "container ID",
+      "count": 1
+    },
+    {
+      "source": "Exact revision (optional)",
+      "count": 1
+    },
+    {
+      "source": "Latest published",
+      "count": 1
+    },
+    {
+      "source": "Uses this deployment's credential, not the runtime key.",
+      "count": 1
+    },
+    {
+      "source": "To create it:",
+      "count": 1
+    },
+    {
+      "source": "Automatic learning",
+      "count": 1
+    },
+    {
+      "source": "Learn from finished conversations, review the skills Intelligence proposes, and give published skills to Bots.",
+      "count": 1
+    },
+    {
+      "source": "Participation",
+      "count": 1
+    },
+    {
+      "source": "Container changes apply to new conversations. Existing ones keep their first container. Containers must already exist in the same Intelligence project. Until you save here, OpenBot uses that project's openbot container.",
+      "count": 1
+    },
+    {
+      "source": "Loading Learning settings…",
+      "count": 1
+    },
+    {
+      "source": "Turn on automatic learning and skill delivery",
+      "count": 1
+    },
+    {
+      "source": "Default",
+      "count": 1
+    },
+    {
+      "source": "With no default, Bots without their own container are left out. IDs are 1 to 64 lowercase letters, numbers and single hyphens. Leave revision empty to use the latest published skills.",
+      "count": 1
+    },
+    {
+      "source": "Per-Bot participation",
+      "count": 1
+    },
+    {
+      "source": "Couldn't load the Bot list. Saved settings for each Bot are below.",
+      "count": 1
+    },
+    {
+      "source": "Use deployment default",
+      "count": 1
+    },
+    {
+      "source": "Leave out of Learning",
+      "count": 1
+    },
+    {
+      "source": "Use a specific container",
+      "count": 1
+    },
+    {
+      "source": "Save Learning settings",
+      "count": 1
+    },
+    {
+      "source": "Settings saved.",
+      "count": 1
+    },
+    {
+      "source": "Review and publish",
+      "count": 1
+    },
+    {
+      "source": "Intelligence studies finished conversations and proposes skills. Review and publish them in Intelligence. Bots only use published skills.",
+      "count": 1
+    },
+    {
+      "source": "Show the container for",
+      "count": 1
+    },
+    {
+      "source": "Deployment default",
+      "count": 1
+    },
+    {
+      "source": "Checking Intelligence…",
+      "count": 1
+    },
+    {
+      "source": "Threads ready",
+      "count": 1
+    },
+    {
+      "source": "Candidates to review",
+      "count": 1
+    },
+    {
+      "source": "Published skills",
+      "count": 1
+    },
+    {
+      "source": "Insights",
+      "count": 1
+    },
+    {
+      "source": "An analysis is running.",
+      "count": 1
+    },
+    {
+      "source": "Manage Learning in Intelligence",
+      "count": 1
+    },
+    {
+      "source": "Review skill candidates",
+      "count": 1
+    },
+    {
+      "source": "View analysis runs",
+      "count": 1
+    },
+    {
+      "source": "Skill delivery",
+      "count": 1
+    },
+    {
+      "source": "Checking delivery…",
+      "count": 1
+    },
+    {
+      "source": "Delivery is off for this Bot.",
+      "count": 1
+    },
+    {
+      "source": "Loaded revision:",
+      "count": 1
+    },
+    {
+      "source": "Last checked:",
+      "count": 1
+    },
+    {
+      "source": "Refresh status",
+      "count": 1
+    },
+    {
+      "source": "Managing Learning needs your Intelligence account and project access. OpenBot keeps project credentials on the server. Turning Learning off here keeps settings and conversation assignments. Schedules and publishing stay in Intelligence.",
+      "count": 1
+    },
+    {
+      "source": "Manage access for people who have signed in. Only admins can access the Admin pages.",
+      "count": 1
+    },
+    {
+      "source": "People",
+      "count": 1
+    },
+    {
+      "source": "Addresses in INITIAL_ADMIN_EMAILS are always admins. You can't change them here.",
+      "count": 1
+    },
+    {
+      "source": "Who is here",
+      "count": 1
+    },
+    {
+      "source": "computer",
+      "count": 1
+    },
+    {
+      "source": "computers",
+      "count": 1
+    },
+    {
+      "source": ". Their disks are kept.",
+      "count": 1
+    },
+    {
+      "source": "Search people",
+      "count": 1
+    },
+    {
+      "source": "Search by name or address",
+      "count": 1
+    },
+    {
+      "source": "Couldn't load people. Reload the page.",
+      "count": 1
+    },
+    {
+      "source": "Nobody has signed in yet",
+      "count": 1
+    },
+    {
+      "source": "People show here once they do.",
+      "count": 1
+    },
+    {
+      "source": "Stop computers",
+      "count": 1
+    },
+    {
+      "source": "Restore",
+      "count": 1
+    },
+    {
+      "source": "Show more",
+      "count": 1
+    },
+    {
+      "source": "Playground",
+      "count": 1
+    },
+    {
+      "source": "Write a component and publish it without redeploying. Your edits are a draft. Conversations only show what is published.",
+      "count": 1
+    },
+    {
+      "source": "Save draft",
+      "count": 1
+    },
+    {
+      "source": "refund_card",
+      "count": 1
+    },
+    {
+      "source": "Refund card",
+      "count": 1
+    },
+    {
+      "source": "What the model is told about it",
+      "count": 1
+    },
+    {
+      "source": "Show a refund with its amount, reason and status.",
+      "count": 1
+    },
+    {
+      "source": "HTML",
+      "count": 1
+    },
+    {
+      "source": "CSS",
+      "count": 1
+    },
+    {
+      "source": "JavaScript",
+      "count": 1
+    },
+    {
+      "source": "Arguments (JSON Schema)",
+      "count": 1
+    },
+    {
+      "source": "Sample arguments",
+      "count": 1
+    },
+    {
+      "source": "Preview",
+      "count": 1
+    },
+    {
+      "source": "The sample arguments aren't available.",
+      "count": 1
+    },
+    {
+      "source": "Saved here",
+      "count": 1
+    },
+    {
+      "source": "Nothing saved yet. Save a draft to see it here.",
+      "count": 1
+    },
+    {
+      "source": "draft only, no Bot can draw it",
+      "count": 1
+    },
+    {
+      "source": " · edited since publishing",
+      "count": 1
+    },
+    {
+      "source": "Publishing makes it available to every Bot. Turn it off for one Bot on the UI components page.",
+      "count": 1
+    },
+    {
+      "source": "It's removed from this deployment, and no Bot can draw it. You can't undo this.",
+      "count": 1
+    },
+    {
+      "source": "Delete it",
+      "count": 1
+    },
+    {
+      "source": "Couldn't load whether you've connected an account here. Reload the page, or check this deployment's logs if it keeps happening.",
+      "count": 1
+    },
+    {
+      "source": "Plugin",
+      "count": 1
+    },
+    {
+      "source": "There is no plugin with that name, here or in the catalogue.",
+      "count": 1
+    },
+    {
+      "source": "Not a plugin",
+      "count": 1
+    },
+    {
+      "source": "Plugin not found",
+      "count": 1
+    },
+    {
+      "source": "Nothing to configure.",
+      "count": 1
+    },
+    {
+      "source": "Enable for this deployment",
+      "count": 1
+    },
+    {
+      "source": "Bots can be given its tools. Turning this off removes it and every Bot's access to its tools.",
+      "count": 1
+    },
+    {
+      "source": "No Bot can reach this vendor. Turn it on to set it up and give Bots its tools.",
+      "count": 1
+    },
+    {
+      "source": "Whose account",
+      "count": 1
+    },
+    {
+      "source": "One shared account for everyone.",
+      "count": 1
+    },
+    {
+      "source": "Each person connects their own.",
+      "count": 1
+    },
+    {
+      "source": "Make personal",
+      "count": 1
+    },
+    {
+      "source": "Make shared",
+      "count": 1
+    },
+    {
+      "source": "Bot owners can give it to their Bots",
+      "count": 1
+    },
+    {
+      "source": "Only an admin can give it to a Bot.",
+      "count": 1
+    },
+    {
+      "source": "This vendor answers as whoever is asking. The deployment registers an OAuth client, and each person connects their own account. A Bot only sees what that person can see.",
+      "count": 1
+    },
+    {
+      "source": "Nothing to set up. These tools run inside this deployment, on its own data.",
+      "count": 1
+    },
+    {
+      "source": "How this is reached",
+      "count": 1
+    },
+    {
+      "source": "Sent with every call to this vendor.",
+      "count": 1
+    },
+    {
+      "source": "Not set",
+      "count": 1
+    },
+    {
+      "source": "This deployment registers itself with the vendor on first connect. There is nothing to paste.",
+      "count": 1
+    },
+    {
+      "source": "Self-registered",
+      "count": 1
+    },
+    {
+      "source": "Identifies this deployment to the vendor. On its own, it can't reach anyone's documents.",
+      "count": 1
+    },
+    {
+      "source": "Not registered",
+      "count": 1
+    },
+    {
+      "source": "Connect your own account to try this connector. Setup is complete without it, and it reaches your documents only.",
+      "count": 1
+    },
+    {
+      "source": "This vendor gives every customer their own hostname. It is checked against the vendor's pattern before it is saved.",
+      "count": 1
+    },
+    {
+      "source": "Documentation",
+      "count": 1
+    },
+    {
+      "source": "Vendor documentation",
+      "count": 1
+    },
+    {
+      "source": "What these tools offer, from the people who maintain them.",
+      "count": 1
+    },
+    {
+      "source": "What this server offers, from the people who maintain it.",
+      "count": 1
+    },
+    {
+      "source": "The deployment registers its redirect URI itself. There is nothing to add at the vendor.",
+      "count": 1
+    },
+    {
+      "source": "Add this to the client's authorised redirect URIs at the vendor, exactly as written. One wrong character fails there, with an error that doesn't mention OpenBot.",
+      "count": 1
+    },
+    {
+      "source": "This deployment has no public URL, so nobody can finish connecting. Set OPENBOT_PUBLIC_URL.",
+      "count": 1
+    },
+    {
+      "source": "Refresh tools",
+      "count": 1
+    },
+    {
+      "source": "Grant tools…",
+      "count": 1
+    },
+    {
+      "source": "A Bot only sees the tools it has been given. Each call is checked when it happens, so removing access applies from the next call.",
+      "count": 1
+    },
+    {
+      "source": "No tools listed",
+      "count": 1
+    },
+    {
+      "source": "By Bot",
+      "count": 1
+    },
+    {
+      "source": "Hidden from your roster. Turn this app's actions on or off one at a time.",
+      "count": 1
+    },
+    {
+      "source": "Turn this app's actions on or off one at a time.",
+      "count": 1
+    },
+    {
+      "source": "This vendor no longer lists these. No Bot sees them, and none can call them. The access is still saved, and comes back if the vendor lists the tool again. To remove it, use the Bot's own page.",
+      "count": 1
+    },
+    {
+      "source": "Given but no longer listed",
+      "count": 1
+    },
+    {
+      "source": "Not listed by",
+      "count": 1
+    },
+    {
+      "source": "From the vendor's console. The secret is saved in this deployment's vault and never shown again.",
+      "count": 1
+    },
+    {
+      "source": "https://your-instance.service-now.com",
+      "count": 1
+    },
+    {
+      "source": "Grant tools",
+      "count": 1
+    },
+    {
+      "source": "Each grant is its own row in Audit. Tools that change things are still checked against the boundaries on every call.",
+      "count": 1
+    },
+    {
+      "source": "To",
+      "count": 1
+    },
+    {
+      "source": "No app with that name is turned on.",
+      "count": 1
+    },
+    {
+      "source": "This app is off",
+      "count": 1
+    },
+    {
+      "source": "Nothing to give a Bot here.",
+      "count": 1
+    },
+    {
+      "source": "There is no Bot with that name.",
+      "count": 1
+    },
+    {
+      "source": "Not a Bot",
+      "count": 1
+    },
+    {
+      "source": "Bot not found",
+      "count": 1
+    },
+    {
+      "source": "It may have been deleted after you opened this page.",
+      "count": 1
+    },
+    {
+      "source": "destroys things",
+      "count": 1
+    },
+    {
+      "source": "No actions listed",
+      "count": 1
+    },
+    {
+      "source": "Search by action name",
+      "count": 1
+    },
+    {
+      "source": "Turn on every read-only action",
+      "count": 1
+    },
+    {
+      "source": "No read-only actions",
+      "count": 1
+    },
+    {
+      "source": "No actions that change things",
+      "count": 1
+    },
+    {
+      "source": "Let",
+      "count": 1
+    },
+    {
+      "source": "use the shared",
+      "count": 1
+    },
+    {
+      "source": "account?",
+      "count": 1
+    },
+    {
+      "source": "Allow",
+      "count": 1
+    },
+    {
+      "source": "Tool",
+      "count": 1
+    },
+    {
+      "source": "This connector has no tool with that name.",
+      "count": 1
+    },
+    {
+      "source": "Tool not found",
+      "count": 1
+    },
+    {
+      "source": "This connector is off",
+      "count": 1
+    },
+    {
+      "source": "It may have been removed since the tool list was last refreshed.",
+      "count": 1
+    },
+    {
+      "source": "Turn it on to see its tools.",
+      "count": 1
+    },
+    {
+      "source": "This tool changes something at the vendor. Boundaries about writes apply to it.",
+      "count": 1
+    },
+    {
+      "source": "This tool only reads. Boundaries about writes don't apply to it.",
+      "count": 1
+    },
+    {
+      "source": "Effect",
+      "count": 1
+    },
+    {
+      "source": "Set by the connector, not the tool's name. Anything unknown counts as a write.",
+      "count": 1
+    },
+    {
+      "source": "A Bot can call this tool only while its switch is on. Turning it off applies from the next call.",
+      "count": 1
+    },
+    {
+      "source": "Create one to give it this tool.",
+      "count": 1
+    },
+    {
+      "source": "Hidden from your roster. ",
+      "count": 1
+    },
+    {
+      "source": "Can't call this tool. The Bot never sees it.",
+      "count": 1
+    },
+    {
+      "source": "Connect services for your company, then choose which Bots can use each service’s tools.",
+      "count": 1
+    },
+    {
+      "source": "Added for everybody. Open one to set it up and choose which Bots get its tools.",
+      "count": 1
+    },
+    {
+      "source": "Nothing connected yet",
+      "count": 1
+    },
+    {
+      "source": "Pick one from the list below.",
+      "count": 1
+    },
+    {
+      "source": "Reviewed, first-party servers. Open one to add it.",
+      "count": 1
+    },
+    {
+      "source": "Explore plugins",
+      "count": 1
+    },
+    {
+      "source": "All connected",
+      "count": 1
+    },
+    {
+      "source": "Every plugin in the catalogue is connected.",
+      "count": 1
+    },
+    {
+      "source": "Not added",
+      "count": 1
+    },
+    {
+      "source": "More apps",
+      "count": 1
+    },
+    {
+      "source": "request",
+      "count": 1
+    },
+    {
+      "source": "requests",
+      "count": 1
+    },
+    {
+      "source": "Create reusable instructions people can run with /. Skills use a Bot’s existing permissions and do not grant additional access.",
+      "count": 1
+    },
+    {
+      "source": "Manage skills shared across this deployment. People can create personal skills on their Skills page.",
+      "count": 1
+    },
+    {
+      "source": "Installed",
+      "count": 1
+    },
+    {
+      "source": "Couldn't load skills. Reload the page.",
+      "count": 1
+    },
+    {
+      "source": "Write a skill for everybody",
+      "count": 1
+    },
+    {
+      "source": "People type the slug after /. The Bot then follows the instructions. Everybody can use it, and you choose which Bots have it.",
+      "count": 1
+    },
+    {
+      "source": "Slug",
+      "count": 1
+    },
+    {
+      "source": "Summary",
+      "count": 1
+    },
+    {
+      "source": "One line",
+      "count": 1
+    },
+    {
+      "source": "What the Bot should do when this skill is used.",
+      "count": 1
+    },
+    {
+      "source": "Install skill",
+      "count": 1
+    },
+    {
+      "source": "Welcome to",
+      "count": 1
+    },
+    {
+      "source": "A message box where you hand off tasks to your Bots",
+      "count": 1
+    },
+    {
+      "source": "Each Bot has its own browser and files",
+      "count": 1
+    },
+    {
+      "source": "Pick a Bot or make your own",
+      "count": 1
+    },
+    {
+      "source": "Example",
+      "count": 1
+    },
+    {
+      "source": "Your own Bot",
+      "count": 1
+    },
+    {
+      "source": "It runs on your machine",
+      "count": 1
+    },
+    {
+      "source": "Your conversations, files and Bots are stored on this computer. Only what you send to your model leaves it.",
+      "count": 1
+    },
+    {
+      "source": "Bring the agents you already have",
+      "count": 1
+    },
+    {
+      "source": "Any AG-UI agent can join as a Bot. Add one from Bots, then New Bot.",
+      "count": 1
+    },
+    {
+      "source": "Deploy it for your organization",
+      "count": 1
+    },
+    {
+      "source": "Run one container image, or a Helm chart for EKS, GKE or AKS. Your people sign in with Google, Microsoft or Okta.",
+      "count": 1
+    },
+    {
+      "source": "Your people sign in with Google, Microsoft or Okta, and your organization gets its own rules, its own Bots and an audit trail",
+      "count": 1
+    },
+    {
+      "source": "We couldn't load your setup. Try again to continue.",
+      "count": 1
+    },
+    {
+      "source": "Choose when your Bots ask before they change things. Rules here apply to all of them.",
+      "count": 1
+    },
+    {
+      "source": "Browsers",
+      "count": 1
+    },
+    {
+      "source": "Connect the OpenBot Recorder in this browser to teach your Bots by doing a task yourself. What you record goes into your own Learning space.",
+      "count": 1
+    },
+    {
+      "source": "There's no component with that name.",
+      "count": 1
+    },
+    {
+      "source": "It may have been removed or unpublished.",
+      "count": 1
+    },
+    {
+      "source": "Back to the gallery",
+      "count": 1
+    },
+    {
+      "source": "Browse components that Bots can display in conversations. An admin controls which components each Bot can use.",
+      "count": 1
+    },
+    {
+      "source": "Nothing published yet",
+      "count": 1
+    },
+    {
+      "source": "When an admin publishes a component, it will show up here.",
+      "count": 1
+    },
+    {
+      "source": "Customize OpenBot’s appearance and message display. Your skin and message settings apply to your account; the theme applies only to this browser.",
+      "count": 1
+    },
+    {
+      "source": "Preferences",
+      "count": 1
+    },
+    {
+      "source": "General",
+      "count": 1
+    },
+    {
+      "source": "Use the dark appearance across OpenBot.",
+      "count": 1
+    },
+    {
+      "source": "Keyboard shortcuts",
+      "count": 1
+    },
+    {
+      "source": "Every recording you make goes into your own Learning space, and the Skills learned there reach every Bot you use. Choose who else's Bots may use them too.",
+      "count": 1
+    },
+    {
+      "source": "Choose where you receive updates when you’re away. Set each Bot’s update frequency on its page.",
+      "count": 1
+    },
+    {
+      "source": "Passwords",
+      "count": 1
+    },
+    {
+      "source": "Manage saved website logins. Bots cannot see your passwords, and you approve each use.",
+      "count": 1
+    },
+    {
+      "source": "Saved logins",
+      "count": 1
+    },
+    {
+      "source": "Couldn't load your passwords. Reload the page.",
+      "count": 1
+    },
+    {
+      "source": "Saved passwords are off",
+      "count": 1
+    },
+    {
+      "source": "An admin turned them off. Your logins are kept but won't be offered.",
+      "count": 1
+    },
+    {
+      "source": "No saved logins yet",
+      "count": 1
+    },
+    {
+      "source": "Choose Save to Passwords when you sign a Bot in to a website.",
+      "count": 1
+    },
+    {
+      "source": " · never used",
+      "count": 1
+    },
+    {
+      "source": "Couldn't load this Bot. Reload the page.",
+      "count": 1
+    },
+    {
+      "source": "There are no Bots yet.",
+      "count": 1
+    },
+    {
+      "source": "Ask it to open a page and watch it work.",
+      "count": 1
+    },
+    {
+      "source": "Couldn't load earlier messages. The Bot is answering without them.",
+      "count": 1
+    },
+    {
+      "source": "Manage the skills, apps, and other Bots this Bot can use.",
+      "count": 1
+    },
+    {
+      "source": "Skills and access",
+      "count": 1
+    },
+    {
+      "source": "Review this Bot’s current work, scheduled tasks, and completed tasks.",
+      "count": 1
+    },
+    {
+      "source": "Choose which actions this Bot can take without your approval.",
+      "count": 1
+    },
+    {
+      "source": "Review this Bot’s activity and settings.",
+      "count": 1
+    },
+    {
+      "source": "Choose which apps this Bot learns from and manage its background research.",
+      "count": 1
+    },
+    {
+      "source": "What your Bots remember about you is in",
+      "count": 1
+    },
+    {
+      "source": "Continue a conversation with this Bot in Slack, Microsoft Teams, or by text message.",
+      "count": 1
+    },
+    {
+      "source": "Reaching you",
+      "count": 1
+    },
+    {
+      "source": "Review this Bot’s ongoing goals, what triggered each run, and its results.",
+      "count": 1
+    },
+    {
+      "source": "Responsibilities",
+      "count": 1
+    },
+    {
+      "source": "Manage this Bot’s scheduled routines. Turn a routine off, run it now, or delete it.",
+      "count": 1
+    },
+    {
+      "source": "Edit this Bot’s profile, visibility, and runtime settings.",
+      "count": 1
+    },
+    {
+      "source": "Setup",
+      "count": 1
+    },
+    {
+      "source": "Choose who can use this Bot. Each person’s conversations with it are private.",
+      "count": 1
+    },
+    {
+      "source": "Sharing",
+      "count": 1
+    },
+    {
+      "source": "Manage your Bots and access those shared with you.",
+      "count": 1
+    },
+    {
+      "source": "Manage what your Bots remember about you. Facts you add are shared with all Bots; learned facts stay with the Bot that learned them.",
+      "count": 1
+    },
+    {
+      "source": "and a skill's name to give a Bot that instruction. Only you see yours, and they work on Bots you own.",
+      "count": 1
+    },
+    {
+      "source": "No skills yet. Write one with New skill.",
+      "count": 1
+    },
+    {
+      "source": "Delete /",
+      "count": 1
+    },
+    {
+      "source": "An admin writes these for everyone and picks which Bots use them.",
+      "count": 1
+    },
+    {
+      "source": "Workspace skills",
+      "count": 1
+    },
+    {
+      "source": "This conversation's Bot",
+      "count": 1
+    },
+    {
+      "source": "Couldn't load this conversation. Reload the page.",
+      "count": 1
+    },
+    {
+      "source": "Add another Bot for a group…",
+      "count": 1
+    },
+    {
+      "source": "Create a new Bot",
+      "count": 1
+    },
+    {
+      "source": "No Bots found.",
+      "count": 1
+    },
+    {
+      "source": "Couldn't load this connection. Reload the page, or ask an admin if it keeps happening.",
+      "count": 1
+    },
+    {
+      "source": "Couldn't load this app. Reload the page, or ask an admin if it keeps happening.",
+      "count": 1
+    },
+    {
+      "source": "An admin has to turn on",
+      "count": 1
+    },
+    {
+      "source": "before anyone can connect it.",
+      "count": 1
+    },
+    {
+      "source": "Shared by your organisation. Bots act as the team account.",
+      "count": 1
+    },
+    {
+      "source": "Bots use this as you, and see only what you can see.",
+      "count": 1
+    },
+    {
+      "source": "You don't connect this app yourself.",
+      "count": 1
+    },
+    {
+      "source": "Shared account",
+      "count": 1
+    },
+    {
+      "source": "App not found",
+      "count": 1
+    },
+    {
+      "source": "Bots use one shared account for this app, the same for everybody.",
+      "count": 1
+    },
+    {
+      "source": "OpenBot has no app by that name.",
+      "count": 1
+    },
+    {
+      "source": "Not available yet. An admin has to turn this on first.",
+      "count": 1
+    },
+    {
+      "source": "Disconnect your",
+      "count": 1
+    },
+    {
+      "source": "Access",
+      "count": 1
+    },
+    {
+      "source": "Allowed",
+      "count": 1
+    },
+    {
+      "source": "Connect your accounts so Bots can use apps on your behalf.",
+      "count": 1
+    },
+    {
+      "source": "Couldn't connect that account. Nothing was saved. Try again.",
+      "count": 1
+    },
+    {
+      "source": "Couldn't load your connections. Reload the page, or ask an admin if it keeps happening.",
+      "count": 1
+    },
+    {
+      "source": "Apps show up here once an admin turns them on.",
+      "count": 1
+    },
+    {
+      "source": "in use ·",
+      "count": 1
+    },
+    {
+      "source": "in all",
+      "count": 1
+    },
+    {
+      "source": "Nothing matches “",
+      "count": 1
+    },
+    {
+      "source": "Couldn't load GitHub and Slack, so they aren't listed. Reload the page.",
+      "count": 1
+    },
+    {
+      "source": "Reconnect",
+      "count": 1
+    },
+    {
+      "source": "OpenBot picks the right Bot. Type",
+      "count": 1
+    },
+    {
+      "source": "to choose one.",
+      "count": 1
+    },
+    {
+      "source": "Couldn't load your Bots, so there's no one to send this to. Reload the page.",
+      "count": 1
+    },
+    {
+      "source": "Couldn't load the Bots shared with you.",
+      "count": 1
+    },
+    {
+      "source": "Nobody has shared a Bot with you yet.",
+      "count": 1
+    },
+    {
+      "source": "Ask a Bot to create or change a scheduled routine. You can review and stop routines here.",
+      "count": 1
+    },
+    {
+      "source": "Close computer",
+      "count": 1
+    },
+    {
+      "source": "Create a Bot to give it a computer.",
+      "count": 1
+    },
+    {
+      "source": "Computer for",
+      "count": 1
+    },
+    {
+      "source": "Select Bot computer",
+      "count": 1
+    },
+    {
+      "source": "Workspace navigation",
+      "count": 1
+    },
+    {
+      "source": "Resume",
+      "count": 1
+    },
+    {
+      "source": "Pause",
+      "count": 1
+    },
+    {
+      "source": "Show navigation",
+      "count": 1
+    },
+    {
+      "source": "Hide navigation",
+      "count": 1
+    },
+    {
+      "source": "Breadcrumb",
+      "count": 1
+    },
+    {
+      "source": "Hide computer",
+      "count": 1
+    },
+    {
+      "source": "Show computer",
+      "count": 1
+    },
+    {
+      "source": "Open navigation",
+      "count": 1
+    },
+    {
+      "source": "Navigation",
+      "count": 1
+    },
+    {
+      "source": "Edit Bot",
+      "count": 1
+    },
+    {
+      "source": "What your Bots do on a schedule. Ask a Bot to set one up. Pause, run or delete one here.",
+      "count": 1
+    },
+    {
+      "source": "What your Bots know about you.",
+      "count": 1
+    },
+    {
+      "source": "Create Bot",
+      "count": 1
+    },
+    {
+      "source": "BOTS",
+      "count": 1
+    },
+    {
+      "source": "No Bots yet. Use + to create one.",
+      "count": 1
+    },
+    {
+      "source": "All",
+      "count": 1
+    },
+    {
+      "source": "Recent chats",
+      "count": 1
+    },
+    {
+      "source": "Close search",
+      "count": 1
+    },
+    {
+      "source": "RECENT CHATS",
+      "count": 1
+    },
+    {
+      "source": "Find a conversation…",
+      "count": 1
+    },
+    {
+      "source": "No conversations yet. Start one with New chat.",
+      "count": 1
+    },
+    {
+      "source": "Workspace",
+      "count": 1
+    },
+    {
+      "source": "Your settings",
+      "count": 1
+    },
+    {
+      "source": "Signing out…",
+      "count": 1
+    },
+    {
+      "source": "Main",
+      "count": 1
+    },
+    {
+      "source": "Tasks",
+      "count": 1
+    },
+    {
+      "source": "Up next",
+      "count": 1
+    },
+    {
+      "source": "Needs input",
+      "count": 1
+    },
+    {
+      "source": "You don't have a Bot yet.",
+      "count": 1
+    },
+    {
+      "source": "All Bots",
+      "count": 1
+    },
+    {
+      "source": "Open conversations and menu",
+      "count": 1
+    },
+    {
+      "source": "Main chat",
+      "count": 1
+    },
+    {
+      "source": "New group",
+      "count": 1
+    },
+    {
+      "source": "A conversation stays with the Bots in it. Pin one to keep it at the top.",
+      "count": 1
+    },
+    {
+      "source": "Home",
+      "count": 1
+    },
+    {
+      "source": "· working",
+      "count": 1
+    },
+    {
+      "source": "You're all caught up",
+      "count": 1
+    },
+    {
+      "source": "No suggestions yet",
+      "count": 1
+    },
+    {
+      "source": "Change how",
+      "count": 1
+    },
+    {
+      "source": "looks for you, on every device. Every skin keeps everything",
+      "count": 1
+    },
+    {
+      "source": "does.",
+      "count": 1
+    },
+    {
+      "source": "Couldn't save that skin to your account, so",
+      "count": 1
+    },
+    {
+      "source": "is back. Try again.",
+      "count": 1
+    }
+  ],
+  "skipped": [
+    {
+      "file": "app\\src\\routes\\_authed\\admin\\boundaries_.new.tsx",
+      "line": 336,
+      "source": "tool.name == \"computer_key\" && key == \"Enter\"",
+      "reason": "jsx entity"
+    }
+  ]
+}
