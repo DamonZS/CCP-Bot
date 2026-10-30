@@ -1,0 +1,244 @@
+name: CI
+
+# WHY A PUSH WORKFLOW AT ALL. This fork carried two workflows and both of them only ran on a `v*`
+# tag (`publish-images.yml`, `build-installers.yml`), so a push to `master` built nothing: a tree
+# that no longer compiles stayed that way until somebody tagged it. This workflow runs on every push
+# and every pull request and fails in the order the tree breaks in — lint and types first (seconds,
+# no browser), then the app build, then the chart and the desktop panel.
+#
+# IT DOES NOT REPLACE THE TAG WORKFLOWS. Images and installers still come from `v*`; this one only
+# answers "does this commit build".
+on:
+  push:
+    branches: [master]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  # A second push to the same branch cancels the run it supersedes, except on `master`, where every
+  # commit's result is worth keeping.
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/master' }}
+
+env:
+  BUN_VERSION: 1.4.3
+
+jobs:
+  static:
+    name: lint and types
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: ${{ env.BUN_VERSION }}
+      - name: Install
+        run: bun install --frozen-lockfile
+      # `generate:app-config` runs from every workspace's `prebuild`, `predev` and `pretypecheck`, and
+      # it reads `.env`. bun tolerates the file being absent, but the jobs that follow read the same
+      # variables, so make the environment explicit rather than accidentally empty. `.env.example` is
+      # the public development set: it holds no secret.
+      - name: Seed the development env file
+        run: cp .env.example .env
+      - name: Lint
+        run: bun run lint
+      - name: Types
+        run: bun run typecheck
+      # `format:check` is deliberately absent: the tree currently carries 2199 formatting
+      # diagnostics, so the gate would either be red on arrival or demand a two-thousand-file diff
+      # inside a change that is not about formatting. Add it once that sweep is its own change.
+      #
+      # THE SUITE'S TYPE GATE RUNS ON LINUX ON PURPOSE. Its baseline is keyed by the text `tsc`
+      # prints, and Windows `tsc` prints ABSOLUTE resolved paths ('D:/.../app/src/components/x.tsx')
+      # where the frozen baseline recorded repository-relative ones, which turns all eight baselined
+      # entries into "new errors" and eight others into "no longer occur" on a Windows checkout.
+      # Linux prints what the baseline holds, so this is the one machine where the gate says
+      # something true.
+      - name: Types for the server test tree, against the frozen baseline
+        run: bun run typecheck:tests
+
+  build:
+    name: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v5
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: ${{ env.BUN_VERSION }}
+      - name: Install
+        run: bun install --frozen-lockfile
+      - name: Seed the development env file
+        run: cp .env.example .env
+      - name: Build every workspace
+        run: bun run build
+      # The build step alone says only that nothing threw. The bundle is the product: assert it.
+      - name: The app bundle exists
+        run: |
+          test -f app/dist/index.html || { echo "app/dist/index.html is missing"; exit 1; }
+
+  tests:
+    name: tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v5
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: ${{ env.BUN_VERSION }}
+      - name: Install
+        run: bun install --frozen-lockfile
+      - name: Seed the development env file
+        run: cp .env.example .env
+      # The interface suite only. The server suite needs PostgreSQL and real websockets, which is a
+      # service definition and its own change; this job covers what the workbench actually renders.
+      - name: Interface tests
+        run: bun test app/tests --timeout 20000
+
+  chart:
+    name: chart (${{ matrix.target }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      # One red target must not hide whether another is red too.
+      fail-fast: false
+      matrix:
+        target: [self-hosted, eks, eks-sandbox, gke, aks]
+    steps:
+      - uses: actions/checkout@v5
+      - uses: azure/setup-helm@v4
+        with:
+          version: v3.19.0
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: ${{ env.BUN_VERSION }}
+      # The chart's default image tag IS `v<appVersion>`, so a release that bumps one and not the
+      # other ships a chart pointing at a tag nobody published. Fail here, before a cluster does.
+      - name: The chart and package.json agree on the version
+        run: |
+          package="$(jq -r .version package.json)"
+          chart="$(grep -E '^appVersion:' charts/ccpbot/Chart.yaml | tr -d '"' | awk '{print $2}')"
+          test "$package" = "$chart" || {
+            echo "package.json is $package but charts/ccpbot/Chart.yaml says $chart"; exit 1; }
+      # The bundled PostgreSQL subchart is an OCI dependency, pinned by Chart.lock. Nothing renders
+      # without it, and a deploy that cannot pull its database is a deploy that never starts.
+      - run: helm dependency build charts/ccpbot
+      # Structure only. `helm lint` reports a template `fail` as an INFO line and exits 0 even under
+      # `--strict`, which was driven and confirmed, so it cannot gate the refusals below. Rendering
+      # does: `helm template` exits non-zero on one.
+      - run: helm lint charts/ccpbot --values charts/ccpbot/ci/${{ matrix.target }}-values.yaml
+      # A key encryption key is a real 32 bytes rather than a placeholder, because the chart checks
+      # its shape. Generated here so no example key is ever a literal in this repository.
+      - name: Render
+        run: |
+          helm template ci charts/ccpbot \
+            --values charts/ccpbot/ci/${{ matrix.target }}-values.yaml \
+            --set-string secrets.keyEncryptionKey="$(openssl rand -base64 32)" \
+            --api-versions agents.x-k8s.io/v1beta1/Sandbox \
+            --api-versions extensions.agents.x-k8s.io/v1beta1/SandboxTemplate \
+            > rendered.yaml
+      # Rendering proves the templates run. This proves the result is coherent, which is a different
+      # question: every secret key a container demands has to be one the chart actually writes.
+      # Getting that wrong is invisible until a pod starts.
+      - run: bun scripts/check-rendered-chart.ts rendered.yaml
+      # No target here is set up for the Learning container, so the setup Job renders nowhere above.
+      # Render it with a credential of each kind and hold it to the same coherence check.
+      - name: Learning setup Job renders
+        run: |
+          helm template ci charts/ccpbot \
+            --values charts/ccpbot/ci/${{ matrix.target }}-values.yaml \
+            --set-string secrets.keyEncryptionKey="$(openssl rand -base64 32)" \
+            --api-versions agents.x-k8s.io/v1beta1/Sandbox \
+            --api-versions extensions.agents.x-k8s.io/v1beta1/SandboxTemplate \
+            --set-string config.learning.setup.cliLoginSecret.name=ccpbot-copilotkit-cli \
+            --set-string config.learning.setup.serviceTokenSecret.name=intelligence-service-token \
+            --set-string config.learning.setup.projectId=7 \
+            > rendered-learning.yaml
+          grep -q 'app.kubernetes.io/component: learning-setup' rendered-learning.yaml
+          bun scripts/check-rendered-chart.ts rendered-learning.yaml
+      # And that the refusals are load-bearing rather than decorative. A chart full of `fail` messages
+      # nothing ever triggers is a chart that has never been shown to refuse anything, and each of
+      # these describes a state that shipped in a values file at some point.
+      - name: Refusals fire
+        run: |
+          set -uo pipefail
+          refuses() {
+            local why="$1"; shift
+            if helm template ci charts/ccpbot \
+                 --values charts/ccpbot/ci/${{ matrix.target }}-values.yaml \
+                 --set-string secrets.keyEncryptionKey="$(openssl rand -base64 32)" \
+                 --api-versions agents.x-k8s.io/v1beta1/Sandbox \
+                 --api-versions extensions.agents.x-k8s.io/v1beta1/SandboxTemplate \
+                 "$@" >/dev/null 2>&1; then
+              echo "::error::The chart rendered $why, which it is supposed to refuse."
+              return 1
+            fi
+            echo "refused: $why"
+          }
+          # The public example key, which the server will not start with. Only where this chart holds
+          # the secret: with an external store the value is not readable at template time, so the
+          # refusal is deliberately not armed there and asserting it would assert a bug.
+          if ! grep -qE '^ *enabled: true' <(sed -n '/^externalSecrets:/,/^[a-z]/p' charts/ccpbot/ci/${{ matrix.target }}-values.yaml); then
+            refuses "the public example encryption key" \
+              --set-string secrets.keyEncryptionKey="$(head -c 32 /dev/zero | base64)"
+          else
+            echo "skipped: the example-key refusal is not armed when the secret comes from a store"
+          fi
+          # A Bot endpoint with nothing on the request that says who is calling. Armed whether the
+          # secret is this chart's or a store's, because the key list is readable either way.
+          refuses "a managed agent URL with no token" \
+            --set-string config.managedAgent.url=http://agent.default:8000/ag-ui
+          # A browser inside every replica of a replicated API.
+          refuses "an embedded browser across several replicas" \
+            --set server.embeddedComputer=true --set server.replicaCount=2
+          # A Bot's egress proxy on a port the computer's own network policy does not allow. The
+          # variables reach the computer through extraEnv, so nothing else notices that the policy
+          # then refuses to let it be reached.
+          refuses "an egress proxy the network policy blocks" \
+            --set networkPolicy.enabled=true \
+            --set computers.extraEnv[0].name=EGRESS_PROXY_DEFAULT \
+            --set-string computers.extraEnv[0].value=http://proxy.internal:3128
+
+  desktop:
+    name: desktop panel
+    runs-on: windows-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v5
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: ${{ env.BUN_VERSION }}
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: swatinem/rust-cache@v2
+        with:
+          workspaces: desktop/src-tauri -> target
+      # `desktop/` is not a workspace of the root manifest, so it installs from its own lockfile and
+      # gets its own step.
+      - name: Install the panel's dependencies
+        working-directory: desktop
+        run: bun install --frozen-lockfile
+      - name: Types
+        working-directory: desktop
+        run: bun run typecheck
+      - name: Compile the Rust side
+        run: cargo check --manifest-path desktop/src-tauri/Cargo.toml
+
+  verify:
+    name: verify
+    if: always()
+    needs: [static, build, tests, chart, desktop]
+    runs-on: ubuntu-latest
+    steps:
+      # One required check for branch protection, and a red run that says so rather than a red run
+      # somebody has to read five jobs to understand.
+      - name: Every gate passed
+        run: |
+          if [ "${{ contains(needs.*.result, 'failure') }}" = "true" ] ||
+             [ "${{ contains(needs.*.result, 'cancelled') }}" = "true" ]; then
+            echo "at least one gate did not pass"; exit 1
+          fi
+          echo "every gate passed"
