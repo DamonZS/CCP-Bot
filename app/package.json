@@ -5,8 +5,8 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "build": "bun --bun node_modules/vite/bin/vite.js build",
-    "dev": "bun --bun node_modules/vite/bin/vite.js",
+    "build": "bunx --bun vite build",
+    "dev": "bunx --bun vite",
     "serve": "bun scripts/serve-or-build.ts && bun serve.ts",
     "prebuild": "bun run --cwd .. generate:app-config",
     "predev": "bun run --cwd .. generate:app-config",
