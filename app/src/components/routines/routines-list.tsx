@@ -263,8 +263,10 @@ export function RoutinesList({
             {t("Routines aren't running.")}
           </span>{" "}
           {sweep?.lastSweptAt
-            ? `OpenBot last checked them ${relativeTime(sweep.lastSweptAt)}. None will run until it starts again. Ask an admin if this keeps happening.`
-            : t("OpenBot hasn't started running routines yet, so none of these will run. Ask an admin to set this up.")}
+            ? `CCP-Bot last checked them ${relativeTime(sweep.lastSweptAt)}. None will run until it starts again. Ask an admin if this keeps happening.`
+            : t(
+                "CCP-Bot hasn't started running routines yet, so none of these will run. Ask an admin to set this up.",
+              )}
         </p>
       ) : null}
 
@@ -276,11 +278,17 @@ export function RoutinesList({
       ) : rows.length === 0 ? (
         <PageEmpty
           icon={IconClock}
-          title={agentId ? t("No routines for this Bot yet") : t("No routines yet")}
+          title={
+            agentId ? t("No routines for this Bot yet") : t("No routines yet")
+          }
         >
           {agentId
-            ? t("Ask it something like \"every weekday at 9, send me…\" and it shows up here.")
-            : t("Ask a Bot something like \"every weekday at 9, send me…\" and it shows up here.")}
+            ? t(
+                'Ask it something like "every weekday at 9, send me…" and it shows up here.',
+              )
+            : t(
+                'Ask a Bot something like "every weekday at 9, send me…" and it shows up here.',
+              )}
         </PageEmpty>
       ) : (
         <PageRows>
@@ -359,7 +367,9 @@ export function RoutinesList({
                        * takes its place, so the switch's state has a word as well as a position.
                        */}
                       {!routine.enabled ? (
-                        <Chip className="text-muted-foreground">{t("Paused")}</Chip>
+                        <Chip className="text-muted-foreground">
+                          {t("Paused")}
+                        </Chip>
                       ) : new Date(routine.nextRunAt).getTime() <=
                         Date.now() ? (
                         /*
@@ -396,7 +406,9 @@ export function RoutinesList({
                         size="sm"
                         title={
                           routine.enabled
-                            ? t("Runs it now, for real. The Bot does the work and posts in the conversation.")
+                            ? t(
+                                "Runs it now, for real. The Bot does the work and posts in the conversation.",
+                              )
                             : t("This routine is paused. Turn it on first.")
                         }
                         type="button"
@@ -463,7 +475,10 @@ export function RoutinesList({
             UI would otherwise render a nested dialog with no backdrop at all. */}
         <DialogContent overlayClassName="bg-black/20 supports-backdrop-filter:backdrop-blur-sm">
           <DialogHeader>
-            <DialogTitle>{t("Delete \"")}{confirming?.schedule}"?</DialogTitle>
+            <DialogTitle>
+              {t('Delete "')}
+              {confirming?.schedule}"?
+            </DialogTitle>
             <DialogDescription>
               {t("This routine stops for good. You can't undo this.")}
             </DialogDescription>

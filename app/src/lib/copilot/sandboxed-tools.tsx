@@ -105,7 +105,9 @@ function SandboxedTool({
 
       // Wait for complete arguments because sandbox source is injected once per keyed instance.
       if (props.status !== "complete") {
-        return <ToolLine label={t("Drawing")} detail={component.name} running />;
+        return (
+          <ToolLine label={t("Drawing")} detail={component.name} running />
+        );
       }
 
       return (

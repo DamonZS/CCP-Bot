@@ -1,5 +1,5 @@
 /**
- * The bar above a browser OpenBot shows: its tabs (new, switch, close) and the tab in front's address, back, forward
+ * The bar above a browser CCP-Bot shows: its tabs (new, switch, close) and the tab in front's address, back, forward
  * and reload.
  *
  * Two browsers have it. A person's own (`browser-host.ts`), which is theirs at every moment, and a Bot's
@@ -14,7 +14,7 @@ import type {
   BrowserTab,
   BrowserTabsRequest,
   BrowserWindow,
-} from "../../shared/openbot-browser";
+} from "../../shared/ccpbot-browser";
 import { navigationFailure } from "./navigation";
 import { addressFrom } from "./request-validation";
 
@@ -23,7 +23,7 @@ export type TabbedBrowser = {
   context: BrowserContext;
   /** The browser-level DevTools session, which the tab list reads titles from. */
   session: CDPSession;
-  /** `screen`: OpenBot decides which tab is in front and the live screen shows it. `native`: the person's own window. */
+  /** `screen`: CCP-Bot decides which tab is in front and the live screen shows it. `native`: the person's own window. */
   window: BrowserWindow;
   /** The tab in front: the one the live screen shows and the bar acts on. */
   active(): Page;

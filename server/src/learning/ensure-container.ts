@@ -1,5 +1,5 @@
 /**
- * Create this project's `openbot` Learning container with whatever credential can.
+ * Create this project's `ccpbot` Learning container with whatever credential can.
  *
  * THE RUNTIME KEY CANNOT. Intelligence serves `POST /api/learning/projects/:projectId/containers`
  * to three callers only: a person's browser session (from a trusted origin), a CopilotKit CLI login
@@ -29,7 +29,7 @@ import { existsSync } from "node:fs";
 import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { homedir, tmpdir } from "node:os";
 import { isAbsolute, join, resolve } from "node:path";
-import { intelligenceApiKey } from "@openbot/shared/intelligence-key";
+import { intelligenceApiKey } from "@ccpbot/shared/intelligence-key";
 import {
   type ContainerProbe,
   type KeyIdentity,
@@ -44,9 +44,9 @@ const SERVICE_TOKEN_HEADER = "x-copilotkit-ei-service-token";
 /** A Learning container to create: its id (Intelligence's 1 to 64 lowercase letters, digits and single hyphens) and name. */
 export type LearningContainerSpec = { id: string; name: string };
 /** The project's shared default, which Automatic Learning assigns. */
-export const OPENBOT_CONTAINER: LearningContainerSpec = {
-  id: "openbot",
-  name: "OpenBot",
+export const CCPBOT_CONTAINER: LearningContainerSpec = {
+  id: "ccpbot",
+  name: "CCP-Bot",
 };
 
 export type CliResult = { exitCode: number; stdout: string };
@@ -197,7 +197,7 @@ export function verifiedContainer(
   result: CliResult,
   projectId: string,
   action: string,
-  containerId: string = OPENBOT_CONTAINER.id,
+  containerId: string = CCPBOT_CONTAINER.id,
 ) {
   const value = json(result.stdout);
   if (
@@ -228,7 +228,7 @@ export function containerMissing(found: Record<string, unknown>) {
 }
 
 export const CREATE_IN_INTELLIGENCE =
-  'or create a Learning container with ID "openbot" in that project in Intelligence. OpenBot assigns it as the default on its next start.';
+  'or create a Learning container with ID "ccpbot" in that project in Intelligence. CCP-Bot assigns it as the default on its next start.';
 
 /**
  * Exactly what an operator runs when nothing here could create the container. One sentence set,
@@ -236,10 +236,10 @@ export const CREATE_IN_INTELLIGENCE =
  */
 export function learningSetupInstructions(apiUrl: string): string {
   const create =
-    'Or create a Learning container with ID "openbot" in this project in Intelligence. OpenBot assigns it within ten minutes either way.';
+    'Or create a Learning container with ID "ccpbot" in this project in Intelligence. CCP-Bot assigns it within ten minutes either way.';
   return apiUrl === MANAGED_API
-    ? `Sign in once with npx --yes copilotkit@latest login, then run bun scripts/setup-learning.ts from the OpenBot checkout (bun run start does this too). On Kubernetes, put that login in a Secret and name it in config.learning.setup.cliLoginSecret; the chart's setup Job creates the container. ${create}`
-    : `Run bun scripts/setup-learning.ts from the OpenBot checkout and sign in to Intelligence in the browser it opens. On a CopilotKit local evaluation install, set INTELLIGENCE_SERVICE_TOKEN and INTELLIGENCE_PROJECT_ID instead and OpenBot creates it by itself. ${create}`;
+    ? `Sign in once with npx --yes copilotkit@latest login, then run bun scripts/setup-learning.ts from the CCP-Bot checkout (bun run start does this too). On Kubernetes, put that login in a Secret and name it in config.learning.setup.cliLoginSecret; the chart's setup Job creates the container. ${create}`
+    : `Run bun scripts/setup-learning.ts from the CCP-Bot checkout and sign in to Intelligence in the browser it opens. On a CopilotKit local evaluation install, set INTELLIGENCE_SERVICE_TOKEN and INTELLIGENCE_PROJECT_ID instead and CCP-Bot creates it by itself. ${create}`;
 }
 
 /**
@@ -451,10 +451,10 @@ export async function createLearningContainer(
   input: LearningContainerCredentials & { container?: LearningContainerSpec },
 ): Promise<"created" | "present" | "skipped"> {
   const run = input.run ?? runCli;
-  const container = input.container ?? OPENBOT_CONTAINER;
+  const container = input.container ?? CCPBOT_CONTAINER;
   // The operator's fallback is to create the shared default by hand; it only applies to that container.
   const orCreateIt =
-    container.id === OPENBOT_CONTAINER.id
+    container.id === CCPBOT_CONTAINER.id
       ? CREATE_IN_INTELLIGENCE
       : `or create a Learning container with ID "${container.id}" in that project in Intelligence.`;
   if (input.serviceToken) {
@@ -513,7 +513,7 @@ export async function createLearningContainer(
   }
   // No project selected here: find the key's among the projects the login can see, and act on it
   // from a scratch directory so this checkout's selection is never made or changed.
-  const scratch = await mkdtemp(join(tmpdir(), "openbot-learning-"));
+  const scratch = await mkdtemp(join(tmpdir(), "ccpbot-learning-"));
   try {
     const listing = listedProjects(
       await run(["project", "list", "--json"], scratch),
@@ -550,14 +550,14 @@ export async function createLearningContainer(
 }
 
 /**
- * Make sure the runtime key's project has `openbot`, creating it with whichever credential is here.
+ * Make sure the runtime key's project has `ccpbot`, creating it with whichever credential is here.
  * Never writes `.env` and never replaces the key: the server assigns the container once it exists
  * (learning/auto-assign.ts).
  */
 export async function ensureLearningContainer(
   input: LearningContainerCredentials,
 ): Promise<EnsureContainerResult> {
-  const found = await input.key.probe(OPENBOT_CONTAINER.id);
+  const found = await input.key.probe(CCPBOT_CONTAINER.id);
   if (found === "present") return "present";
   if (found === "not_entitled") {
     throw new Error(
@@ -566,18 +566,18 @@ export async function ensureLearningContainer(
   }
   if (found === "unavailable") {
     throw new Error(
-      "Intelligence could not be asked about the openbot Learning container with the configured runtime key. Check INTELLIGENCE_API_URL and INTELLIGENCE_API_KEY, then run this helper again.",
+      "Intelligence could not be asked about the ccpbot Learning container with the configured runtime key. Check INTELLIGENCE_API_URL and INTELLIGENCE_API_KEY, then run this helper again.",
     );
   }
   const created = await createLearningContainer(input);
   if (created === "skipped") return "skipped";
   const reused = created === "present";
   // The check that matters, whatever the project match said: can the key see it now?
-  if ((await input.key.probe(OPENBOT_CONTAINER.id)) !== "present") {
+  if ((await input.key.probe(CCPBOT_CONTAINER.id)) !== "present") {
     throw new Error(
       reused
-        ? "The openbot container exists in the project that was used, but this runtime key cannot see it, so the key belongs to another project. Nothing was assigned."
-        : "Created an openbot container, but this runtime key still cannot see it, so it is in another project. Nothing was assigned; remove that container in Intelligence if it is not wanted.",
+        ? "The ccpbot container exists in the project that was used, but this runtime key cannot see it, so the key belongs to another project. Nothing was assigned."
+        : "Created an ccpbot container, but this runtime key still cannot see it, so it is in another project. Nothing was assigned; remove that container in Intelligence if it is not wanted.",
     );
   }
   return created;
@@ -615,8 +615,8 @@ async function jobMain() {
   });
   console.log(
     result === "skipped"
-      ? `Automatic Learning: no credential here could create the openbot container. ${learningSetupInstructions(apiUrl)}`
-      : `Automatic Learning: the openbot container is ${result === "created" ? "created" : "present"}; OpenBot assigns it as the default unless Admin → Automatic Learning has a saved setting.`,
+      ? `Automatic Learning: no credential here could create the ccpbot container. ${learningSetupInstructions(apiUrl)}`
+      : `Automatic Learning: the ccpbot container is ${result === "created" ? "created" : "present"}; CCP-Bot assigns it as the default unless Admin → Automatic Learning has a saved setting.`,
   );
 }
 

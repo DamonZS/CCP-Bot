@@ -1,4 +1,4 @@
-import type { LauncherState } from "@openbot/shared/openbot-browser";
+import type { LauncherState } from "@ccpbot/shared/ccpbot-browser";
 import { IconMicrophone, IconMicrophoneOff } from "@tabler/icons-react";
 import { useId } from "react";
 import {
@@ -45,11 +45,11 @@ export function narrationProblemSentence(
     case "unsupported":
       return `Narration isn't available in this browser, so what you say isn't recorded. ${GOES_ON}`;
     case "on-device":
-      return `This browser can't turn speech into text on your computer, and OpenBot sends your voice nowhere else, so narration is off. ${GOES_ON}`;
+      return `This browser can't turn speech into text on your computer, and CCP-Bot sends your voice nowhere else, so narration is off. ${GOES_ON}`;
     case "speech-pack":
       return `Your browser has to download its ${languageName(language)} speech recognition to your computer first. Turn narration on to download it. ${GOES_ON}`;
     case "not-allowed":
-      return `OpenBot can't use your microphone, so narration is off. Allow the microphone for this site, then turn narration on again. ${GOES_ON}`;
+      return `CCP-Bot can't use your microphone, so narration is off. Allow the microphone for this site, then turn narration on again. ${GOES_ON}`;
     case "no-microphone":
       return `No microphone was found, or another app is using it. ${GOES_ON}`;
     case "service":
@@ -57,7 +57,9 @@ export function narrationProblemSentence(
     case "language":
       return `This browser can't turn ${languageName(language)} speech into text on your computer, so narration is off. ${GOES_ON}`;
     case "network":
-      return t("Can't reach this browser's speech service. Narration tries again in a moment.");
+      return t(
+        "Can't reach this browser's speech service. Narration tries again in a moment.",
+      );
   }
 }
 
@@ -72,31 +74,39 @@ function nativeNarrationSentence(voice: LauncherState["voice"]): string {
     case "listening":
       return t("Listening. Say what you're doing as you go.");
     case "muted":
-      return t("Muted in the Recorder, so what you say isn't recorded. Turn it on again from the Recorder's button in your browser's toolbar.");
+      return t(
+        "Muted in the Recorder, so what you say isn't recorded. Turn it on again from the Recorder's button in your browser's toolbar.",
+      );
     case "unavailable":
       return `The Recorder can't hear your microphone, so what you say isn't recorded. The Recorder's button in your browser's toolbar says why. ${GOES_ON}`;
     // Nothing is being recorded yet, or the Recorder has not said.
     default:
-      return t("On. The Recorder hears your microphone while you record, so say what you're doing as you go.");
+      return t(
+        "On. The Recorder hears your microphone while you record, so say what you're doing as you go.",
+      );
   }
 }
 
-/** The narration row on OpenBot Desktop while nothing records: the person's choice, which the next Record passes on. */
+/** The narration row on CCP-Bot Desktop while nothing records: the person's choice, which the next Record passes on. */
 function narrationChoiceSentence(
   narration: Exclude<NarrationChoice["narration"], undefined>,
 ) {
   switch (narration) {
     case "on":
-      return t("On. The Recorder in your browser listens to your microphone while you record, and turns your speech into text on your computer.");
+      return t(
+        "On. The Recorder in your browser listens to your microphone while you record, and turns your speech into text on your computer.",
+      );
     case "off":
       return t("Off. The Recorder doesn't open your microphone.");
     case null:
-      return t("Not chosen yet. Record asks before your first recording, and the microphone stays closed until you say yes.");
+      return t(
+        "Not chosen yet. Record asks before your first recording, and the microphone stays closed until you say yes.",
+      );
   }
 }
 
 /**
- * The narration row on OpenBot Desktop. While nothing records it is the person's choice, a switch that takes effect at
+ * The narration row on CCP-Bot Desktop. While nothing records it is the person's choice, a switch that takes effect at
  * once: the next Record tells the Recorder in their browser whether to open the microphone. While a recording runs, the
  * Recorder hears the microphone itself, so the row says what it reports, read every second with the rest of the
  * browser's state, so a microphone that is muted or cannot be heard shows here while the person records.
@@ -298,7 +308,7 @@ export function NarrationRow({
     (listening
       ? "Listening. Say what you're doing as you go."
       : narration.on
-        ? "On. OpenBot hears your microphone while you record and turns your speech into text on your computer, so say what you're doing as you go."
+        ? "On. CCP-Bot hears your microphone while you record and turns your speech into text on your computer, so say what you're doing as you go."
         : choice === null
           ? "Not chosen yet. Record asks before your first recording, and the microphone stays closed until you say yes."
           : "Off. What you say isn't recorded.");

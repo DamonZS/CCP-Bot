@@ -867,8 +867,8 @@ describe("the computer gateway", () => {
     expect(screenshotReq).toBeDefined();
     expect(screenshotReq?.url).toBe("http://agent-computer:4100/screenshot");
     expect(screenshotReq?.init?.headers).toMatchObject({
-      "x-openbot-bot-id": "bot-1",
-      "x-openbot-computer-token": "computer-secret",
+      "x-ccpbot-bot-id": "bot-1",
+      "x-ccpbot-computer-token": "computer-secret",
     });
   });
 
@@ -896,8 +896,8 @@ describe("the computer gateway", () => {
     const request = requests.find(({ url }) => url.includes("/files/download"));
     expect(request?.init?.method).toBe("GET");
     expect(request?.init?.headers).toMatchObject({
-      "x-openbot-bot-id": "bot-1",
-      "x-openbot-computer-token": "computer-secret",
+      "x-ccpbot-bot-id": "bot-1",
+      "x-ccpbot-computer-token": "computer-secret",
     });
     expect(new URL(request?.url ?? "").searchParams.get("path")).toBe(
       "reports/Q3 file.pdf",
@@ -1289,7 +1289,7 @@ describe("resolving a computer's address", () => {
 /**
  * The snapshot a ref resolves against is shared between servers, not held in one process.
  *
- * OpenBot runs several server processes behind a load balancer, and the process that answers a
+ * CCP-Bot runs several server processes behind a load balancer, and the process that answers a
  * snapshot is rarely the one that answers the click that uses its refs. If the mapping from ref to
  * element lives in a `Map`, it is missing on every replica but the one that snapshotted: the policy
  * decides with no element in front of it, and the deny rule the deployment is relying on does not
@@ -1848,11 +1848,11 @@ describe("seats on a person's computer", () => {
     // Inside the computer the Bot picks the profile and folder; the person is the computer itself,
     // so it is not sent, and each Bot keeps the profile it has always had there.
     expect(
-      requests.map((request) => headersOf(request)["x-openbot-bot-id"]),
+      requests.map((request) => headersOf(request)["x-ccpbot-bot-id"]),
     ).toEqual(["sales", "notes"]);
     expect(
       requests.every(
-        (request) => headersOf(request)["x-openbot-person-id"] === undefined,
+        (request) => headersOf(request)["x-ccpbot-person-id"] === undefined,
       ),
     ).toBe(true);
   });
@@ -1877,7 +1877,7 @@ describe("seats on a person's computer", () => {
     const reset = requests.find((request) =>
       request.url.endsWith("/computers/reset"),
     );
-    expect(reset && headersOf(reset)["x-openbot-bot-id"]).toBe("sales");
+    expect(reset && headersOf(reset)["x-ccpbot-bot-id"]).toBe("sales");
     expect(await snapshots.load("person:ada/sales")).toBeUndefined();
     expect(await snapshots.load("person:ada/notes")).toBeDefined();
     expect(rows.at(-1)?.payload).toMatchObject({
@@ -1987,8 +1987,8 @@ describe("seats on the shared computer", () => {
     await gateway.snapshot(personSeat("bo", "pub-bot"));
     expect(
       requests.map((headers) => [
-        headers.get("x-openbot-person-id"),
-        headers.get("x-openbot-bot-id"),
+        headers.get("x-ccpbot-person-id"),
+        headers.get("x-ccpbot-bot-id"),
       ]),
     ).toEqual([
       ["ada", "pub-bot"],

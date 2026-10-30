@@ -1,11 +1,11 @@
 import {
   type BotBrowserApiState,
   botBrowserApiPaths,
-} from "@openbot/shared/bot-browser";
+} from "@ccpbot/shared/bot-browser";
 import type {
   BrowserNavigateRequest,
   BrowserTabsRequest,
-} from "@openbot/shared/openbot-browser";
+} from "@ccpbot/shared/ccpbot-browser";
 import { mutationOptions, type QueryClient } from "@tanstack/react-query";
 import {
   type NarrationAnswer,

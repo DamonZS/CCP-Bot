@@ -24,7 +24,10 @@ const TABS = [
 export function CapabilitiesTabs() {
   const matchRoute = useMatchRoute();
   return (
-    <nav aria-label={t("Capabilities")} className="mt-6 flex items-center gap-1">
+    <nav
+      aria-label={t("Capabilities")}
+      className="mt-6 flex items-center gap-1"
+    >
       {TABS.map((tab) => (
         <Button
           key={tab.label}

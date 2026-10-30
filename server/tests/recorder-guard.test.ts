@@ -5,7 +5,7 @@ import type { AuditEventInput } from "../src/audit";
 import { DEV_ACTOR } from "../src/auth/dev-actor";
 import type { AuthenticatedActor } from "../src/auth/guards";
 import { AuthorityUnavailable } from "../src/auth/organization";
-import type { OpenBotRole } from "../src/auth/roles";
+import type { CcpBotRole } from "../src/auth/roles";
 import {
   createRecorderResolver,
   createRequireRecorder,
@@ -21,9 +21,9 @@ const TOKEN = `obr_${"a".repeat(43)}`;
 const SECOND_TOKEN = `obr_${"b".repeat(43)}`;
 const STRANGER_TOKEN = `obr_${"c".repeat(43)}`;
 const SIGNED_OUT_SENTENCE =
-  "This browser is no longer connected to OpenBot. Connect it again.";
+  "This browser is no longer connected to CCP-Bot. Connect it again.";
 const ORGANIZATION_SENTENCE =
-  "Your organization sign-in ended. Connect this browser to OpenBot again.";
+  "Your organization sign-in ended. Connect this browser to CCP-Bot again.";
 
 type Refusal = Parameters<RecorderRefusalSink>[0];
 type UserRow = {
@@ -40,7 +40,7 @@ type Connection = {
 
 const owner: UserRow = {
   id: "owner",
-  email: "owner@openbot.test",
+  email: "owner@ccpbot.test",
   name: "Owner Person",
   image: "https://example.test/owner.png",
 };
@@ -99,7 +99,7 @@ function fixture(
     c.json({ connectionId: c.var.recorderConnectionId }),
   );
   const call = (headers: Record<string, string> = {}, path = "/x") =>
-    app.request(`http://openbot.test${path}`, { headers });
+    app.request(`http://ccpbot.test${path}`, { headers });
   const bearer = (token = TOKEN) => ({ authorization: `Bearer ${token}` });
   return { app, call, bearer, refusals, clock, connections, users, resolve };
 }
@@ -254,7 +254,7 @@ describe("the recorder bearer guard", () => {
 
   test("a person in an allowed email domain is admitted", async () => {
     const { call, bearer } = fixture(
-      betterAuth({ allowedEmailDomains: ["openbot.test"] }),
+      betterAuth({ allowedEmailDomains: ["ccpbot.test"] }),
     );
 
     expect((await call(bearer())).status).toBe(200);
@@ -284,7 +284,7 @@ describe("the recorder bearer guard", () => {
     const blank = {
       ...owner,
       id: "blank",
-      email: "blank@openbot.test",
+      email: "blank@ccpbot.test",
       name: "   ",
     };
     const { call, bearer } = fixture(betterAuth(), {
@@ -312,10 +312,10 @@ describe("the recorder bearer guard", () => {
   test("the resolver answers null when the request carries no recorder bearer", async () => {
     const { resolve } = fixture(betterAuth());
 
-    expect(await resolve(new Request("http://openbot.test/x"))).toBeNull();
+    expect(await resolve(new Request("http://ccpbot.test/x"))).toBeNull();
     expect(
       await resolve(
-        new Request("http://openbot.test/x", {
+        new Request("http://ccpbot.test/x", {
           headers: { authorization: "Bearer someone-elses-token" },
         }),
       ),
@@ -416,7 +416,7 @@ describe("organization mode", () => {
   }
 
   const signedIn =
-    (role: OpenBotRole = "user") =>
+    (role: CcpBotRole = "user") =>
     async () => ({
       id: owner.id,
       email: owner.email,
@@ -431,7 +431,7 @@ describe("organization mode", () => {
 
     expect(response.status).toBe(200);
     expect(unsealed).toEqual(["sealed-session-one"]);
-    expect(asked).toEqual(["openbot.organization-session=session-one"]);
+    expect(asked).toEqual(["ccpbot.organization-session=session-one"]);
     expect(await response.json()).toEqual({
       id: owner.id,
       email: owner.email,
@@ -480,7 +480,7 @@ describe("organization mode", () => {
   test("a session that belongs to somebody else is signed out as organization", async () => {
     const { call, bearer } = organization(async () => ({
       id: "somebody-else",
-      email: "else@openbot.test",
+      email: "else@ccpbot.test",
       role: "admin",
     }));
 
@@ -539,8 +539,8 @@ describe("organization mode", () => {
 
     await call(bearer(SECOND_TOKEN));
     expect(asked).toEqual([
-      "openbot.organization-session=session-one",
-      "openbot.organization-session=session-two",
+      "ccpbot.organization-session=session-one",
+      "ccpbot.organization-session=session-two",
     ]);
 
     clock.now += 2_000;

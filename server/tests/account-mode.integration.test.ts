@@ -185,7 +185,7 @@ describe("switching to Shared", () => {
       .from(mcpServers)
       .where(eq(mcpServers.id, app));
     expect(row?.accountMode).toBe("shared");
-    expect(row?.sharedVendorUserId).toMatch(/^openbot-deployment:acme:.+/);
+    expect(row?.sharedVendorUserId).toMatch(/^ccpbot-deployment:acme:.+/);
     expect(
       await database
         .select()

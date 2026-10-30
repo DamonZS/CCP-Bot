@@ -21,7 +21,12 @@ export function TabBar({ current }: { current: OpenDuetTab }) {
   const inbox = useQuery(approvalInboxOptions());
   const waiting = waitingCount(inbox.data);
   const tabs = [
-    { id: "chat" as const, label: t("Chat"), Glyph: IconMessageCircle, badge: 0 },
+    {
+      id: "chat" as const,
+      label: t("Chat"),
+      Glyph: IconMessageCircle,
+      badge: 0,
+    },
     {
       id: "tasks" as const,
       label: t("Tasks"),

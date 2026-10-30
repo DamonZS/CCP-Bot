@@ -98,12 +98,16 @@ function RuleDetail({ policy, rule }: { policy: ActionPolicy; rule: string }) {
     >
       {policy.mode === "dry-run" ? (
         <p className="text-amber-600 text-sm dark:text-amber-500">
-          {t("Trial mode is on, so this rule records matching actions without stopping them.")}
+          {t(
+            "Trial mode is on, so this rule records matching actions without stopping them.",
+          )}
         </p>
       ) : null}
 
       <PageSection
-        description={t("Written in CEL. It is checked before every action a Bot takes.")}
+        description={t(
+          "Written in CEL. It is checked before every action a Bot takes.",
+        )}
         title={t("Rule")}
       >
         <PageCard className="mt-4">
@@ -120,7 +124,9 @@ function RuleDetail({ policy, rule }: { policy: ActionPolicy; rule: string }) {
           </p>
         ) : reach.data.scanned === 0 ? (
           <p className="mt-4 text-muted-foreground text-sm">
-            {t("No recorded actions yet. What this rule stops will show here once Bots have acted.")}
+            {t(
+              "No recorded actions yet. What this rule stops will show here once Bots have acted.",
+            )}
           </p>
         ) : (
           <>
@@ -155,7 +161,10 @@ function RuleDetail({ policy, rule }: { policy: ActionPolicy; rule: string }) {
       <Dialog onOpenChange={setRemoving} open={removing}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>{t("Remove “")}{label.name}”?</DialogTitle>
+            <DialogTitle>
+              {t("Remove “")}
+              {label.name}”?
+            </DialogTitle>
             <DialogDescription>
               {t("Every Bot can do this again from its next action.")}
             </DialogDescription>

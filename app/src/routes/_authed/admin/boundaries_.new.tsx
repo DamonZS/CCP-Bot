@@ -141,7 +141,9 @@ function NewRulePage() {
   return (
     <PageShell
       backButton={BACK}
-      description={t("Define an action that no Bot may take. This boundary applies to every Bot’s next action.")}
+      description={t(
+        "Define an action that no Bot may take. This boundary applies to every Bot’s next action.",
+      )}
       title={t("Add rule")}
     >
       <PageSection title={t("Start from")}>
@@ -253,7 +255,9 @@ function NewRulePage() {
                 <Field>
                   <FieldLabel htmlFor="rule-expression">{t("Rule")}</FieldLabel>
                   <FieldDescription>
-                    {t("Written in CEL. A rule that can't be evaluated counts as a match, so a typo stops actions rather than letting them through.")}
+                    {t(
+                      "Written in CEL. A rule that can't be evaluated counts as a match, so a typo stops actions rather than letting them through.",
+                    )}
                   </FieldDescription>
                   <Textarea
                     autoCapitalize="off"
@@ -264,7 +268,9 @@ function NewRulePage() {
                       setRule(event.target.value);
                       setTested(null);
                     }}
-                    placeholder={t("tool.name == \"computer_click\" && contains(element.name, \"delete\")")}
+                    placeholder={t(
+                      'tool.name == "computer_click" && contains(element.name, "delete")',
+                    )}
                     spellCheck={false}
                     value={rule}
                   />
@@ -330,7 +336,10 @@ function RuleReference() {
       </dl>
       <p className="mt-3 text-muted-foreground">
         {t("A rule that names something an action doesn't have, such as")}{" "}
-        <code className="font-mono text-xs">{t("key")}</code> {t("on a click, counts as a match. Name the tool first so the rest is only checked where it applies:")}{" "}
+        <code className="font-mono text-xs">{t("key")}</code>{" "}
+        {t(
+          "on a click, counts as a match. Name the tool first so the rest is only checked where it applies:",
+        )}{" "}
         <code className="font-mono text-xs">
           tool.name == "computer_key" && key == "Enter"
         </code>
@@ -344,7 +353,9 @@ function TestResult({ report }: { report: DryRunReport }) {
   if (report.scanned === 0) {
     return (
       <p className="mt-3 text-muted-foreground text-sm" role="status">
-        {t("No recorded actions to test against yet. The rule is valid; you'll see what it stops once Bots have acted.")}
+        {t(
+          "No recorded actions to test against yet. The rule is valid; you'll see what it stops once Bots have acted.",
+        )}
       </p>
     );
   }

@@ -5,7 +5,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type { Page } from "playwright";
 import type { BotBrowserState } from "../../shared/bot-browser";
-import type { LauncherConnection } from "../../shared/openbot-browser";
+import type { LauncherConnection } from "../../shared/ccpbot-browser";
 import { type BotBrowserHost, SENDING_WAIT_MS } from "../src/bot-browser-host";
 import type { BrowserRuntime } from "../src/browser-runtime";
 import { createControl } from "../src/control";
@@ -17,16 +17,16 @@ import { setWebBotAuth } from "../src/web-bot-auth";
 /**
  * What the Recorder changes for a Bot's own browser, launched for real: two Bots side by side on one computer, one
  * whose browser has the fixture Recorder in it and one whose browser does not, as a computer without
- * `OPENBOT_RECORDER_DIR` launches it. Until somebody records, the Recorder must change nothing the Bot or a site can
+ * `CCPBOT_RECORDER_DIR` launches it. Until somebody records, the Recorder must change nothing the Bot or a site can
  * see: not the page the Bot is on, not what the browser says about itself, not the Web Bot Auth signature.
  *
  * The bar's routes are served over the Bot's browser from `createBotBrowserHost`, with the real control state machine
  * (`control.ts`) holding the wheel for a person. `bot-browser-computer.test.ts` drives the same routes through the
  * running computer.
  *
- *   OPENBOT_COMPUTER_BROWSER=1 bun test tests/bot-browser.test.ts
+ *   CCPBOT_COMPUTER_BROWSER=1 bun test tests/bot-browser.test.ts
  */
-const asked = process.env.OPENBOT_COMPUTER_BROWSER === "1";
+const asked = process.env.CCPBOT_COMPUTER_BROWSER === "1";
 const FIXTURE = join(import.meta.dir, "fixtures", "recorder");
 const WITH = "bot-with-recorder";
 const WITHOUT = "bot-without-recorder";
@@ -40,13 +40,13 @@ const HOSTED: BrowserRuntime = {
 };
 
 type FixtureCall = { method: string; input: unknown; sending: boolean };
-/** Every call the fixture Recorder received, as it reported it to the OpenBot it was connected to. */
+/** Every call the fixture Recorder received, as it reported it to the CCP-Bot it was connected to. */
 const calls: FixtureCall[] = [];
-/** How long the last of a stopped recording takes to reach Intelligence, as this OpenBot tells the fixture Recorder. */
+/** How long the last of a stopped recording takes to reach Intelligence, as this CCP-Bot tells the fixture Recorder. */
 let tailMs = 0;
 
 /**
- * The site both Bots browse, which says back what each browser sent it; and the OpenBot the fixture Recorder is
+ * The site both Bots browse, which says back what each browser sent it; and the CCP-Bot the fixture Recorder is
  * connected to while a person records.
  */
 const site = asked
@@ -75,7 +75,7 @@ const site = asked
   : undefined;
 const ORIGIN = `http://127.0.0.1:${site?.port ?? 0}`;
 const CONNECTION: LauncherConnection = {
-  openbotUrl: ORIGIN,
+  ccpbotUrl: ORIGIN,
   token: "obr_bot-browser-tail",
   connectionId: "connection-tail",
   user: { id: "user-1", name: "Pat Example", email: "pat@example.com" },
@@ -149,7 +149,7 @@ async function bar<T = BotBrowserState>(
 ): Promise<{ status: number; json: T }> {
   const response = await fetch(`http://127.0.0.1:${server.port}${path}`, {
     method: body === undefined ? "GET" : "POST",
-    headers: { "content-type": "application/json", "x-openbot-bot-id": WITH },
+    headers: { "content-type": "application/json", "x-ccpbot-bot-id": WITH },
     ...(body === undefined ? {} : { body: JSON.stringify(body) }),
   });
   return { status: response.status, json: (await response.json()) as T };
@@ -157,7 +157,7 @@ async function bar<T = BotBrowserState>(
 
 beforeAll(async () => {
   if (!asked) return;
-  root = await mkdtemp(join(tmpdir(), "openbot-bot-browser-"));
+  root = await mkdtemp(join(tmpdir(), "ccpbot-bot-browser-"));
   // Imported here rather than at the top, so a run that did not ask for a browser never loads Playwright.
   const { createProfiles } = await import("../src/profiles");
   const { createBotBrowserHost } = await import("../src/bot-browser-host");
@@ -182,7 +182,7 @@ beforeAll(async () => {
       host.handle(
         request,
         new URL(request.url).pathname,
-        request.headers.get("x-openbot-bot-id") ?? "",
+        request.headers.get("x-ccpbot-bot-id") ?? "",
       ),
   });
 }, 30_000);
@@ -259,7 +259,7 @@ describe.skipIf(!asked)("a Bot's browser with the Recorder in it", () => {
     const jwk = generateKeyPairSync("ed25519").privateKey.export({
       format: "jwk",
     });
-    await setWebBotAuth({ agent: "https://openbot.example.com", jwk });
+    await setWebBotAuth({ agent: "https://ccpbot.example.com", jwk });
     try {
       for (const profiles of [withRecorder, withoutRecorder]) {
         const page = await profiles.page(

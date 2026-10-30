@@ -191,7 +191,7 @@ async function requireOwnerMayIsolate(
 
 export class ManagedAgentUnavailableError extends Error {
   constructor() {
-    super("OpenBot has no managed Bot. Give this Bot its own AG-UI endpoint.");
+    super("CCP-Bot has no managed Bot. Give this Bot its own AG-UI endpoint.");
     this.name = "ManagedAgentUnavailableError";
   }
 }

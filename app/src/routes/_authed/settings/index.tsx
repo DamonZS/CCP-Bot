@@ -40,7 +40,9 @@ function RouteComponent() {
    */
   return (
     <PageShell
-      description={t("Customize OpenBot’s appearance and message display. Your skin and message settings apply to your account; the theme applies only to this browser.")}
+      description={t(
+        "Customize CCP-Bot’s appearance and message display. Your skin and message settings apply to your account; the theme applies only to this browser.",
+      )}
       title={t("Preferences")}
     >
       <ProfileSettings />
@@ -51,7 +53,7 @@ function RouteComponent() {
             <ItemContent>
               <ItemTitle>{t("Dark theme")}</ItemTitle>
               <ItemDescription>
-                {t("Use the dark appearance across OpenBot.")}
+                {t("Use the dark appearance across CCP-Bot.")}
               </ItemDescription>
             </ItemContent>
             <ItemActions>

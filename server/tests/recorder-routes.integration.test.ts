@@ -6,8 +6,8 @@ import {
   RECORDER_ACTIVITY_STALE_MS,
   RECORDER_SIGNED_OUT,
   type RecorderConnectionsResponse,
-} from "@openbot/shared/recorder-api";
-import { RECORDER_EXTENSION_ID } from "@openbot/shared/recorder-extension";
+} from "@ccpbot/shared/recorder-api";
+import { RECORDER_EXTENSION_ID } from "@ccpbot/shared/recorder-extension";
 import { eq, inArray } from "drizzle-orm";
 import { createApp } from "../src/app";
 import type { AuditEventInput } from "../src/audit";
@@ -131,7 +131,7 @@ const call = (
   init: RequestInit & { json?: unknown } = {},
 ) => {
   const { json, headers, ...rest } = init;
-  return app.request(`http://openbot.test${path}`, {
+  return app.request(`http://ccpbot.test${path}`, {
     ...rest,
     headers: {
       ...(json === undefined ? {} : { "content-type": "application/json" }),
@@ -379,7 +379,7 @@ describe("connecting", () => {
       json: { code: "obc_x", label: "x", installId: INSTALL },
     });
     expect(refused.status).toBe(403);
-    const h = build({ OPENBOT_RECORDER_EXTRA_EXTENSION_IDS: extra });
+    const h = build({ CCPBOT_RECORDER_EXTRA_EXTENSION_IDS: extra });
     const listed = await call(h, "/api/recorder/connections", {
       headers: COOKIE,
     });
@@ -505,7 +505,7 @@ describe("using the bearer", () => {
 
   test("the connections list says which browser is recording now, from its Recorder's own recent report", async () => {
     // End-to-end run: a browser recording right now read "last used 49 seconds ago", since a recording streams to the
-    // gateway and reaches OpenBot only with its activity reports.
+    // gateway and reaches CCP-Bot only with its activity reports.
     const h = build();
     const made = await connect(h, "5".repeat(32));
     const recordingNow = async () => {
@@ -595,10 +595,10 @@ describe("using the bearer", () => {
       new File([new Uint8Array(8)], "recording.webm", { type: "audio/webm" }),
     );
     const answer = await h.app.request(
-      "http://openbot.test/api/audio/transcriptions",
+      "http://ccpbot.test/api/audio/transcriptions",
       {
         method: "POST",
-        headers: { ...bearer(made.token), "x-openbot-dictation": "1" },
+        headers: { ...bearer(made.token), "x-ccpbot-dictation": "1" },
         body: form,
       },
     );
@@ -607,7 +607,7 @@ describe("using the bearer", () => {
     expect(transcribed).toBe(0);
   });
 
-  test("OpenBot takes no recording from the Recorder, not even with its bearer", async () => {
+  test("CCP-Bot takes no recording from the Recorder, not even with its bearer", async () => {
     const h = build();
     const made = await connect(h, "6".repeat(32));
     for (const [method, path] of [

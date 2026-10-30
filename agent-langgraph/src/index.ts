@@ -55,7 +55,7 @@ const PORT = resolvedPort.port;
 const MANAGED_AGENT_TOKEN = process.env.MANAGED_AGENT_TOKEN?.trim();
 if (!MANAGED_AGENT_TOKEN) {
   console.error(
-    "MANAGED_AGENT_TOKEN is not set. This process holds a model credential and will not start without a token for OpenBot's server.",
+    "MANAGED_AGENT_TOKEN is not set. This process holds a model credential and will not start without a token for CCP-Bot's server.",
   );
   process.exit(1);
 }
@@ -236,7 +236,7 @@ function buildModel() {
 const TOOL_URL =
   // Numeric, never `localhost`: it resolves to `::1` under Node and `127.0.0.1` under bun, so a
   // name here reaches a different interface depending on what started the process.
-  process.env.OPENBOT_TOOL_URL ?? "http://127.0.0.1:3001/api/agent-tools/call";
+  process.env.CCPBOT_TOOL_URL ?? "http://127.0.0.1:3001/api/agent-tools/call";
 const TOOL_TOKEN = process.env.AGENT_TOOL_TOKEN ?? "";
 
 async function callTool(
@@ -259,7 +259,7 @@ async function callTool(
       method: "POST",
       headers: {
         "content-type": "application/json",
-        "x-openbot-agent-token": TOOL_TOKEN,
+        "x-ccpbot-agent-token": TOOL_TOKEN,
       },
       /*
        * The deployment's own statement, handed straight back.
@@ -286,8 +286,8 @@ async function callTool(
  * calls a tool, and the deployment that signed it is the only thing that can open it.
  */
 function runAssertionOf(input: RunAgentInput): string {
-  const props = input.forwardedProps as { openbotRun?: unknown } | undefined;
-  return typeof props?.openbotRun === "string" ? props.openbotRun : "";
+  const props = input.forwardedProps as { ccpbotRun?: unknown } | undefined;
+  return typeof props?.ccpbotRun === "string" ? props.ccpbotRun : "";
 }
 
 /**
@@ -300,9 +300,9 @@ function runAssertionOf(input: RunAgentInput): string {
  */
 function deploymentToolsOf(input: RunAgentInput): Set<string> {
   const props = input.forwardedProps as
-    | { openbotDeploymentTools?: unknown }
+    | { ccpbotDeploymentTools?: unknown }
     | undefined;
-  const names = props?.openbotDeploymentTools;
+  const names = props?.ccpbotDeploymentTools;
   return new Set(
     Array.isArray(names)
       ? names.filter((name) => typeof name === "string")

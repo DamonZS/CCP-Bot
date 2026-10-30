@@ -1,5 +1,5 @@
 import { expect, spyOn, test } from "bun:test";
-import { HeadlessToolSuspension } from "@openbot/toolkit/headless-tools";
+import { HeadlessToolSuspension } from "@ccpbot/toolkit/headless-tools";
 import { z } from "zod";
 import { currentApprovalContext } from "../src/approvals/types";
 import { buildAgents } from "../src/copilot";
@@ -104,7 +104,7 @@ test("a real built-in native tool carries provider call identity and suspends AG
     expect(events).toContainEqual(
       expect.objectContaining({
         type: "CUSTOM",
-        name: "openbot.headless.waiting",
+        name: "ccpbot.headless.waiting",
       }),
     );
     expect(events).toContainEqual(

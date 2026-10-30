@@ -23,7 +23,7 @@ export type HarnessChoice = {
   agentUrl?: string;
 };
 
-/** What OpenBot sets up unless somebody says otherwise. David's call. */
+/** What CCP-Bot sets up unless somebody says otherwise. David's call. */
 export const DEFAULT_HARNESS = "langgraph";
 
 /**
@@ -97,7 +97,7 @@ export function HarnessPicker({
         applies to will read it.
       */}
       <p className="lede">
-        OpenBot sets this up for you. If you write code, you can choose the
+        CCP-Bot sets this up for you. If you write code, you can choose the
         agent framework below.
       </p>
 

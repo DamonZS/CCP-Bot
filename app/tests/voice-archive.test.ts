@@ -1,5 +1,5 @@
 import { afterEach, expect, mock, spyOn, test } from "bun:test";
-import type { VoiceSessionRecord } from "@openbot/shared/voice-session";
+import type { VoiceSessionRecord } from "@ccpbot/shared/voice-session";
 import {
   loadVoiceArchive,
   saveVoiceSession,

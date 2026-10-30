@@ -41,7 +41,7 @@ export function initialOf(user: { name?: string | null; email: string }) {
 }
 
 /**
- * What the open conversation is doing, from the roster OpenBot keeps live over its socket: a turn
+ * What the open conversation is doing, from the roster CCP-Bot keeps live over its socket: a turn
  * running, or work it waits on between turns.
  */
 function useOpenConversation() {
@@ -71,7 +71,7 @@ export function doingLine(busy: boolean, work: ChannelWork[]): string | null {
 
 /**
  * OpenDuet's header on a tab: the menu in a disc on the left, an orb in the centre, the person's
- * initial in a disc on the right (their settings). The orb is OpenBot's own (`AgentOrb`, as sign-in
+ * initial in a disc on the right (their settings). The orb is CCP-Bot's own (`AgentOrb`, as sign-in
  * and onboarding draw it), so the frame carries the deployment's identity, not OpenDuet's. It is the
  * way to talk: pressed, it
  * starts the composer's own dictation, or, on a screen with no composer, opens Chat and starts it
@@ -79,7 +79,7 @@ export function doingLine(busy: boolean, work: ChannelWork[]): string | null {
  * under it saying what the Bot is doing.
  *
  * `floating` lays it over a screen that scrolls under it, behind a fade. Otherwise it is a bar in
- * the column's flow, over an OpenBot page that owns its own scroller.
+ * the column's flow, over a CCP-Bot page that owns its own scroller.
  */
 export function TabHeader({
   floating,
@@ -94,7 +94,7 @@ export function TabHeader({
   main: HTMLElement | null;
 }) {
   const { data: user } = useQuery(currentUserQueryOptions());
-  // Settings, from OpenBot's one navigation list, behind the person's initial.
+  // Settings, from CCP-Bot's one navigation list, behind the person's initial.
   const settings = useNavigationItems().find((item) => item.id === "settings");
   const capabilities = useQuery(deploymentCapabilitiesQueryOptions());
   const canDictate = capabilities.data?.transcription === true;
@@ -216,7 +216,7 @@ export type PageFacts = {
 
 /**
  * Read the page's title and its own back link, for the chrome to show in their place. Only read:
- * the page is OpenBot's, rendered by React, and nothing here writes to it. The back link sits in the
+ * the page is CCP-Bot's, rendered by React, and nothing here writes to it. The back link sits in the
  * bar `PageShell` draws above the scroller that holds the page's header.
  */
 export function readPageFacts(root: ParentNode): PageFacts {

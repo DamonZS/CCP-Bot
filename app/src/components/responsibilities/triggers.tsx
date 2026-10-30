@@ -198,7 +198,8 @@ export function Triggers({ goal }: { goal: ResponsibilityRecord }) {
       </div>
       {goal.status !== "active" && (
         <p className="text-muted-foreground text-xs">
-          {t("This responsibility is")} {goal.status}{t(". Its triggers won't start it.")}
+          {t("This responsibility is")} {goal.status}
+          {t(". Its triggers won't start it.")}
         </p>
       )}
       {triggers.error && (
@@ -208,7 +209,9 @@ export function Triggers({ goal }: { goal: ResponsibilityRecord }) {
       )}
       {triggers.data?.length === 0 && (
         <p className="text-muted-foreground text-xs">
-          {t("No triggers. It runs when you press Run now, or on the events above.")}
+          {t(
+            "No triggers. It runs when you press Run now, or on the events above.",
+          )}
         </p>
       )}
       {triggers.data?.length ? (
@@ -358,7 +361,9 @@ function TriggerRow({
             </div>
           ) : (
             <p className="text-amber-600 text-xs dark:text-amber-500">
-              {t("Email isn't set up on OpenBot yet, so this address can't receive mail. An admin has to turn it on.")}
+              {t(
+                "Email isn't set up on CCP-Bot yet, so this address can't receive mail. An admin has to turn it on.",
+              )}
             </p>
           ))}
         {generated && (
@@ -531,7 +536,7 @@ function NewTriggerDialog({
         <DialogHeader>
           <DialogTitle>{t("Add trigger")}</DialogTitle>
           <DialogDescription>
-            {t("Something outside OpenBot that starts this responsibility.")}
+            {t("Something outside CCP-Bot that starts this responsibility.")}
           </DialogDescription>
         </DialogHeader>
         <DialogBody className="mt-4 overflow-y-auto">
@@ -591,7 +596,9 @@ function NewTriggerDialog({
                     />
                   </Field>
                   <Field>
-                    <FieldLabel htmlFor={`${id}-mode`}>{t("Fire on")}</FieldLabel>
+                    <FieldLabel htmlFor={`${id}-mode`}>
+                      {t("Fire on")}
+                    </FieldLabel>
                     <Select
                       items={SLACK_MODE}
                       onValueChange={(value) => {
@@ -654,7 +661,9 @@ function NewTriggerDialog({
               ) : (
                 <FieldGroup className="sm:grid sm:grid-cols-2">
                   <Field className="sm:col-span-2">
-                    <FieldLabel htmlFor={`${id}-types`}>{t("Event types")}</FieldLabel>
+                    <FieldLabel htmlFor={`${id}-types`}>
+                      {t("Event types")}
+                    </FieldLabel>
                     <Input
                       id={`${id}-types`}
                       placeholder={placeholder[kind]}
@@ -674,7 +683,9 @@ function NewTriggerDialog({
                     />
                   </Field>
                   <Field>
-                    <FieldLabel htmlFor={`${id}-equals`}>{t("equals")}</FieldLabel>
+                    <FieldLabel htmlFor={`${id}-equals`}>
+                      {t("equals")}
+                    </FieldLabel>
                     <Input
                       id={`${id}-equals`}
                       placeholder={t("ENG")}
@@ -743,7 +754,9 @@ function NewTriggerDialog({
             size="sm"
             type="submit"
           >
-            {create.isPending ? t("Adding…") : `Add ${KIND_LABEL[kind]} trigger`}
+            {create.isPending
+              ? t("Adding…")
+              : `Add ${KIND_LABEL[kind]} trigger`}
           </Button>
         </DialogFooter>
       </DialogContent>

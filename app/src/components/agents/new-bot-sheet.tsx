@@ -1,4 +1,4 @@
-import { summaryFor, WEB_HARNESSES } from "@openbot/shared/harnesses";
+import { summaryFor, WEB_HARNESSES } from "@ccpbot/shared/harnesses";
 import {
   IconCheck,
   IconInfoCircle,
@@ -408,7 +408,9 @@ function NewBotFlow({ onCreated }: { onCreated: (agentId: string) => void }) {
                 />
                 {!builtInAvailable && (
                   <p className="mt-3 text-sm text-muted-foreground">
-                    {t("An admin must enable built-in hosting before you can run a Bot here.")}
+                    {t(
+                      "An admin must enable built-in hosting before you can run a Bot here.",
+                    )}
                   </p>
                 )}
               </>
@@ -562,7 +564,9 @@ function CreatedView({ name }: { name: string }) {
         <h2 className="break-words font-semibold text-xl tracking-tight">
           {name} {t("is ready")}
         </h2>
-        <p className="mt-1 text-muted-foreground text-sm">{t("Taking you to it…")}</p>
+        <p className="mt-1 text-muted-foreground text-sm">
+          {t("Taking you to it…")}
+        </p>
       </motion.div>
     </div>
   );
@@ -650,14 +654,18 @@ function AboutStep({
       <Field>
         <FieldLabel htmlFor="new-bot-instructions">
           {t("Instructions")}
-          <span className="font-normal text-muted-foreground">{t("Optional")}</span>
+          <span className="font-normal text-muted-foreground">
+            {t("Optional")}
+          </span>
         </FieldLabel>
         <Textarea
           autoComplete="off"
           id="new-bot-instructions"
           maxLength={1000}
           onChange={(event) => onInstructions(event.target.value)}
-          placeholder={t("Review receipts, categorize expenses, and prepare reimbursement reports.")}
+          placeholder={t(
+            "Review receipts, categorize expenses, and prepare reimbursement reports.",
+          )}
           rows={5}
           value={instructions}
         />
@@ -908,7 +916,9 @@ function EndpointStep({
 
       <FieldGroup>
         <Field data-invalid={endpointError ? true : undefined}>
-          <FieldLabel htmlFor="new-bot-endpoint">{t("Agent address")}</FieldLabel>
+          <FieldLabel htmlFor="new-bot-endpoint">
+            {t("Agent address")}
+          </FieldLabel>
           <Input
             aria-invalid={endpointError ? true : undefined}
             autoComplete="off"
@@ -926,14 +936,18 @@ function EndpointStep({
             />
           ) : (
             <FieldDescription>
-              {t("Any agent that speaks AG-UI works. OpenBot connects to it, so it has to be reachable from OpenBot's server.")}
+              {t(
+                "Any agent that speaks AG-UI works. CCP-Bot connects to it, so it has to be reachable from CCP-Bot's server.",
+              )}
             </FieldDescription>
           )}
         </Field>
         <Field>
           <FieldLabel htmlFor="new-bot-key">
             {t("Key")}
-            <span className="font-normal text-muted-foreground">{t("Optional")}</span>
+            <span className="font-normal text-muted-foreground">
+              {t("Optional")}
+            </span>
           </FieldLabel>
           <Input
             autoComplete="off"
@@ -944,7 +958,8 @@ function EndpointStep({
             value={secret}
           />
           <FieldDescription>
-            {t("Sent as an")} <code>{t("Authorization")}</code> {t("header with every request, and stored encrypted.")}
+            {t("Sent as an")} <code>{t("Authorization")}</code>{" "}
+            {t("header with every request, and stored encrypted.")}
           </FieldDescription>
         </Field>
       </FieldGroup>

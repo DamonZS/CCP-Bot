@@ -5,8 +5,8 @@ import { t } from "@/lib/i18n";
 
 /**
  * OpenDots' workspace page: a small eyebrow, a large quiet title and one line under it, with the
- * page's primary action on the title's right. What sits beneath is OpenBot's own list, so every
- * switch, Run now, history and delete OpenBot offers is still there.
+ * page's primary action on the title's right. What sits beneath is CCP-Bot's own list, so every
+ * switch, Run now, history and delete CCP-Bot offers is still there.
  */
 function OpenDotsPage({
   eyebrow = "YOUR WORKSPACE",
@@ -44,11 +44,13 @@ function OpenDotsPage({
   );
 }
 
-/** Routines: what each Bot does on a schedule, as OpenBot's routines list. */
+/** Routines: what each Bot does on a schedule, as CCP-Bot's routines list. */
 export function RoutinesScreen() {
   return (
     <OpenDotsPage
-      description={t("What your Bots do on a schedule. Ask a Bot to set one up. Pause, run or delete one here.")}
+      description={t(
+        "What your Bots do on a schedule. Ask a Bot to set one up. Pause, run or delete one here.",
+      )}
       title={t("Routines")}
     >
       <RoutinesList embedded />
@@ -56,7 +58,7 @@ export function RoutinesScreen() {
   );
 }
 
-/** "Memories": what the person's Bots know about them, as OpenBot's memory. */
+/** "Memories": what the person's Bots know about them, as CCP-Bot's memory. */
 export function MemoriesScreen() {
   return (
     <OpenDotsPage

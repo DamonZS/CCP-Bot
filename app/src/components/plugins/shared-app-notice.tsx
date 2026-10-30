@@ -50,12 +50,14 @@ export function SharedAppNotice({
       {apps.map((app) =>
         waiting.has(app.serverId) ? (
           <p className="text-muted-foreground" key={app.serverId}>
-            {t("Waiting for an admin to approve the shared")} {app.title} {t("account.")}
+            {t("Waiting for an admin to approve the shared")} {app.title}{" "}
+            {t("account.")}
           </p>
         ) : app.covered ? null : (
           <div className="flex flex-wrap items-center gap-2" key={app.serverId}>
             <p className="text-amber-700 dark:text-amber-400">
-              {t("This Bot can't use the shared")} {app.title} {t("account until an admin approves who can use the Bot.")}
+              {t("This Bot can't use the shared")} {app.title}{" "}
+              {t("account until an admin approves who can use the Bot.")}
             </p>
             <Button
               aria-label={`Request approval for ${app.title}`}

@@ -72,7 +72,10 @@ export function IdentityConnectionPage({
 
   return (
     <PageShell
-      backButton={{ label: t("Connections"), linkProps: { to: "/connections" } }}
+      backButton={{
+        label: t("Connections"),
+        linkProps: { to: "/connections" },
+      }}
       description={IDENTITY_SUMMARIES[provider]}
       title={title}
     >
@@ -118,7 +121,9 @@ function GithubTools() {
   ).some((row) => row.serverId === app.id);
   return (
     <PageSection
-      description={t("Lets your Bots read and change your repositories as you. You connect this separately from your account above.")}
+      description={t(
+        "Lets your Bots read and change your repositories as you. You connect this separately from your account above.",
+      )}
       title={t("Tools")}
     >
       <PageRows>

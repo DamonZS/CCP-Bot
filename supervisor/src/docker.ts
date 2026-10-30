@@ -24,7 +24,7 @@ import {
  * root on the host, a supervisor that forwarded arbitrary calls would hand that straight back
  * through a politer door. Four verbs, expressed in whose computer it is, and nothing else.
  *
- * Every write is scoped by ownership. Containers are created carrying `openbot.supervisor`, and
+ * Every write is scoped by ownership. Containers are created carrying `ccpbot.supervisor`, and
  * stop, reset and inspect refuse anything without it. A container whose name happens to match but
  * lacks the label is treated as absent.
  */
@@ -305,7 +305,7 @@ async function inspectOwned(names: ComputerNames): Promise<{
  * Whether the computer that exists is running the image this deployment now ships.
  *
  * `ensure` reused any container with the right name, whatever it was built from, so once a Bot had a
- * computer, upgrading OpenBot never reached it. Rebuilding the image moves the tag; the container
+ * computer, upgrading CCP-Bot never reached it. Rebuilding the image moves the tag; the container
  * goes on running the old one, indefinitely, and nothing says so. Found by rebuilding every image,
  * restarting the whole stack, and watching a Bot's computer answer with in-memory state from an hour
  * earlier: `docker compose down` does not touch these, because the supervisor makes them rather than
@@ -766,7 +766,7 @@ export type CarryOverOutcome = "copied" | "kept" | "done" | "absent";
  * cannot reach it. Both volumes are mounted rather than tarred through a host directory, so nothing
  * of a person's logins or files ever lands on the host's disk.
  *
- * Once, recorded in the destination: a marker under `.openbot-carried-over/` says it was done, and
+ * Once, recorded in the destination: a marker under `.ccpbot-carried-over/` says it was done, and
  * what the owner already has for that Bot is never overwritten. Staged under a dot-name and moved
  * into place, so the computer never sees half of it; a dot-name is not a seat it lists.
  *
@@ -777,12 +777,12 @@ export type CarryOverOutcome = "copied" | "kept" | "done" | "absent";
  * The exit code is the outcome, so nothing depends on parsing a log stream.
  */
 const CARRY_OVER_SCRIPT = `set -eu
-marks="$ROOT/.openbot-carried-over"
+marks="$ROOT/.ccpbot-carried-over"
 dest="$ROOT/$DEST"
 if [ -e "$marks/$BOT" ]; then exit 11; fi
 mkdir -p "$marks"
 if [ -e "$dest" ]; then touch "$marks/$BOT"; exit 10; fi
-staging="$ROOT/.openbot-carrying-$BOT"
+staging="$ROOT/.ccpbot-carrying-$BOT"
 rm -rf "$staging"
 mkdir "$staging"
 cp -a /carry-from/. "$staging"/
@@ -821,7 +821,7 @@ async function copyVolume(input: {
       Labels: {
         [OWNER_LABEL]: "true",
         [NAMESPACE_LABEL]: NAMESPACE,
-        "openbot.carry-over": input.botId,
+        "ccpbot.carry-over": input.botId,
       },
       Entrypoint: ["sh", "-c"],
       Cmd: [CARRY_OVER_SCRIPT],

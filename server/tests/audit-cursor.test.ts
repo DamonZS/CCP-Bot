@@ -10,7 +10,7 @@ const adminAuth = {
   handler: () => new Response(null, { status: 204 }),
   api: {
     getSession: async () => ({
-      user: { id: "admin", email: "admin@openbot.test" },
+      user: { id: "admin", email: "admin@ccpbot.test" },
     }),
   },
 };
@@ -43,13 +43,13 @@ describe("audit cursor validation", () => {
   test("a corrupt cursor is a query error, not a server failure", () => {
     expect(() =>
       auditQueryFromUrl(
-        new URL("http://openbot.local/api/admin/audit-events?cursor=!!bogus!!"),
+        new URL("http://ccpbot.local/api/admin/audit-events?cursor=!!bogus!!"),
       ),
     ).toThrow(AuditQueryError);
     expect(() =>
       auditQueryFromUrl(
         new URL(
-          "http://openbot.local/api/admin/audit-events?cursor=bm90LWpzb24=",
+          "http://ccpbot.local/api/admin/audit-events?cursor=bm90LWpzb24=",
         ),
       ),
     ).toThrow(/cursor must be a valid audit page cursor/);
@@ -86,7 +86,7 @@ describe("audit cursor validation", () => {
         try {
           auditQueryFromUrl(
             new URL(
-              `http://openbot.local/api/admin/audit-events?cursor=${cursor}`,
+              `http://ccpbot.local/api/admin/audit-events?cursor=${cursor}`,
             ),
           );
           return "the cursor was accepted";
@@ -131,7 +131,7 @@ describe("audit cursor validation", () => {
         try {
           auditQueryFromUrl(
             new URL(
-              `http://openbot.local/api/admin/audit-events?cursor=${cursor}`,
+              `http://ccpbot.local/api/admin/audit-events?cursor=${cursor}`,
             ),
           );
           return "the cursor was accepted";
@@ -151,7 +151,7 @@ describe("audit cursor validation", () => {
   test("a well-formed cursor still parses", () => {
     const query = auditQueryFromUrl(
       new URL(
-        `http://openbot.local/api/admin/audit-events?cursor=${validCursor()}&limit=10`,
+        `http://ccpbot.local/api/admin/audit-events?cursor=${validCursor()}&limit=10`,
       ),
     );
     expect(query.cursor).toBe(validCursor());
@@ -171,7 +171,7 @@ describe("audit cursor validation", () => {
     );
 
     const response = await app.request(
-      "http://openbot.local/api/admin/audit-events?cursor=!!bogus!!",
+      "http://ccpbot.local/api/admin/audit-events?cursor=!!bogus!!",
     );
 
     expect(response.status).toBe(400);
@@ -195,7 +195,7 @@ describe("audit cursor validation", () => {
     );
 
     const response = await app.request(
-      `http://openbot.local/api/admin/audit-events?cursor=${validCursor()}`,
+      `http://ccpbot.local/api/admin/audit-events?cursor=${validCursor()}`,
     );
 
     expect(response.status).toBe(200);

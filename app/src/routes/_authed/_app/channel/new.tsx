@@ -198,7 +198,9 @@ function RouteComponent() {
               >
                 <AgentOrb size="24px" state="idle" />
                 <span className="font-medium">{t("New Bot")}</span>
-                <span className="text-muted-foreground">{t("Create a new Bot")}</span>
+                <span className="text-muted-foreground">
+                  {t("Create a new Bot")}
+                </span>
               </button>
             </div>
             <ComboboxEmpty>{t("No Bots found.")}</ComboboxEmpty>

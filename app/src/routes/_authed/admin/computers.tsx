@@ -148,7 +148,9 @@ function ComputersPage() {
 
   return (
     <PageShell
-      description={t("Each person's computer, and each isolated Bot's. Every Bot keeps its own browser profile on it, which keeps that Bot signed in. Resetting a computer signs every Bot on it out of everything.")}
+      description={t(
+        "Each person's computer, and each isolated Bot's. Every Bot keeps its own browser profile on it, which keeps that Bot signed in. Resetting a computer signs every Bot on it out of everything.",
+      )}
       title={t("Computers")}
     >
       {problem ? (
@@ -165,11 +167,17 @@ function ComputersPage() {
           <span className="font-medium">
             {t("Every person's Bots run on one computer.")}
           </span>{" "}
-          {t("Each person keeps their own browser profile and folder for each Bot, so logins aren't shared. A command one Bot runs can still read another's files. Set")} <code>{t("COMPUTER_SUPERVISOR_URL")}</code> {t("to give each person a computer of their own.")}
+          {t(
+            "Each person keeps their own browser profile and folder for each Bot, so logins aren't shared. A command one Bot runs can still read another's files. Set",
+          )}{" "}
+          <code>{t("COMPUTER_SUPERVISOR_URL")}</code>{" "}
+          {t("to give each person a computer of their own.")}
         </p>
       ) : isolation === "per-person" ? (
         <p className="mt-4 rounded-md border border-border bg-muted/40 px-3 py-2 text-muted-foreground text-sm">
-          {t("Each person has their own computer, and every Bot they use runs on it, public Bots made by other people included. Each Bot keeps its own browser profile and folder there, but a command one Bot runs can reach anything else on that person's computer. An isolated Bot has a computer of its own.")}
+          {t(
+            "Each person has their own computer, and every Bot they use runs on it, public Bots made by other people included. Each Bot keeps its own browser profile and folder there, but a command one Bot runs can reach anything else on that person's computer. An isolated Bot has a computer of its own.",
+          )}
         </p>
       ) : null}
 
@@ -207,7 +215,10 @@ function ComputersPage() {
           </p>
         ) : null}
         {computers === null && problem ? (
-          <PageEmpty icon={IconAlertTriangle} title={t("Couldn't load the list")} />
+          <PageEmpty
+            icon={IconAlertTriangle}
+            title={t("Couldn't load the list")}
+          />
         ) : computers === null ? null : computers.length === 0 ? (
           <PageEmpty icon={IconDeviceDesktop} title={t("No computers yet")}>
             {t("One shows up the first time a Bot opens a page.")}
@@ -226,7 +237,9 @@ function ComputersPage() {
                       {" · "}
                       {computer.running
                         ? `Browser running since ${new Date(computer.startedAt ?? "").toLocaleTimeString()}`
-                        : t("No browser running. It starts when the Bot next needs it.")}
+                        : t(
+                            "No browser running. It starts when the Bot next needs it.",
+                          )}
                       {" · "}
                       {computer.egress === undefined
                         ? t("Egress not reported")
@@ -253,7 +266,9 @@ function ComputersPage() {
                       size="sm"
                       variant="outline"
                     >
-                      {busy === rowId(computer) ? t("Working…") : t("Stop browser")}
+                      {busy === rowId(computer)
+                        ? t("Working…")
+                        : t("Stop browser")}
                     </Button>
                     <Button
                       disabled={busy === rowId(computer)}
@@ -291,8 +306,12 @@ function ComputersPage() {
             </DialogTitle>
             <DialogDescription>
               {confirming?.kind === "person" && !confirming.botId
-                ? t("Every Bot's profile on this person's computer is deleted. Each is signed out of every service and starts clean.")
-                : t("Its profile is deleted. The Bot is signed out of every service and starts clean.")}{" "}
+                ? t(
+                    "Every Bot's profile on this person's computer is deleted. Each is signed out of every service and starts clean.",
+                  )
+                : t(
+                    "Its profile is deleted. The Bot is signed out of every service and starts clean.",
+                  )}{" "}
               {t("You can't undo this.")}
             </DialogDescription>
           </DialogHeader>
@@ -332,7 +351,9 @@ function ComputersPage() {
               {t("Update")} {confirmingUpdate ? titleOf(confirmingUpdate) : ""}?
             </DialogTitle>
             <DialogDescription>
-              {t("It moves to the computer image this deployment now runs. Its files and sign-ins are kept. If it's running, it restarts and stops what it's doing.")}
+              {t(
+                "It moves to the computer image this deployment now runs. Its files and sign-ins are kept. If it's running, it restarts and stops what it's doing.",
+              )}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
@@ -361,8 +382,16 @@ function ComputersPage() {
       </Dialog>
 
       <p className="mt-4 text-muted-foreground text-sm">
-        <strong>{t("Stop")}</strong> {t("closes the computer's browsers and keeps their logins. It starts again the next time a Bot needs it.")}{" "}
-        <strong>{t("Reset")}</strong> {t("deletes the profiles and signs every Bot on it out of everything.")} <strong>{t("Update computer")}</strong> {t("shows when a computer runs an older image. It moves the computer to the new one and keeps its files and sign-ins. All three show in")}{" "}
+        <strong>{t("Stop")}</strong>{" "}
+        {t(
+          "closes the computer's browsers and keeps their logins. It starts again the next time a Bot needs it.",
+        )}{" "}
+        <strong>{t("Reset")}</strong>{" "}
+        {t("deletes the profiles and signs every Bot on it out of everything.")}{" "}
+        <strong>{t("Update computer")}</strong>{" "}
+        {t(
+          "shows when a computer runs an older image. It moves the computer to the new one and keeps its files and sign-ins. All three show in",
+        )}{" "}
         <Link className="underline" to="/admin/audit">
           {t("Audit")}
         </Link>
@@ -413,7 +442,9 @@ function HostFoldersSection({
 
   return (
     <PageSection
-      description={t("Choose folders a Bot can read on this computer. The desktop app asks before each edit or command. Access ends when you stop OpenBot.")}
+      description={t(
+        "Choose folders a Bot can read on this computer. The desktop app asks before each edit or command. Access ends when you stop CCP-Bot.",
+      )}
       title={t("Folders on this computer")}
     >
       {problem ? (
@@ -427,7 +458,9 @@ function HostFoldersSection({
 
       {!connected && !loading ? (
         <p className="mb-3 rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-sm">
-          {t("The desktop app is offline. Open it to approve folders or run commands.")}
+          {t(
+            "The desktop app is offline. Open it to approve folders or run commands.",
+          )}
         </p>
       ) : null}
 
@@ -460,7 +493,9 @@ function HostFoldersSection({
                     size="sm"
                     variant="outline"
                   >
-                    {requestingBotId === botId ? t("Waiting…") : t("Choose folder")}
+                    {requestingBotId === botId
+                      ? t("Waiting…")
+                      : t("Choose folder")}
                   </Button>
                 </ItemActions>
               </Item>
@@ -472,7 +507,9 @@ function HostFoldersSection({
 
       <div className="mt-3 flex flex-wrap items-center justify-between gap-3 text-muted-foreground text-sm">
         <p>
-          {t("Folders are read-only. When a Bot needs to write, the desktop app asks you first.")}
+          {t(
+            "Folders are read-only. When a Bot needs to write, the desktop app asks you first.",
+          )}
         </p>
         <div className="flex items-center gap-3">
           <Button

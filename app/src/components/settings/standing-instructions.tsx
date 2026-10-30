@@ -58,7 +58,9 @@ export function StandingInstructions() {
 
   return (
     <PageSection
-      description={t("Applies to every Bot in every conversation. A Bot's role says what it does. This says how you want it done, like your writing style.")}
+      description={t(
+        "Applies to every Bot in every conversation. A Bot's role says what it does. This says how you want it done, like your writing style.",
+      )}
       title={t("Standing instructions")}
     >
       {stored.isPending ? null : stored.error ? (
@@ -75,7 +77,9 @@ export function StandingInstructions() {
               setDraft(event.target.value);
               setSaved(false);
             }}
-            placeholder={t("We are two people, not a team. Write in British English, and never call our product a platform.")}
+            placeholder={t(
+              "We are two people, not a team. Write in British English, and never call our product a platform.",
+            )}
             value={text}
           />
           <div className="flex flex-row items-center justify-between gap-4">
@@ -86,7 +90,8 @@ export function StandingInstructions() {
                   : "text-muted-foreground text-xs"
               }
             >
-              {text.trim().length} {t("of")} {INSTRUCTIONS_LIMIT} {t("characters")}
+              {text.trim().length} {t("of")} {INSTRUCTIONS_LIMIT}{" "}
+              {t("characters")}
             </p>
             <div className="flex flex-row items-center gap-3">
               {/*
@@ -98,7 +103,9 @@ export function StandingInstructions() {
                   {problem}
                 </span>
               ) : saved ? (
-                <span className="text-muted-foreground text-xs">{t("Saved")}</span>
+                <span className="text-muted-foreground text-xs">
+                  {t("Saved")}
+                </span>
               ) : null}
               <Button
                 disabled={save.isPending || over || unchanged}

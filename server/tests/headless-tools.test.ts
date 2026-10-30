@@ -6,8 +6,8 @@ import {
   HttpAgent,
   type RunAgentInput,
 } from "@ag-ui/client";
-import { HeadlessToolsMiddleware } from "@openbot/toolkit/headless-tools";
-import { createTurnRunner, type RunnerLike } from "@openbot/toolkit/run-turn";
+import { HeadlessToolsMiddleware } from "@ccpbot/toolkit/headless-tools";
+import { createTurnRunner, type RunnerLike } from "@ccpbot/toolkit/run-turn";
 import { Observable } from "rxjs";
 import { serverTurnAdmission } from "../src/agents/turn-admission";
 import { parseApprovalContinuation } from "../src/approvals/types";
@@ -597,7 +597,7 @@ test("remote backend tool results are persisted without executing the client too
   ).toHaveLength(1);
 });
 
-test("a computer tool the caller offers is left to the caller when OpenBot adds plugin tools beside it", async () => {
+test("a computer tool the caller offers is left to the caller when CCP-Bot adds plugin tools beside it", async () => {
   const remote = remoteTurn((input) =>
     lifecycle(
       input,
@@ -718,7 +718,7 @@ test("human help creates a durable suspension, persists the waiting event, and r
     persisted.filter((event) => event.type === EventType.CUSTOM),
   ).toMatchObject([
     {
-      name: "openbot.headless.waiting",
+      name: "ccpbot.headless.waiting",
       value: { requestId: "durable-handoff" },
     },
   ]);

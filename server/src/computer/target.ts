@@ -271,7 +271,7 @@ export function checkNavigationTarget(
     return {
       allowed: false,
       reason:
-        "That address holds OpenBot's own cloud keys, so the Bot can never open it.",
+        "That address holds CCP-Bot's own cloud keys, so the Bot can never open it.",
     };
   }
 
@@ -290,7 +290,7 @@ export function checkNavigationTarget(
     return {
       allowed: false,
       reason:
-        "That address is inside OpenBot's own network, so the Bot can't open it.",
+        "That address is inside CCP-Bot's own network, so the Bot can't open it.",
     };
   }
 

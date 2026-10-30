@@ -49,9 +49,9 @@ function intelligence(status: number, body: unknown) {
 const serviceToken = { token: "synthetic-service-token", projectId: "7" };
 
 describe("creating the container with a service token", () => {
-  test("posts the openbot container to the token's project and proves it with the key", async () => {
+  test("posts the ccpbot container to the token's project and proves it with the key", async () => {
     const api = intelligence(201, {
-      container: { id: "openbot", projectId: 7, name: "OpenBot" },
+      container: { id: "ccpbot", projectId: 7, name: "CCP-Bot" },
     });
     const runtimeKey = key(["absent", "present"]);
     expect(
@@ -76,8 +76,8 @@ describe("creating the container with a service token", () => {
     const headers = request.init.headers as Record<string, string>;
     expect(headers["x-copilotkit-ei-service-token"]).toBe(serviceToken.token);
     expect(JSON.parse(String(request.init.body))).toEqual({
-      id: "openbot",
-      name: "OpenBot",
+      id: "ccpbot",
+      name: "CCP-Bot",
     });
     expect(runtimeKey.probes).toBe(2);
   });
@@ -114,7 +114,7 @@ describe("creating the container with a service token", () => {
 
   test("a container in another project is reported, not assigned", async () => {
     const wrongProject = intelligence(201, {
-      container: { id: "openbot", projectId: 8 },
+      container: { id: "ccpbot", projectId: 8 },
     });
     await expect(
       ensureLearningContainer({
@@ -125,9 +125,9 @@ describe("creating the container with a service token", () => {
         serviceToken,
         fetch: wrongProject.fetch,
       }),
-    ).rejects.toThrow("other than the openbot container");
+    ).rejects.toThrow("other than the ccpbot container");
     const invisible = intelligence(201, {
-      container: { id: "openbot", projectId: 7 },
+      container: { id: "ccpbot", projectId: 7 },
     });
     await expect(
       ensureLearningContainer({
@@ -180,7 +180,7 @@ describe("with no credential that can create it", () => {
     expect(managed).toContain("npx --yes copilotkit@latest login");
     expect(managed).toContain("bun scripts/setup-learning.ts");
     expect(managed).toContain("config.learning.setup.cliLoginSecret");
-    expect(managed).toContain('ID "openbot"');
+    expect(managed).toContain('ID "ccpbot"');
     const selfHosted = learningSetupInstructions(SELF_HOSTED);
     expect(selfHosted).toContain("bun scripts/setup-learning.ts");
     expect(selfHosted).toContain(
@@ -191,7 +191,7 @@ describe("with no credential that can create it", () => {
 
 describe("the CopilotKit CLI", () => {
   test("a login is found where the CLI keeps it, and only there", async () => {
-    const home = await mkdtemp(join(tmpdir(), "openbot-cli-home-"));
+    const home = await mkdtemp(join(tmpdir(), "ccpbot-cli-home-"));
     directories.push(home);
     expect(cliLoginPresent({}, "darwin", home)).toBe(false);
     await mkdir(join(home, "Library/Preferences/copilotkit-auth-nodejs"), {
@@ -217,7 +217,7 @@ describe("the CopilotKit CLI", () => {
   test("runs without this process's secrets", () => {
     const environment = cliEnvironment({
       PATH: "/usr/bin",
-      HOME: "/home/openbot",
+      HOME: "/home/ccpbot",
       COPILOTKIT_CONFIG_DIR: "/var/run/copilotkit",
       INTELLIGENCE_API_KEY: "cpk-secret",
       INTELLIGENCE_SERVICE_TOKEN: "secret",
@@ -226,7 +226,7 @@ describe("the CopilotKit CLI", () => {
     });
     expect(environment).toEqual({
       PATH: "/usr/bin",
-      HOME: "/home/openbot",
+      HOME: "/home/ccpbot",
       COPILOTKIT_CONFIG_DIR: "/var/run/copilotkit",
       COPILOTKIT_TELEMETRY_DISABLED: "1",
     });

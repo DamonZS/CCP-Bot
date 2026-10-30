@@ -22,7 +22,8 @@ export function NewSkill() {
       <header>
         <h1 className="text-2xl font-semibold">{t("New skill")}</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          {t("An instruction you start with")} <code>/</code>{t(". Only you see it, and it works on Bots you own.")}
+          {t("An instruction you start with")} <code>/</code>
+          {t(". Only you see it, and it works on Bots you own.")}
         </p>
       </header>
 

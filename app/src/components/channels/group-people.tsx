@@ -68,7 +68,9 @@ export function GroupPeopleButton({ channelId }: { channelId: string }) {
           <DialogHeader>
             <DialogTitle>{t("People in this group")}</DialogTitle>
             <DialogDescription>
-              {t("Everyone here sees the whole conversation. Every Bot in it answers them.")}
+              {t(
+                "Everyone here sees the whole conversation. Every Bot in it answers them.",
+              )}
             </DialogDescription>
           </DialogHeader>
           <DialogBody className="mt-4 grid gap-4 overflow-y-auto">
@@ -88,7 +90,9 @@ export function GroupPeopleButton({ channelId }: { channelId: string }) {
                           {self ? t("You") : (person.name ?? person.email)}
                         </ItemTitle>
                         <ItemDescription>
-                          {person.creator ? t("Started this group") : person.email}
+                          {person.creator
+                            ? t("Started this group")
+                            : person.email}
                         </ItemDescription>
                       </ItemContent>
                       {removable ? (

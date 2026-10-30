@@ -20,7 +20,7 @@ import {
   isPersonBrowserId,
   PEOPLE_ONLY_ENV,
   realBrowserComputerPaths,
-} from "../../shared/openbot-browser";
+} from "../../shared/ccpbot-browser";
 
 /** Why a Bot route is refused for a person's browser id. */
 export const PERSONS_OWN_BROWSER =
@@ -39,7 +39,7 @@ export class BrowserNotOpenError extends Error {
 
 const PERSON_PATHS = new Set<string>([
   ...Object.values(browserComputerPaths),
-  // The person's own everyday browser, on OpenBot Desktop: brought forward, or shown the
+  // The person's own everyday browser, on CCP-Bot Desktop: brought forward, or shown the
   // Recorder's store page. Nothing in it is read or driven (see real-browser.ts).
   ...Object.values(realBrowserComputerPaths),
   // The live screen, and the person's own input through it.
@@ -84,7 +84,7 @@ export function personHoldsTheWheel(since: string): ComputerControlState {
  * prompt-injected Bot could read `/profiles/person-<hex>/Default/Cookies` straight off the disk. So the computer
  * decides this for itself, from what it was started with, as well as the server deciding where to send the person:
  *
- *   - `people`: OpenBot Desktop's host-side computer (`COMPUTER_PEOPLE_ONLY=on`), which runs people's own browsers and
+ *   - `people`: CCP-Bot Desktop's host-side computer (`COMPUTER_PEOPLE_ONLY=on`), which runs people's own browsers and
  *     no Bot.
  *   - `one`: a computer started for one id (`COMPUTER_BOT_ID`): an isolated Bot's, or a person's own browser's, as the
  *     supervisor and a Sandbox start them. Started for a person's browser, it runs that browser and nothing else.
@@ -111,15 +111,15 @@ export function computerOwner(
   return person ? { kind: "person", id: person } : { kind: "shared" };
 }
 
-/** Why a person's browser is refused on a computer Bots run on. Said to whoever runs OpenBot: the server tells the
+/** Why a person's browser is refused on a computer Bots run on. Said to whoever runs CCP-Bot: the server tells the
  * person their browser cannot open and who can see to it. */
 export const NOT_ITS_OWN_COMPUTER =
-  "A person's own browser runs only on a computer of its own, and Bots run on this one. Give people's browsers their own computers (COMPUTER_SUPERVISOR_URL or a Sandbox), or OpenBot Desktop's.";
+  "A person's own browser runs only on a computer of its own, and Bots run on this one. Give people's browsers their own computers (COMPUTER_SUPERVISOR_URL or a Sandbox), or CCP-Bot Desktop's.";
 
 /**
  * Why Record is refused in a Bot's browser on the computer every person shares (`shared`, not a person's own). Record hands the Recorder there a person's own
  * connection, kept in the Bot's profile until Stop, and every other Bot here can run a shell as the same user and read
- * it. Said to whoever runs OpenBot, as `NOT_ITS_OWN_COMPUTER` is; the server tells the person in its own words.
+ * it. Said to whoever runs CCP-Bot, as `NOT_ITS_OWN_COMPUTER` is; the server tells the person in its own words.
  */
 export const NOT_ITS_OWN_COMPUTER_RECORD =
   "Record in a Bot's browser runs only on a computer that Bot does not share, and every Bot runs on this one. Give each Bot its own computer (COMPUTER_SUPERVISOR_URL or a Sandbox).";

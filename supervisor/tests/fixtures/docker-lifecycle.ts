@@ -34,8 +34,8 @@ function withDocker() {
   return runtime;
 }
 
-const IMAGE = `openbot-supervisor-fixture:${namespace}-one`;
-const OTHER = `openbot-supervisor-fixture:${namespace}-two`;
+const IMAGE = `ccpbot-supervisor-fixture:${namespace}-one`;
+const OTHER = `ccpbot-supervisor-fixture:${namespace}-two`;
 const fixtureImages: string[] = [];
 
 const BOT = "supervisortestbot";
@@ -57,9 +57,9 @@ if (!legacyFound.ok) throw new Error(legacyFound.reason);
 const LEGACY = legacyFound.names;
 /** What every computer of this supervisor's carried before kinds existed. */
 const LEGACY_LABELS = {
-  "openbot.supervisor": "true",
-  "openbot.namespace": namespace,
-  "openbot.bot-id": LEGACY_BOT,
+  "ccpbot.supervisor": "true",
+  "ccpbot.namespace": namespace,
+  "ccpbot.bot-id": LEGACY_BOT,
 };
 
 function isMissing(error: unknown): boolean {
@@ -77,10 +77,10 @@ async function remove(container: string) {
     const info = await docker.getContainer(container).inspect();
     const labels = info.Config?.Labels;
     if (
-      labels?.["openbot.test-fixture"] !== namespace &&
+      labels?.["ccpbot.test-fixture"] !== namespace &&
       !(
-        labels?.["openbot.namespace"] === namespace &&
-        labels?.["openbot.bot-id"] === BOT
+        labels?.["ccpbot.namespace"] === namespace &&
+        labels?.["ccpbot.bot-id"] === BOT
       )
     ) {
       throw new Error("Refusing to clean a container outside this fixture.");
@@ -103,8 +103,8 @@ async function removeVolumes() {
     try {
       const info = await withDocker().docker.getVolume(volume).inspect();
       if (
-        info.Labels?.["openbot.namespace"] !== namespace ||
-        info.Labels?.["openbot.bot-id"] !== BOT
+        info.Labels?.["ccpbot.namespace"] !== namespace ||
+        info.Labels?.["ccpbot.bot-id"] !== BOT
       ) {
         throw new Error("Refusing to clean a volume outside this fixture.");
       }
@@ -159,7 +159,7 @@ afterAll(async () => {
   await removeNamespace();
   for (const image of fixtureImages) {
     const info = await withDocker().docker.getImage(image).inspect();
-    if (info.Config.Labels?.["openbot.test-fixture"] !== namespace)
+    if (info.Config.Labels?.["ccpbot.test-fixture"] !== namespace)
       throw new Error("Foreign fixture image");
     await withDocker().docker.getImage(image).remove();
   }
@@ -180,7 +180,7 @@ async function plant(labels: Record<string, string>, health?: boolean) {
   await withDocker().docker.createContainer({
     name: names.container,
     Image: IMAGE,
-    Labels: { ...labels, "openbot.test-fixture": namespace },
+    Labels: { ...labels, "ccpbot.test-fixture": namespace },
     ...(health
       ? {}
       : {
@@ -196,10 +196,10 @@ async function plant(labels: Record<string, string>, health?: boolean) {
 }
 
 const OURS = {
-  "openbot.supervisor": "true",
-  "openbot.namespace": namespace,
-  "openbot.computer-kind": "bot",
-  "openbot.bot-id": BOT,
+  "ccpbot.supervisor": "true",
+  "ccpbot.namespace": namespace,
+  "ccpbot.computer-kind": "bot",
+  "ccpbot.bot-id": BOT,
 };
 
 /**
@@ -210,7 +210,7 @@ async function removeNamespace() {
   const docker = withDocker().docker;
   const containers = await docker.listContainers({
     all: true,
-    filters: { label: [`openbot.namespace=${namespace}`] },
+    filters: { label: [`ccpbot.namespace=${namespace}`] },
   });
   for (const container of containers) {
     await docker
@@ -221,7 +221,7 @@ async function removeNamespace() {
       });
   }
   const { Volumes } = await docker.listVolumes({
-    filters: { label: [`openbot.namespace=${namespace}`] },
+    filters: { label: [`ccpbot.namespace=${namespace}`] },
   });
   for (const volume of Volumes ?? []) {
     await docker
@@ -247,8 +247,8 @@ async function inVolumes(binds: string[], script: string): Promise<string> {
   const container = await docker.createContainer({
     Image: IMAGE,
     Labels: {
-      "openbot.test-fixture": namespace,
-      "openbot.namespace": namespace,
+      "ccpbot.test-fixture": namespace,
+      "ccpbot.namespace": namespace,
     },
     Entrypoint: ["sh", "-c"],
     Cmd: [script],
@@ -478,8 +478,8 @@ describe("one computer per person", () => {
       .docker.getContainer(ADA.container)
       .inspect();
     expect(info.Config.Labels).toMatchObject({
-      "openbot.computer-kind": "person",
-      "openbot.person-id": "ada",
+      "ccpbot.computer-kind": "person",
+      "ccpbot.person-id": "ada",
     });
     const listed = await withDocker().supervisor.listOwned();
     expect(listed).toContainEqual(
@@ -498,7 +498,7 @@ describe("one computer per person", () => {
      * adopting it would hand one Bot another's logins.
      */
     await plant(
-      { ...OURS, "openbot.computer-kind": "", "openbot.bot-id": `bot-${BOT}` },
+      { ...OURS, "ccpbot.computer-kind": "", "ccpbot.bot-id": `bot-${BOT}` },
       true,
     );
     await expect(
@@ -623,7 +623,7 @@ describe("a private Bot's login, carried over to its owner", () => {
     await withDocker().docker.createContainer({
       name: LEGACY.container,
       Image: IMAGE,
-      Labels: { ...LEGACY_LABELS, "openbot.test-fixture": namespace },
+      Labels: { ...LEGACY_LABELS, "ccpbot.test-fixture": namespace },
       HostConfig: { Binds: [`${LEGACY.profileVolume}:/profiles`] },
     });
     await withDocker().docker.getContainer(LEGACY.container).start();

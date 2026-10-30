@@ -1,4 +1,4 @@
-import type { BrowserApiState } from "@openbot/shared/openbot-browser";
+import type { BrowserApiState } from "@ccpbot/shared/ccpbot-browser";
 import { IconBrowser } from "@tabler/icons-react";
 import { useMutation } from "@tanstack/react-query";
 import { type RefObject, useId, useRef, useState } from "react";
@@ -39,7 +39,7 @@ import { t } from "@/lib/i18n";
 const SCREEN_ASPECT_RATIO = 1280 / 800;
 
 /**
- * THE PERSON'S BROWSER, SHOWN IN THE PAGE (hosted OpenBot). A cloud browser has no window of its own, so the page is
+ * THE PERSON'S BROWSER, SHOWN IN THE PAGE (hosted CCP-Bot). A cloud browser has no window of its own, so the page is
  * the window: a bar with the recording controls, the tabs, the address bar with back, forward and reload, and the live
  * screen, which the person already drives (it is their browser, so there is no wheel to take).
  *
@@ -111,7 +111,7 @@ export function ScreenBrowser({
           />
         </RecordingBar>
       </div>
-      {/* On OpenBot Desktop, why this is a browser in the page rather than the person's own Chrome or Edge. */}
+      {/* On CCP-Bot Desktop, why this is a browser in the page rather than the person's own Chrome or Edge. */}
       {state.note ? (
         <p className="border-b border-border px-3 py-2 text-muted-foreground text-sm">
           {state.note}
@@ -227,7 +227,9 @@ function Screen({
             <LiveScreen
               computerId={computerId}
               driving
-              label={t("Your browser. Click it to type into it, and press Escape to leave it.")}
+              label={t(
+                "Your browser. Click it to type into it, and press Escape to leave it.",
+              )}
               onProblem={setProblem}
               ref={screen}
               retryKey={retryKey}

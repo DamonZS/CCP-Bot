@@ -208,7 +208,9 @@ export function ResponsibilityDialog({
                   <ItemContent>
                     <ItemTitle>{t("Run now")}</ItemTitle>
                     <ItemDescription>
-                      {t("Runs it now, for real. The Bot does the work and can post and take actions.")}
+                      {t(
+                        "Runs it now, for real. The Bot does the work and can post and take actions.",
+                      )}
                     </ItemDescription>
                   </ItemContent>
                 </Item>
@@ -287,7 +289,9 @@ export function ResponsibilityDialog({
           >
             <FieldGroup>
               <Field>
-                <FieldLabel htmlFor={`${formId}-title`}>{t("Title")}</FieldLabel>
+                <FieldLabel htmlFor={`${formId}-title`}>
+                  {t("Title")}
+                </FieldLabel>
                 <Input
                   id={`${formId}-title`}
                   value={title}
@@ -466,7 +470,10 @@ function Runs({
                   <ItemFooter className="min-w-0 flex-col items-stretch">
                     {run.waiting && (
                       <p>
-                        {t("Waiting for")} {run.waiting.kind}{t(". Answer at the top of this Bot's page or in the conversation.")}
+                        {t("Waiting for")} {run.waiting.kind}
+                        {t(
+                          ". Answer at the top of this Bot's page or in the conversation.",
+                        )}
                       </p>
                     )}
                     {run.error && (

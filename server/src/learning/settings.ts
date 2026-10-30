@@ -2,7 +2,7 @@ import {
   isLearningContainerId,
   type LearningSettings,
   type LearningTarget,
-} from "@openbot/shared/learning";
+} from "@ccpbot/shared/learning";
 import { eq } from "drizzle-orm";
 import type { Database } from "../db/client";
 import {

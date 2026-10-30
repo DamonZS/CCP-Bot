@@ -1,4 +1,4 @@
-import { researchRoleOf } from "@openbot/shared/research";
+import { researchRoleOf } from "@ccpbot/shared/research";
 import { textOf } from "../agents/message-text";
 import { researchRoleFor } from "./catalogue";
 /**

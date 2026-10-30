@@ -30,7 +30,9 @@ function RouteComponent() {
 
   return (
     <PageShell
-      description={t("Browse components that Bots can display in conversations. An admin controls which components each Bot can use.")}
+      description={t(
+        "Browse components that Bots can display in conversations. An admin controls which components each Bot can use.",
+      )}
       title={t("Components gallery")}
     >
       {components.isPending ? null : components.error ? (

@@ -138,7 +138,7 @@ export function ProposedBotCard({
       action={<Badge tone="caution">{t("Waiting on you")}</Badge>}
       caption={
         clashes
-          ? `There's already a ${clashes.title}, and it's ${clashes.ownership === "the deployment's" ? "built into OpenBot" : clashes.ownership}. Two Bots with the same name are hard to tell apart.`
+          ? `There's already a ${clashes.title}, and it's ${clashes.ownership === "the deployment's" ? "built into CCP-Bot" : clashes.ownership}. Two Bots with the same name are hard to tell apart.`
           : "Nothing is created until you press Create it."
       }
       title={titleFor(values.name, clashes)}
@@ -173,7 +173,9 @@ export function ProposedBotCard({
       </p>
 
       <p className="mt-2 text-muted-foreground text-xs">
-        {t("It starts private, with no apps. Apps are added on its page afterwards.")}
+        {t(
+          "It starts private, with no apps. Apps are added on its page afterwards.",
+        )}
       </p>
 
       {refusal ? (

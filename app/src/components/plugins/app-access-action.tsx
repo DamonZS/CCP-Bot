@@ -316,7 +316,8 @@ function OwnerGiveAction({
             rel="noreferrer"
             target="_blank"
           >
-            {t("Open")} {name}{t("'s sign-in")}
+            {t("Open")} {name}
+            {t("'s sign-in")}
           </a>
           .
         </p>
@@ -423,7 +424,8 @@ function ConnectAction({ access }: { access: AppAccess }) {
             rel="noreferrer"
             target="_blank"
           >
-            {t("Open")} {access.displayName}{t("'s sign-in")}
+            {t("Open")} {access.displayName}
+            {t("'s sign-in")}
           </a>
           .
         </p>

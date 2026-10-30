@@ -115,7 +115,9 @@ export function MemorySources({ agentId: fixedBot }: { agentId?: string }) {
           {t("Add source")}
         </Button>
       }
-      description={t("Apps you connected that this Bot can read show up here, and you can add more. Sources refresh every 15 minutes. Only this Bot sees what they hold.")}
+      description={t(
+        "Apps you connected that this Bot can read show up here, and you can add more. Sources refresh every 15 minutes. Only this Bot sees what they hold.",
+      )}
       title={t("App sources")}
     >
       {sources.isPending ? null : sources.error ? (
@@ -224,7 +226,7 @@ export function MemorySources({ agentId: fixedBot }: { agentId?: string }) {
           <DialogHeader>
             <DialogTitle>{t("Add a source")}</DialogTitle>
             <DialogDescription>
-              {t("OpenBot reads it now, then every 15 minutes while it's on.")}
+              {t("CCP-Bot reads it now, then every 15 minutes while it's on.")}
             </DialogDescription>
           </DialogHeader>
           <DialogBody className="mt-4 overflow-y-auto">
@@ -256,7 +258,7 @@ export function MemorySources({ agentId: fixedBot }: { agentId?: string }) {
                         .filter(Boolean);
                     else if (setting.schema.type === "object")
                       throw new Error(
-                        "This one has settings OpenBot can't show. Choose another.",
+                        "This one has settings CCP-Bot can't show. Choose another.",
                       );
                     else values[setting.name] = value;
                   }
@@ -314,7 +316,9 @@ export function MemorySources({ agentId: fixedBot }: { agentId?: string }) {
                   </Field>
                 ) : null}
                 <Field>
-                  <FieldLabel htmlFor={`${id}-action`}>{t("What to read")}</FieldLabel>
+                  <FieldLabel htmlFor={`${id}-action`}>
+                    {t("What to read")}
+                  </FieldLabel>
                   <Select
                     items={tools.data?.map((tool) => ({
                       value: tool.ref,
@@ -343,7 +347,9 @@ export function MemorySources({ agentId: fixedBot }: { agentId?: string }) {
                   ) : null}
                 </Field>
                 <Field>
-                  <FieldLabel htmlFor={`${id}-name`}>{t("Source name")}</FieldLabel>
+                  <FieldLabel htmlFor={`${id}-name`}>
+                    {t("Source name")}
+                  </FieldLabel>
                   <Input
                     id={`${id}-name`}
                     required

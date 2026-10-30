@@ -1,14 +1,14 @@
 //! Docker Desktop: opened when it is installed, stopped, and safe to open.
 //!
-//! **OpenBot never puts a person in front of Docker's terms, and never waits on them.** A Docker
+//! **CCP-Bot never puts a person in front of Docker's terms, and never waits on them.** A Docker
 //! Desktop that was installed and never opened shows its subscription terms on first open, and
 //! from outside it nothing tells that window apart from a password prompt, a required sign-in or a
 //! slow boot. So a stopped Docker Desktop is opened only when it is known to start by itself:
 //!
 //! - it has run before on this machine (`used_before`: its VM disk exists), or
-//! - this installation was set up on Docker, so it answered for OpenBot before.
+//! - this installation was set up on Docker, so it answered for CCP-Bot before.
 //!
-//! Anything else gets Podman (see `install::install_engine_with`). OpenBot never installs Docker
+//! Anything else gets Podman (see `install::install_engine_with`). CCP-Bot never installs Docker
 //! Desktop itself. Linux is not handled here: Docker there is the distribution's Docker Engine.
 
 use std::path::PathBuf;
@@ -184,7 +184,7 @@ pub fn start_saved(progress: &mut dyn FnMut(String)) -> Result<(), Problem> {
 fn open() -> Result<(), Problem> {
     let Some(app) = installed_app() else {
         return Err(Problem::plain(
-            "OpenBot cannot find Docker Desktop. Install it, then try again.",
+            "CCP-Bot cannot find Docker Desktop. Install it, then try again.",
         ));
     };
     #[cfg(target_os = "macos")]
@@ -199,11 +199,11 @@ fn open() -> Result<(), Problem> {
     match spawned {
         Ok(status) if status.success() => Ok(()),
         Ok(status) => Err(Problem::with(
-            "OpenBot could not open Docker Desktop. Open it yourself, then try again.",
+            "CCP-Bot could not open Docker Desktop. Open it yourself, then try again.",
             format!("opening {} ended with {status}", app.display()),
         )),
         Err(error) => Err(Problem::with(
-            "OpenBot could not open Docker Desktop. Open it yourself, then try again.",
+            "CCP-Bot could not open Docker Desktop. Open it yourself, then try again.",
             format!("opening {}: {error}", app.display()),
         )),
     }

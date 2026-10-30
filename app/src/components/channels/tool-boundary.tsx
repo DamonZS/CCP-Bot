@@ -70,7 +70,9 @@ export class ToolRenderBoundary extends Component<
     if (this.state.failed) {
       return (
         <p className="my-2 rounded-lg border border-destructive/30 bg-destructive/5 px-3 py-2 text-sm text-destructive">
-          {t("Couldn't show")} <span className="font-medium">{this.props.name}</span>{t(". The rest of the conversation is fine.")}
+          {t("Couldn't show")}{" "}
+          <span className="font-medium">{this.props.name}</span>
+          {t(". The rest of the conversation is fine.")}
         </p>
       );
     }

@@ -16,7 +16,7 @@ import { createComputerRoutes } from "../src/computer/routes";
 
 const member: AuthenticatedActor = {
   id: "user-1",
-  email: "member@openbot.test",
+  email: "member@ccpbot.test",
   role: "user",
 };
 
@@ -67,7 +67,7 @@ describe("the public computer file download route", () => {
     const bytes = Uint8Array.from([0, 1, 2, 255]);
     const { gateway, calls } = gatewayThatReturns("report.pdf", bytes);
     const response = await appFor(gateway).request(
-      "http://openbot.test/bot-17/files/download?path=%20reports%2Freport.pdf%20",
+      "http://ccpbot.test/bot-17/files/download?path=%20reports%2Freport.pdf%20",
     );
 
     expect(response.status).toBe(200);
@@ -92,7 +92,7 @@ describe("the public computer file download route", () => {
       Uint8Array.from([1]),
     );
     const response = await appFor(gateway).request(
-      "http://openbot.test/bot-17/files/download?path=evil.txt",
+      "http://ccpbot.test/bot-17/files/download?path=evil.txt",
     );
 
     expect(response.status).toBe(200);
@@ -103,7 +103,7 @@ describe("the public computer file download route", () => {
   test("refuses a missing path before asking the gateway", async () => {
     const { gateway, calls } = gatewayThatReturns("x", Uint8Array.from([1]));
     const response = await appFor(gateway).request(
-      "http://openbot.test/bot-17/files/download",
+      "http://ccpbot.test/bot-17/files/download",
     );
 
     expect(response.status).toBe(400);
@@ -116,7 +116,7 @@ describe("the public computer file download route", () => {
   test("applies Bot ownership before asking the gateway", async () => {
     const { gateway, calls } = gatewayThatReturns("x", Uint8Array.from([1]));
     const response = await appFor(gateway, async () => false).request(
-      "http://openbot.test/somebody-elses-bot/files/download?path=x",
+      "http://ccpbot.test/somebody-elses-bot/files/download?path=x",
     );
 
     expect(response.status).toBe(404);
@@ -151,7 +151,7 @@ describe("the public computer file download route", () => {
       },
     } as unknown as ComputerGateway;
     const response = await appFor(gateway).request(
-      "http://openbot.test/bot-17/files/download?path=x",
+      "http://ccpbot.test/bot-17/files/download?path=x",
     );
 
     expect(response.status).toBe(status);

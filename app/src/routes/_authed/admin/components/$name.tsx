@@ -129,7 +129,9 @@ function RouteComponent() {
           <EmptyHeader>
             <EmptyTitle>{name}</EmptyTitle>
             <EmptyDescription className="text-pretty">
-              {t("It may have been renamed, or this deployment no longer ships it.")}
+              {t(
+                "It may have been renamed, or this deployment no longer ships it.",
+              )}
             </EmptyDescription>
           </EmptyHeader>
           <Button
@@ -310,7 +312,9 @@ function ComponentDetail({
       </div>
 
       <PageSection
-        description={t("Describe this component and choose which Bots can display it.")}
+        description={t(
+          "Describe this component and choose which Bots can display it.",
+        )}
         title={t("Configuration")}
       >
         <PageRows>
@@ -327,7 +331,9 @@ function ComponentDetail({
                 <ItemContent>
                   <ItemTitle>{t("Not in this build")}</ItemTitle>
                   <ItemDescription>
-                    {t("OpenBot can't draw it. The settings below have no effect.")}
+                    {t(
+                      "CCP-Bot can't draw it. The settings below have no effect.",
+                    )}
                   </ItemDescription>
                 </ItemContent>
               </Item>
@@ -429,7 +435,9 @@ function ComponentDetail({
           <DialogHeader>
             <DialogTitle>{t("Description")}</DialogTitle>
             <DialogDescription>
-              {t("What the model reads when it decides to use this. It has no effect until the component is published.")}
+              {t(
+                "What the model reads when it decides to use this. It has no effect until the component is published.",
+              )}
             </DialogDescription>
           </DialogHeader>
           <DialogBody className="mt-4">
@@ -473,12 +481,16 @@ function ComponentDetail({
           <DialogHeader>
             <DialogTitle>{t("Available to")}</DialogTitle>
             <DialogDescription>
-              {t("Turn a Bot off and it never learns this component exists. Changes apply right away.")}
+              {t(
+                "Turn a Bot off and it never learns this component exists. Changes apply right away.",
+              )}
             </DialogDescription>
           </DialogHeader>
           <DialogBody className="mt-4">
             {bots.length === 0 ? (
-              <p className="text-muted-foreground text-sm">{t("No Bots yet.")}</p>
+              <p className="text-muted-foreground text-sm">
+                {t("No Bots yet.")}
+              </p>
             ) : (
               <div className="flex flex-col">
                 {bots.map((bot, index) => {
@@ -521,7 +533,9 @@ function ComponentDetail({
           <DialogHeader>
             <DialogTitle>{t("Can read")}</DialogTitle>
             <DialogDescription>
-              {t("The data this component can fetch to draw itself. This is separate from Available to. With all of these off, it shows only what the Bot passes it. Every read shows in Audit. Changes apply right away.")}
+              {t(
+                "The data this component can fetch to draw itself. This is separate from Available to. With all of these off, it shows only what the Bot passes it. Every read shows in Audit. Changes apply right away.",
+              )}
             </DialogDescription>
           </DialogHeader>
           <DialogBody className="mt-4">

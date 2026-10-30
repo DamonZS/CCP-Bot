@@ -545,8 +545,9 @@ export const GALLERY: GalleryComponent[] = [
     name: "showBarChart",
     title: t("Bar chart"),
     kind: "chart",
-    description:
-      t("Show values as a bar chart. Use when comparing a handful of named things, teams, months, categories. Not for a trend over time, which is showLineChart."),
+    description: t(
+      "Show values as a bar chart. Use when comparing a handful of named things, teams, months, categories. Not for a trend over time, which is showLineChart.",
+    ),
     parameters: BarChartProps,
     Component: BarChartCard as GalleryComponent["Component"],
     preview: {
@@ -565,8 +566,9 @@ export const GALLERY: GalleryComponent[] = [
     name: "showPieChart",
     title: t("Donut chart"),
     kind: "chart",
-    description:
-      t("Show how a whole is divided, as a donut with a legend. Use only when the parts sum to something meaningful, and prefer a bar chart above about six slices."),
+    description: t(
+      "Show how a whole is divided, as a donut with a legend. Use only when the parts sum to something meaningful, and prefer a bar chart above about six slices.",
+    ),
     parameters: PieChartProps,
     Component: PieChartCard as GalleryComponent["Component"],
     preview: {
@@ -584,8 +586,9 @@ export const GALLERY: GalleryComponent[] = [
     name: "showLineChart",
     title: t("Line chart"),
     kind: "chart",
-    description:
-      t("Show one or more series over an ordered axis, usually time. Every series must have one value per label."),
+    description: t(
+      "Show one or more series over an ordered axis, usually time. Every series must have one value per label.",
+    ),
     parameters: LineChartProps,
     Component: LineChartCard as GalleryComponent["Component"],
     preview: {
@@ -601,8 +604,9 @@ export const GALLERY: GalleryComponent[] = [
     name: "showAreaChart",
     title: t("Area chart"),
     kind: "chart",
-    description:
-      t("The same as showLineChart with the area under each line filled. Use for volume or accumulation rather than for a rate."),
+    description: t(
+      "The same as showLineChart with the area under each line filled. Use for volume or accumulation rather than for a rate.",
+    ),
     parameters: AreaChartProps,
     Component: AreaChartCard as GalleryComponent["Component"],
     preview: {
@@ -618,8 +622,9 @@ export const GALLERY: GalleryComponent[] = [
     name: "showProgress",
     title: t("Progress against target"),
     kind: "chart",
-    description:
-      t("Show values against their targets as progress bars. Use for 'are we there yet' questions, budget spent against budget, done against planned."),
+    description: t(
+      "Show values against their targets as progress bars. Use for 'are we there yet' questions, budget spent against budget, done against planned.",
+    ),
     parameters: ProgressChartProps,
     Component: ProgressChartCard as GalleryComponent["Component"],
     preview: {

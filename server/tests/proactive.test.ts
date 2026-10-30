@@ -5,8 +5,8 @@ import {
   HttpAgent,
   type RunAgentInput,
 } from "@ag-ui/client";
-import type { GrantedTool } from "@openbot/toolkit/granted-tool";
-import { createTurnRunner, type RunnerLike } from "@openbot/toolkit/run-turn";
+import type { GrantedTool } from "@ccpbot/toolkit/granted-tool";
+import { createTurnRunner, type RunnerLike } from "@ccpbot/toolkit/run-turn";
 import { Observable } from "rxjs";
 import { z } from "zod";
 import { serverTurnAdmission } from "../src/agents/turn-admission";
@@ -711,7 +711,7 @@ describe("private information sharing check", () => {
     const { store, opened } = approvals("pending", [
       {
         botId: "bot",
-        toolRef: "openbot/share_private_information",
+        toolRef: "ccpbot/share_private_information",
         effect: "share_private",
         scope: "slack_channel:C1",
         revokedAt: null,

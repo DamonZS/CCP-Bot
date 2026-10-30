@@ -49,7 +49,9 @@ export function GalleryPreview({
 }) {
   if (!available) {
     return (
-      <p className="text-muted-foreground text-sm">{t("Loading what it can draw…")}</p>
+      <p className="text-muted-foreground text-sm">
+        {t("Loading what it can draw…")}
+      </p>
     );
   }
 
@@ -118,7 +120,9 @@ function PreviewOf({ name }: { name: string }) {
      */
     return (
       <p className="text-muted-foreground text-sm">
-        {t("Shows OpenBot's own records. There's nothing to show until a Bot asks for it.")}
+        {t(
+          "Shows CCP-Bot's own records. There's nothing to show until a Bot asks for it.",
+        )}
       </p>
     );
   }

@@ -1,6 +1,6 @@
 import { expect, spyOn, test } from "bun:test";
 import { HttpAgent, type RunAgentInput } from "@ag-ui/client";
-import { HeadlessToolSuspension } from "@openbot/toolkit/headless-tools";
+import { HeadlessToolSuspension } from "@ccpbot/toolkit/headless-tools";
 import { of } from "rxjs";
 import { z } from "zod";
 import { currentApprovalContext } from "../src/approvals/types";
@@ -99,7 +99,7 @@ test("remote client tool captures real provider call and canonical conversation 
       toolName: "mcp__vendor__write",
       args: { value: "actual" },
       state: { real: "provider-state" },
-      forwardedProps: { openbotRun: "signed-original-run" },
+      forwardedProps: { ccpbotRun: "signed-original-run" },
     });
     expect(
       f
@@ -110,7 +110,7 @@ test("remote client tool captures real provider call and canonical conversation 
             message.toolCalls?.some((call) => call.id === "provider-call"),
         ),
     ).toBe(true);
-    expect(f.requests[0]?.forwardedProps.openbotDeploymentTools).toEqual([]);
+    expect(f.requests[0]?.forwardedProps.ccpbotDeploymentTools).toEqual([]);
     expect(result.newMessages.some((message) => message.role === "tool")).toBe(
       false,
     );

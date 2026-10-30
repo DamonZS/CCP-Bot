@@ -120,7 +120,9 @@ function AuditPage() {
      * because a log is scanned across and rows of prose would make every entry a paragraph.
      */
     <PageShell
-      description={t("Review Bot actions and actions blocked by this deployment’s policy.")}
+      description={t(
+        "Review Bot actions and actions blocked by this deployment’s policy.",
+      )}
       title={t("Audit")}
       width="full"
     >
@@ -140,7 +142,9 @@ function AuditPage() {
                * group: the pressed one is filled, the rest sit flat inside the same outline.
                */}
               <div className="flex items-center gap-2">
-                <span className="text-muted-foreground text-xs">{t("View")}</span>
+                <span className="text-muted-foreground text-xs">
+                  {t("View")}
+                </span>
                 <fieldset
                   aria-label={t("View")}
                   className="inline-flex items-center gap-0.5 rounded-lg border border-border p-0.5"
@@ -213,7 +217,9 @@ function AuditPage() {
               {exportCapped ? (
                 <p className="text-muted-foreground text-sm" role="status">
                   {t("The file has the newest")} {exportCapped.toLocaleString()}{" "}
-                  {t("events, not all of them. Narrow the filter or dates to export the rest.")}
+                  {t(
+                    "events, not all of them. Narrow the filter or dates to export the rest.",
+                  )}
                 </p>
               ) : null}
               {rows.length === 0 ? (

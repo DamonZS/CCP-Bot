@@ -7,8 +7,8 @@ import {
   HttpAgent,
   type RunAgentInput,
 } from "@ag-ui/client";
-import { NOT_SHOWN } from "@openbot/shared/component-markers";
-import { createTurnRunner, type RunnerLike } from "@openbot/toolkit/run-turn";
+import { NOT_SHOWN } from "@ccpbot/shared/component-markers";
+import { createTurnRunner, type RunnerLike } from "@ccpbot/toolkit/run-turn";
 import { inArray } from "drizzle-orm";
 import { Observable } from "rxjs";
 import { GALLERY } from "../../app/src/components/gallery/charts";
@@ -69,7 +69,7 @@ beforeAll(async () => {
     throw new Error(
       `The test database has showBarChart unpublished: ${decision.reason}`,
     );
-  await store.revoke("showBarChart", deniedBot, "test@openbot.local");
+  await store.revoke("showBarChart", deniedBot, "test@ccpbot.local");
 });
 
 afterAll(async () => {
@@ -349,7 +349,7 @@ describe("an unattended routine turn answering with a governed chart", () => {
     });
     const bar = tools.find((tool) => tool.definition.name === "showBarChart");
     expect(bar?.hidden).toBeUndefined();
-    await store.revoke("showBarChart", allowedBot, "test@openbot.local");
+    await store.revoke("showBarChart", allowedBot, "test@ccpbot.local");
     try {
       const result = String(
         await bar?.execute(chartArgs, {

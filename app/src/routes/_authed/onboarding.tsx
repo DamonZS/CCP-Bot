@@ -1,4 +1,4 @@
-import { WEB_HARNESSES } from "@openbot/shared/harnesses";
+import { WEB_HARNESSES } from "@ccpbot/shared/harnesses";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
 import Avatar from "boring-avatars";
@@ -153,7 +153,9 @@ function RosterStep() {
                   {a.name}
                 </h3>
                 {a.example ? (
-                  <span className="text-xs text-muted-foreground">{t("Example")}</span>
+                  <span className="text-xs text-muted-foreground">
+                    {t("Example")}
+                  </span>
                 ) : null}
               </div>
             </div>
@@ -171,7 +173,7 @@ function RosterStep() {
 }
 
 /*
- * These local-evaluation scenes are for somebody trying OpenBot on their own machine
+ * These local-evaluation scenes are for somebody trying CCP-Bot on their own machine
  * (see `localEvaluation` in RouteComponent). They answer what that person is deciding: where their
  * data is, whether their own agents fit, and what taking it to their organization involves (OB-02 in
  * the product backlog). None of it is said to an organization's own people, who are past all three.
@@ -189,7 +191,9 @@ function LocalStep() {
        * word about sign-in either: activating a local install signs you in to CopilotKit.
        */}
       <p className="mt-3 max-w-md text-center text-muted-foreground">
-        {t("Your conversations, files and Bots are stored on this computer. Only what you send to your model leaves it.")}
+        {t(
+          "Your conversations, files and Bots are stored on this computer. Only what you send to your model leaves it.",
+        )}
       </p>
       <div className="h-8" />
       <IllustrationFrame
@@ -212,7 +216,9 @@ function AgentsStep() {
         {t("Bring the agents you already have")}
       </h1>
       <p className="mt-3 max-w-md text-center text-muted-foreground">
-        {t("Any AG-UI agent can join as a Bot. Add one from Bots, then New Bot.")}
+        {t(
+          "Any AG-UI agent can join as a Bot. Add one from Bots, then New Bot.",
+        )}
       </p>
       <div className="h-8" />
       <IllustrationFrame
@@ -240,12 +246,16 @@ function OrganizationStep() {
         {t("Deploy it for your organization")}
       </h1>
       <p className="mt-3 max-w-md text-center text-muted-foreground">
-        {t("Run one container image, or a Helm chart for EKS, GKE or AKS. Your people sign in with Google, Microsoft or Okta.")}
+        {t(
+          "Run one container image, or a Helm chart for EKS, GKE or AKS. Your people sign in with Google, Microsoft or Okta.",
+        )}
       </p>
       <div className="h-8" />
       <IllustrationFrame
         className="flex justify-center px-6 py-8"
-        label={t("Your people sign in with Google, Microsoft or Okta, and your organization gets its own rules, its own Bots and an audit trail")}
+        label={t(
+          "Your people sign in with Google, Microsoft or Okta, and your organization gets its own rules, its own Bots and an audit trail",
+        )}
       >
         <OrganizationFlow />
       </IllustrationFrame>
@@ -323,7 +333,7 @@ function RouteComponent() {
    * Local-evaluation content is never shown to an organization's people:
    * the server says single-user mode, which an organization's deployment, always behind sign-in,
    * cannot be in. Until the answer arrives they are left out, so a slow or failed request never
-   * shows an organization's employees a page about deploying OpenBot themselves.
+   * shows an organization's employees a page about deploying CCP-Bot themselves.
    *
    * NOT GATED ON `selfHostBanner` AS WELL. That flag is off for any deployment with a paid
    * Intelligence entitlement, and the stack `copilotkit local` installs runs on an enterprise

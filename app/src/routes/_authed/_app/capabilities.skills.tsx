@@ -130,7 +130,10 @@ function SkillsPage() {
           }
           description={
             <>
-              {t("Type")} <code>/</code> {t("and a skill's name to give a Bot that instruction. Only you see yours, and they work on Bots you own.")}
+              {t("Type")} <code>/</code>{" "}
+              {t(
+                "and a skill's name to give a Bot that instruction. Only you see yours, and they work on Bots you own.",
+              )}
             </>
           }
           title={t("Your skills")}
@@ -209,7 +212,8 @@ function SkillsPage() {
                               }}
                               variant="destructive"
                             >
-                              {t("Delete /")}{skill.slug}
+                              {t("Delete /")}
+                              {skill.slug}
                             </DropdownMenuItem>
                           </DropdownMenuGroup>
                         </DropdownMenuContent>
@@ -235,7 +239,9 @@ function SkillsPage() {
          */}
         {deployment.length > 0 ? (
           <PageSection
-            description={t("An admin writes these for everyone and picks which Bots use them.")}
+            description={t(
+              "An admin writes these for everyone and picks which Bots use them.",
+            )}
             title={t("Workspace skills")}
           >
             <PageRows>

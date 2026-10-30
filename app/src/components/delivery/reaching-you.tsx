@@ -63,7 +63,7 @@ import { t } from "@/lib/i18n";
  * phone a moment after they may have looked away: leaving and coming back used to drop the box to
  * type it into, with no way to confirm the code they had just been sent.
  */
-const PENDING_SMS = "openbot.reachability.pendingSms";
+const PENDING_SMS = "ccpbot.reachability.pendingSms";
 function readPending(): string {
   try {
     return sessionStorage.getItem(PENDING_SMS) ?? "";
@@ -173,7 +173,9 @@ export function ReachingYou({ agentId: fixedBot }: { agentId?: string }) {
     <>
       {fixedBot === undefined ? (
         <p className="mt-6 text-muted-foreground text-sm">
-          {t("Your devices, recent deliveries, and where each kind of update goes are in")}{" "}
+          {t(
+            "Your devices, recent deliveries, and where each kind of update goes are in",
+          )}{" "}
           <Link
             className="underline underline-offset-4"
             to="/settings/notifications"
@@ -235,7 +237,9 @@ export function ReachingYou({ agentId: fixedBot }: { agentId?: string }) {
         )}
       </PageSection>
       <PageSection
-        description={t("In a Slack or Teams channel that others can read, the Bot replies to you in a direct message.")}
+        description={t(
+          "In a Slack or Teams channel that others can read, the Bot replies to you in a direct message.",
+        )}
         title={t("Connect a conversation")}
       >
         {reach.data ? (
@@ -297,7 +301,7 @@ export function ReachingYou({ agentId: fixedBot }: { agentId?: string }) {
 
 /**
  * Choose the conversation, then link an account or verify a phone. Linking an account answers with a
- * one-time `link <code>` message to send to the OpenBot app; a phone answers with a text carrying a
+ * one-time `link <code>` message to send to the CCP-Bot app; a phone answers with a text carrying a
  * code to type back here.
  */
 function ConnectDialog({
@@ -365,7 +369,9 @@ function ConnectDialog({
         <DialogHeader>
           <DialogTitle>{TRANSPORT[transport].link}</DialogTitle>
           <DialogDescription>
-            {t("Each account or phone number works with one conversation at a time. Linking it here moves it from the one it's linked to now.")}
+            {t(
+              "Each account or phone number works with one conversation at a time. Linking it here moves it from the one it's linked to now.",
+            )}
           </DialogDescription>
         </DialogHeader>
         <DialogBody className="mt-4 grid gap-4 overflow-y-auto">
@@ -513,10 +519,15 @@ function ConnectDialog({
             <Item size="sm" variant="muted">
               <ItemContent>
                 <ItemDescription className="line-clamp-none">
-                  {t("Send this message to the OpenBot app in")}{" "}
-                  {linked.platform === "teams" ? t("Microsoft Teams") : t("Slack")}{" "}
-                  {t("within")} {Math.ceil((linked.expiresAt - Date.now()) / 60_000)}{" "}
-                  {t("minutes. It links that account to this conversation and Bot.")}
+                  {t("Send this message to the CCP-Bot app in")}{" "}
+                  {linked.platform === "teams"
+                    ? t("Microsoft Teams")
+                    : t("Slack")}{" "}
+                  {t("within")}{" "}
+                  {Math.ceil((linked.expiresAt - Date.now()) / 60_000)}{" "}
+                  {t(
+                    "minutes. It links that account to this conversation and Bot.",
+                  )}
                 </ItemDescription>
                 <ItemTitle className="break-all font-mono">
                   {linked.command}

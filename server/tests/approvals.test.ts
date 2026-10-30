@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { HeadlessToolSuspension } from "@openbot/toolkit/headless-tools";
+import { HeadlessToolSuspension } from "@ccpbot/toolkit/headless-tools";
 import { z } from "zod";
 import { createApprovalRoutes } from "../src/approvals/routes";
 import * as serviceModule from "../src/approvals/service";

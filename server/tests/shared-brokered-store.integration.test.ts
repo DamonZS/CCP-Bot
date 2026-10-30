@@ -1,7 +1,7 @@
 // server/tests/shared-brokered-store.integration.test.ts
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 import { randomUUID } from "node:crypto";
-import { readConnectPrompt } from "@openbot/shared/connect-prompt";
+import { readConnectPrompt } from "@ccpbot/shared/connect-prompt";
 import { and, eq, inArray } from "drizzle-orm";
 import { createAuditStore } from "../src/audit";
 import { createDatabase } from "../src/db/client";
@@ -27,7 +27,7 @@ const app = `team-gh-${suite}`;
 const bot = `bot-${suite}`;
 const admin = `admin-${suite}`;
 const asker = `asker-${suite}`;
-const VENDOR_ID = `openbot-deployment:acme-${suite}:R`;
+const VENDOR_ID = `ccpbot-deployment:acme-${suite}:R`;
 /*
  * A second row at the app's url. `zz-` sorts after `team-gh-` in any collation, so the seeded row
  * stays the one `brokeredAppRow` answers with — `order by id`, first row per url — and this is

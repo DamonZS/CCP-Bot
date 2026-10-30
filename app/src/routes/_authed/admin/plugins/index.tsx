@@ -141,7 +141,9 @@ function RouteComponent() {
 
   return (
     <PageShell
-      description={t("Connect services for your company, then choose which Bots can use each service’s tools.")}
+      description={t(
+        "Connect services for your company, then choose which Bots can use each service’s tools.",
+      )}
       title={t("Plugins")}
     >
       {/* Pending, error, empty, rows — pending first, so no sentence asserts anything mid-fetch. */}
@@ -158,7 +160,9 @@ function RouteComponent() {
           <AccessRequestsSection />
 
           <PageSection
-            description={t("Added for everybody. Open one to set it up and choose which Bots get its tools.")}
+            description={t(
+              "Added for everybody. Open one to set it up and choose which Bots get its tools.",
+            )}
             title={t("Connected")}
           >
             {plugins.data?.servers.length === 0 ? (
@@ -229,7 +233,9 @@ function RouteComponent() {
           </PageSection>
 
           <PageSection
-            description={t("Reviewed, first-party servers. Open one to add it.")}
+            description={t(
+              "Reviewed, first-party servers. Open one to add it.",
+            )}
             title={t("Explore plugins")}
           >
             {explore.length === 0 ? (

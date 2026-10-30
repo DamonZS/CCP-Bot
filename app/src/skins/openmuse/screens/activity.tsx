@@ -7,7 +7,7 @@ import { t } from "@/lib/i18n";
 
 /**
  * Activity: what the centre Bot is waiting on you for, then what it is doing, has scheduled and has
- * finished. Both are OpenBot's own sections from the Bot's page, under OpenMuse's title.
+ * finished. Both are CCP-Bot's own sections from the Bot's page, under OpenMuse's title.
  */
 export function ActivityScreen() {
   const { bot } = useMuse();

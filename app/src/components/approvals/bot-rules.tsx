@@ -48,7 +48,9 @@ export function BotApprovalRules({ agentId }: { agentId: string }) {
     <PageSection
       description={
         <>
-          {t("The strictest matching rule wins. An \"ask\" rule beats an \"allow\" rule. Rules for every Bot are in")}{" "}
+          {t(
+            'The strictest matching rule wins. An "ask" rule beats an "allow" rule. Rules for every Bot are in',
+          )}{" "}
           <Link
             className="underline underline-offset-4"
             to="/settings/approvals"
@@ -57,7 +59,9 @@ export function BotApprovalRules({ agentId }: { agentId: string }) {
           </Link>
           .
           {rulesOff
-            ? t(" An admin has turned off personal rules. Yours are kept but don't apply.")
+            ? t(
+                " An admin has turned off personal rules. Yours are kept but don't apply.",
+              )
             : ""}
         </>
       }

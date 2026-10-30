@@ -31,13 +31,13 @@ describe("locating a Bot's computer", () => {
       Response.json({
         kind: "bot",
         id: "sales",
-        container: "openbot-computer-sales",
+        container: "ccpbot-computer-sales",
         status: "running",
-        url: "http://openbot-computer-sales:4100",
+        url: "http://ccpbot-computer-sales:4100",
       }),
     );
     expect(await client.locate(botSeat("sales"))).toBe(
-      "http://openbot-computer-sales:4100",
+      "http://ccpbot-computer-sales:4100",
     );
   });
 
@@ -47,7 +47,7 @@ describe("locating a Bot's computer", () => {
       Response.json({
         kind: "bot",
         id: "sales",
-        container: "openbot-computer-sales",
+        container: "ccpbot-computer-sales",
         status: "running",
         port: 49213,
       }),
@@ -64,7 +64,7 @@ describe("locating a Bot's computer", () => {
       Response.json({
         kind: "bot",
         id: "sales",
-        container: "openbot-computer-sales",
+        container: "ccpbot-computer-sales",
         status: "running",
       }),
     );
@@ -203,9 +203,9 @@ describe("Docker supervisor provider", () => {
               {
                 kind: "bot",
                 id: "bot",
-                container: "openbot-computer-bot",
+                container: "ccpbot-computer-bot",
                 status: dockerStatus,
-                url: "http://openbot-computer-bot:4100",
+                url: "http://ccpbot-computer-bot:4100",
               },
             ],
           })) as unknown as typeof fetch,
@@ -371,9 +371,9 @@ describe("telling one run of a computer from the next, across replicas", () => {
       {
         kind: "bot",
         id: botId,
-        container: `openbot-computer-${botId}`,
+        container: `ccpbot-computer-${botId}`,
         status: "running",
-        url: `http://openbot-computer-${botId}:4100`,
+        url: `http://ccpbot-computer-${botId}:4100`,
         startedAt,
       },
     ];

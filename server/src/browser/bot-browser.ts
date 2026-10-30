@@ -7,15 +7,15 @@ import {
   type BotBrowserState,
   botBrowserComputerPaths,
   botBrowserComputerRecordingRequestSchema,
-} from "@openbot/shared/bot-browser";
-import type { ComputerControlState } from "@openbot/shared/computer-control";
+} from "@ccpbot/shared/bot-browser";
+import type { ComputerControlState } from "@ccpbot/shared/computer-control";
 import {
   browserNavigateRequestSchema,
   browserRecordingRequestSchema,
   browserTabsRequestSchema,
-} from "@openbot/shared/openbot-browser";
-import type { RecorderConnection } from "@openbot/shared/recorder-api";
-import { RECORDER_EXTENSION_ID } from "@openbot/shared/recorder-extension";
+} from "@ccpbot/shared/ccpbot-browser";
+import type { RecorderConnection } from "@ccpbot/shared/recorder-api";
+import { RECORDER_EXTENSION_ID } from "@ccpbot/shared/recorder-extension";
 import { Hono } from "hono";
 import type { z } from "zod";
 import type { AuditStore } from "../audit";
@@ -62,7 +62,7 @@ import {
  * left behind, and is revoked the next time the server reads this Bot's browser, mints another for it, or hands its wheel
  * back to the Bot. Each is in Settings, Browsers while it lives, named for the Bot, and can be disconnected there.
  *
- * THE BOT'S NETWORK FOLLOWS THE CONNECTIONS. While one is live the Bot's computer is pushed its policy with OpenBot's and
+ * THE BOT'S NETWORK FOLLOWS THE CONNECTIONS. While one is live the Bot's computer is pushed its policy with CCP-Bot's and
  * the gateway's origins let through (`botBrowserNetwork`), which the Recorder needs and the Bot does not. The Bot cannot
  * act while a person holds its wheel, and after a person has held it the Bot acts again only once that person hands it
  * back through these routes (a restart or a stop leaves the computer waiting for a person: agent-computer's control.ts),
@@ -74,9 +74,9 @@ const SENTENCES = {
   unreachable: "The Bot's browser could not be reached. Try again.",
   slow: "The Bot's browser is taking too long to answer. The page may still be loading.",
   notSetUp:
-    "The Bot's browser can't do that right now. Ask an admin to check OpenBot's setup.",
+    "The Bot's browser can't do that right now. Ask an admin to check CCP-Bot's setup.",
   notSetUpSingleUser:
-    "The Bot's browser can't do that right now. Quit OpenBot, open it again, and try once more.",
+    "The Bot's browser can't do that right now. Quit CCP-Bot, open it again, and try once more.",
   takeControl: "Take control of the Bot's browser first.",
   alreadyRecording: "A recording is already running in this Bot's browser.",
   nothingRecording: "Nothing is being recorded in this Bot's browser.",
@@ -89,13 +89,13 @@ const SENTENCES = {
   notWeb: "Only web addresses open here.",
   /** The profile is gone, and what goes with it on this side (its row, its snapshots and screenshots) did not all go. */
   clearedNotFinished:
-    "The Bot's browser was cleared, but OpenBot couldn't finish. Clear it again.",
+    "The Bot's browser was cleared, but CCP-Bot couldn't finish. Clear it again.",
 } as const;
 
-/** Why a recording cannot start when this OpenBot has no address the Recorder would take: for the log, as for the
+/** Why a recording cannot start when this CCP-Bot has no address the Recorder would take: for the log, as for the
  * person's own browser (browser/routes.ts). */
 const NO_ADDRESS =
-  "This OpenBot has no address a browser can reach it at, so the Recorder in a Bot's browser cannot be connected. Set OPENBOT_PUBLIC_URL to this OpenBot's https address.";
+  "This CCP-Bot has no address a browser can reach it at, so the Recorder in a Bot's browser cannot be connected. Set CCPBOT_PUBLIC_URL to this CCP-Bot's https address.";
 
 /** The computer's own route for who holds the wheel (`ComputerControlState`). */
 const CONTROL_PATH = "/control";
@@ -103,7 +103,7 @@ const CONTROL_PATH = "/control";
 /*
  * HOW LONG EACH ROUTE HAS TO ANSWER, from the request's arrival, as the person's own browser's routes have
  * (browser/routes.ts): every wait in it shares the budget (finding the computer, each call to it, a policy push), and
- * OpenBot's server keeps the request open for it (`botBrowserRequestSeconds`), past the 10 s after which `Bun.serve`
+ * CCP-Bot's server keeps the request open for it (`botBrowserRequestSeconds`), past the 10 s after which `Bun.serve`
  * closes a request that has sent nothing and the person gets an empty reply.
  *
  * - The read, which the Bot's screen makes every second: the computer's word on the wheel and the browser, within
@@ -133,7 +133,7 @@ const ENDS_A_RECORDING_ROUTE =
   /^\/api\/computers\/[^/]+\/(control\/release|control\/cancel|computers\/stop|computers\/reset)$/;
 
 /**
- * How long OpenBot's server keeps a request to a Bot's browser's routes open, in seconds (http-server.ts applies it), or
+ * How long CCP-Bot's server keeps a request to a Bot's browser's routes open, in seconds (http-server.ts applies it), or
  * undefined for any other path, and for the read, which answers within its budget and keeps Bun's own 10 s. The
  * computer routes that end a recording on the way are kept open as long as the bar's, past the 10 s after which Bun
  * would close them and the person would be told a hand-back that happened had failed.
@@ -152,7 +152,7 @@ export function botBrowserRequestSeconds(pathname: string): number | undefined {
   );
 }
 /**
- * How long the computer may take to start a recording: the Recorder is connected, asks OpenBot whether its connection
+ * How long the computer may take to start a recording: the Recorder is connected, asks CCP-Bot whether its connection
  * stands, and starts. The person's own browser gives an open (which does the same and launches a browser) as long.
  */
 const START_TIMEOUT_MS = 90_000;
@@ -212,15 +212,15 @@ async function heldConnections(
 }
 
 /**
- * A Bot's network policy as it must be now (admin/controls.ts `duringRecording`): its own, with OpenBot's and the
+ * A Bot's network policy as it must be now (admin/controls.ts `duringRecording`): its own, with CCP-Bot's and the
  * Intelligence gateway's origins let through while its browser holds a Recorder connection, which is from Record until
  * the recording is stopped or found left behind. Read from the database, so every replica's push says the same, the
  * periodic one included, and a recording started through one server is not cut off by another's push.
  */
 export function botBrowserNetwork(input: {
   connections: Pick<RecorderConnectionStore, "atInstall">;
-  /** This OpenBot's addresses (its public URL and its app's). */
-  openbotUrls: readonly (string | undefined)[];
+  /** This CCP-Bot's addresses (its public URL and its app's). */
+  ccpbotUrls: readonly (string | undefined)[];
   /** INTELLIGENCE_GATEWAY_WS_URL. */
   gatewayUrl: string;
 }): (botId: string, policy: EgressPolicy) => Promise<EgressPolicy> {
@@ -244,8 +244,8 @@ export type BotBrowserRouteDeps = {
     RecorderExtensionDeps,
     "connections" | "user" | "sealOrganizationSession" | "onConnected"
   >;
-  /** The address the Recorder reaches this OpenBot at (browser/address.ts), from the request's Origin. */
-  openbotUrl: (requestOrigin: string | undefined) => string | null;
+  /** The address the Recorder reaches this CCP-Bot at (browser/address.ts), from the request's Origin. */
+  ccpbotUrl: (requestOrigin: string | undefined) => string | null;
   /**
    * Pushes the Bot's computer its network policy now (computer/policy-network.ts `policyPusher`), which
    * `botBrowserNetwork` widens while a connection is live. Absent where no network policy is pushed at all.
@@ -267,7 +267,7 @@ export type BotBrowserRouteDeps = {
     bar?: number;
     clear?: number;
   };
-  /** A single-user OpenBot: the one person is its admin, so a setup failure is theirs to see to. */
+  /** A single-user CCP-Bot: the one person is its admin, so a setup failure is theirs to see to. */
   singleUser?: boolean;
   /**
    * Why Record is refused in every Bot's browser here (browser/host.ts `botRecordRefusal`): its Bots share one computer.
@@ -280,7 +280,7 @@ export type BotBrowser = {
   /** The routes, mounted at `/:botId/browser` under the computer routes' guard. */
   routes: Hono<{ Variables: AppVariables }>;
   /**
-   * The wheel went back to the Bot through OpenBot (a hand back, or the Bot's request cancelled): any recording in its
+   * The wheel went back to the Bot through CCP-Bot (a hand back, or the Bot's request cancelled): any recording in its
    * browser has ended, so every connection it holds is left behind. Revoked, and the Bot pushed its own policy, before
    * the Bot acts again. Never throws.
    */
@@ -649,7 +649,7 @@ export function createBotBrowser(deps: BotBrowserRouteDeps): BotBrowser {
    * Record: for the person at the wheel, while nothing records. Their connection is minted and exchanged at once, as the
    * person's own browser's is (browser/routes.ts), under the Bot's browser's install id, which replaces their last one
    * for this Bot; anybody else's this Bot's browser still holds is left behind and goes. The Bot is pushed its widened
-   * policy before the computer connects the Recorder, which asks OpenBot whether its connection stands as it takes it.
+   * policy before the computer connects the Recorder, which asks CCP-Bot whether its connection stands as it takes it.
    * A start the computer refused takes its connection and the widening away again.
    */
   async function startNow(
@@ -674,8 +674,8 @@ export function createBotBrowser(deps: BotBrowserRouteDeps): BotBrowser {
           ? SENTENCES.alreadyRecording
           : SENTENCES.someoneElses,
       );
-    const openbotUrl = deps.openbotUrl(asker.origin);
-    if (!openbotUrl) {
+    const ccpbotUrl = deps.ccpbotUrl(asker.origin);
+    if (!ccpbotUrl) {
       console.warn(
         JSON.stringify({
           type: "bot-browser-record-no-address",
@@ -746,7 +746,7 @@ export function createBotBrowser(deps: BotBrowserRouteDeps): BotBrowser {
       ...(request.language ? { language: request.language } : {}),
       by: actor.id,
       connection: {
-        openbotUrl,
+        ccpbotUrl,
         token: made.token,
         connectionId: made.connection.id,
         user: {

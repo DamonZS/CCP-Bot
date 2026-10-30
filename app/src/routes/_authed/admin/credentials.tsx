@@ -45,7 +45,9 @@ function CredentialsPage() {
           {t("Add credential")}
         </Button>
       }
-      description={t("Manage this deployment’s keys and tokens. Saved secrets cannot be viewed again.")}
+      description={t(
+        "Manage this deployment’s keys and tokens. Saved secrets cannot be viewed again.",
+      )}
       title={t("Credentials")}
     >
       <PageSection title={t("Saved credentials")}>

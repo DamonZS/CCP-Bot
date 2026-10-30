@@ -1,5 +1,5 @@
 import { t } from "@/lib/i18n";
-"use client";
+("use client");
 
 import {
   type ToastManager,

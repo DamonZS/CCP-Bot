@@ -35,7 +35,9 @@ export function NativeDevices() {
   const error = reach.error ?? remove.error;
   return (
     <PageSection
-      description={t("Sign in to the OpenBot app on your phone and turn on notifications to add it here.")}
+      description={t(
+        "Sign in to the CCP-Bot app on your phone and turn on notifications to add it here.",
+      )}
       title={t("Your devices")}
     >
       {error ? (

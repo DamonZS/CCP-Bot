@@ -64,7 +64,7 @@ export const Route = createFileRoute("/_authed/_app/connections/")({
   /*
    * `?connected=` is how the OAuth callback reports back, carrying a server key on success and
    * `failed` otherwise. `?linked=` is the same for the GitHub account-link callback: `github` on
-   * success, `github-taken` when that GitHub account belongs to another OpenBot user, `failed`
+   * success, `github-taken` when that GitHub account belongs to another CCP-Bot user, `failed`
    * otherwise (see linked-notice.ts). Each is the only channel available: the callback is a
    * redirect from another company's server, so there is no response body to read.
    *
@@ -134,7 +134,7 @@ export const AUTHORIZATION_NOTICES: ReadonlyMap<string, string> = new Map([
   ],
   [
     "vendor-unavailable",
-    "The app didn't answer when OpenBot tried to finish that authorization, so nothing was recorded. Try the link again in a moment.",
+    "The app didn't answer when CCP-Bot tried to finish that authorization, so nothing was recorded. Try the link again in a moment.",
   ],
   [
     "not-your-authorization",
@@ -317,7 +317,9 @@ function RouteComponent() {
   return (
     <PageShell
       className="@container"
-      description={t("Connect your accounts so Bots can use apps on your behalf.")}
+      description={t(
+        "Connect your accounts so Bots can use apps on your behalf.",
+      )}
       title={t("Connections")}
     >
       {/*
@@ -364,7 +366,9 @@ function RouteComponent() {
          */}
         {loading ? null : plugins.error || connections.error ? (
           <p className="mt-4 text-destructive text-sm" role="alert">
-            {t("Couldn't load your connections. Reload the page, or ask an admin if it keeps happening.")}
+            {t(
+              "Couldn't load your connections. Reload the page, or ask an admin if it keeps happening.",
+            )}
           </p>
         ) : rows.length === 0 ? (
           <PageEmpty icon={IconPlug} title={t("No apps yet")}>
@@ -390,7 +394,8 @@ function RouteComponent() {
             </div>
             {matching.length === 0 ? (
               <p className="mt-4 text-sm text-muted-foreground" role="status">
-                {t("Nothing matches “")}{search.trim()}”.
+                {t("Nothing matches “")}
+                {search.trim()}”.
               </p>
             ) : (
               /*
@@ -408,7 +413,9 @@ function RouteComponent() {
         )}
         {links.error || providers.error ? (
           <p className="mt-4 text-destructive text-sm" role="alert">
-            {t("Couldn't load GitHub and Slack, so they aren't listed. Reload the page.")}
+            {t(
+              "Couldn't load GitHub and Slack, so they aren't listed. Reload the page.",
+            )}
           </p>
         ) : null}
       </PageSection>
@@ -465,7 +472,9 @@ function ConnectionStateLabel({ state }: { state: ConnectionRow["state"] }) {
     );
   }
   if (state === "team") {
-    return <span className="text-xs text-muted-foreground">{t("Team account")}</span>;
+    return (
+      <span className="text-xs text-muted-foreground">{t("Team account")}</span>
+    );
   }
   return (
     <span className="rounded-full bg-muted px-3 py-1 text-xs font-medium">

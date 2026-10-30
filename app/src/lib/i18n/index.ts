@@ -1,5 +1,7 @@
 export {
+  DEFAULT_LOCALE,
   LOCALES,
+  LOCALE_OVERRIDE_KEY,
   LOCALE_STORAGE_KEY,
   applyLocale,
   currentLocale,

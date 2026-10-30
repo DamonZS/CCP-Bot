@@ -33,7 +33,7 @@ export function mountDesktopConnectionFailure<T extends Env>(
   const expected = hostToken?.trim();
   if (!expected) return;
   app.get("/api/desktop/connection-failure", (context) => {
-    const offered = context.req.header("x-openbot-desktop-host-token") ?? "";
+    const offered = context.req.header("x-ccpbot-desktop-host-token") ?? "";
     const a = Buffer.from(offered),
       b = Buffer.from(expected);
     if (a.length !== b.length || !timingSafeEqual(a, b))
@@ -48,7 +48,7 @@ export function mountDesktopConnectionFailure<T extends Env>(
  */
 export function isModelAuthenticationError(error: unknown): boolean {
   if (!(error instanceof Error)) return false;
-  if (error.name === "OpenBotModelAuthenticationError") return true;
+  if (error.name === "CcpBotModelAuthenticationError") return true;
   if (
     error.name === "AI_APICallError" &&
     "statusCode" in error &&
@@ -70,7 +70,7 @@ export function observeModelConnection(
       next: (event) => {
         if (
           event.type === "RUN_ERROR" &&
-          event.code === "OPENBOT_MODEL_AUTH_REQUIRED"
+          event.code === "CCPBOT_MODEL_AUTH_REQUIRED"
         ) {
           recordDesktopConnectionFailure({
             connection: "model",

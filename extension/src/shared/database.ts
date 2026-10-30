@@ -1,4 +1,4 @@
-export const RECORDER_DATABASE = "openbot-recorder";
+export const RECORDER_DATABASE = "ccpbot-recorder";
 export const RECORDER_DATABASE_VERSION = 2;
 
 /**

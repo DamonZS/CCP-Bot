@@ -1,7 +1,7 @@
 import type {
   LearningSharingMode,
   PersonalLearningSharing,
-} from "@openbot/shared/learning";
+} from "@ccpbot/shared/learning";
 import {
   IconCheck,
   IconListCheck,
@@ -51,14 +51,15 @@ export const SHARING_CHOICES: {
     mode: "open",
     icon: IconUsersGroup,
     title: t("Everyone's Bots"),
-    description: t("Every Bot on OpenBot draws on all of your Skills."),
+    description: t("Every Bot on CCP-Bot draws on all of your Skills."),
   },
   {
     mode: "choose",
     icon: IconListCheck,
     title: t("The Skills I choose"),
-    description:
-      t("Every Bot draws on the Skills you open below; your own Bots use all of them."),
+    description: t(
+      "Every Bot draws on the Skills you open below; your own Bots use all of them.",
+    ),
   },
 ];
 
@@ -162,7 +163,7 @@ export function LearningSharing() {
       {mode === "choose" ? (
         <PageSection
           title={t("Your Skills")}
-          description={t("Open a Skill to let every Bot on OpenBot use it.")}
+          description={t("Open a Skill to let every Bot on CCP-Bot use it.")}
         >
           {data.skills === null || data.skills.length === 0 ? (
             <PageEmpty>{emptySentence(data)}</PageEmpty>

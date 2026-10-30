@@ -286,7 +286,9 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                     </EmptyTitle>
                     <EmptyDescription className="text-pretty">
                       {channels.hasNextPage
-                        ? t("Load older conversations to search more of your history.")
+                        ? t(
+                            "Load older conversations to search more of your history.",
+                          )
                         : `No conversation has “${search.trim()}” in its name or latest message.`}
                     </EmptyDescription>
                   </EmptyHeader>
@@ -299,7 +301,9 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                   <EmptyHeader>
                     <EmptyTitle>{t("No conversations yet")}</EmptyTitle>
                     <EmptyDescription className="text-pretty">
-                      {t("Start a conversation with a Bot and it shows up here.")}
+                      {t(
+                        "Start a conversation with a Bot and it shows up here.",
+                      )}
                     </EmptyDescription>
                   </EmptyHeader>
                 </Empty>
@@ -348,7 +352,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                 </SidebarMenuButton>
               </SidebarMenuItem>
             ))}
-          {/* Your own browser, with the Recorder in it. Drawn only where OpenBot can run one for you. */}
+          {/* Your own browser, with the Recorder in it. Drawn only where CCP-Bot can run one for you. */}
           <BrowserNavItem />
           <SidebarMenuItem>
             <DropdownMenu>

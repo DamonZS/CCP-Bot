@@ -1,4 +1,4 @@
-import type { HandoffStatus } from "@openbot/shared/computer-control";
+import type { HandoffStatus } from "@ccpbot/shared/computer-control";
 import {
   IconAlertTriangle,
   IconCircleCheck,
@@ -63,7 +63,8 @@ function endedAs(outcome: HelpOutcome): {
 } {
   if (outcome.handoffStatus === "completed")
     return { title: t("Taken over and handed back"), done: true };
-  if (outcome.stopped) return { title: t("Stopped waiting for you"), done: false };
+  if (outcome.stopped)
+    return { title: t("Stopped waiting for you"), done: false };
   switch (outcome.handoffStatus) {
     case "cancelled":
       return { title: t("Nobody took over"), done: false };
@@ -161,7 +162,8 @@ export function HelpRequestCard({
                 aria-hidden="true"
                 className="mr-1 inline size-3.5 align-[-2px]"
               />
-              {t("The Bot asked: “")}{asked}”
+              {t("The Bot asked: “")}
+              {asked}”
             </>
           ) : (
             "The Bot asked you to take over its browser."

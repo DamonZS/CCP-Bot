@@ -36,11 +36,11 @@ function rememberView(view: TasksView) {
 }
 
 /**
- * OpenDuet's Tasks: its two big words, Active and Up next, over OpenBot's own screens.
+ * OpenDuet's Tasks: its two big words, Active and Up next, over CCP-Bot's own screens.
  *
- * Every list here is OpenBot's component, unchanged: `WaitingForYou` for approvals and questions,
+ * Every list here is CCP-Bot's component, unchanged: `WaitingForYou` for approvals and questions,
  * `BotResponsibilities` for responsibilities, `RoutinesList` for routines and `SuggestionsInbox`
- * for suggested next steps. So every choice, field and confirmation OpenBot offers is here, and a
+ * for suggested next steps. So every choice, field and confirmation CCP-Bot offers is here, and a
  * new one arrives without this screen changing. The skin adds only the switch, the headings and
  * the layout around them.
  */
@@ -136,8 +136,8 @@ function SwitchTab({
 }
 
 /**
- * Active: what waits on the person, decided in OpenBot's own rows, then the responsibilities and
- * routines their Bots carry, in OpenBot's own lists. Needs input is left out when nothing waits.
+ * Active: what waits on the person, decided in CCP-Bot's own rows, then the responsibilities and
+ * routines their Bots carry, in CCP-Bot's own lists. Needs input is left out when nothing waits.
  */
 function ActiveView() {
   const inbox = useQuery(approvalInboxOptions());
@@ -159,7 +159,7 @@ function ActiveView() {
   );
 }
 
-/** A section heading in OpenDuet's grey, with how many, over an OpenBot list. */
+/** A section heading in OpenDuet's grey, with how many, over a CCP-Bot list. */
 function Section({
   label,
   count,

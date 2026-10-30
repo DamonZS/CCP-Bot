@@ -15,7 +15,7 @@ mock.module("@tauri-apps/api/core", () => ({
 
 const { Failure, InlineFailure } = await import("./Problem");
 
-const previousSupportUrl = process.env.VITE_OPENBOT_SUPPORT_URL;
+const previousSupportUrl = process.env.VITE_CCPBOT_SUPPORT_URL;
 
 beforeAll(() =>
   GlobalRegistrator.register({
@@ -26,8 +26,8 @@ afterEach(() => {
   invokeCalls = [];
   invokeFailure = null;
   if (previousSupportUrl === undefined)
-    delete process.env.VITE_OPENBOT_SUPPORT_URL;
-  else process.env.VITE_OPENBOT_SUPPORT_URL = previousSupportUrl;
+    delete process.env.VITE_CCPBOT_SUPPORT_URL;
+  else process.env.VITE_CCPBOT_SUPPORT_URL = previousSupportUrl;
   cleanup();
 });
 afterAll(() => GlobalRegistrator.unregister());
@@ -51,7 +51,7 @@ test("problem_ui_has_no_credential_restore_action", () => {
 
 for (const Component of [Failure, InlineFailure]) {
   test(`${Component.name} offers external setup help without including error data`, () => {
-    delete process.env.VITE_OPENBOT_SUPPORT_URL;
+    delete process.env.VITE_CCPBOT_SUPPORT_URL;
     const view = render(
       <Component
         problem={{
@@ -80,22 +80,22 @@ for (const Component of [Failure, InlineFailure]) {
 }
 
 test("setup help honors a branded support URL", () => {
-  process.env.VITE_OPENBOT_SUPPORT_URL = "https://support.example.test/openbot";
+  process.env.VITE_CCPBOT_SUPPORT_URL = "https://support.example.test/ccpbot";
   const view = render(<Failure problem={{ said: "Synthetic failure." }} />);
   expect(
     view.getByRole("link", { name: "Get setup help" }).getAttribute("href"),
-  ).toBe("https://support.example.test/openbot");
+  ).toBe("https://support.example.test/ccpbot");
   fireEvent.click(view.getByRole("link", { name: "Get setup help" }));
   expect(invokeCalls).toEqual([
     {
       command: "plugin:opener|open_url",
-      args: { url: "https://support.example.test/openbot" },
+      args: { url: "https://support.example.test/ccpbot" },
     },
   ]);
 });
 
 test("setup help reports a failed browser open and allows retry", async () => {
-  delete process.env.VITE_OPENBOT_SUPPORT_URL;
+  delete process.env.VITE_CCPBOT_SUPPORT_URL;
   invokeFailure = "synthetic browser refusal";
   const view = render(<Failure problem={{ said: "Synthetic failure." }} />);
   const help = view.getByRole("link", { name: "Get setup help" });

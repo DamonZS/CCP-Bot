@@ -212,7 +212,10 @@ function RouteComponent() {
   if (plugins.data && !server) {
     return (
       <PageShell
-        backButton={{ label: t("Plugins"), linkProps: { to: "/admin/plugins" } }}
+        backButton={{
+          label: t("Plugins"),
+          linkProps: { to: "/admin/plugins" },
+        }}
         description={t("No app with that name is turned on.")}
         title={appTitle}
       >
@@ -233,7 +236,10 @@ function RouteComponent() {
   if (!server) {
     return (
       <PageShell
-        backButton={{ label: t("Plugins"), linkProps: { to: "/admin/plugins" } }}
+        backButton={{
+          label: t("Plugins"),
+          linkProps: { to: "/admin/plugins" },
+        }}
         title={t("Plugins")}
       >
         <p className="mt-12 text-destructive text-sm" role="alert">
@@ -505,7 +511,9 @@ function RouteComponent() {
             {writes.length === 0 ? (
               <PageEmpty
                 icon={needle ? IconSearch : IconListDetails}
-                title={needle ? t("No matches") : t("No actions that change things")}
+                title={
+                  needle ? t("No matches") : t("No actions that change things")
+                }
               >
                 {needle
                   ? `Nothing that changes things matches "${search.trim()}".`
@@ -530,7 +538,8 @@ function RouteComponent() {
             <DialogContent>
               <DialogHeader>
                 <DialogTitle>
-                  {t("Let")} {botName} {t("use the shared")} {appTitle} {t("account?")}
+                  {t("Let")} {botName} {t("use the shared")} {appTitle}{" "}
+                  {t("account?")}
                 </DialogTitle>
               </DialogHeader>
               <DialogBody className="mt-4">

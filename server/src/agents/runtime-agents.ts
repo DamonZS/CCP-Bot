@@ -71,7 +71,7 @@ export function createRuntimeAgentLoader(
         if (ours) {
           agent.headers = {
             ...agent.headers,
-            "x-openbot-agent-token": managedAgent.token,
+            "x-ccpbot-agent-token": managedAgent.token,
           };
         }
       }

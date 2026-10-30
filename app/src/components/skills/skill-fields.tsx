@@ -97,7 +97,9 @@ export function SkillFields({
                       <>
                         {t("What you type after a slash.")}{" "}
                         <code>
-                          /{"{"}{t("command")}{"}"}
+                          /{"{"}
+                          {t("command")}
+                          {"}"}
                         </code>
                       </>
                     )}
@@ -145,7 +147,9 @@ export function SkillFields({
                   name={field.name}
                   onBlur={field.handleBlur}
                   onChange={(event) => field.handleChange(event.target.value)}
-                  placeholder={t("Turns yesterday's work into a standup update")}
+                  placeholder={t(
+                    "Turns yesterday's work into a standup update",
+                  )}
                   value={field.state.value}
                 />
                 {isInvalid ? (
@@ -167,7 +171,9 @@ export function SkillFields({
               field.state.meta.isTouched && !field.state.meta.isValid;
             return (
               <Field data-invalid={isInvalid}>
-                <FieldLabel htmlFor={field.name}>{t("Instructions")}</FieldLabel>
+                <FieldLabel htmlFor={field.name}>
+                  {t("Instructions")}
+                </FieldLabel>
                 <Textarea
                   aria-invalid={isInvalid}
                   className="min-h-40"
@@ -175,14 +181,18 @@ export function SkillFields({
                   name={field.name}
                   onBlur={field.handleBlur}
                   onChange={(event) => field.handleChange(event.target.value)}
-                  placeholder={t("Summarise what I did yesterday in this conversation, then list what is left.")}
+                  placeholder={t(
+                    "Summarise what I did yesterday in this conversation, then list what is left.",
+                  )}
                   value={field.state.value}
                 />
                 {isInvalid ? (
                   <FieldError errors={field.state.meta.errors} />
                 ) : (
                   <p className="text-muted-foreground text-xs">
-                    {t("What the Bot is told when you use the command. Write it as instructions to the Bot.")}
+                    {t(
+                      "What the Bot is told when you use the command. Write it as instructions to the Bot.",
+                    )}
                   </p>
                 )}
               </Field>

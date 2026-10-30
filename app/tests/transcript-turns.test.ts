@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { frameFiring } from "@openbot/shared/routine-firing";
+import { frameFiring } from "@ccpbot/shared/routine-firing";
 import type { TranscriptItem } from "@/components/channels/tool-activity";
 import { currentTurn, turnsOf } from "@/components/channels/transcript-turns";
 

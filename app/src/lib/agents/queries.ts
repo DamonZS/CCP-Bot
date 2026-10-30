@@ -62,7 +62,7 @@ export type AgentProfile = {
   isolationActive: boolean;
   /**
    * Why an isolated Bot is running on a shared computer instead, or null. `admin`: the owner no
-   * longer holds "Isolated Bots". `deployment`: this OpenBot cannot make a second computer.
+   * longer holds "Isolated Bots". `deployment`: this CCP-Bot cannot make a second computer.
    */
   isolationOffReason: "admin" | "deployment" | null;
 };

@@ -87,10 +87,10 @@ export function viteConfigs(input: {
         },
       },
     },
-    script("content/index.ts", "OpenBotRecorderContent", "content.js"),
+    script("content/index.ts", "CcpBotRecorderContent", "content.js"),
     script(
       "main-world/network-hook.ts",
-      "OpenBotRecorderPageNetwork",
+      "CcpBotRecorderPageNetwork",
       "page-network.js",
     ),
   ];

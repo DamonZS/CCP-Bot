@@ -1,6 +1,6 @@
 import { afterAll, afterEach, describe, expect, test } from "bun:test";
 import { randomUUID } from "node:crypto";
-import { MAX_IMAGE_BYTES } from "@openbot/shared/attachments";
+import { MAX_IMAGE_BYTES } from "@ccpbot/shared/attachments";
 import { eq, sql } from "drizzle-orm";
 import type { MiddlewareHandler } from "hono";
 import { Hono } from "hono";
@@ -276,7 +276,7 @@ function uploadRequest(
   formData.set("file", file);
   formData.set("uploadGroup", randomUUID());
   return app.request(
-    `http://openbot.test/api/channels/${channelId}/attachments`,
+    `http://ccpbot.test/api/channels/${channelId}/attachments`,
     { method: "POST", body: formData },
   );
 }

@@ -2,8 +2,8 @@ import { CopilotKitContext } from "@copilotkit/react-core/v2/context";
 import {
   readConnectPrompt,
   SHOW_APP_ACCESS_TOOL,
-} from "@openbot/shared/connect-prompt";
-import { researchRoleOfTool } from "@openbot/shared/research";
+} from "@ccpbot/shared/connect-prompt";
+import { researchRoleOfTool } from "@ccpbot/shared/research";
 import {
   IconFileText,
   IconPlug,

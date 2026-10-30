@@ -121,7 +121,7 @@ export const connectWebSocket: ConnectVoice = async ({
       method: "POST",
       credentials: "include",
       signal,
-      headers: { "Content-Type": "application/json", "x-openbot-voice": "1" },
+      headers: { "Content-Type": "application/json", "x-ccpbot-voice": "1" },
       body: JSON.stringify({ channelId }),
     });
     const body: unknown = await response.json();

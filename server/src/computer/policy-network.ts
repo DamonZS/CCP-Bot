@@ -83,7 +83,7 @@ async function botsOn(
     `${(computer.url ?? "").replace(/\/$/, "")}/computers`,
     {
       headers: options.token
-        ? { "x-openbot-computer-token": options.token }
+        ? { "x-ccpbot-computer-token": options.token }
         : {},
       signal: AbortSignal.timeout(5_000),
     },
@@ -179,8 +179,8 @@ export async function pushEgressPolicy(
       method: "PUT",
       headers: {
         "content-type": "application/json",
-        "x-openbot-bot-id": botId,
-        ...(options.token ? { "x-openbot-computer-token": options.token } : {}),
+        "x-ccpbot-bot-id": botId,
+        ...(options.token ? { "x-ccpbot-computer-token": options.token } : {}),
       },
       body: JSON.stringify({
         policy: { mode: policy.mode, rules: policy.rules },

@@ -113,7 +113,9 @@ export function TeamApprovalSettings() {
                 <IconTerminal2 />
               </ItemMedia>
               <ItemContent>
-                <ItemTitle>{t("Commands on members' computers, at most")}</ItemTitle>
+                <ItemTitle>
+                  {t("Commands on members' computers, at most")}
+                </ItemTitle>
                 <ItemDescription>
                   {t("A member's own stricter setting still applies.")}
                 </ItemDescription>
@@ -134,7 +136,9 @@ export function TeamApprovalSettings() {
         </PageSection>
       ) : null}
       <PageSection
-        description={t("These apply to every member's Bots. Members can't change them.")}
+        description={t(
+          "These apply to every member's Bots. Members can't change them.",
+        )}
         title={t("Team rules")}
       >
         {teamRules.length === 0 ? (

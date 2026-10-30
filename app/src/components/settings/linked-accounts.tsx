@@ -204,7 +204,8 @@ export function LinkedAccountSection({
     return (
       <PageSection title={t("Your account")}>
         <PageEmpty icon={IconLink} title={t("Not set up yet")}>
-          {t("You can't link a")} {linkableProviderTitle(provider)} {t("account yet. An admin has to set it up first.")}
+          {t("You can't link a")} {linkableProviderTitle(provider)}{" "}
+          {t("account yet. An admin has to set it up first.")}
         </PageEmpty>
       </PageSection>
     );

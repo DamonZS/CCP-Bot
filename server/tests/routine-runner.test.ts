@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import type { TurnRunner } from "@openbot/toolkit/run-turn";
+import type { TurnRunner } from "@ccpbot/toolkit/run-turn";
 import type { AgentActor } from "../src/agents/profile-types";
 import type {
   AgentChannel,

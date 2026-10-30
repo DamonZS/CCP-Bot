@@ -75,7 +75,9 @@ export function ProposedSkillCard({
   if (!respond) {
     return (
       <GalleryFrame title={titleFor(args.slug, replaces)}>
-        <p className="text-sm text-muted-foreground">{t("Writing the skill…")}</p>
+        <p className="text-sm text-muted-foreground">
+          {t("Writing the skill…")}
+        </p>
       </GalleryFrame>
     );
   }
@@ -146,7 +148,9 @@ export function ProposedSkillCard({
 
       {values.tools.length > 0 ? (
         <p className="mt-2 text-muted-foreground text-xs">
-          {t("Naming a tool doesn't give access. A Bot can only use these if it already has them.")}
+          {t(
+            "Naming a tool doesn't give access. A Bot can only use these if it already has them.",
+          )}
         </p>
       ) : null}
 
@@ -236,7 +240,9 @@ function Unwritable({
       title={t("Skill")}
     >
       <p className="text-sm">
-        {t("The Bot's draft wasn't a valid skill. Nothing was saved, and the Bot knows what to fix.")}
+        {t(
+          "The Bot's draft wasn't a valid skill. Nothing was saved, and the Bot knows what to fix.",
+        )}
       </p>
     </GalleryFrame>
   );

@@ -12,7 +12,7 @@ import { t } from "@/lib/i18n";
 
 /**
  * Ideas: the next steps the centre Bot's background research suggested, and the research itself.
- * Both are OpenBot's own sections, so starting, dismissing and running research behave as on the
+ * Both are CCP-Bot's own sections, so starting, dismissing and running research behave as on the
  * Bot's page.
  */
 export function IdeasScreen() {

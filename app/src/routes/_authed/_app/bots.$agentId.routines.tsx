@@ -12,7 +12,9 @@ function RoutinesPage() {
   return (
     <BotSubpage
       agentId={agentId}
-      description={t("Manage this Bot’s scheduled routines. Turn a routine off, run it now, or delete it.")}
+      description={t(
+        "Manage this Bot’s scheduled routines. Turn a routine off, run it now, or delete it.",
+      )}
       title={t("Routines")}
     >
       {(agent) => <RoutinesList agentId={agent.id} />}

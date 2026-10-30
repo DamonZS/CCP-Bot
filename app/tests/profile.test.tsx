@@ -27,8 +27,8 @@ function client(needsName = true) {
   });
   query.setQueryData(authKeys.currentUser(), {
     id: "existing-user",
-    email: "dev@openbot.local",
-    name: needsName ? "dev@openbot.local" : "Sam",
+    email: "dev@ccpbot.local",
+    name: needsName ? "dev@ccpbot.local" : "Sam",
     needsName,
     onboarding: { completedAt: "2026-01-01", step: 0 },
   });

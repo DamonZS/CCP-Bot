@@ -60,7 +60,9 @@ export function DeleteConversationDialog({
     <Dialog onOpenChange={onOpenChange} open={open}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>{t("Delete")} {name}?</DialogTitle>
+          <DialogTitle>
+            {t("Delete")} {name}?
+          </DialogTitle>
           <DialogDescription>
             {t("It disappears for everyone in the conversation.")}
           </DialogDescription>

@@ -229,8 +229,9 @@ export const GALLERY: GalleryComponent[] = [
     name: "showRecord",
     title: t("Record"),
     kind: "card",
-    description:
-      t("Show one thing and its fields, an order, a person, a ticket. Use instead of describing a record in prose."),
+    description: t(
+      "Show one thing and its fields, an order, a person, a ticket. Use instead of describing a record in prose.",
+    ),
     parameters: RecordCardProps,
     Component: RecordCard as GalleryComponent["Component"],
     preview: {
@@ -249,8 +250,9 @@ export const GALLERY: GalleryComponent[] = [
     name: "showMetrics",
     title: t("Headline figures"),
     kind: "card",
-    description:
-      t("Show up to six headline figures, each with an optional movement. Use for a summary somebody reads at a glance."),
+    description: t(
+      "Show up to six headline figures, each with an optional movement. Use for a summary somebody reads at a glance.",
+    ),
     parameters: MetricsCardProps,
     Component: MetricsCard as GalleryComponent["Component"],
     preview: {
@@ -277,8 +279,9 @@ export const GALLERY: GalleryComponent[] = [
     name: "showChecklist",
     title: t("Checklist"),
     kind: "card",
-    description:
-      t("Show a list of things and which are done. Reporting only, the person cannot tick these, so do not use it to ask for anything."),
+    description: t(
+      "Show a list of things and which are done. Reporting only, the person cannot tick these, so do not use it to ask for anything.",
+    ),
     parameters: ChecklistCardProps,
     Component: ChecklistCard as GalleryComponent["Component"],
     preview: {
@@ -295,8 +298,9 @@ export const GALLERY: GalleryComponent[] = [
     name: "showNotice",
     title: t("Notice"),
     kind: "card",
-    description:
-      t("Show a headline, a short explanation and optional supporting points. Use instead of writing several paragraphs of prose."),
+    description: t(
+      "Show a headline, a short explanation and optional supporting points. Use instead of writing several paragraphs of prose.",
+    ),
     parameters: NoticeCardProps,
     Component: NoticeCard as GalleryComponent["Component"],
     preview: {

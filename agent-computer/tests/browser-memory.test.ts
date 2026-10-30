@@ -17,9 +17,9 @@ import type { MemoryReading } from "../src/container-memory";
  * Asked for by name, like the other tests that launch a real Chromium:
  *
  *   cd agent-computer && bunx playwright install chromium
- *   OPENBOT_COMPUTER_BROWSER=1 COMPUTER_BROWSER_MODE=headless bun test tests/browser-memory.test.ts
+ *   CCPBOT_COMPUTER_BROWSER=1 COMPUTER_BROWSER_MODE=headless bun test tests/browser-memory.test.ts
  */
-const asked = process.env.OPENBOT_COMPUTER_BROWSER === "1";
+const asked = process.env.CCPBOT_COMPUTER_BROWSER === "1";
 const LAUNCH_TIMEOUT_MS = 120_000;
 
 const html = (title: string) =>
@@ -67,7 +67,7 @@ async function profilesFor(
   options: Parameters<typeof import("../src/profiles").createProfiles>[2],
 ) {
   const { createProfiles } = await import("../src/profiles");
-  const root = await mkdtemp(join(tmpdir(), `openbot-${name}-`));
+  const root = await mkdtemp(join(tmpdir(), `ccpbot-${name}-`));
   roots.push(root);
   const told: string[] = [];
   const profiles = createProfiles(

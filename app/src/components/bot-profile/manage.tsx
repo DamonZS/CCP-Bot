@@ -81,9 +81,14 @@ function ResetDialog({
     <Dialog onOpenChange={onOpenChange} open={open}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>{t("Reset")} {agent.name}?</DialogTitle>
+          <DialogTitle>
+            {t("Reset")} {agent.name}?
+          </DialogTitle>
           <DialogDescription>
-            {t("This deletes what")} {agent.name} {t("has with you. Other people's conversations and data stay. You can't undo this.")}
+            {t("This deletes what")} {agent.name}{" "}
+            {t(
+              "has with you. Other people's conversations and data stay. You can't undo this.",
+            )}
           </DialogDescription>
         </DialogHeader>
         <DialogBody className="mt-4 overflow-y-auto">
@@ -92,7 +97,9 @@ function ResetDialog({
               {t("Couldn't check what a reset would delete. Try again.")}
             </p>
           ) : reset.isSuccess ? (
-            <p className="text-sm">{t("Done.")} {agent.name} {t("starts fresh with you.")}</p>
+            <p className="text-sm">
+              {t("Done.")} {agent.name} {t("starts fresh with you.")}
+            </p>
           ) : (
             <div className="grid gap-2 text-sm">
               {lines.length === 0 ? (
@@ -110,7 +117,9 @@ function ResetDialog({
               {plan.data.sharedConversationsKept > 0 ? (
                 <p className="text-muted-foreground">
                   {plan.data.sharedConversationsKept} {t("conversation")}
-                  {plan.data.sharedConversationsKept === 1 ? t(" is") : t("s are")}{" "}
+                  {plan.data.sharedConversationsKept === 1
+                    ? t(" is")
+                    : t("s are")}{" "}
                   {t("shared with other people or Bots and will be kept.")}
                 </p>
               ) : null}
@@ -192,7 +201,9 @@ export function ManageSection({
             <ItemTitle>{t("Pinned")}</ItemTitle>
             <ItemDescription>
               {assigned
-                ? t("An admin assigned it to you. It stays at the top of your Bots list.")
+                ? t(
+                    "An admin assigned it to you. It stays at the top of your Bots list.",
+                  )
                 : agent.pinned
                   ? "At the top of your Bots list. Only your list changes."
                   : "Keep it at the top of your Bots list. Only your list changes."}
@@ -255,7 +266,9 @@ export function ManageSection({
           <ItemContent>
             <ItemTitle>{t("Duplicate")}</ItemTitle>
             <ItemDescription>
-              {t("Make your own copy. Its conversations and keys aren't copied.")}
+              {t(
+                "Make your own copy. Its conversations and keys aren't copied.",
+              )}
             </ItemDescription>
           </ItemContent>
         </Item>
@@ -270,7 +283,9 @@ export function ManageSection({
           <ItemContent>
             <ItemTitle>{t("Reset")}</ItemTitle>
             <ItemDescription>
-              {t("Delete your conversations with it, what it remembers for you, and its scheduled work. You'll see the list first.")}
+              {t(
+                "Delete your conversations with it, what it remembers for you, and its scheduled work. You'll see the list first.",
+              )}
             </ItemDescription>
           </ItemContent>
           <ItemActions>
@@ -306,7 +321,9 @@ export function ManageSection({
       <Dialog onOpenChange={setDeleteOpen} open={deleteOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>{t("Delete")} {agent.name}?</DialogTitle>
+            <DialogTitle>
+              {t("Delete")} {agent.name}?
+            </DialogTitle>
             <DialogDescription>
               {t("It's deleted for everyone. You can't undo this.")}
             </DialogDescription>

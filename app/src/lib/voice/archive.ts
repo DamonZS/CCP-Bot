@@ -3,7 +3,7 @@ import type {
   SaveVoiceSessionInput,
   VoiceSessionPage,
   VoiceSessionRecord,
-} from "@openbot/shared/voice-session";
+} from "@ccpbot/shared/voice-session";
 import { queryOptions, useQuery } from "@tanstack/react-query";
 import { channelKeys } from "@/lib/channels/queries";
 import { client } from "@/lib/client";
@@ -16,7 +16,7 @@ import {
   voiceCallOwner,
 } from "./outbox";
 
-export const VOICE_CHAT_ACTIVITY = "openbot-voice-chat";
+export const VOICE_CHAT_ACTIVITY = "ccpbot-voice-chat";
 export type VoiceChatEntry = VoiceSessionRecord & {
   saveState?: "saving" | "unsaved";
   saveError?: string;
@@ -100,7 +100,7 @@ export function saveVoiceSession(
         credentials: "include",
         signal: AbortSignal.timeout(30_000),
         keepalive: new TextEncoder().encode(payload).byteLength < 60_000,
-        headers: { "content-type": "application/json", "x-openbot-voice": "1" },
+        headers: { "content-type": "application/json", "x-ccpbot-voice": "1" },
         body: payload,
       });
       // A proxy's error page is not JSON, and its parser message is no sentence for a person.

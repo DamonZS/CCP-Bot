@@ -96,11 +96,15 @@ function PeoplePage() {
 
   return (
     <PageShell
-      description={t("Manage access for people who have signed in. Only admins can access the Admin pages.")}
+      description={t(
+        "Manage access for people who have signed in. Only admins can access the Admin pages.",
+      )}
       title={t("People")}
     >
       <PageSection
-        description={t("Addresses in INITIAL_ADMIN_EMAILS are always admins. You can't change them here.")}
+        description={t(
+          "Addresses in INITIAL_ADMIN_EMAILS are always admins. You can't change them here.",
+        )}
         title={t("Who is here")}
       >
         {failure ? (
@@ -111,7 +115,9 @@ function PeoplePage() {
         {terminate.data ? (
           <p className="mt-4 text-muted-foreground text-sm" role="status">
             {t("Stopped")} {terminate.data.stopped.length}{" "}
-            {terminate.data.stopped.length === 1 ? t("computer") : t("computers")}
+            {terminate.data.stopped.length === 1
+              ? t("computer")
+              : t("computers")}
             {terminate.data.failed.length > 0
               ? `. ${terminate.data.failed.length} couldn't be stopped`
               : ""}

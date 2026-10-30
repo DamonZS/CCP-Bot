@@ -1,4 +1,4 @@
-import { SKIN_IDS } from "@openbot/shared/user-preferences";
+import { SKIN_IDS } from "@ccpbot/shared/user-preferences";
 import { Hono, type MiddlewareHandler } from "hono";
 import { z } from "zod";
 import type { AppVariables } from "./auth/guards";

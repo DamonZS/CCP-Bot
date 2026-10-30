@@ -59,7 +59,8 @@ export function SharedUseRequests() {
               </ItemMedia>
               <ItemContent>
                 <ItemTitle className="line-clamp-none">
-                  {request.botName} {t("wants the shared")} {request.title} {t("account")}
+                  {request.botName} {t("wants the shared")} {request.title}{" "}
+                  {t("account")}
                 </ItemTitle>
                 <ItemDescription className="line-clamp-none">
                   {WHY[request.reason as SharedUseRequestReason] ??

@@ -1,7 +1,7 @@
-import type { VoiceTranscriptEntry } from "@openbot/shared/voice-session";
+import type { VoiceTranscriptEntry } from "@ccpbot/shared/voice-session";
 import type { VoiceEvent } from "./types";
 
-export const VOICE_CONTEXT_ITEM_ID = "openbot-voice-context";
+export const VOICE_CONTEXT_ITEM_ID = "ccpbot-voice-context";
 
 function object(value: unknown): Record<string, unknown> | undefined {
   return value && typeof value === "object"

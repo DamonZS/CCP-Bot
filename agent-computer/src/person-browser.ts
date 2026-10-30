@@ -1,8 +1,8 @@
 /**
  * Launching a person's browser with the Recorder in it.
  *
- * One browser per person, a computer named for them (`person-` and 32 hex digits). On OpenBot
- * Desktop it is the person's installed Chrome, or Edge, as a native window on a dedicated OpenBot
+ * One browser per person, a computer named for them (`person-` and 32 hex digits). On CCP-Bot
+ * Desktop it is the person's installed Chrome, or Edge, as a native window on a dedicated CCP-Bot
  * profile; hosted, it is this computer's bundled Chromium, which the person sees through the live
  * screen. Either way the Recorder is in it before anybody looks, its microphone is granted, and
  * none of its setup pages show: `person-launch.ts` has the switches and why, this file starts the
@@ -33,7 +33,7 @@ import {
 import type {
   BrowserProduct,
   BrowserWindow,
-} from "../../shared/openbot-browser";
+} from "../../shared/ccpbot-browser";
 import type { BrowserRuntime } from "./browser-runtime";
 import type { Egress } from "./egress";
 import { launchNativeBrowser } from "./native-browser";
@@ -90,7 +90,7 @@ export type PersonOpenStep =
 /**
  * Playwright's own words for a browser this computer cannot start at all: the browser it bundles is not installed
  * (`playwright install`), the system libraries it needs are missing (`playwright install-deps`), or the installed browser
- * a launch named is not there. These are the computer's setup, which only whoever runs OpenBot can see to, never anything
+ * a launch named is not there. These are the computer's setup, which only whoever runs CCP-Bot can see to, never anything
  * the person did. Matched on playwright-core 1.62.1's messages (its browser registry and its dependency check), which
  * `person-browser-rules.test.ts` pins against the real text, so a Playwright that words them differently fails there.
  */

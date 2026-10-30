@@ -1,6 +1,6 @@
-// The OpenBot address rule lives beside the Recorder's API in shared/, so OpenBot itself checks an address with the same
-// rule before it hands one to the Recorder (the OpenBot browser's connection).
-export { normaliseOpenBotOrigin } from "@openbot/shared/recorder-api";
+// The CCP-Bot address rule lives beside the Recorder's API in shared/, so CCP-Bot itself checks an address with the same
+// rule before it hands one to the Recorder (the CCP-Bot browser's connection).
+export { normaliseCcpBotOrigin } from "@ccpbot/shared/recorder-api";
 
 const LOOPBACK_HOSTS = new Set(["127.0.0.1", "[::1]"]);
 

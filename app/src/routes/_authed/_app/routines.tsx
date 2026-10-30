@@ -22,7 +22,9 @@ export const Route = createFileRoute("/_authed/_app/routines")({
 function RoutinesPage() {
   return (
     <PageShell
-      description={t("Ask a Bot to create or change a scheduled routine. You can review and stop routines here.")}
+      description={t(
+        "Ask a Bot to create or change a scheduled routine. You can review and stop routines here.",
+      )}
       title={t("Routines")}
     >
       <RoutinesList />

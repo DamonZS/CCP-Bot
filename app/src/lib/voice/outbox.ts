@@ -1,8 +1,8 @@
-import type { SaveVoiceSessionInput } from "@openbot/shared/voice-session";
+import type { SaveVoiceSessionInput } from "@ccpbot/shared/voice-session";
 import { type AuthenticatedUser, authKeys } from "@/lib/auth/queries";
 import { queryClient } from "@/query-client";
 
-const PREFIX = "openbot:voice-outbox:";
+const PREFIX = "ccpbot:voice-outbox:";
 export const voiceCallOwner = () =>
   queryClient.getQueryData<AuthenticatedUser>(authKeys.currentUser())?.id;
 const key = (

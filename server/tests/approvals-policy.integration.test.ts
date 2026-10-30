@@ -1,6 +1,6 @@
 import { afterAll, beforeAll, expect, test } from "bun:test";
 import { randomUUID } from "node:crypto";
-import { HeadlessToolSuspension } from "@openbot/toolkit/headless-tools";
+import { HeadlessToolSuspension } from "@ccpbot/toolkit/headless-tools";
 import { and, eq, inArray } from "drizzle-orm";
 import {
   createApprovalService,

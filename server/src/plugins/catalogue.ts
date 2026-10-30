@@ -21,7 +21,7 @@
 import {
   type ResearchRole,
   researchRoleOfTool,
-} from "@openbot/shared/research";
+} from "@ccpbot/shared/research";
 /**
  * How a server is authenticated, and whose credential does it.
  *
@@ -412,7 +412,7 @@ export const CATALOGUE: readonly CatalogueEntry[] = Object.freeze([
   {
     key: "routines",
     title: "Routines",
-    vendor: "OpenBot",
+    vendor: "CCP-Bot",
     summary:
       "Standing instructions a Bot runs on a schedule, as whoever scheduled them.",
     /*

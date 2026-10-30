@@ -95,7 +95,9 @@ function RouteComponent() {
           {t("Write a skill")}
         </Button>
       }
-      description={t("Create reusable instructions people can run with /. Skills use a Bot’s existing permissions and do not grant additional access.")}
+      description={t(
+        "Create reusable instructions people can run with /. Skills use a Bot’s existing permissions and do not grant additional access.",
+      )}
       title={t("Skills")}
     >
       {error ? (
@@ -105,7 +107,9 @@ function RouteComponent() {
       ) : null}
 
       <PageSection
-        description={t("Manage skills shared across this deployment. People can create personal skills on their Skills page.")}
+        description={t(
+          "Manage skills shared across this deployment. People can create personal skills on their Skills page.",
+        )}
         title={t("Installed")}
       >
         {/* A read that failed says so; `isPending` goes false on it too, and it is not "none". */}
@@ -195,7 +199,9 @@ function RouteComponent() {
           <DialogHeader>
             <DialogTitle>{t("Write a skill for everybody")}</DialogTitle>
             <DialogDescription>
-              {t("People type the slug after /. The Bot then follows the instructions. Everybody can use it, and you choose which Bots have it.")}
+              {t(
+                "People type the slug after /. The Bot then follows the instructions. Everybody can use it, and you choose which Bots have it.",
+              )}
             </DialogDescription>
           </DialogHeader>
           <DialogBody className="mt-4">
@@ -255,7 +261,9 @@ function RouteComponent() {
                       instructions: event.target.value,
                     }))
                   }
-                  placeholder={t("What the Bot should do when this skill is used.")}
+                  placeholder={t(
+                    "What the Bot should do when this skill is used.",
+                  )}
                   value={draft.instructions}
                 />
               </Field>

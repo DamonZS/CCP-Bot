@@ -55,7 +55,9 @@ export function GithubSources() {
           {t("Add a repository")}
         </Button>
       }
-      description={t("Add a repository here, then add a webhook in GitHub with the address below and the same secret. Its events, like issues.opened, can then start a responsibility.")}
+      description={t(
+        "Add a repository here, then add a webhook in GitHub with the address below and the same secret. Its events, like issues.opened, can then start a responsibility.",
+      )}
       title={t("Repositories")}
     >
       {error ? (
@@ -89,7 +91,9 @@ export function GithubSources() {
                 <ItemContent>
                   <ItemTitle>{binding.repository}</ItemTitle>
                   <ItemDescription className="line-clamp-none break-all font-mono text-xs">
-                    {window.location.origin}{t("/api/events/github/")}{binding.id}
+                    {window.location.origin}
+                    {t("/api/events/github/")}
+                    {binding.id}
                   </ItemDescription>
                 </ItemContent>
                 <ItemActions>

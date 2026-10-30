@@ -9,12 +9,12 @@ import { join } from "node:path";
  *
  * Asked for explicitly because it needs a virtual display and a real Chromium:
  *
- *   OPENBOT_HEADED_BROWSER=1 bun test tests/headed-browser.test.ts
+ *   CCPBOT_HEADED_BROWSER=1 bun test tests/headed-browser.test.ts
  *
  * The computer starts and owns Xvfb itself. Wrapping this command in xvfb-run would hide display
  * allocation bugs by giving Chromium a second display it does not own.
  */
-const asked = process.env.OPENBOT_HEADED_BROWSER === "1";
+const asked = process.env.CCPBOT_HEADED_BROWSER === "1";
 const TOKEN = "headed-browser-test-token";
 const BOT = "headed-browser";
 
@@ -42,8 +42,8 @@ function api(path: string, init?: RequestInit) {
     ...init,
     headers: {
       "content-type": "application/json",
-      "x-openbot-bot-id": BOT,
-      "x-openbot-computer-token": TOKEN,
+      "x-ccpbot-bot-id": BOT,
+      "x-ccpbot-computer-token": TOKEN,
       ...(init?.headers ?? {}),
     },
   });

@@ -262,7 +262,7 @@ async function seedApp(input: {
     accountMode:
       input.accountMode === undefined ? "personal" : input.accountMode,
     sharedVendorUserId:
-      input.accountMode === "shared" ? `openbot-deployment:${suite}` : null,
+      input.accountMode === "shared" ? `ccpbot-deployment:${suite}` : null,
   });
   for (const tool of input.tools ?? ["READ"])
     await database.insert(mcpTools).values({
@@ -299,7 +299,7 @@ async function connectTeamAccount(name: string) {
     provider: "composio",
     app: slug(name),
     holder: "deployment",
-    vendorUserId: `openbot-deployment:${suite}`,
+    vendorUserId: `ccpbot-deployment:${suite}`,
     verified: true,
   });
 }
@@ -477,7 +477,7 @@ describe("what each app a Bot holds is, for the person asking", () => {
       provider: "composio",
       app: slug("slack"),
       holder: "deployment",
-      vendorUserId: `openbot-deployment:${suite}`,
+      vendorUserId: `ccpbot-deployment:${suite}`,
       verified: true,
       connectedAt: new Date("2026-10-20T09:30:00.000Z"),
     });
@@ -970,7 +970,7 @@ describe("answering a request", () => {
       provider: "composio",
       app: slug("slack"),
       holder: "deployment",
-      vendorUserId: `openbot-deployment:${suite}`,
+      vendorUserId: `ccpbot-deployment:${suite}`,
       verified: true,
     });
     const later = await appAs(admin, "admin").request(

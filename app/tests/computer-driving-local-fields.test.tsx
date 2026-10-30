@@ -7,7 +7,7 @@ import { useState } from "react";
 import {
   type BotBrowserApiState,
   botBrowserApiPaths,
-} from "@openbot/shared/bot-browser";
+} from "@ccpbot/shared/bot-browser";
 import { BotRecordPanel } from "@/components/computer/bot-browser";
 import { LiveScreen } from "@/components/computer/live-screen";
 import { queryClient } from "@/query-client";

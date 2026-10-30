@@ -63,7 +63,7 @@ const channels: Pick<ChannelStore, "get"> = { get: async () => channel };
 function request(body: unknown = { channelId: channel.id, sdp }): RequestInit {
   return {
     method: "POST",
-    headers: { "content-type": "application/json", "x-openbot-voice": "1" },
+    headers: { "content-type": "application/json", "x-ccpbot-voice": "1" },
     body: JSON.stringify(body),
   };
 }

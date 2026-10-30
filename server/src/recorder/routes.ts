@@ -10,8 +10,8 @@ import {
   type RecorderMe,
   type RecorderUser,
   recorderActivitySchema,
-} from "@openbot/shared/recorder-api";
-import { extensionIdFromOrigin } from "@openbot/shared/recorder-extension";
+} from "@ccpbot/shared/recorder-api";
+import { extensionIdFromOrigin } from "@ccpbot/shared/recorder-extension";
 import { Hono, type MiddlewareHandler } from "hono";
 import { bodyLimit } from "hono/body-limit";
 import { type AuditStore, DEPLOYMENT_INITIATOR } from "../audit";
@@ -33,8 +33,8 @@ export type RecorderRouteDeps = {
   learningSpace: (actor: AuthenticatedActor) => Promise<LearningSpaceState>;
   /** A browser connected as this person: make their Learning space in the background. Never throws or waits. */
   onConnected?: (userId: string) => void;
-  /** The person revoked one of their connections from OpenBot (Settings, Browsers): the browser holding it is told, where
-   * OpenBot can reach it (their own OpenBot browser, browser/routes.ts). Awaited, briefly; never throws. */
+  /** The person revoked one of their connections from CCP-Bot (Settings, Browsers): the browser holding it is told, where
+   * CCP-Bot can reach it (their own CCP-Bot browser, browser/routes.ts). Awaited, briefly; never throws. */
   onRevoked?: (userId: string, connection: RecorderConnection) => Promise<void>;
   /** The name falls back to the email, never empty. */
   user: (userId: string) => Promise<RecorderUser | null>;
@@ -143,7 +143,7 @@ export function createRecorderRoutes(deps: RecorderRouteDeps) {
         payload: { reason: "origin", origin: origin ?? null },
       });
       return context.json(
-        { error: "Only the OpenBot Recorder extension can finish connecting." },
+        { error: "Only the CCP-Bot Recorder extension can finish connecting." },
         403,
       );
     }
@@ -192,7 +192,7 @@ export function createRecorderRoutes(deps: RecorderRouteDeps) {
       return context.json(
         {
           error:
-            "This connection code has expired or was already used. Choose Connect this browser in OpenBot again.",
+            "This connection code has expired or was already used. Choose Connect this browser in CCP-Bot again.",
         },
         400,
       );
@@ -215,7 +215,7 @@ export function createRecorderRoutes(deps: RecorderRouteDeps) {
 
   // Settings, Browsers, which asks again while it is open: each live connection, and whether its Recorder is recording
   // now by its own latest report, which a recording sends every 30 s. Its last use cannot say so: a recording streams to
-  // the gateway, and reaches OpenBot only with those reports.
+  // the gateway, and reaches CCP-Bot only with those reports.
   routes.get("/connections", deps.requireUser, async (context) => {
     const now = Date.now();
     const answer: RecorderConnectionsResponse = {
@@ -306,7 +306,7 @@ export function createRecorderRoutes(deps: RecorderRouteDeps) {
 
   // What this browser's Recorder is doing now, which it says whenever its recording phase changes and every 30 s while
   // one runs: the Browser button's red dot reads it (browser/routes.ts), so the dot follows a recording in the person's
-  // everyday browser as well as in the OpenBot browser. Kept against the connection, in place of the last report, and
+  // everyday browser as well as in the CCP-Bot browser. Kept against the connection, in place of the last report, and
   // never audited: it is a heartbeat, not a decision.
   routes.post(
     "/activity",
@@ -336,7 +336,7 @@ export function createRecorderRoutes(deps: RecorderRouteDeps) {
         return context.json(
           {
             error:
-              "This browser is no longer connected to OpenBot. Connect it again.",
+              "This browser is no longer connected to CCP-Bot. Connect it again.",
             code: RECORDER_SIGNED_OUT,
             reason: "revoked",
           },

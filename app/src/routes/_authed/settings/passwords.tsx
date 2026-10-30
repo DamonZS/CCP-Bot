@@ -38,7 +38,9 @@ function PasswordsPage() {
   return (
     <PageShell
       title={t("Passwords")}
-      description={t("Manage saved website logins. Bots cannot see your passwords, and you approve each use.")}
+      description={t(
+        "Manage saved website logins. Bots cannot see your passwords, and you approve each use.",
+      )}
     >
       <PageSection title={t("Saved logins")}>
         {logins.isPending ? null : logins.error ? (
@@ -47,7 +49,9 @@ function PasswordsPage() {
           </p>
         ) : !logins.data.passwordManager ? (
           <PageEmpty icon={IconLockOff} title={t("Saved passwords are off")}>
-            {t("An admin turned them off. Your logins are kept but won't be offered.")}
+            {t(
+              "An admin turned them off. Your logins are kept but won't be offered.",
+            )}
           </PageEmpty>
         ) : logins.data.logins.length === 0 ? (
           <PageEmpty icon={IconKey} title={t("No saved logins yet")}>

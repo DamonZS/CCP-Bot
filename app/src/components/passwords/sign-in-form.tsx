@@ -97,7 +97,9 @@ export function SignInForm({ requestId }: { requestId: string }) {
 
   if (FINAL_SIGN_IN.includes(data.status))
     return (
-      <PageSection title={data.status === "signed_in" ? t("Signed in") : t("Closed")}>
+      <PageSection
+        title={data.status === "signed_in" ? t("Signed in") : t("Closed")}
+      >
         <p className="text-muted-foreground text-sm">
           {data.outcome ?? "This sign-in has ended."}
         </p>
@@ -108,7 +110,9 @@ export function SignInForm({ requestId }: { requestId: string }) {
     return (
       <PageSection
         title={t("Enter the verification code")}
-        description={t("The site sent a verification code. Enter it to finish signing in.")}
+        description={t(
+          "The site sent a verification code. Enter it to finish signing in.",
+        )}
       >
         <form
           className="flex flex-col gap-3"
@@ -175,7 +179,9 @@ export function SignInForm({ requestId }: { requestId: string }) {
     return (
       <PageSection
         title={t("Sign in by hand")}
-        description={t("Open the Bot's browser and sign in yourself. Then choose I've signed in and the Bot carries on.")}
+        description={t(
+          "Open the Bot's browser and sign in yourself. Then choose I've signed in and the Bot carries on.",
+        )}
       >
         <div className="flex flex-wrap gap-2">
           <Button
@@ -257,7 +263,9 @@ export function SignInForm({ requestId }: { requestId: string }) {
       ) : null}
       <PageSection
         title={t("Enter your login")}
-        description={t("This goes straight into the Bot's browser. The Bot only learns whether it worked.")}
+        description={t(
+          "This goes straight into the Bot's browser. The Bot only learns whether it worked.",
+        )}
       >
         <form
           className="flex flex-col gap-3"

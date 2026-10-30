@@ -1,4 +1,4 @@
-import type { BotBrowserApiState } from "@openbot/shared/bot-browser";
+import type { BotBrowserApiState } from "@ccpbot/shared/bot-browser";
 import { useQuery } from "@tanstack/react-query";
 import { type ReactNode, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
@@ -192,19 +192,25 @@ function NothingToSee({
         </>
       ) : problem ? (
         <>
-          <span className="font-medium">{t("Can't show the screen right now")}</span>
+          <span className="font-medium">
+            {t("Can't show the screen right now")}
+          </span>
           <span>{problem}</span>
           <span>
-            {t("The Bot may still be working. If this keeps happening, ask an admin to check its Computer.")}
+            {t(
+              "The Bot may still be working. If this keeps happening, ask an admin to check its Computer.",
+            )}
           </span>
         </>
       ) : waiting === "starting" ? (
         <span role="status">
-          {t("Starting")} {owner} {t("computer. The first start takes about a minute.")}
+          {t("Starting")} {owner}{" "}
+          {t("computer. The first start takes about a minute.")}
         </span>
       ) : waiting === "asleep" ? (
         <span role="status">
-          {capitalise(owner)} {t("computer is off. It starts when the Bot next uses it.")}
+          {capitalise(owner)}{" "}
+          {t("computer is off. It starts when the Bot next uses it.")}
         </span>
       ) : blankBrowser ? (
         <span>{t("The Bot hasn't opened a page yet.")}</span>
@@ -738,7 +744,9 @@ export function ComputerView({
           <p className="px-3 py-2 text-sm">
             {someoneElse
               ? t("Finishing the Bot's current action…")
-              : t("Finishing the Bot's current action before giving you control…")}
+              : t(
+                  "Finishing the Bot's current action before giving you control…",
+                )}
           </p>
         ) : null}
         {/*
@@ -747,11 +755,15 @@ export function ComputerView({
         */}
         {!settled && control?.recoveryRequired ? (
           <p className="px-3 py-2 text-sm">
-            {t("The Computer stopped while you had control. Take control to check the page, then hand it back to the Bot.")}
+            {t(
+              "The Computer stopped while you had control. Take control to check the page, then hand it back to the Bot.",
+            )}
           </p>
         ) : !settled && control?.request?.status === "interrupted" ? (
           <p className="px-3 py-2 text-sm text-muted-foreground">
-            {t("The Computer stopped before anyone took control. The Bot will ask again if it still needs you.")}
+            {t(
+              "The Computer stopped before anyone took control. The Bot will ask again if it still needs you.",
+            )}
           </p>
         ) : null}
         {/*
@@ -774,13 +786,13 @@ export function ComputerView({
               await refreshControl?.();
             }}
           >
-            <label className="block" htmlFor="openbot-secret">
+            <label className="block" htmlFor="ccpbot-secret">
               <span className="font-medium">{t("The Bot needs")} </span>
               <span>{control.secretWanted}</span>
             </label>
             <div className="mt-1.5 flex gap-2">
               <input
-                id="openbot-secret"
+                id="ccpbot-secret"
                 type="password"
                 value={secret}
                 onChange={(event) => setSecret(event.target.value)}
@@ -799,7 +811,9 @@ export function ComputerView({
               </button>
             </div>
             <p className="mt-1 text-xs text-muted-foreground">
-              {t("This goes straight to the page. It isn't shown in the conversation, and the Bot never sees it.")}
+              {t(
+                "This goes straight to the page. It isn't shown in the conversation, and the Bot never sees it.",
+              )}
             </p>
             {secretProblem ? (
               <p className="mt-1 text-xs text-destructive">{secretProblem}</p>
@@ -983,7 +997,9 @@ export function ComputerView({
                     >
                       {someoneElse
                         ? t("Finishing the current action…")
-                        : t("Finishing the current action before giving you control…")}
+                        : t(
+                            "Finishing the current action before giving you control…",
+                          )}
                     </p>
                   ) : null}
                   {settled ? null : (
@@ -1030,7 +1046,9 @@ export function ComputerView({
                     />
                   ) : botBrowser.error ? (
                     <p className="text-destructive text-sm" role="alert">
-                      {t("Couldn't load the Bot's browser. Close this and open it again.")}
+                      {t(
+                        "Couldn't load the Bot's browser. Close this and open it again.",
+                      )}
                     </p>
                   ) : null}
                 </WheelColumn>

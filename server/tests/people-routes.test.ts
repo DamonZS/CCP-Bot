@@ -12,7 +12,7 @@ import { testEnvironment } from "./support/environment";
  */
 const ADMIN = {
   id: "admin-1",
-  email: "admin@openbot.test",
+  email: "admin@ccpbot.test",
   name: "An Administrator",
   image: null,
 };
@@ -20,7 +20,7 @@ const ADMIN = {
 function person(overrides: Partial<Person> = {}): Person {
   return {
     id: "u1",
-    email: "member@openbot.test",
+    email: "member@ccpbot.test",
     name: "A Member",
     image: null,
     role: "user",
@@ -81,7 +81,7 @@ function appWith(
   );
 
   return {
-    request: (path, init) => app.request(`http://openbot.test${path}`, init),
+    request: (path, init) => app.request(`http://ccpbot.test${path}`, init),
     calls,
   };
 }
@@ -243,7 +243,7 @@ describe("people routes", () => {
       { rolesForUser: async () => ["admin"] },
     );
 
-    const response = await app.request("http://openbot.test/api/admin/people");
+    const response = await app.request("http://ccpbot.test/api/admin/people");
 
     expect(response.status).toBe(503);
   });

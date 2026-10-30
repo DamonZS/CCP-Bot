@@ -188,9 +188,9 @@ export function sharedSeatHeaders(target: {
   key: ComputerKey;
 }): Record<string, string> {
   return {
-    "x-openbot-bot-id": target.botId,
+    "x-ccpbot-bot-id": target.botId,
     ...(target.key.kind === "person"
-      ? { "x-openbot-person-id": target.key.personId }
+      ? { "x-ccpbot-person-id": target.key.personId }
       : {}),
   };
 }
@@ -216,7 +216,7 @@ export function createSharedComputerProvider(
   }): Record<string, string> {
     return {
       ...(seat ? sharedSeatHeaders(seat) : {}),
-      ...(options.token ? { "x-openbot-computer-token": options.token } : {}),
+      ...(options.token ? { "x-ccpbot-computer-token": options.token } : {}),
     };
   }
 

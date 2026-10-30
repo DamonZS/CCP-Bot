@@ -253,7 +253,7 @@ export function parseConnectionHeaders(
  * The audit table has a foreign key to that table, so writing this id would fail the constraint and
  * lose the row entirely. Who it was is in the payload either way.
  */
-const DEV_ACTOR_EMAIL = "dev@openbot.local";
+const DEV_ACTOR_EMAIL = "dev@ccpbot.local";
 
 export function createAgentRoutes(
   store: AgentProfileStore,
@@ -515,7 +515,7 @@ export function createAgentRoutes(
       typeof body?.endpoint === "string" &&
       isManagedEndpoint(body.endpoint, managedRun.endpoints);
     const headers = {
-      ...(ours ? { "x-openbot-agent-token": managedRun.token } : {}),
+      ...(ours ? { "x-ccpbot-agent-token": managedRun.token } : {}),
       ...parsed.value,
     };
     const result = await testAgentConnection(body?.endpoint, {
@@ -604,7 +604,7 @@ export function createAgentRoutes(
   };
   /** Said where a deployment's computers cannot make one more. */
   const NO_ISOLATION =
-    "This OpenBot can't give a Bot a computer of its own, so it runs on yours.";
+    "This CCP-Bot can't give a Bot a computer of its own, so it runs on yours.";
 
   routes.post("/", requireUser, async (context) => {
     // Malformed JSON is a recoverable client-input error and is validated by the same parser.

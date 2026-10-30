@@ -12,7 +12,9 @@ function ApprovalRulesPage() {
   return (
     <BotSubpage
       agentId={agentId}
-      description={t("Choose which actions this Bot can take without your approval.")}
+      description={t(
+        "Choose which actions this Bot can take without your approval.",
+      )}
       title={t("Approval rules")}
     >
       {(agent) => <BotApprovalRules agentId={agent.id} />}

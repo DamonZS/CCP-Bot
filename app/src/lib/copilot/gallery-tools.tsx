@@ -1,5 +1,5 @@
 import { useCopilotKit, useFrontendTool } from "@copilotkit/react-core/v2";
-import { NOT_SHOWN, NOT_SHOWN_TAIL } from "@openbot/shared/component-markers";
+import { NOT_SHOWN, NOT_SHOWN_TAIL } from "@ccpbot/shared/component-markers";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   useCallback,

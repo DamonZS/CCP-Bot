@@ -35,15 +35,15 @@ export function buildManifest(input: {
   };
   return {
     manifest_version: 3,
-    name: "OpenBot Recorder",
+    name: "CCP-Bot Recorder",
     version: input.version,
     description:
-      "Record a task in your browser so an OpenBot Bot can learn to do it.",
+      "Record a task in your browser so a CCP-Bot Bot can learn to do it.",
     minimum_chrome_version: MINIMUM_CHROME_VERSION,
     incognito: "not_allowed",
     icons,
     action: {
-      default_title: "OpenBot Recorder",
+      default_title: "CCP-Bot Recorder",
       default_popup: "popup.html",
       default_icon: icons,
     },

@@ -108,7 +108,7 @@ export async function fitWindowsToViewport(
  * same script again is, by the service worker rules, the registration already there; and the
  * browser's own update check never runs for an extension's worker. So a profile kept running the
  * Recorder it first cached, whatever had been built since: every Recorder fix was invisible in a
- * browser that had run an earlier one, and an update of OpenBot would never have updated it.
+ * browser that had run an earlier one, and an update of CCP-Bot would never have updated it.
  * Measured on Google Chrome 156 and Playwright's Chromium, for a changed script and for a changed
  * manifest version alike, which makes no difference. Loading the Recorder again while it is loaded
  * is an update, and an update unregisters the worker and registers the one on disk: measured the

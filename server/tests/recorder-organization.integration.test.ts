@@ -11,8 +11,8 @@ import {
   type ExchangeResponse,
   RECORDER_AUTHORITY_UNAVAILABLE,
   RECORDER_SIGNED_OUT,
-} from "@openbot/shared/recorder-api";
-import { RECORDER_EXTENSION_ID } from "@openbot/shared/recorder-extension";
+} from "@ccpbot/shared/recorder-api";
+import { RECORDER_EXTENSION_ID } from "@ccpbot/shared/recorder-extension";
 import { eq } from "drizzle-orm";
 import { createApp } from "../src/app";
 import type { AuditEventInput } from "../src/audit";
@@ -65,13 +65,13 @@ const pastTheCache = () => {
 };
 
 const config = loadConfig({
-  DATABASE_URL: "postgres://openbot:openbot@127.0.0.1:5432/openbot",
+  DATABASE_URL: "postgres://ccpbot:ccpbot@127.0.0.1:5432/ccpbot",
   KEY_ENCRYPTION_KEY: "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
   INTELLIGENCE_API_URL: "http://127.0.0.1:7100",
   INTELLIGENCE_GATEWAY_WS_URL: "ws://127.0.0.1:7103",
   INTELLIGENCE_API_KEY: "tenant-api-key",
   COPILOTKIT_LICENSE_TOKEN: "license-token",
-  OPENBOT_ORGANIZATION_AUTH_URL: `http://127.0.0.1:${authorityPort}`,
+  CCPBOT_ORGANIZATION_AUTH_URL: `http://127.0.0.1:${authorityPort}`,
 });
 const audits: AuditEventInput[] = [];
 const auditStore = {
@@ -98,7 +98,7 @@ const bearer = (token: string) => ({ authorization: `Bearer ${token}` });
 const desktopFailure = async () =>
   (
     await call("/api/desktop/connection-failure", {
-      headers: { "x-openbot-desktop-host-token": HOST_TOKEN },
+      headers: { "x-ccpbot-desktop-host-token": HOST_TOKEN },
     })
   ).json();
 
@@ -116,7 +116,7 @@ async function organizationCookie() {
   );
   expect(consumed.status).toBe(303);
   const cookie = consumed.headers.get("set-cookie")?.split(";")[0];
-  expect(cookie).toStartWith("openbot.organization-session=");
+  expect(cookie).toStartWith("ccpbot.organization-session=");
   return cookie as string;
 }
 
@@ -331,7 +331,7 @@ test("the stored organization session is sealed, never the raw cookie", async ()
     .from(recorderConnections)
     .where(eq(recorderConnections.id, connection.id));
   expect(row?.sealed).toBeTruthy();
-  const value = cookie.slice("openbot.organization-session=".length);
+  const value = cookie.slice("ccpbot.organization-session=".length);
   expect(row?.sealed).not.toContain(value);
   expect(row?.sealed).not.toContain("better-auth.session_token");
   expect(row?.sealed).not.toContain(cookie);

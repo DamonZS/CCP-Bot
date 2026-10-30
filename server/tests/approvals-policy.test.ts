@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { HeadlessToolSuspension } from "@openbot/toolkit/headless-tools";
+import { HeadlessToolSuspension } from "@ccpbot/toolkit/headless-tools";
 import {
   createCoordinationTools,
   handoffTool,
@@ -439,7 +439,7 @@ describe("auto-review", () => {
       candidate: candidate({
         toolRef: "composio/GITHUB_UPDATE_REPOSITORY_SETTINGS",
         scope: "github",
-        args: { repo: "openbot", private: false },
+        args: { repo: "ccpbot", private: false },
       }),
       autoReview: true,
       model: model(
@@ -761,7 +761,7 @@ describe("delegation is gated", () => {
       credentialActorFor: async (actorId) => actorId,
       coordinationCall: (input) => coordination.call(input),
       answer: (result) => result.text,
-      privateShareToolRef: "openbot/private_share",
+      privateShareToolRef: "ccpbot/private_share",
       refusalMarker: "REFUSED:",
       personInitiator: { kind: "person", id: "" },
     });

@@ -66,7 +66,9 @@ export function EditSkill({ slug }: { slug: string }) {
       <header>
         <h1 className="text-2xl font-semibold">{t("Edit skill")}</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          {t("Changes apply the next time someone uses")} <code>/{skill.slug}</code>{t(". Bots that have it keep it.")}
+          {t("Changes apply the next time someone uses")}{" "}
+          <code>/{skill.slug}</code>
+          {t(". Bots that have it keep it.")}
         </p>
       </header>
 

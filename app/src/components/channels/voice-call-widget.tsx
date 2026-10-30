@@ -176,7 +176,9 @@ export function VoiceCallWidget({
               {state.muted && (
                 <span className="absolute -bottom-1 -right-1 rounded-full bg-card p-1">
                   <IconMicrophoneOff className="size-2.5" />
-                  <span className="sr-only">{t("Your microphone is muted")}</span>
+                  <span className="sr-only">
+                    {t("Your microphone is muted")}
+                  </span>
                 </span>
               )}
             </div>
@@ -217,7 +219,9 @@ export function VoiceCallWidget({
             </Button>
             <Button
               aria-label={
-                state.muted ? t("Unmute your microphone") : t("Mute your microphone")
+                state.muted
+                  ? t("Unmute your microphone")
+                  : t("Mute your microphone")
               }
               aria-pressed={state.muted}
               disabled={connecting || failed}

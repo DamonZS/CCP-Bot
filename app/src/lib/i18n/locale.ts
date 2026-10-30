@@ -1,4 +1,3 @@
-import { t } from "@/lib/i18n";
 /**
  * The interface language, remembered across reloads.
  *
@@ -13,10 +12,17 @@ export type Locale = "zh-CN" | "en";
 
 export const LOCALE_STORAGE_KEY = "ccpbot-locale";
 
-/** The languages this build ships. `en` is the source language and needs no dictionary. */
+/**
+ * The languages this build ships, as source strings.
+ *
+ * The labels are deliberately not put through `t()` here: doing so would import this module's own
+ * barrel from inside it, and `t()` reads `currentLocale()` — the cache this file is still
+ * initialising — so the first import would throw `Cannot access 'activeLocale' before
+ * initialization`. Callers pass each label through `t()` where they render it instead.
+ */
 export const LOCALES: { value: Locale; label: string }[] = [
   { value: "zh-CN", label: "简体中文" },
-  { value: "en", label: t("English") },
+  { value: "en", label: "English" },
 ];
 
 export const DEFAULT_LOCALE: Locale = "zh-CN";
@@ -62,8 +68,31 @@ export function applyLocale(locale: Locale, effects: LocaleEffects) {
 /** The language this module graph was loaded in. Read once, cached, never re-read. */
 let activeLocale: Locale | null = null;
 
+/**
+ * Where a suite pins the language, on `globalThis`.
+ *
+ * The app's tests assert the English sentences this code was written in — `role="button"` and name
+ * "Browser", not "浏览器" — and only the translated document is what a person reads. So the suite
+ * preloads exactly one language and the assertions keep reading the source strings; the product
+ * default stays Chinese, which is what `resolveLocale` says when nothing is stored.
+ */
+export const LOCALE_OVERRIDE_KEY = "__ccpbotLocale";
+
+/** The pinned language, or null when nothing (or nothing this build ships) is pinned. */
+function readOverride(): Locale | null {
+  const pinned: unknown = (globalThis as Record<string, unknown>)[
+    LOCALE_OVERRIDE_KEY
+  ];
+  return typeof pinned === "string" ? parseStoredLocale(pinned) : null;
+}
+
 export function currentLocale(): Locale {
   if (activeLocale !== null) {
+    return activeLocale;
+  }
+  const override = readOverride();
+  if (override !== null) {
+    activeLocale = override;
     return activeLocale;
   }
   let stored: string | null = null;

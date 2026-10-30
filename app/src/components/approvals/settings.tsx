@@ -102,7 +102,9 @@ export function ApprovalSettings() {
             <ItemContent>
               <ItemTitle>{t("Ask before making changes")}</ItemTitle>
               <ItemDescription>
-                {t("Review a Bot's changes to websites, connected apps, and files.")}
+                {t(
+                  "Review a Bot's changes to websites, connected apps, and files.",
+                )}
               </ItemDescription>
             </ItemContent>
             <ItemActions>
@@ -122,13 +124,17 @@ export function ApprovalSettings() {
                   <IconEyeCheck />
                 </ItemMedia>
                 <ItemContent>
-                  <ItemTitle id="auto-review-title">{t("Auto-review")}</ItemTitle>
+                  <ItemTitle id="auto-review-title">
+                    {t("Auto-review")}
+                  </ItemTitle>
                   <ItemDescription
                     className="line-clamp-none"
                     id="auto-review-description"
                   >
                     {enforced ? t("An admin requires this. ") : ""}
-                    {t("Before a Bot does something that could affect your accounts or share information, OpenBot checks it against your request and your rules. If it can't tell, it asks you.")}
+                    {t(
+                      "Before a Bot does something that could affect your accounts or share information, CCP-Bot checks it against your request and your rules. If it can't tell, it asks you.",
+                    )}
                   </ItemDescription>
                 </ItemContent>
                 <ItemActions>
@@ -158,7 +164,9 @@ export function ApprovalSettings() {
                       inbox.data.preferences.hostCommands
                       ? `An admin limits this to "${HOST_LABELS[inbox.data.hostCommands]}". `
                       : ""}
-                    {t("The OpenBot desktop app still shows you each command before it runs.")}
+                    {t(
+                      "The CCP-Bot desktop app still shows you each command before it runs.",
+                    )}
                   </ItemDescription>
                 </ItemContent>
                 <ItemActions>
@@ -180,13 +188,17 @@ export function ApprovalSettings() {
       <PageSection
         description={
           <>
-            {t("The strictest matching rule wins. An \"ask\" rule beats an \"allow\" rule. Team rules are locked. Passwords, security settings and payments are always handed to you. Rules for one Bot are on")}{" "}
+            {t(
+              'The strictest matching rule wins. An "ask" rule beats an "allow" rule. Team rules are locked. Passwords, security settings and payments are always handed to you. Rules for one Bot are on',
+            )}{" "}
             <Link className="underline underline-offset-4" to="/bots">
               {t("that Bot's page")}
             </Link>
             .
             {rulesOff
-              ? t(" An admin has turned off personal rules. Yours are kept but don't apply.")
+              ? t(
+                  " An admin has turned off personal rules. Yours are kept but don't apply.",
+                )
               : ""}
           </>
         }
@@ -227,7 +239,11 @@ export function ApprovalSettings() {
             {canAdd ? (
               <>
                 {saved > 0 ? <Separator /> : null}
-                <RuleForm botField={false} label={t("Add a rule")} save={addRule} />
+                <RuleForm
+                  botField={false}
+                  label={t("Add a rule")}
+                  save={addRule}
+                />
               </>
             ) : null}
           </PageRows>
@@ -235,7 +251,9 @@ export function ApprovalSettings() {
       </PageSection>
       {agents.data !== undefined && otherBots.length > 0 ? (
         <PageSection
-          description={t("These don't match a Bot you can open. They still apply to any Bot they match. Remove the ones you don't want.")}
+          description={t(
+            "These don't match a Bot you can open. They still apply to any Bot they match. Remove the ones you don't want.",
+          )}
           title={t("Rules for other Bots")}
         >
           <PageRows>

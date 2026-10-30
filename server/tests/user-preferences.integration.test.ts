@@ -30,25 +30,25 @@ test("database defaults and writes survive a new store and remain scoped to the 
     messageListEmphasis: "thread",
     selfHostBannerDismissed: false,
     narration: null,
-    skin: "openbot",
+    skin: "ccpbot",
   });
   expect(await store.patch(alice, { messageListEmphasis: "agent" })).toEqual({
     messageListEmphasis: "agent",
     selfHostBannerDismissed: false,
     narration: null,
-    skin: "openbot",
+    skin: "ccpbot",
   });
   expect(await createUserPreferencesStore(database).read(alice)).toEqual({
     messageListEmphasis: "agent",
     selfHostBannerDismissed: false,
     narration: null,
-    skin: "openbot",
+    skin: "ccpbot",
   });
   expect(await store.read(bob)).toEqual({
     messageListEmphasis: "thread",
     selfHostBannerDismissed: false,
     narration: null,
-    skin: "openbot",
+    skin: "ccpbot",
   });
 });
 
@@ -85,7 +85,7 @@ test("the narration choice is kept in the database beside the others", async () 
     messageListEmphasis: "thread",
     selfHostBannerDismissed: false,
     narration: "on",
-    skin: "openbot",
+    skin: "ccpbot",
   });
 });
 
@@ -108,5 +108,5 @@ test("a stored skin this build does not ship reads as the default", async () => 
     .update(users)
     .set({ preferences: sql`'{"skin":"retired-skin"}'::jsonb` })
     .where(eq(users.id, id));
-  expect((await store.read(id)).skin).toBe("openbot");
+  expect((await store.read(id)).skin).toBe("ccpbot");
 });

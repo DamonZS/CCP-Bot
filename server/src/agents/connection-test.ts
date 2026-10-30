@@ -86,14 +86,14 @@ export type ConnectionTestResult =
  */
 function probeBody() {
   return {
-    threadId: `openbot-connection-test-${crypto.randomUUID()}`,
-    runId: `openbot-connection-test-${crypto.randomUUID()}`,
+    threadId: `ccpbot-connection-test-${crypto.randomUUID()}`,
+    runId: `ccpbot-connection-test-${crypto.randomUUID()}`,
     messages: [
       {
         id: crypto.randomUUID(),
         role: "user",
         content:
-          "This is an automated connection test from OpenBot. Reply with one short word.",
+          "This is an automated connection test from CCP-Bot. Reply with one short word.",
       },
     ],
     tools: [],

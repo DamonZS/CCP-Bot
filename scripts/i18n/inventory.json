@@ -1059,7 +1059,7 @@
       "count": 2
     },
     {
-      "source": "Meet OpenBot",
+      "source": "Meet CCP-Bot",
       "count": 2
     },
     {
@@ -1551,7 +1551,7 @@
       "count": 1
     },
     {
-      "source": "Any agent that speaks AG-UI works. OpenBot connects to it, so it has to be reachable from OpenBot's server.",
+      "source": "Any agent that speaks AG-UI works. CCP-Bot connects to it, so it has to be reachable from CCP-Bot's server.",
       "count": 1
     },
     {
@@ -1711,11 +1711,11 @@
       "count": 1
     },
     {
-      "source": "Before a Bot does something that could affect your accounts or share information, OpenBot checks it against your request and your rules. If it can't tell, it asks you.",
+      "source": "Before a Bot does something that could affect your accounts or share information, CCP-Bot checks it against your request and your rules. If it can't tell, it asks you.",
       "count": 1
     },
     {
-      "source": "The OpenBot desktop app still shows you each command before it runs.",
+      "source": "The CCP-Bot desktop app still shows you each command before it runs.",
       "count": 1
     },
     {
@@ -2075,7 +2075,7 @@
       "count": 1
     },
     {
-      "source": "Comes with OpenBot. It doesn't belong to a person.",
+      "source": "Comes with CCP-Bot. It doesn't belong to a person.",
       "count": 1
     },
     {
@@ -2087,7 +2087,7 @@
       "count": 1
     },
     {
-      "source": "Runs inside OpenBot. There's nothing to connect.",
+      "source": "Runs inside CCP-Bot. There's nothing to connect.",
       "count": 1
     },
     {
@@ -2123,7 +2123,7 @@
       "count": 1
     },
     {
-      "source": "It's public, so everyone on OpenBot can already use it.",
+      "source": "It's public, so everyone on CCP-Bot can already use it.",
       "count": 1
     },
     {
@@ -2315,7 +2315,7 @@
       "count": 1
     },
     {
-      "source": "OpenBot keeps your answer for every recording. You can change it any time with the Narration switch on this page.",
+      "source": "CCP-Bot keeps your answer for every recording. You can change it any time with the Narration switch on this page.",
       "count": 1
     },
     {
@@ -2363,7 +2363,7 @@
       "count": 1
     },
     {
-      "source": "Connect the OpenBot Recorder",
+      "source": "Connect the CCP-Bot Recorder",
       "count": 1
     },
     {
@@ -2943,7 +2943,7 @@
       "count": 1
     },
     {
-      "source": "Send this message to the OpenBot app in",
+      "source": "Send this message to the CCP-Bot app in",
       "count": 1
     },
     {
@@ -2983,7 +2983,7 @@
       "count": 1
     },
     {
-      "source": "OpenBot hasn't refused anything.",
+      "source": "CCP-Bot hasn't refused anything.",
       "count": 1
     },
     {
@@ -3339,7 +3339,7 @@
       "count": 1
     },
     {
-      "source": "Shows OpenBot's own records. There's nothing to show until a Bot asks for it.",
+      "source": "Shows CCP-Bot's own records. There's nothing to show until a Bot asks for it.",
       "count": 1
     },
     {
@@ -3407,11 +3407,11 @@
       "count": 1
     },
     {
-      "source": "Self-host OpenBot",
+      "source": "Self-host CCP-Bot",
       "count": 1
     },
     {
-      "source": "Self-host OpenBot for your organization.",
+      "source": "Self-host CCP-Bot for your organization.",
       "count": 1
     },
     {
@@ -3483,7 +3483,7 @@
       "count": 1
     },
     {
-      "source": "OpenBot reads it now, then every 15 minutes while it's on.",
+      "source": "CCP-Bot reads it now, then every 15 minutes while it's on.",
       "count": 1
     },
     {
@@ -3931,7 +3931,7 @@
       "count": 1
     },
     {
-      "source": "Email isn't set up on OpenBot yet, so this address can't receive mail. An admin has to turn it on.",
+      "source": "Email isn't set up on CCP-Bot yet, so this address can't receive mail. An admin has to turn it on.",
       "count": 1
     },
     {
@@ -3975,7 +3975,7 @@
       "count": 1
     },
     {
-      "source": "Something outside OpenBot that starts this responsibility.",
+      "source": "Something outside CCP-Bot that starts this responsibility.",
       "count": 1
     },
     {
@@ -4059,7 +4059,7 @@
       "count": 1
     },
     {
-      "source": "OpenBot hasn't started running routines yet, so none of these will run. Ask an admin to set this up.",
+      "source": "CCP-Bot hasn't started running routines yet, so none of these will run. Ask an admin to set this up.",
       "count": 1
     },
     {
@@ -4127,7 +4127,7 @@
       "count": 1
     },
     {
-      "source": "Your OpenBot browser, connected ",
+      "source": "Your CCP-Bot browser, connected ",
       "count": 1
     },
     {
@@ -4135,7 +4135,7 @@
       "count": 1
     },
     {
-      "source": " from OpenBot Desktop",
+      "source": " from CCP-Bot Desktop",
       "count": 1
     },
     {
@@ -4143,7 +4143,7 @@
       "count": 1
     },
     {
-      "source": "OpenBot signs the Recorder in",
+      "source": "CCP-Bot signs the Recorder in",
       "count": 1
     },
     {
@@ -4159,7 +4159,7 @@
       "count": 1
     },
     {
-      "source": "OpenBot Recorder",
+      "source": "CCP-Bot Recorder",
       "count": 1
     },
     {
@@ -4167,7 +4167,7 @@
       "count": 1
     },
     {
-      "source": "Sign in to the OpenBot app on your phone and turn on notifications to add it here.",
+      "source": "Sign in to the CCP-Bot app on your phone and turn on notifications to add it here.",
       "count": 1
     },
     {
@@ -4247,7 +4247,7 @@
       "count": 1
     },
     {
-      "source": "Every Bot on OpenBot draws on all of your Skills.",
+      "source": "Every Bot on CCP-Bot draws on all of your Skills.",
       "count": 1
     },
     {
@@ -4267,7 +4267,7 @@
       "count": 1
     },
     {
-      "source": "Open a Skill to let every Bot on OpenBot use it.",
+      "source": "Open a Skill to let every Bot on CCP-Bot use it.",
       "count": 1
     },
     {
@@ -4355,7 +4355,7 @@
       "count": 1
     },
     {
-      "source": "Choose the name OpenBot displays for you.",
+      "source": "Choose the name CCP-Bot displays for you.",
       "count": 1
     },
     {
@@ -5095,7 +5095,7 @@
       "count": 1
     },
     {
-      "source": "OpenBot can't draw it. The settings below have no effect.",
+      "source": "CCP-Bot can't draw it. The settings below have no effect.",
       "count": 1
     },
     {
@@ -5243,7 +5243,7 @@
       "count": 1
     },
     {
-      "source": "Choose folders a Bot can read on this computer. The desktop app asks before each edit or command. Access ends when you stop OpenBot.",
+      "source": "Choose folders a Bot can read on this computer. The desktop app asks before each edit or command. Access ends when you stop CCP-Bot.",
       "count": 1
     },
     {
@@ -5503,7 +5503,7 @@
       "count": 1
     },
     {
-      "source": "Set OTEL_EXPORTER_OTLP_ENDPOINT to stream audit events and Bot actions to your OpenTelemetry collector or SIEM. They are tagged openbot.surface.",
+      "source": "Set OTEL_EXPORTER_OTLP_ENDPOINT to stream audit events and Bot actions to your OpenTelemetry collector or SIEM. They are tagged ccpbot.surface.",
       "count": 1
     },
     {
@@ -5711,7 +5711,7 @@
       "count": 1
     },
     {
-      "source": "Control what Bots can access outside OpenBot.",
+      "source": "Control what Bots can access outside CCP-Bot.",
       "count": 1
     },
     {
@@ -5767,7 +5767,7 @@
       "count": 1
     },
     {
-      "source": "Review actions taken in OpenBot and who took them.",
+      "source": "Review actions taken in CCP-Bot and who took them.",
       "count": 1
     },
     {
@@ -5779,7 +5779,7 @@
       "count": 1
     },
     {
-      "source": "Couldn't reach Intelligence to find this project's Learning container. OpenBot will try again.",
+      "source": "Couldn't reach Intelligence to find this project's Learning container. CCP-Bot will try again.",
       "count": 1
     },
     {
@@ -5811,7 +5811,7 @@
       "count": 1
     },
     {
-      "source": "Container changes apply to new conversations. Existing ones keep their first container. Containers must already exist in the same Intelligence project. Until you save here, OpenBot uses that project's openbot container.",
+      "source": "Container changes apply to new conversations. Existing ones keep their first container. Containers must already exist in the same Intelligence project. Until you save here, CCP-Bot uses that project's ccpbot container.",
       "count": 1
     },
     {
@@ -5935,7 +5935,7 @@
       "count": 1
     },
     {
-      "source": "Managing Learning needs your Intelligence account and project access. OpenBot keeps project credentials on the server. Turning Learning off here keeps settings and conversation assignments. Schedules and publishing stay in Intelligence.",
+      "source": "Managing Learning needs your Intelligence account and project access. CCP-Bot keeps project credentials on the server. Turning Learning off here keeps settings and conversation assignments. Schedules and publishing stay in Intelligence.",
       "count": 1
     },
     {
@@ -6211,11 +6211,11 @@
       "count": 1
     },
     {
-      "source": "Add this to the client's authorised redirect URIs at the vendor, exactly as written. One wrong character fails there, with an error that doesn't mention OpenBot.",
+      "source": "Add this to the client's authorised redirect URIs at the vendor, exactly as written. One wrong character fails there, with an error that doesn't mention CCP-Bot.",
       "count": 1
     },
     {
-      "source": "This deployment has no public URL, so nobody can finish connecting. Set OPENBOT_PUBLIC_URL.",
+      "source": "This deployment has no public URL, so nobody can finish connecting. Set CCPBOT_PUBLIC_URL.",
       "count": 1
     },
     {
@@ -6547,7 +6547,7 @@
       "count": 1
     },
     {
-      "source": "Connect the OpenBot Recorder in this browser to teach your Bots by doing a task yourself. What you record goes into your own Learning space.",
+      "source": "Connect the CCP-Bot Recorder in this browser to teach your Bots by doing a task yourself. What you record goes into your own Learning space.",
       "count": 1
     },
     {
@@ -6575,7 +6575,7 @@
       "count": 1
     },
     {
-      "source": "Customize OpenBot’s appearance and message display. Your skin and message settings apply to your account; the theme applies only to this browser.",
+      "source": "Customize CCP-Bot’s appearance and message display. Your skin and message settings apply to your account; the theme applies only to this browser.",
       "count": 1
     },
     {
@@ -6583,7 +6583,7 @@
       "count": 1
     },
     {
-      "source": "Use the dark appearance across OpenBot.",
+      "source": "Use the dark appearance across CCP-Bot.",
       "count": 1
     },
     {
@@ -6779,7 +6779,7 @@
       "count": 1
     },
     {
-      "source": "OpenBot has no app by that name.",
+      "source": "CCP-Bot has no app by that name.",
       "count": 1
     },
     {
@@ -6835,7 +6835,7 @@
       "count": 1
     },
     {
-      "source": "OpenBot picks the right Bot. Type",
+      "source": "CCP-Bot picks the right Bot. Type",
       "count": 1
     },
     {

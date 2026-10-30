@@ -3,7 +3,7 @@ import type {
   LearningAutoAssignState,
   LearningDeliveryStatus,
   LearningOverview,
-} from "@openbot/shared/learning";
+} from "@ccpbot/shared/learning";
 import { type Context, Hono, type MiddlewareHandler } from "hono";
 import { bodyLimit } from "hono/body-limit";
 import { type AuditStore, recordAuditEvent } from "../audit";

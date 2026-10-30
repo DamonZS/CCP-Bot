@@ -70,7 +70,9 @@ export function RememberFact() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>{t("Remember a fact")}</DialogTitle>
-            <DialogDescription>{t("All your Bots will know it.")}</DialogDescription>
+            <DialogDescription>
+              {t("All your Bots will know it.")}
+            </DialogDescription>
           </DialogHeader>
           <DialogBody className="mt-4">
             {/* The submit button is in the footer and reaches this form by id, so DialogBody stays a

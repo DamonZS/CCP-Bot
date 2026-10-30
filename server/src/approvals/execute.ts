@@ -1,5 +1,5 @@
-import type { GrantedTool } from "@openbot/toolkit/granted-tool";
-import type { HeadlessTool } from "@openbot/toolkit/headless-tools";
+import type { GrantedTool } from "@ccpbot/toolkit/granted-tool";
+import type { HeadlessTool } from "@ccpbot/toolkit/headless-tools";
 import { z } from "zod";
 import type { RunAssertion } from "../agents/callback-token";
 import type { AuditInitiator } from "../audit";
@@ -142,8 +142,8 @@ export function createApprovedActionExecutor(deps: ApprovedActionDependencies) {
     if (action.toolRef.startsWith("bot/")) {
       const forwarded = snapshot.forwardedProps;
       const signed =
-        forwarded && typeof forwarded === "object" && "openbotRun" in forwarded
-          ? (deps.readRun?.(forwarded.openbotRun) ?? null)
+        forwarded && typeof forwarded === "object" && "ccpbotRun" in forwarded
+          ? (deps.readRun?.(forwarded.ccpbotRun) ?? null)
           : null;
       const run: RunAssertion =
         signed &&

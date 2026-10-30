@@ -5,7 +5,7 @@ import { join } from "node:path";
 import type {
   BrowserState,
   LauncherConnection,
-} from "../../shared/openbot-browser";
+} from "../../shared/ccpbot-browser";
 import { NOT_ITS_OWN_COMPUTER, ONLY_THE_PERSONS } from "../src/person-access";
 
 /**
@@ -17,15 +17,15 @@ import { NOT_ITS_OWN_COMPUTER, ONLY_THE_PERSONS } from "../src/person-access";
  * and that a person's input reaches their browser through the live screen without anybody taking
  * control first.
  *
- *   OPENBOT_COMPUTER_BROWSER=1 bun test tests/person-browser-computer.test.ts
+ *   CCPBOT_COMPUTER_BROWSER=1 bun test tests/person-browser-computer.test.ts
  *
  * One case reaches the public internet (Google, through the computer's own egress filter), so it
  * runs only when that is asked for as well:
  *
- *   OPENBOT_COMPUTER_BROWSER=1 OPENBOT_LIVE_NETWORK=1 bun test tests/person-browser-computer.test.ts
+ *   CCPBOT_COMPUTER_BROWSER=1 CCPBOT_LIVE_NETWORK=1 bun test tests/person-browser-computer.test.ts
  */
-const asked = process.env.OPENBOT_COMPUTER_BROWSER === "1";
-const online = asked && process.env.OPENBOT_LIVE_NETWORK === "1";
+const asked = process.env.CCPBOT_COMPUTER_BROWSER === "1";
+const online = asked && process.env.CCPBOT_LIVE_NETWORK === "1";
 const TOKEN = "person-browser-computer-token";
 const PERSON = "person-fedcba9876543210fedcba9876543210";
 const FIXTURE = join(import.meta.dir, "fixtures", "recorder");
@@ -103,11 +103,11 @@ function call(
     method: options.body === undefined ? "GET" : "POST",
     headers: {
       "content-type": "application/json",
-      "x-openbot-computer-token": options.token ?? TOKEN,
+      "x-ccpbot-computer-token": options.token ?? TOKEN,
       ...(options.botId === undefined
-        ? { "x-openbot-bot-id": PERSON }
+        ? { "x-ccpbot-bot-id": PERSON }
         : options.botId
-          ? { "x-openbot-bot-id": options.botId }
+          ? { "x-ccpbot-bot-id": options.botId }
           : {}),
     },
     ...(options.body === undefined
@@ -117,7 +117,7 @@ function call(
 }
 
 const connection = (): LauncherConnection => ({
-  openbotUrl: `http://127.0.0.1:${site?.port}`,
+  ccpbotUrl: `http://127.0.0.1:${site?.port}`,
   token: "obr_fixture-token",
   connectionId: "connection-1",
   user: { id: "user-1", name: "Pat Example", email: "pat@example.com" },
@@ -125,8 +125,8 @@ const connection = (): LauncherConnection => ({
 
 beforeAll(async () => {
   if (!asked) return;
-  root = await mkdtemp(join(tmpdir(), "openbot-person-computer-"));
-  // The OpenBot the fixture Recorder reports to, and a page whose title is what the person types.
+  root = await mkdtemp(join(tmpdir(), "ccpbot-person-computer-"));
+  // The CCP-Bot the fixture Recorder reports to, and a page whose title is what the person types.
   site = Bun.serve({
     hostname: "127.0.0.1",
     port: 0,
@@ -158,7 +158,7 @@ beforeAll(async () => {
   });
   // Started for the person's browser alone, as a supervisor starts the container it makes for it.
   computer = await startComputer("with-recorder", {
-    OPENBOT_RECORDER_DIR: FIXTURE,
+    CCPBOT_RECORDER_DIR: FIXTURE,
     COMPUTER_BOT_ID: PERSON,
   });
 }, 30_000);
@@ -367,25 +367,25 @@ describe.skipIf(!asked)("a person's browser on the computer", () => {
 
   test("a computer without a built Recorder refuses to open one, and says why", async () => {
     const without = await startComputer("without-recorder", {
-      OPENBOT_RECORDER_DIR: "",
+      CCPBOT_RECORDER_DIR: "",
       COMPUTER_BOT_ID: PERSON,
     });
     const response = await fetch(`${without.base}/browser/open`, {
       method: "POST",
       headers: {
-        "x-openbot-computer-token": TOKEN,
-        "x-openbot-bot-id": PERSON,
+        "x-ccpbot-computer-token": TOKEN,
+        "x-ccpbot-bot-id": PERSON,
       },
       body: JSON.stringify({ connection: connection() }),
     });
     expect(response.status).toBe(503);
     expect(((await response.json()) as { error: string }).error).toContain(
-      "OPENBOT_RECORDER_DIR",
+      "CCPBOT_RECORDER_DIR",
     );
     const state = await fetch(`${without.base}/browser/state`, {
       headers: {
-        "x-openbot-computer-token": TOKEN,
-        "x-openbot-bot-id": PERSON,
+        "x-ccpbot-computer-token": TOKEN,
+        "x-ccpbot-bot-id": PERSON,
       },
     });
     expect(((await state.json()) as BrowserState).open).toBe(false);
@@ -393,13 +393,13 @@ describe.skipIf(!asked)("a person's browser on the computer", () => {
 });
 
 /**
- * A computer whose image lacks Playwright's Chromium: the person's browser cannot start, which is OpenBot's setup and
+ * A computer whose image lacks Playwright's Chromium: the person's browser cannot start, which is CCP-Bot's setup and
  * nothing the person did or can do. Run 4 saw a launch failure reach the person as a 502 reading "The browser could
  * not be opened:" and Playwright's own text, its install box included. No browser starts, so this runs everywhere.
  */
 describe("a person's browser on a computer whose browser is not installed", () => {
   test("is a 503 the server turns into its sentence for the person, and Playwright's text stays in the computer's log", async () => {
-    const dir = await mkdtemp(join(tmpdir(), "openbot-no-chromium-"));
+    const dir = await mkdtemp(join(tmpdir(), "ccpbot-no-chromium-"));
     const port = await freePort();
     const base = `http://127.0.0.1:${port}`;
     const child = Bun.spawn([process.execPath, "src/index.ts"], {
@@ -413,7 +413,7 @@ describe("a person's browser on a computer whose browser is not installed", () =
         EGRESS_POLICY_REQUIRED: "0",
         PROFILES_DIR: join(dir, "profiles"),
         WORKSPACE_DIR: join(dir, "workspace"),
-        OPENBOT_RECORDER_DIR: FIXTURE,
+        CCPBOT_RECORDER_DIR: FIXTURE,
         COMPUTER_BOT_ID: PERSON,
         // Where Playwright looks for its browsers: an empty folder, as an image built without them is.
         PLAYWRIGHT_BROWSERS_PATH: join(dir, "browsers"),
@@ -437,12 +437,12 @@ describe("a person's browser on a computer whose browser is not installed", () =
         method: "POST",
         headers: {
           "content-type": "application/json",
-          "x-openbot-computer-token": TOKEN,
-          "x-openbot-bot-id": PERSON,
+          "x-ccpbot-computer-token": TOKEN,
+          "x-ccpbot-bot-id": PERSON,
         },
         body: JSON.stringify({
           connection: {
-            openbotUrl: "http://127.0.0.1:7829",
+            ccpbotUrl: "http://127.0.0.1:7829",
             token: "obr_fixture-token",
             connectionId: "connection-1",
             user: {
@@ -490,7 +490,7 @@ describe("a person's browser on a computer whose browser is not installed", () =
  * Where a person's browser may run at all, as the running computer decides it from how it was started. A Bot on the
  * computer every Bot shares may run a shell as the same user the browser's profile belongs to, so a person's browser
  * runs only on a computer of its own: one started for it (`COMPUTER_BOT_ID`, as a supervisor or a Sandbox starts each),
- * or one started for people's browsers alone (`COMPUTER_PEOPLE_ONLY`, OpenBot Desktop's). Refused before anything is
+ * or one started for people's browsers alone (`COMPUTER_PEOPLE_ONLY`, CCP-Bot Desktop's). Refused before anything is
  * launched, so no browser starts and this runs everywhere.
  */
 describe("a person's browser on a computer that is not its own", () => {
@@ -498,7 +498,7 @@ describe("a person's browser on a computer that is not its own", () => {
   /** The computers this block starts, which it stops itself: the file's own teardown runs only with a browser. */
   let first = 0;
   beforeAll(async () => {
-    dir = await mkdtemp(join(tmpdir(), "openbot-person-placement-"));
+    dir = await mkdtemp(join(tmpdir(), "ccpbot-person-placement-"));
     root ||= dir;
     first = computers.length;
   });
@@ -519,7 +519,7 @@ describe("a person's browser on a computer that is not its own", () => {
 
   test("is refused on the computer every Bot shares, before its profile, policy or live screen exist", async () => {
     const shared = await startComputer("shared", {
-      OPENBOT_RECORDER_DIR: FIXTURE,
+      CCPBOT_RECORDER_DIR: FIXTURE,
       PROFILES_DIR: join(dir, "shared", "profiles"),
     });
     const opening = await open(shared);
@@ -534,7 +534,7 @@ describe("a person's browser on a computer that is not its own", () => {
     expect(await readdir(join(dir, "shared", "profiles"))).toEqual([]);
     // A Bot's computer, started for that Bot, refuses it as well.
     const bots = await startComputer("a-bot", {
-      OPENBOT_RECORDER_DIR: FIXTURE,
+      CCPBOT_RECORDER_DIR: FIXTURE,
       COMPUTER_BOT_ID: "sales-bot",
     });
     expect((await open(bots)).status).toBe(503);
@@ -545,9 +545,9 @@ describe("a person's browser on a computer that is not its own", () => {
       );
   }, 30_000);
 
-  test("on OpenBot Desktop's computer, which runs people's browsers and no Bot, a Bot is refused", async () => {
+  test("on CCP-Bot Desktop's computer, which runs people's browsers and no Bot, a Bot is refused", async () => {
     const desktop = await startComputer("people-only", {
-      OPENBOT_RECORDER_DIR: FIXTURE,
+      CCPBOT_RECORDER_DIR: FIXTURE,
       COMPUTER_PEOPLE_ONLY: "on",
     });
     for (const botId of ["sales-bot", "shared"]) {

@@ -237,7 +237,9 @@ function YourSkills({ agentId }: { agentId: string }) {
   );
   return (
     <PageSection
-      description={t("Turn on a skill to use it with this Bot. Type / in a conversation to run it.")}
+      description={t(
+        "Turn on a skill to use it with this Bot. Type / in a conversation to run it.",
+      )}
       title={t("Your skills")}
     >
       {grant.error ? (
@@ -345,19 +347,27 @@ function Granted({ agentId, mine }: { agentId: string; mine: boolean }) {
   const count = states.length + rest.length + skills.length;
   return (
     <PageSection
-      description={t("Review this Bot’s available apps and skills, and check which apps are ready to use. The Bot cannot use apps or skills outside this list.")}
+      description={t(
+        "Review this Bot’s available apps and skills, and check which apps are ready to use. The Bot cannot use apps or skills outside this list.",
+      )}
       title={t("What it can use")}
     >
       {apps.error ? (
         <p className="mt-4 text-destructive text-sm" role="alert">
-          {t("Couldn't check whether each app is ready for you. Reload the page.")}
+          {t(
+            "Couldn't check whether each app is ready for you. Reload the page.",
+          )}
         </p>
       ) : null}
       {count === 0 ? (
         <PageEmpty icon={IconApps} title={t("No apps yet")}>
           {mine
-            ? t("Turn one on under Your apps, or ask an admin. Until then this Bot can only talk with you.")
-            : t("An admin has to add them. Until then this Bot can only talk with you.")}
+            ? t(
+                "Turn one on under Your apps, or ask an admin. Until then this Bot can only talk with you.",
+              )
+            : t(
+                "An admin has to add them. Until then this Bot can only talk with you.",
+              )}
         </PageEmpty>
       ) : (
         <PageRows>
@@ -438,7 +448,9 @@ function Granted({ agentId, mine }: { agentId: string; mine: boolean }) {
                   <ItemDescription>{skill.summary}</ItemDescription>
                 </ItemContent>
                 <ItemActions>
-                  <span className="text-muted-foreground text-sm">{t("Skill")}</span>
+                  <span className="text-muted-foreground text-sm">
+                    {t("Skill")}
+                  </span>
                 </ItemActions>
               </Item>
             </Fragment>

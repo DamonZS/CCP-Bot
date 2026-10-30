@@ -126,7 +126,8 @@ export function SuggestionsInbox({
                     {new Date(suggestion.createdAt).toLocaleString()}
                     {suggestion.sourceApp || suggestion.sourceLink ? (
                       <>
-                        {" · "}{t("From")} {suggestion.sourceApp ?? "a connected app"}
+                        {" · "}
+                        {t("From")} {suggestion.sourceApp ?? "a connected app"}
                         {suggestion.sourceLink && (
                           <>
                             {" · "}
@@ -230,7 +231,9 @@ export function ProactiveResearchSettings({
           {t("Turn on research")}
         </Button>
       }
-      description={t("On by default once you start a conversation with just this Bot: it looks through the apps it can already read every four hours, forms memories for you to review and suggests next steps. It can only read: it cannot send messages, change anything in an app, or use a browser or computer. Turn it off or remove it and it stays that way.")}
+      description={t(
+        "On by default once you start a conversation with just this Bot: it looks through the apps it can already read every four hours, forms memories for you to review and suggests next steps. It can only read: it cannot send messages, change anything in an app, or use a browser or computer. Turn it off or remove it and it stays that way.",
+      )}
       title={t("Background research")}
     >
       {settings.isPending ? null : settings.error ? (
@@ -300,7 +303,9 @@ function TurnOnResearchDialog({
         <DialogHeader>
           <DialogTitle>{t("Turn on background research")}</DialogTitle>
           <DialogDescription>
-            {t("It reads on a schedule and delivers what it suggests to a channel it is in.")}
+            {t(
+              "It reads on a schedule and delivers what it suggests to a channel it is in.",
+            )}
           </DialogDescription>
         </DialogHeader>
         <DialogBody className="mt-4 overflow-y-auto">
@@ -371,7 +376,9 @@ function TurnOnResearchDialog({
                 </Select>
               </Field>
               <Field>
-                <FieldLabel htmlFor={`${id}-interval`}>{t("How often")}</FieldLabel>
+                <FieldLabel htmlFor={`${id}-interval`}>
+                  {t("How often")}
+                </FieldLabel>
                 <Select
                   items={intervalItems}
                   onValueChange={(value) => {
@@ -403,7 +410,9 @@ function TurnOnResearchDialog({
                   maxLength={1000}
                   value={focus}
                   onChange={(event) => setFocus(event.target.value)}
-                  placeholder={t("Open issues assigned to me and questions waiting on me")}
+                  placeholder={t(
+                    "Open issues assigned to me and questions waiting on me",
+                  )}
                 />
               </Field>
             </FieldGroup>
@@ -513,7 +522,8 @@ function SettingRow({
                 <ItemTitle>{researchStatus(setting)}</ItemTitle>
                 {setting.lastRunAt && (
                   <ItemDescription>
-                    {t("Last ran")} {new Date(setting.lastRunAt).toLocaleString()}
+                    {t("Last ran")}{" "}
+                    {new Date(setting.lastRunAt).toLocaleString()}
                     {setting.lastStatus === "succeeded"
                       ? ""
                       : ` (${setting.lastStatus})`}
@@ -527,7 +537,9 @@ function SettingRow({
               </p>
             )}
             <Field>
-              <FieldLabel htmlFor={`${id}-interval`}>{t("How often")}</FieldLabel>
+              <FieldLabel htmlFor={`${id}-interval`}>
+                {t("How often")}
+              </FieldLabel>
               {/* Writes on pick: one value, no draft worth holding. */}
               <Select
                 disabled={change.isPending}

@@ -21,12 +21,12 @@ const ALLOWED = /^[A-Za-z0-9][A-Za-z0-9_-]*$/;
 /**
  * The deployment a computer belongs to.
  *
- * Container and volume names are global to a Docker host, so two OpenBot deployments sharing a host
+ * Container and volume names are global to a Docker host, so two CCP-Bot deployments sharing a host
  * would otherwise derive the same names for the same Bot id and each would treat the other's
  * containers as its own. The namespace is part of every derived name, and is held to the same
  * character rules for the same reason.
  */
-export const DEFAULT_NAMESPACE = "openbot";
+export const DEFAULT_NAMESPACE = "ccpbot";
 
 export const NAMESPACE = (() => {
   const configured = process.env.COMPUTER_NAMESPACE?.trim();
@@ -73,7 +73,7 @@ export type NameResult =
   | { ok: false; reason: string };
 
 /** The label every container and volume the supervisor owns carries. */
-export const OWNER_LABEL = "openbot.supervisor";
+export const OWNER_LABEL = "ccpbot.supervisor";
 
 /**
  * The label holding the Bot a computer belongs to, on a Bot's own computer.
@@ -82,16 +82,16 @@ export const OWNER_LABEL = "openbot.supervisor";
  * on. Computers from before one per person carry it too, without {@link KIND_LABEL}, which is how
  * they are told apart.
  */
-export const BOT_LABEL = "openbot.bot-id";
+export const BOT_LABEL = "ccpbot.bot-id";
 
 /** The label holding the person a computer belongs to, on a person's computer. */
-export const PERSON_LABEL = "openbot.person-id";
+export const PERSON_LABEL = "ccpbot.person-id";
 
 /** Whether a computer is a person's or a Bot's. Absent on a computer from before that existed. */
-export const KIND_LABEL = "openbot.computer-kind";
+export const KIND_LABEL = "ccpbot.computer-kind";
 
 /** The label holding the deployment a container belongs to. */
-export const NAMESPACE_LABEL = "openbot.namespace";
+export const NAMESPACE_LABEL = "ccpbot.namespace";
 
 /** A person or Bot id, checked before it becomes any part of a name. */
 function checkId(id: unknown, what: string): string | undefined {

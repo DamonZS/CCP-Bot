@@ -21,7 +21,7 @@
  * implementations of the same hard thing, one of which nobody tests.
  */
 
-import type { HeadlessWaiting } from "@openbot/toolkit/headless-tools";
+import type { HeadlessWaiting } from "@ccpbot/toolkit/headless-tools";
 import {
   and,
   asc,

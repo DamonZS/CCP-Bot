@@ -19,13 +19,13 @@ export type DeploymentCapabilities = {
    */
   generativeUi: boolean;
   /**
-   * Whether to show the banner offering help self-hosting OpenBot. A fork that runs OpenBot for its
-   * own organization turns it off with OPENBOT_SELF_HOST_BANNER=false, and the server answers false
+   * Whether to show the banner offering help self-hosting CCP-Bot. A fork that runs CCP-Bot for its
+   * own organization turns it off with CCPBOT_SELF_HOST_BANNER=false, and the server answers false
    * for a deployment on a paid Intelligence plan.
    */
   selfHostBanner: boolean;
   /**
-   * Whether this is somebody trying OpenBot on their own machine rather than an organization's
+   * Whether this is somebody trying CCP-Bot on their own machine rather than an organization's
    * deployment: single-user mode on the server, which only a local, unreachable install can be in.
    */
   localEvaluation: boolean;

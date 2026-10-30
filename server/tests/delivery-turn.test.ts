@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test";
 import { AbstractAgent, type Message, type RunAgentInput } from "@ag-ui/client";
-import { createTurnRunner } from "@openbot/toolkit/run-turn";
+import { createTurnRunner } from "@ccpbot/toolkit/run-turn";
 import { EMPTY } from "rxjs";
 import { serverTurnAdmission } from "../src/agents/turn-admission";
 

@@ -14,13 +14,13 @@ use crate::{
     stack,
 };
 
-pub const REQUIRED: &str = "Finish installing OpenBot's local software before signing in or starting. Return to Install and try again.";
-pub const FILE: &str = ".openbot-prepared.json";
-const DEPENDENCIES: &str = ".openbot-dependencies.json";
-const LAUNCH: &str = ".openbot-launched.json";
+pub const REQUIRED: &str = "Finish installing CCP-Bot's local software before signing in or starting. Return to Install and try again.";
+pub const FILE: &str = ".ccpbot-prepared.json";
+const DEPENDENCIES: &str = ".ccpbot-dependencies.json";
+const LAUNCH: &str = ".ccpbot-launched.json";
 /// The engine this installation was set up on. Never invalidated with the preparation record: a
 /// new release is prepared again on the same engine, where its database already is.
-pub const ENGINE: &str = ".openbot-engine.json";
+pub const ENGINE: &str = ".ccpbot-engine.json";
 const PACKAGES: [&str; 7] = [
     "",
     "server",
@@ -114,7 +114,7 @@ struct SavedEngine {
 ///
 /// Every later install and start uses this engine and never the other one. The installation's
 /// images and its database are in the engine it was set up on, so moving to the other one, say
-/// because Docker happens to be answering, starts OpenBot with an empty database.
+/// because Docker happens to be answering, starts CCP-Bot with an empty database.
 pub fn saved_engine(root: &Path) -> Option<Engine> {
     let record: SavedEngine =
         serde_json::from_slice(&std::fs::read(root.join(ENGINE)).ok()?).ok()?;
@@ -129,13 +129,13 @@ pub fn save_engine(root: &Path, engine: Engine) -> Result<(), Problem> {
 pub fn save_selected_root(config: &Path, root: &Path) -> Result<(), Problem> {
     let root = std::fs::canonicalize(root).map_err(|e| {
         Problem::with(
-            "OpenBot could not remember this installation for next time.",
+            "CCP-Bot could not remember this installation for next time.",
             e.to_string(),
         )
     })?;
     std::fs::create_dir_all(config).map_err(|e| {
         Problem::with(
-            "OpenBot could not remember this installation for next time.",
+            "CCP-Bot could not remember this installation for next time.",
             e.to_string(),
         )
     })?;
@@ -155,7 +155,7 @@ pub fn required(detail: impl Into<String>) -> Problem {
 
 fn hash_files(root: &Path, files: impl IntoIterator<Item = PathBuf>) -> Result<String, Problem> {
     let mut hash = Sha256::new();
-    hash.update(b"openbot-preparation-v1\0");
+    hash.update(b"ccpbot-preparation-v1\0");
     hash.update(
         std::fs::canonicalize(root)
             .map_err(|e| required(e.to_string()))?
@@ -201,7 +201,7 @@ fn recorder_manifest() -> PathBuf {
 
 fn fingerprint(root: &Path) -> Result<String, Problem> {
     let mut files = vec![
-        PathBuf::from(".openbot-deployment"),
+        PathBuf::from(".ccpbot-deployment"),
         PathBuf::from("container-images.json"),
         PathBuf::from("docker-compose.yml"),
         PathBuf::from(DEPENDENCIES),
@@ -318,7 +318,7 @@ pub fn place_recorder(root: &Path, address: &Address) -> Result<(), Problem> {
     }
     let image = deployment::reference(root, RECORDER_IMAGE).map_err(|detail| {
         Problem::with(
-            "OpenBot could not set up the Recorder for its browser. Try again.",
+            "CCP-Bot could not set up the Recorder for its browser. Try again.",
             detail,
         )
     })?;
@@ -335,7 +335,7 @@ pub fn place_recorder_with(
 ) -> Result<(), Problem> {
     let failed = |detail: String| {
         Problem::with(
-            "OpenBot could not set up the Recorder for its browser. Try again.",
+            "CCP-Bot could not set up the Recorder for its browser. Try again.",
             detail,
         )
     };
@@ -498,7 +498,7 @@ fn require_with(
         .is_some_and(|found| deployment::needs_fetch(root, &found.version))
     {
         return Err(required(
-            "The deployment was laid out by an earlier OpenBot and is missing files this version runs.",
+            "The deployment was laid out by an earlier CCP-Bot and is missing files this version runs.",
         ));
     }
     let bun = dependencies_ready(root)?;
@@ -829,7 +829,7 @@ fn main() {
     }
 
     /// The release's computer image, digest-pinned, as the manifest names it.
-    const COMPUTER: &str = "ghcr.io/copilotkit/openbot-agent-computer@sha256:0123";
+    const COMPUTER: &str = "ghcr.io/copilotkit/ccpbot-agent-computer@sha256:0123";
 
     /// A process's result, as the engine's command line leaves it.
     fn exited(code: i32, stdout: &str, stderr: &str) -> std::process::Output {
@@ -864,7 +864,7 @@ fn main() {
             std::fs::create_dir_all(recorder.join("background")).unwrap();
             std::fs::write(
                 recorder.join("manifest.json"),
-                r#"{"name":"OpenBot Recorder"}"#,
+                r#"{"name":"CCP-Bot Recorder"}"#,
             )
             .unwrap();
             std::fs::write(recorder.join("background/index.js"), "prebuilt();").unwrap();
@@ -976,12 +976,12 @@ fn main() {
     /// at `/recorder` as the computer image does, and the container it made gone afterwards.
     ///
     /// ```sh
-    /// OPENBOT_LIVE_RECORDER_IMAGE=<image> cargo test --lib live_the_recorder -- --ignored
+    /// CCPBOT_LIVE_RECORDER_IMAGE=<image> cargo test --lib live_the_recorder -- --ignored
     /// ```
     #[test]
     #[ignore = "creates a container from an image on this machine's Docker engine"]
     fn live_the_recorder_is_copied_out_of_a_real_image() {
-        let image = std::env::var("OPENBOT_LIVE_RECORDER_IMAGE").unwrap();
+        let image = std::env::var("CCPBOT_LIVE_RECORDER_IMAGE").unwrap();
         let f = Fixture::new();
         let address = Address::new(crate::engine::Engine::Docker, None);
         let before = address

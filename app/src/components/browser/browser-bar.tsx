@@ -1,4 +1,4 @@
-import type { BrowserTab } from "@openbot/shared/openbot-browser";
+import type { BrowserTab } from "@ccpbot/shared/ccpbot-browser";
 import {
   IconArrowLeft,
   IconArrowRight,
@@ -39,7 +39,7 @@ import { t } from "@/lib/i18n";
 
 /*
  * THE BAR ABOVE A BROWSER SHOWN IN THE PAGE: its tabs, then back, forward, reload, Clear browser data and the address.
- * One component for both browsers a person works in through OpenBot, their own (the Browser page, hosted) and a Bot's
+ * One component for both browsers a person works in through CCP-Bot, their own (the Browser page, hosted) and a Bot's
  * (the Bot's screen), so the two never drift into two different browsers.
  */
 
@@ -437,7 +437,9 @@ export function ClearBrowserDialog({
         <DialogHeader>
           <DialogTitle>{t("Clear this browser?")}</DialogTitle>
           <DialogDescription>
-            {t("Cookies, saved passwords and history are wiped. You'll have to sign in everywhere again.")}
+            {t(
+              "Cookies, saved passwords and history are wiped. You'll have to sign in everywhere again.",
+            )}
           </DialogDescription>
         </DialogHeader>
         {clear.error ? (

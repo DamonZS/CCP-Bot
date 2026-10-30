@@ -94,7 +94,11 @@ export function GroupChat({ channelId }: { channelId: string }) {
         <div className="mx-auto flex w-full max-w-2xl flex-col gap-5 py-6">
           {messages.length === 0 ? (
             <p className="text-sm text-muted-foreground">
-              {t("Say something to")} {bots.map((bot) => bot.name).join(" and ")}{t(". Every Bot answers in turn; start with @Name to ask just one.")}
+              {t("Say something to")}{" "}
+              {bots.map((bot) => bot.name).join(" and ")}
+              {t(
+                ". Every Bot answers in turn; start with @Name to ask just one.",
+              )}
             </p>
           ) : null}
           {messages.map((message) => (

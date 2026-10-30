@@ -973,7 +973,9 @@ export function BrokeredAccountRow({
                * at it twice. A button that cannot work is worse than no button — it invites the
                * second press that files a record of an act that did not happen.
                */
-              <span className="text-muted-foreground text-xs">{t("Key missing")}</span>
+              <span className="text-muted-foreground text-xs">
+                {t("Key missing")}
+              </span>
             ) : account.connected ? (
               <>
                 {/* Decorative: the word beside it already says which. */}
@@ -982,7 +984,9 @@ export function BrokeredAccountRow({
                   className="size-1.5 rounded-full bg-emerald-500"
                 />
                 {/* The same word for both kinds. The line beneath says what it rests on. */}
-                <span className="text-muted-foreground text-xs">{t("Connected")}</span>
+                <span className="text-muted-foreground text-xs">
+                  {t("Connected")}
+                </span>
                 {/*
                  * OFFERED ONLY ON A KEY APP, BECAUSE THAT IS THE ONLY KIND A RE-CHECK IS AN ACT ON.
                  * A consent connection is written verified by the confirm, with no probe behind it,
@@ -1048,7 +1052,7 @@ export function BrokeredAccountRow({
                 {t("Approved per action")}
               </span>
             ) : (
-              /* The arrow says this leaves OpenBot for the vendor's consent page. It does. */
+              /* The arrow says this leaves CCP-Bot for the vendor's consent page. It does. */
               <Button
                 disabled={account.connecting}
                 onClick={() => {
@@ -1132,7 +1136,9 @@ export function BrokeredAccountRow({
                * on a second open and not only on a first.
                */
               <p className="text-muted-foreground text-sm">
-                {t("Couldn't find out what this app needs. Close this and try again.")}
+                {t(
+                  "Couldn't find out what this app needs. Close this and try again.",
+                )}
               </p>
             )}
             {/*

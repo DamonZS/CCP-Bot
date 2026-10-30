@@ -34,7 +34,7 @@ export const Route = createFileRoute("/_authed/admin/boundaries")({
 });
 
 const DESCRIPTION =
-  "Define actions that Bots must never take. OpenBot checks these rules before a Bot acts on its computer or in a connected app.";
+  "Define actions that Bots must never take. CCP-Bot checks these rules before a Bot acts on its computer or in a connected app.";
 
 /**
  * The deployment's boundaries, read as a list of things Bots may never do.
@@ -80,7 +80,11 @@ function BoundariesPage() {
     policy.allow.length === 1 && policy.allow[0] === "true";
 
   return (
-    <PageShell action={addRule} description={DESCRIPTION} title={t("Boundaries")}>
+    <PageShell
+      action={addRule}
+      description={DESCRIPTION}
+      title={t("Boundaries")}
+    >
       <PageSection title={t("Bots may never")}>
         {policy.deny.length === 0 ? (
           <PageEmpty
@@ -148,8 +152,12 @@ function BoundariesPage() {
               <ItemTitle>{t("Trial mode")}</ItemTitle>
               <ItemDescription>
                 {trial
-                  ? t("On. A matching action goes ahead and is recorded in Audit, so you can see what a rule catches before it stops anything.")
-                  : t("Off. A matching action is stopped, and the Bot is told which rule stopped it.")}
+                  ? t(
+                      "On. A matching action goes ahead and is recorded in Audit, so you can see what a rule catches before it stops anything.",
+                    )
+                  : t(
+                      "Off. A matching action is stopped, and the Bot is told which rule stopped it.",
+                    )}
               </ItemDescription>
             </ItemContent>
             <ItemActions>
@@ -177,7 +185,9 @@ function BoundariesPage() {
             <ItemContent>
               <ItemTitle>{t("Stopped actions")}</ItemTitle>
               <ItemDescription>
-                {t("In Audit, choose Blocked to see every action a rule stopped and which rule it was.")}
+                {t(
+                  "In Audit, choose Blocked to see every action a rule stopped and which rule it was.",
+                )}
               </ItemDescription>
             </ItemContent>
             <IconChevronRight className="size-4 shrink-0 text-muted-foreground" />
@@ -195,7 +205,9 @@ function BoundariesPage() {
                 className={allowsEverythingElse ? undefined : "font-mono"}
               >
                 {allowsEverythingElse
-                  ? t("Allowed. A Bot can do anything no rule above stops, within its own permissions.")
+                  ? t(
+                      "Allowed. A Bot can do anything no rule above stops, within its own permissions.",
+                    )
                   : policy.allow.length === 0
                     ? "Nothing else is allowed. Every action is refused."
                     : `Only what these allow: ${policy.allow.join(" · ")}`}

@@ -1,4 +1,4 @@
-import type { AuditInitiator } from "@openbot/toolkit/initiator";
+import type { AuditInitiator } from "@ccpbot/toolkit/initiator";
 import {
   and,
   desc,
@@ -622,7 +622,7 @@ export const auditEventTypes = [
    */
   "recorder.bearer_refused",
   /*
-   * A browser connected to OpenBot as the Recorder, by whom and through which extension copy. Never
+   * A browser connected to CCP-Bot as the Recorder, by whom and through which extension copy. Never
    * the token or the code; the label is the person's own name for the browser.
    */
   "recorder.connected",
@@ -639,7 +639,7 @@ export const auditEventTypes = [
    * a sign-out, sessions ended another way, the person removed, their organization ending the session it holds a copy
    * of) or expired (its lifetime ran out: the deployment ended it, payload `owner`); for a Bot's browser's connection,
    * which lasts one recording, stopped (the person's Stop), ended (the recording ended without one) or not-started (the
-   * start it was for did not happen); for the person's own OpenBot browser's, cleared (they cleared that browser, and its
+   * start it was for did not happen); for the person's own CCP-Bot browser's, cleared (they cleared that browser, and its
    * token went with the profile). Written in the transaction that ends the connection, as `recorder.connected` is in
    * the one that makes it.
    */

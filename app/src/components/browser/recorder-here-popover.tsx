@@ -1,4 +1,4 @@
-import type { RecorderPageState } from "@openbot/shared/recorder-page";
+import type { RecorderPageState } from "@ccpbot/shared/recorder-page";
 import { IconPlayerRecordFilled } from "@tabler/icons-react";
 import { type RefObject, useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -69,8 +69,8 @@ function progress(
 }
 
 /**
- * Record and Stop in the popover from the sidebar's Browser button, for the Recorder in the browser OpenBot is open in,
- * read from its own report (`openbot.state`). Idle: a task name and Record, under what the last Stop saved, said as the
+ * Record and Stop in the popover from the sidebar's Browser button, for the Recorder in the browser CCP-Bot is open in,
+ * read from its own report (`ccpbot.state`). Idle: a task name and Record, under what the last Stop saved, said as the
  * Browser page says it. Recording: its name, how long it has run, its actions and Stop. A narrow column, so each part
  * stands on its own line.
  */
@@ -140,7 +140,9 @@ function IdleHere({
       <PopoverHeader>
         <PopoverTitle>{t("Record a task")}</PopoverTitle>
         <PopoverDescription>
-          {t("What you do in this browser goes into your own Learning space, in every tab you use, until you stop: your steps, what each step saves, AI assistant conversations, and your narration when it's on.")}
+          {t(
+            "What you do in this browser goes into your own Learning space, in every tab you use, until you stop: your steps, what each step saves, AI assistant conversations, and your narration when it's on.",
+          )}
         </PopoverDescription>
       </PopoverHeader>
       {stopped ? (
@@ -197,17 +199,17 @@ export type ConnectProgress =
 function connectSentence(progress: ConnectProgress): string {
   switch (progress.state) {
     case "idle":
-      return "The OpenBot Recorder in this browser isn't connected to OpenBot.";
+      return "The CCP-Bot Recorder in this browser isn't connected to CCP-Bot.";
     case "sending":
       return "Connecting this browser…";
     case "awaiting":
-      return "Confirm in the OpenBot Recorder tab that opened.";
+      return "Confirm in the CCP-Bot Recorder tab that opened.";
     case "expired":
       return "The request expired. Try again.";
     case "cancelled":
-      return "You cancelled in the OpenBot Recorder tab. Nothing was connected.";
+      return "You cancelled in the CCP-Bot Recorder tab. Nothing was connected.";
     case "closed":
-      return "The OpenBot Recorder tab closed before you confirmed. Nothing was connected.";
+      return "The CCP-Bot Recorder tab closed before you confirmed. Nothing was connected.";
     case "failed":
       return progress.message;
   }
@@ -223,7 +225,7 @@ const CONNECT_AGAIN: Partial<Record<ConnectProgress["state"], string>> = {
 };
 
 /**
- * The popover while the Recorder in this browser is being connected to this OpenBot, which the first click on the
+ * The popover while the Recorder in this browser is being connected to this CCP-Bot, which the first click on the
  * Browser button started: what is happening, the Recorder's refusal in its own sentence, or that the request ran out,
  * with a button to ask again.
  */
@@ -238,7 +240,7 @@ export function ConnectHerePanel({
   return (
     <>
       <PopoverHeader>
-        <PopoverTitle>{t("Connect the OpenBot Recorder")}</PopoverTitle>
+        <PopoverTitle>{t("Connect the CCP-Bot Recorder")}</PopoverTitle>
         <PopoverDescription
           className={failed ? "text-destructive" : undefined}
           role={failed ? "alert" : "status"}

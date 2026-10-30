@@ -1,5 +1,5 @@
 import { t } from "@/lib/i18n";
-"use client";
+("use client");
 
 import { mergeProps } from "@base-ui/react/merge-props";
 import { useRender } from "@base-ui/react/use-render";
@@ -216,7 +216,9 @@ function Sidebar({
         >
           <SheetHeader className="sr-only">
             <SheetTitle>{t("Sidebar")}</SheetTitle>
-            <SheetDescription>{t("Displays the mobile sidebar.")}</SheetDescription>
+            <SheetDescription>
+              {t("Displays the mobile sidebar.")}
+            </SheetDescription>
           </SheetHeader>
           <div className="flex h-full w-full flex-col">{children}</div>
         </SheetContent>

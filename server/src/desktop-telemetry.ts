@@ -2,27 +2,27 @@
 export function desktopTelemetryProperties(
   env: Record<string, string | undefined> = process.env,
 ): Record<string, string> {
-  if (env.OPENBOT_DISTRIBUTION !== "desktop") return {};
+  if (env.CCPBOT_DISTRIBUTION !== "desktop") return {};
 
   const properties: Record<string, string> = {
-    openbot_distribution: "desktop",
+    ccpbot_distribution: "desktop",
   };
   for (const [input, output, allowed] of [
     [
-      "OPENBOT_PLATFORM",
-      "openbot_platform",
+      "CCPBOT_PLATFORM",
+      "ccpbot_platform",
       ["macos", "windows", "linux", "other"],
     ],
-    ["OPENBOT_ARCH", "openbot_arch", ["aarch64", "x86_64", "other"]],
-    ["OPENBOT_ENGINE", "openbot_engine", ["docker", "podman", "none"]],
+    ["CCPBOT_ARCH", "ccpbot_arch", ["aarch64", "x86_64", "other"]],
+    ["CCPBOT_ENGINE", "ccpbot_engine", ["docker", "podman", "none"]],
   ] as const) {
     const value = env[input];
     if (value && allowed.some((item) => item === value))
       properties[output] = value;
   }
   for (const [input, output] of [
-    ["OPENBOT_VERSION", "openbot_version"],
-    ["OPENBOT_OS_VERSION", "openbot_os_version"],
+    ["CCPBOT_VERSION", "ccpbot_version"],
+    ["CCPBOT_OS_VERSION", "ccpbot_os_version"],
   ] as const) {
     const value = env[input];
     if (

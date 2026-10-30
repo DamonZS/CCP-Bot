@@ -1,7 +1,7 @@
 import {
   type HeadlessTool,
   HeadlessToolSuspension,
-} from "@openbot/toolkit/headless-tools";
+} from "@ccpbot/toolkit/headless-tools";
 import { z } from "zod";
 import { currentApprovalContext } from "../approvals/types";
 import { type AuditStore, recordAuditEvent } from "../audit";

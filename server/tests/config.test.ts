@@ -6,13 +6,13 @@ import { configuredAuthProviders, loadConfig } from "../src/config";
 // case builds on. Leaving it out of the base would make most of this file assert the behaviour of a
 // deployment that is not allowed to exist.
 const baseEnvironment = {
-  DATABASE_URL: "postgres://openbot:openbot@localhost:5432/openbot",
+  DATABASE_URL: "postgres://ccpbot:ccpbot@localhost:5432/ccpbot",
   KEY_ENCRYPTION_KEY: "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
   GOOGLE_OAUTH_CLIENT_ID: "google-client-id",
   GOOGLE_OAUTH_CLIENT_SECRET: "google-client-secret",
   BETTER_AUTH_SECRET: "a-long-enough-local-development-auth-secret",
   BETTER_AUTH_URL: "http://localhost:3001",
-  INITIAL_ADMIN_EMAILS: "admin@openbot.test",
+  INITIAL_ADMIN_EMAILS: "admin@ccpbot.test",
   INTELLIGENCE_API_URL: "http://localhost:7100",
   INTELLIGENCE_GATEWAY_WS_URL: "ws://localhost:7103",
   INTELLIGENCE_API_KEY: "tenant-api-key",
@@ -73,12 +73,12 @@ describe("deployment configuration", () => {
   test("organization authority disables the standalone actor without requiring local provider secrets", () => {
     const config = loadConfig({
       ...withoutSignIn,
-      OPENBOT_SINGLE_USER: "true",
-      OPENBOT_ORGANIZATION_AUTH_URL: "https://openbot.company.example",
+      CCPBOT_SINGLE_USER: "true",
+      CCPBOT_ORGANIZATION_AUTH_URL: "https://ccpbot.company.example",
     });
     expect(config.singleUser).toBe(false);
     expect(config.auth).toBeUndefined();
-    expect(config.organizationAuthUrl).toBe("https://openbot.company.example");
+    expect(config.organizationAuthUrl).toBe("https://ccpbot.company.example");
     expect(config.runtime.intelligence.apiKey).toBe("tenant-api-key");
   });
   test("resolves the Intelligence runtime, which is the only runtime", () => {
@@ -112,7 +112,7 @@ describe("deployment configuration", () => {
       MANAGED_AGENT_TOKEN: baseEnvironment.MANAGED_AGENT_TOKEN,
       // Explicit, because no provider means every visitor is the administrator and a deployment has
       // to say it meant that. See single-user.test.ts.
-      OPENBOT_SINGLE_USER: "true",
+      CCPBOT_SINGLE_USER: "true",
     });
 
     expect(config.auth).toBeUndefined();
@@ -338,7 +338,7 @@ describe("deployment configuration", () => {
       GOOGLE_OAUTH_CLIENT_SECRET: "google-client-secret",
       BETTER_AUTH_SECRET: "a-long-enough-local-development-auth-secret",
       BETTER_AUTH_URL: "http://localhost:3001",
-      INITIAL_ADMIN_EMAILS: "admin@openbot.test, owner@openbot.test",
+      INITIAL_ADMIN_EMAILS: "admin@ccpbot.test, owner@ccpbot.test",
     });
 
     expect(config.auth).toEqual({
@@ -353,7 +353,7 @@ describe("deployment configuration", () => {
         "http://[::1]:3010",
         "http://localhost:3010",
       ],
-      initialAdminEmails: ["admin@openbot.test", "owner@openbot.test"],
+      initialAdminEmails: ["admin@ccpbot.test", "owner@ccpbot.test"],
       // Nothing set, so no opinion and everybody is admitted: the shape a deployment that has not
       // heard of SIGNIN_ALLOWED_EMAIL_DOMAINS has, which is every deployment running today.
       allowedEmailDomains: [],
@@ -445,11 +445,11 @@ describe("deployment configuration", () => {
   const SESSION = {
     BETTER_AUTH_SECRET: "a-long-enough-local-development-auth-secret",
     BETTER_AUTH_URL: "http://localhost:3001",
-    INITIAL_ADMIN_EMAILS: "admin@openbot.test",
+    INITIAL_ADMIN_EMAILS: "admin@ccpbot.test",
   };
 
   /** What a deployment with no provider has to say before it is allowed to come up. */
-  const OPEN = { OPENBOT_SINGLE_USER: "true" };
+  const OPEN = { CCPBOT_SINGLE_USER: "true" };
 
   test("enables Microsoft, and admits any account until told a directory", () => {
     const config = loadConfig({
@@ -573,19 +573,19 @@ describe("deployment configuration", () => {
   // NODE_ENV: the image and the chart both set it to production for every deployment, the local
   // trial included, so it says nothing about who can reach this.
   test.each([
-    ["a public URL", { OPENBOT_PUBLIC_URL: "https://openbot.example.com" }],
-    ["an app URL", { OPENBOT_APP_URL: "https://openbot.example.com" }],
-    ["a trusted origin", { TRUSTED_ORIGINS: "https://openbot.example.com" }],
+    ["a public URL", { CCPBOT_PUBLIC_URL: "https://ccpbot.example.com" }],
+    ["an app URL", { CCPBOT_APP_URL: "https://ccpbot.example.com" }],
+    ["a trusted origin", { TRUSTED_ORIGINS: "https://ccpbot.example.com" }],
     [
       "one published origin among loopback ones",
-      { TRUSTED_ORIGINS: "http://localhost:3010,https://openbot.example.com" },
+      { TRUSTED_ORIGINS: "http://localhost:3010,https://ccpbot.example.com" },
     ],
-    ["an address that is not a URL at all", { OPENBOT_PUBLIC_URL: "openbot" }],
+    ["an address that is not a URL at all", { CCPBOT_PUBLIC_URL: "ccpbot" }],
     [
       "a public URL missing its scheme",
-      { OPENBOT_PUBLIC_URL: "example.com:3010" },
+      { CCPBOT_PUBLIC_URL: "example.com:3010" },
     ],
-    ["an app URL missing its scheme", { OPENBOT_APP_URL: "example.com:3010" }],
+    ["an app URL missing its scheme", { CCPBOT_APP_URL: "example.com:3010" }],
     [
       "a trusted origin missing its scheme",
       { TRUSTED_ORIGINS: "http://localhost:3010,example.com:3010" },
@@ -593,7 +593,7 @@ describe("deployment configuration", () => {
   ])("refuses no sign-in combined with %s", (_label, published) => {
     expect(() =>
       loadConfig({ ...withoutSignIn, ...OPEN, ...published }),
-    ).toThrow("OPENBOT_SINGLE_USER");
+    ).toThrow("CCPBOT_SINGLE_USER");
   });
 
   /*
@@ -602,12 +602,12 @@ describe("deployment configuration", () => {
    * this feature's own audience. They are allowed and warned about, not refused.
    */
   test.each([
-    ["a home LAN address", { OPENBOT_PUBLIC_URL: "http://192.168.1.10:3001" }],
-    ["a 10/8 address", { OPENBOT_PUBLIC_URL: "http://10.0.0.5:3001" }],
-    ["a 172.16/12 address", { OPENBOT_PUBLIC_URL: "http://172.20.1.4:3001" }],
-    ["a Tailscale address", { OPENBOT_PUBLIC_URL: "http://100.101.102.103" }],
-    ["a unique-local IPv6 address", { OPENBOT_PUBLIC_URL: "http://[fd00::1]" }],
-    ["an mDNS name", { TRUSTED_ORIGINS: "http://openbot.local:3010" }],
+    ["a home LAN address", { CCPBOT_PUBLIC_URL: "http://192.168.1.10:3001" }],
+    ["a 10/8 address", { CCPBOT_PUBLIC_URL: "http://10.0.0.5:3001" }],
+    ["a 172.16/12 address", { CCPBOT_PUBLIC_URL: "http://172.20.1.4:3001" }],
+    ["a Tailscale address", { CCPBOT_PUBLIC_URL: "http://100.101.102.103" }],
+    ["a unique-local IPv6 address", { CCPBOT_PUBLIC_URL: "http://[fd00::1]" }],
+    ["an mDNS name", { TRUSTED_ORIGINS: "http://ccpbot.local:3010" }],
     ["a single-label LAN name", { TRUSTED_ORIGINS: "http://nas:3010" }],
   ])("still runs with no sign-in on %s", (_label, reachable) => {
     expect(() =>
@@ -618,12 +618,12 @@ describe("deployment configuration", () => {
   // 172.32 is outside 172.16/12, and 100.128 is outside 100.64/10. The near miss is the case a
   // hand-written range check gets wrong, so both are pinned as refused.
   test.each([
-    ["just outside 172.16/12", { OPENBOT_PUBLIC_URL: "http://172.32.0.1" }],
-    ["just outside 100.64/10", { OPENBOT_PUBLIC_URL: "http://100.128.0.1" }],
+    ["just outside 172.16/12", { CCPBOT_PUBLIC_URL: "http://172.32.0.1" }],
+    ["just outside 100.64/10", { CCPBOT_PUBLIC_URL: "http://100.128.0.1" }],
   ])("refuses no sign-in on %s", (_label, published) => {
     expect(() =>
       loadConfig({ ...withoutSignIn, ...OPEN, ...published }),
-    ).toThrow("OPENBOT_SINGLE_USER");
+    ).toThrow("CCPBOT_SINGLE_USER");
   });
 
   // A name that merely starts with 127. is a public name, not loopback. Only a whole 127.x.x.x
@@ -631,7 +631,7 @@ describe("deployment configuration", () => {
   test.each([
     [
       "a public name starting 127.",
-      { OPENBOT_PUBLIC_URL: "https://127.example.com" },
+      { CCPBOT_PUBLIC_URL: "https://127.example.com" },
     ],
     [
       "a wildcard DNS name that starts 127.",
@@ -640,7 +640,7 @@ describe("deployment configuration", () => {
   ])("refuses no sign-in on %s", (_label, published) => {
     expect(() =>
       loadConfig({ ...withoutSignIn, ...OPEN, ...published }),
-    ).toThrow("OPENBOT_SINGLE_USER");
+    ).toThrow("CCPBOT_SINGLE_USER");
   });
 
   // The local workflow the flag exists for, and the two addresses the quick start hands out.
@@ -648,7 +648,7 @@ describe("deployment configuration", () => {
     {},
     { TRUSTED_ORIGINS: "http://localhost:3010" },
     { TRUSTED_ORIGINS: "http://127.0.0.1:3010,http://[::1]:3010" },
-    { OPENBOT_PUBLIC_URL: "http://127.0.0.1:3001" },
+    { CCPBOT_PUBLIC_URL: "http://127.0.0.1:3001" },
     // The chart and the image both set this for every install; it must decide nothing. A real key
     // comes with it because the gate beside this one refuses the example key under production, and
     // this case is about sign-in rather than about that.
@@ -972,12 +972,12 @@ describe("accessibility", () => {
   });
 
   test.each(["true", "1"])(
-    "is off on OPENBOT_ACCESSIBILITY_DISABLED=%p",
+    "is off on CCPBOT_ACCESSIBILITY_DISABLED=%p",
     (value) => {
       expect(
         loadConfig({
           ...baseEnvironment,
-          OPENBOT_ACCESSIBILITY_DISABLED: value,
+          CCPBOT_ACCESSIBILITY_DISABLED: value,
         }).accessibility,
       ).toBe(false);
     },
@@ -987,12 +987,12 @@ describe("accessibility", () => {
   // else has not opted out, and silently treating it as opt-out would be a
   // setting that appears to work and does not.
   test.each(["false", "no", "", "yes"])(
-    "stays on for OPENBOT_ACCESSIBILITY_DISABLED=%p",
+    "stays on for CCPBOT_ACCESSIBILITY_DISABLED=%p",
     (value) => {
       expect(
         loadConfig({
           ...baseEnvironment,
-          OPENBOT_ACCESSIBILITY_DISABLED: value,
+          CCPBOT_ACCESSIBILITY_DISABLED: value,
         }).accessibility,
       ).toBe(true);
     },
@@ -1012,25 +1012,25 @@ describe("generated interfaces", () => {
     expect(loadConfig(baseEnvironment).generativeUi).toBe(true);
   });
 
-  test.each(["true", "1"])("stay on for OPENBOT_GENERATIVE_UI=%p", (value) => {
+  test.each(["true", "1"])("stay on for CCPBOT_GENERATIVE_UI=%p", (value) => {
     expect(
-      loadConfig({ ...baseEnvironment, OPENBOT_GENERATIVE_UI: value })
+      loadConfig({ ...baseEnvironment, CCPBOT_GENERATIVE_UI: value })
         .generativeUi,
     ).toBe(true);
   });
 
-  test.each(["false", "0"])("are off for OPENBOT_GENERATIVE_UI=%p", (value) => {
+  test.each(["false", "0"])("are off for CCPBOT_GENERATIVE_UI=%p", (value) => {
     expect(
-      loadConfig({ ...baseEnvironment, OPENBOT_GENERATIVE_UI: value })
+      loadConfig({ ...baseEnvironment, CCPBOT_GENERATIVE_UI: value })
         .generativeUi,
     ).toBe(false);
   });
 
   test.each(["no", "", "yes", "TRUE", "on"])(
-    "stay on for OPENBOT_GENERATIVE_UI=%p",
+    "stay on for CCPBOT_GENERATIVE_UI=%p",
     (value) => {
       expect(
-        loadConfig({ ...baseEnvironment, OPENBOT_GENERATIVE_UI: value })
+        loadConfig({ ...baseEnvironment, CCPBOT_GENERATIVE_UI: value })
           .generativeUi,
       ).toBe(true);
     },
@@ -1042,7 +1042,7 @@ describe("generated interfaces", () => {
     expect(
       loadConfig({
         ...baseEnvironment,
-        OPENBOT_GENERATIVE_UI_DISABLED: "false",
+        CCPBOT_GENERATIVE_UI_DISABLED: "false",
       }).generativeUi,
     ).toBe(true);
   });
@@ -1054,20 +1054,20 @@ describe("the self-host banner", () => {
   });
 
   test.each(["false", "0"])(
-    "is off for OPENBOT_SELF_HOST_BANNER=%p",
+    "is off for CCPBOT_SELF_HOST_BANNER=%p",
     (value) => {
       expect(
-        loadConfig({ ...baseEnvironment, OPENBOT_SELF_HOST_BANNER: value })
+        loadConfig({ ...baseEnvironment, CCPBOT_SELF_HOST_BANNER: value })
           .selfHostBanner,
       ).toBe(false);
     },
   );
 
   test.each(["true", "1", "", "no"])(
-    "stays on for OPENBOT_SELF_HOST_BANNER=%p",
+    "stays on for CCPBOT_SELF_HOST_BANNER=%p",
     (value) => {
       expect(
-        loadConfig({ ...baseEnvironment, OPENBOT_SELF_HOST_BANNER: value })
+        loadConfig({ ...baseEnvironment, CCPBOT_SELF_HOST_BANNER: value })
           .selfHostBanner,
       ).toBe(true);
     },
@@ -1080,10 +1080,10 @@ describe("automatic Learning container assignment", () => {
   });
 
   test.each(["false", "0"])(
-    "is off for OPENBOT_LEARNING_AUTO_ASSIGN=%p",
+    "is off for CCPBOT_LEARNING_AUTO_ASSIGN=%p",
     (value) => {
       expect(
-        loadConfig({ ...baseEnvironment, OPENBOT_LEARNING_AUTO_ASSIGN: value })
+        loadConfig({ ...baseEnvironment, CCPBOT_LEARNING_AUTO_ASSIGN: value })
           .learningAutoAssign,
       ).toBe(false);
     },
@@ -1133,11 +1133,11 @@ describe("memory sources and background research", () => {
 
   test.each(["false", "0"])("each switches off on its own with %p", (value) => {
     expect(
-      loadConfig({ ...baseEnvironment, OPENBOT_MEMORY_SOURCE_DEFAULTS: value })
+      loadConfig({ ...baseEnvironment, CCPBOT_MEMORY_SOURCE_DEFAULTS: value })
         .memoryDefaults,
     ).toEqual({ sources: false, research: true });
     expect(
-      loadConfig({ ...baseEnvironment, OPENBOT_PROACTIVE_DEFAULTS: value })
+      loadConfig({ ...baseEnvironment, CCPBOT_PROACTIVE_DEFAULTS: value })
         .memoryDefaults,
     ).toEqual({ sources: true, research: false });
   });
@@ -1269,11 +1269,11 @@ test("an Arcade key and a broker provider are read, and an unknown provider is r
   const set = loadConfig({
     ...baseEnvironment,
     ARCADE_API_KEY: "  arc_example  ",
-    OPENBOT_BROKER_PROVIDER: " arcade ",
+    CCPBOT_BROKER_PROVIDER: " arcade ",
   });
   expect(set.arcadeApiKey).toBe("arc_example");
   expect(set.brokerProvider).toBe("arcade");
   expect(() =>
-    loadConfig({ ...baseEnvironment, OPENBOT_BROKER_PROVIDER: "zapier" }),
-  ).toThrow(/OPENBOT_BROKER_PROVIDER must be "composio" or "arcade"/);
+    loadConfig({ ...baseEnvironment, CCPBOT_BROKER_PROVIDER: "zapier" }),
+  ).toThrow(/CCPBOT_BROKER_PROVIDER must be "composio" or "arcade"/);
 });

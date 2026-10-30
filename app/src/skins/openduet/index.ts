@@ -7,8 +7,9 @@ import { t } from "@/lib/i18n";
 export const openduet: Skin = {
   id: "openduet",
   name: "OpenDuet",
-  description:
-    t("Bots that keep you in the loop, in a column shaped like a phone."),
+  description: t(
+    "Bots that keep you in the loop, in a column shaped like a phone.",
+  ),
   Frame: OpenDuetFrame,
   screens: { [TASKS_SCREEN]: TasksScreen },
 };

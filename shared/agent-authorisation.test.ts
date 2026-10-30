@@ -8,7 +8,7 @@ describe("managed agent authorization", () => {
     expect(
       hasManagedAgentToken(
         new Request("http://bot.local/ag-ui", {
-          headers: { "x-openbot-agent-token": expected },
+          headers: { "x-ccpbot-agent-token": expected },
         }),
         expected,
       ),
@@ -19,7 +19,7 @@ describe("managed agent authorization", () => {
     expect(
       hasManagedAgentToken(
         new Request("http://bot.local/ag-ui", {
-          headers: { "x-openbot-agent-token": "wrong" },
+          headers: { "x-ccpbot-agent-token": "wrong" },
         }),
         expected,
       ),

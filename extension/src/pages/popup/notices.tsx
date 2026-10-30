@@ -15,8 +15,8 @@ import type { RecorderNotice } from "../../shared/storage";
 
 const SIGNED_OUT = {
   organization:
-    "Your organization sign-in ended. Connect this browser to OpenBot again.",
-  default: "This browser was disconnected from OpenBot. Connect it again.",
+    "Your organization sign-in ended. Connect this browser to CCP-Bot again.",
+  default: "This browser was disconnected from CCP-Bot. Connect it again.",
 } as const;
 
 function noticeSentence(notice: RecorderNotice): string {
@@ -28,7 +28,7 @@ function noticeSentence(notice: RecorderNotice): string {
         ? SIGNED_OUT.organization
         : SIGNED_OUT.default;
     case "policy-moved":
-      return `Your organization moved the Recorder to ${notice.origin}. Connect it again from OpenBot.`;
+      return `Your organization moved the Recorder to ${notice.origin}. Connect it again from CCP-Bot.`;
   }
 }
 

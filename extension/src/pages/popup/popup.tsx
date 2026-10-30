@@ -1,5 +1,5 @@
-import { installOnDeviceSpeech } from "@openbot/shared/on-device-speech";
-import type { LearningSpaceState } from "@openbot/shared/recorder-api";
+import { installOnDeviceSpeech } from "@ccpbot/shared/on-device-speech";
+import type { LearningSpaceState } from "@ccpbot/shared/recorder-api";
 import { IconAlertTriangle } from "@tabler/icons-react";
 import { useCallback, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -73,7 +73,7 @@ export function Popup({ deps }: { deps?: Partial<PopupDeps> }) {
       ? deps.Recognition
       : (globalThis as { SpeechRecognition?: unknown }).SpeechRecognition;
   /** On the person's click, while it still counts: the browser downloads (or unmasks) a language for recognition on
-   * their own computer only on one (@openbot/shared/on-device-speech). Not waited for: the Voice row says while it
+   * their own computer only on one (@ccpbot/shared/on-device-speech). Not waited for: the Voice row says while it
    * downloads, and voice starts once it is there. */
   const getSpeech = (language: string) =>
     void installOnDeviceSpeech(Recognition, language);
@@ -157,7 +157,7 @@ export function Popup({ deps }: { deps?: Partial<PopupDeps> }) {
 
   if (!view) {
     return (
-      <Page title="OpenBot Recorder" width="popup">
+      <Page title="CCP-Bot Recorder" width="popup">
         {error ? <ErrorLine message={error} /> : null}
       </Page>
     );
@@ -166,11 +166,11 @@ export function Popup({ deps }: { deps?: Partial<PopupDeps> }) {
   const { connection, policy, state } = view;
 
   if (!connection) {
-    const openAddress = !policy.invalid ? policy.openbotUrl : null;
+    const openAddress = !policy.invalid ? policy.ccpbotUrl : null;
     return (
       <Page
-        title="Connect the Recorder to OpenBot"
-        description="Open OpenBot, go to Settings, Browsers, and choose Connect this browser."
+        title="Connect the Recorder to CCP-Bot"
+        description="Open CCP-Bot, go to Settings, Browsers, and choose Connect this browser."
         width="popup"
       >
         <Notices notice={view.notice} kept={state.kept} onDismiss={dismiss} />
@@ -178,7 +178,7 @@ export function Popup({ deps }: { deps?: Partial<PopupDeps> }) {
         <AfterStop state={state} connected={false} onDiscard={discardKept} />
         {policy.invalid ? (
           <p className="mt-4 text-muted-foreground text-sm">
-            Your organization's Recorder policy names an OpenBot address the
+            Your organization's Recorder policy names a CCP-Bot address the
             Recorder cannot use. Ask your IT team.
           </p>
         ) : null}
@@ -203,7 +203,7 @@ export function Popup({ deps }: { deps?: Partial<PopupDeps> }) {
                 const answer = await ask<PageResponse>({
                   type: "page.connect.desktop",
                 });
-                // A good ping does not promise a good handoff: OpenBot Desktop says why it could not connect. Connected,
+                // A good ping does not promise a good handoff: CCP-Bot Desktop says why it could not connect. Connected,
                 // the refresh shows the Record form; there is no Connect page to confirm.
                 if (!answer.ok) setError(answer.error);
                 else if ("connected" in answer && !answer.connected)
@@ -211,7 +211,7 @@ export function Popup({ deps }: { deps?: Partial<PopupDeps> }) {
                 await refresh();
               }}
             >
-              Connect with OpenBot Desktop
+              Connect with CCP-Bot Desktop
             </Button>
           ) : null}
         </div>
@@ -263,7 +263,7 @@ export function Popup({ deps }: { deps?: Partial<PopupDeps> }) {
   return (
     <Page
       title={connection.user.name}
-      description={new URL(connection.openbotUrl).host}
+      description={new URL(connection.ccpbotUrl).host}
       width="popup"
     >
       <Notices notice={view.notice} kept={state.kept} onDismiss={dismiss} />

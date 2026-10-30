@@ -18,8 +18,8 @@
  * hands in, not a channel post written into the tool.
  */
 
-import { PUT_TO } from "@openbot/shared/handoff-markers";
-import type { GrantedTool } from "@openbot/toolkit/granted-tool";
+import { PUT_TO } from "@ccpbot/shared/handoff-markers";
+import type { GrantedTool } from "@ccpbot/toolkit/granted-tool";
 import { z } from "zod";
 import {
   type AuditInitiator,

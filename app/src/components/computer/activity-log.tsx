@@ -107,7 +107,9 @@ export function ActivityLog({ computerId }: { computerId: string }) {
       <Empty className="h-[180px] border border-dashed">
         <EmptyHeader>
           <EmptyTitle className="text-muted-foreground">
-            {t("Nothing yet. Commands the Bot runs and files it reads appear here.")}
+            {t(
+              "Nothing yet. Commands the Bot runs and files it reads appear here.",
+            )}
           </EmptyTitle>
         </EmptyHeader>
       </Empty>

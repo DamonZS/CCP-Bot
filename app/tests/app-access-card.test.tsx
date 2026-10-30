@@ -11,7 +11,7 @@ import {
   type ConnectPrompt,
   connectAppRefusal,
   SHOW_APP_ACCESS_TOOL,
-} from "@openbot/shared/connect-prompt";
+} from "@ccpbot/shared/connect-prompt";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
   createMemoryHistory,

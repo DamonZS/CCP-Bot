@@ -1,4 +1,4 @@
-import type { DrawnComponent } from "@openbot/toolkit/run-turn";
+import type { DrawnComponent } from "@ccpbot/toolkit/run-turn";
 import { resolveUpdateRoute, type UpdateRoute } from "../agents/lifecycle";
 import type { WorkItem, WorkQueue } from "../work/queue";
 import type { ExpoPushTransport } from "./push";
@@ -476,7 +476,7 @@ export function createDeliveryRouter(deps: {
           throw new DeliveryRefusedError("Push device unavailable.");
         result = await deps.providers.push.send({
           token: device.token,
-          title: "OpenBot",
+          title: "CCP-Bot",
           body: row.text,
           channelId: row.channelId,
           kind: row.kind,

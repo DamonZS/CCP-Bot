@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import path from "node:path";
-import { listenPort } from "@openbot/shared/listen-port";
+import { listenPort } from "@ccpbot/shared/listen-port";
 import tailwindcss from "@tailwindcss/vite";
 import { tanstackRouter } from "@tanstack/router-plugin/vite";
 import react from "@vitejs/plugin-react";
@@ -21,13 +21,13 @@ import { defineConfig, type Plugin } from "vite";
  * own middleware below.
  */
 function announceServerPort(port: number): Plugin {
-  const tag = `<script>window.__OPENBOT_WS_PORT__=${JSON.stringify(String(port))};</script>`;
+  const tag = `<script>window.__CCPBOT_WS_PORT__=${JSON.stringify(String(port))};</script>`;
   const inject = (html: string) =>
-    html.includes("__OPENBOT_WS_PORT__")
+    html.includes("__CCPBOT_WS_PORT__")
       ? html
       : html.replace("</head>", `    ${tag}\n  </head>`);
   return {
-    name: "openbot-announce-server-port",
+    name: "ccpbot-announce-server-port",
     transformIndexHtml(html, ctx) {
       return ctx.server ? inject(html) : html;
     },
@@ -133,7 +133,7 @@ function routeComponentSplitPath(id: string): string | undefined {
   return filePath.slice(routesIndex + routesMarker.length);
 }
 
-export function selectOpenBotManualChunk(id: string): string | undefined {
+export function selectCcpBotManualChunk(id: string): string | undefined {
   const routePath = routeComponentSplitPath(id);
   if (!routePath) {
     return undefined;
@@ -165,7 +165,7 @@ export function selectOpenBotManualChunk(id: string): string | undefined {
 
 export const routeBuildRollupOutputOptions = {
   onlyExplicitManualChunks: true,
-  manualChunks: selectOpenBotManualChunk,
+  manualChunks: selectCcpBotManualChunk,
 };
 
 export default defineConfig({

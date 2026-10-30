@@ -86,8 +86,8 @@ pub fn podman_download() -> Result<Download, Problem> {
         ),
         ("macos", _) => {
             return Err(Problem::with(
-                "OpenBot cannot install the container engine on an Intel Mac. Install Podman \
-                 Desktop or Docker Desktop, then start OpenBot again.",
+                "CCP-Bot cannot install the container engine on an Intel Mac. Install Podman \
+                 Desktop or Docker Desktop, then start CCP-Bot again.",
                 format!("Podman {PODMAN} publishes an arm64 package only"),
             ))
         }
@@ -98,7 +98,7 @@ pub fn podman_download() -> Result<Download, Problem> {
         }
         (os, arch) => {
             return Err(Problem::with(
-                "OpenBot cannot install the container engine on this kind of computer.",
+                "CCP-Bot cannot install the container engine on this kind of computer.",
                 format!("no Podman installer for {os} on {arch}"),
             ))
         }
@@ -144,7 +144,7 @@ pub fn compose_download() -> Result<Download, Problem> {
         ),
         (os, arch) => {
             return Err(Problem::with(
-                "OpenBot cannot install the piece that runs the containers on this kind of \
+                "CCP-Bot cannot install the piece that runs the containers on this kind of \
                  computer.",
                 format!("no Compose build for {os} on {arch}"),
             ))
@@ -172,7 +172,7 @@ fn fetch_verified(download: &Download, into: &Path) -> Result<PathBuf, Problem> 
 
     let body = crate::deployment::get(&download.url).map_err(|error| {
         Problem::with(
-            "OpenBot could not download the software it needs to run. Check the internet \
+            "CCP-Bot could not download the software it needs to run. Check the internet \
              connection and try again.",
             format!("{}: {error}", download.url),
         )
@@ -181,7 +181,7 @@ fn fetch_verified(download: &Download, into: &Path) -> Result<PathBuf, Problem> 
     let got = digest_of(&body);
     if got != download.sha256 {
         return Err(Problem::with(
-            "What OpenBot downloaded is not what it was expecting, so it has not been run. Try \
+            "What CCP-Bot downloaded is not what it was expecting, so it has not been run. Try \
              again.",
             format!(
                 "{} from {}: expected sha256 {}, got {got}",
@@ -198,7 +198,7 @@ fn fetch_verified(download: &Download, into: &Path) -> Result<PathBuf, Problem> 
 /// One sentence for every "could not write here", because the person's fix is the same each time.
 fn unwritable(path: &Path, error: &str) -> Problem {
     Problem::with(
-        "OpenBot could not save the software it downloaded. Check there is free disk space and \
+        "CCP-Bot could not save the software it downloaded. Check there is free disk space and \
          try again.",
         format!("{}: {error}", path.display()),
     )
@@ -259,7 +259,7 @@ fn bun_download(os: &str, arch: &str) -> Result<Download, Problem> {
         ),
         _ => {
             return Err(Problem::with(
-                "OpenBot cannot install its app runtime on this kind of computer.",
+                "CCP-Bot cannot install its app runtime on this kind of computer.",
                 format!("no Bun {BUN} build for {os} on {arch}"),
             ))
         }
@@ -324,7 +324,7 @@ fn install_bun_with(
 fn extract_bun(archive: &Path, target: &Path, entry: &str) -> Result<(), Problem> {
     let unpack_error = |error: &dyn std::fmt::Display| {
         Problem::with(
-            "OpenBot could not unpack its app runtime. Try again.",
+            "CCP-Bot could not unpack its app runtime. Try again.",
             format!("{} entry {entry}: {error}", archive.display()),
         )
     };
@@ -354,13 +354,13 @@ pub(crate) fn verify_bun(binary: &Path) -> Result<(), Problem> {
         .output()
         .map_err(|error| {
             Problem::with(
-                "OpenBot could not start its app runtime.",
+                "CCP-Bot could not start its app runtime.",
                 format!("{}: {error}", binary.display()),
             )
         })?;
     if !output.status.success() || String::from_utf8_lossy(&output.stdout).trim() != BUN {
         return Err(Problem::with(
-            "OpenBot could not verify its app runtime.",
+            "CCP-Bot could not verify its app runtime.",
             format!(
                 "{} --version: {}; expected {BUN}; stdout: {}; stderr: {}",
                 binary.display(),
@@ -459,7 +459,7 @@ enum Choice {
  *
  * A new installation uses a Docker that answers, then a stopped Docker Desktop that has run before,
  * then Podman. A Docker Desktop that has never run is not opened: its first window is Docker's
- * terms, and OpenBot must never put a person in front of them or wait on them. A `docker` command
+ * terms, and CCP-Bot must never put a person in front of them or wait on them. A `docker` command
  * that does not answer is not a reason to stop either. That machine gets Podman too.
  *
  * An installation that saved its engine keeps it. Its images and its database are there, and
@@ -511,7 +511,7 @@ fn install_engine_with(
         }
         Choice::DockerNotRunning => {
             return Err(Problem::with(
-                "OpenBot was installed with Docker, and Docker isn't running. Start Docker, then \
+                "CCP-Bot was installed with Docker, and Docker isn't running. Start Docker, then \
                  try again.",
                 "this installation saved Docker as its engine; docker does not answer and there \
                  is no Docker Desktop to open",
@@ -531,8 +531,8 @@ fn install_engine_with(
     // reporting no engine on a machine that has just installed one.
     if engine::program(Engine::Podman).is_none() {
         return Err(Problem::with(
-            "OpenBot installed the container engine, but cannot find it afterwards. Install \
-             Podman Desktop and start OpenBot again.",
+            "CCP-Bot installed the container engine, but cannot find it afterwards. Install \
+             Podman Desktop and start CCP-Bot again.",
             format!(
                 "the {PODMAN} installer reported success; podman is on neither PATH nor any \
                  install location this platform uses"
@@ -574,7 +574,7 @@ fn place_compose(into: &Path) -> Result<String, Problem> {
         std::fs::set_permissions(&named, std::fs::Permissions::from_mode(0o755)).map_err(
             |error| {
                 Problem::with(
-                    "OpenBot could not finish installing the piece that runs the containers.",
+                    "CCP-Bot could not finish installing the piece that runs the containers.",
                     format!("chmod 755 {}: {error}", named.display()),
                 )
             },
@@ -656,7 +656,7 @@ fn msiexec(verb: &[&str], msi: &Path, log: &Path) -> Result<(), MsiexecFailure> 
 fn installer_stopped(verb: &str, msi: &Path, failure: MsiexecFailure, log: &Path) -> Problem {
     match failure {
         MsiexecFailure::Start(error) => Problem::with(
-            "OpenBot could not start the installer for the software it needs. Try again.",
+            "CCP-Bot could not start the installer for the software it needs. Try again.",
             format!(
                 "msiexec {verb} {} could not start: {error}; intended log path is {}",
                 msi.display(),
@@ -667,11 +667,11 @@ fn installer_stopped(verb: &str, msi: &Path, failure: MsiexecFailure, log: &Path
             if code == 1625 {
                 // ERROR_INSTALL_PACKAGE_REJECTED requires an administrator to resolve policy.
                 // https://learn.microsoft.com/en-us/windows/win32/msi/error-codes
-                "Windows policy blocks installing Podman, the container engine OpenBot needs. \
+                "Windows policy blocks installing Podman, the container engine CCP-Bot needs. \
                  Ask an administrator to allow the installation or install Podman for your \
                  account, then try again."
             } else {
-                "Installing the software OpenBot needs did not finish. Try again."
+                "Installing the software CCP-Bot needs did not finish. Try again."
             },
             format!(
                 "msiexec {verb} {} stopped with exit code {code}; its log is at {}",
@@ -699,7 +699,7 @@ fn install_podman(into: &Path) -> Result<(), Problem> {
         .output()
         .map_err(|error| {
             Problem::with(
-                "OpenBot could not start the installer for the software it needs.",
+                "CCP-Bot could not start the installer for the software it needs.",
                 format!("osascript: {error}"),
             )
         })?;
@@ -711,12 +711,12 @@ fn install_podman(into: &Path) -> Result<(), Problem> {
     // -128 is AppleScript's "user cancelled", which is a decision rather than a failure.
     if said.contains("-128") {
         return Err(Problem::plain(
-            "The install was cancelled, so OpenBot does not have the software it needs yet. Press \
+            "The install was cancelled, so CCP-Bot does not have the software it needs yet. Press \
              Start to try again.",
         ));
     }
     Err(Problem::with(
-        "Installing the software OpenBot needs did not finish. Try again.",
+        "Installing the software CCP-Bot needs did not finish. Try again.",
         said,
     ))
 }
@@ -735,8 +735,8 @@ fn applescript_shell_arg(path: &Path) -> String {
 fn install_podman(_into: &Path) -> Result<(), Problem> {
     let (manager, args) = linux_package_manager().ok_or_else(|| {
         Problem::with(
-            "OpenBot cannot install the software it needs on this system. Install the `podman` \
-             package, then start OpenBot again.",
+            "CCP-Bot cannot install the software it needs on this system. Install the `podman` \
+             package, then start CCP-Bot again.",
             "no apt-get, dnf, zypper or pacman in /usr/bin",
         )
     })?;
@@ -750,7 +750,7 @@ fn install_podman(_into: &Path) -> Result<(), Problem> {
         .output()
         .map_err(|error| {
             Problem::with(
-                "OpenBot could not start the installer for the software it needs.",
+                "CCP-Bot could not start the installer for the software it needs.",
                 format!("pkexec {manager}: {error}"),
             )
         })?;
@@ -762,12 +762,12 @@ fn install_podman(_into: &Path) -> Result<(), Problem> {
     // package manager that failed.
     if matches!(output.status.code(), Some(126) | Some(127)) {
         return Err(Problem::plain(
-            "The install was not allowed, so OpenBot does not have the software it needs yet. \
+            "The install was not allowed, so CCP-Bot does not have the software it needs yet. \
              Press Start to try again.",
         ));
     }
     Err(Problem::with(
-        "Installing the software OpenBot needs did not finish. Try again.",
+        "Installing the software CCP-Bot needs did not finish. Try again.",
         crate::quiet::said(&output.stderr),
     ))
 }
@@ -1259,7 +1259,7 @@ mod tests {
         ) {
             return;
         }
-        std::env::set_var("PATH", "/openbot-no-developer-tools");
+        std::env::set_var("PATH", "/ccpbot-no-developer-tools");
         let (root, download) = bun_zip_fixture("bun user's fresh account");
         let binary = ensure_bun_with(None, || {
             install_bun_with(
@@ -1383,7 +1383,7 @@ mod tests {
     fn unsupported_existing_bun_acquires_pinned_runtime_without_changing_user_binary() {
         let root = temp_root("unsupported-existing-bun");
         let existing = runtime_version_fixture(&root.join("user"), "1.2.15");
-        let pinned = runtime_version_fixture(&root.join("openbot"), BUN);
+        let pinned = runtime_version_fixture(&root.join("ccpbot"), BUN);
         let before = std::fs::read(&existing).unwrap();
         let chosen = ensure_bun_with(Some(existing.clone()), || Ok(pinned.clone())).unwrap();
         assert_eq!(
@@ -1605,7 +1605,7 @@ mod tests {
         assert_eq!(
             problem.said,
             "Windows policy blocks installing Podman, the container engine \
-            OpenBot needs. Ask an administrator to allow the installation or install Podman for \
+            CCP-Bot needs. Ask an administrator to allow the installation or install Podman for \
             your account, then try again."
         );
         assert_eq!(

@@ -55,7 +55,9 @@ export function RecipientField({
             <ChannelAvatar participantIds={[recipient.id]} size={16} />
             {recipient.name}
             <span aria-hidden>×</span>
-            <span className="sr-only">{t("Remove")} {recipient.name}</span>
+            <span className="sr-only">
+              {t("Remove")} {recipient.name}
+            </span>
           </Button>
         ))}
 

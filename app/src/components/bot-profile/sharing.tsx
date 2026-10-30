@@ -107,7 +107,9 @@ export function SharingSections({ agent }: { agent: AgentProfile }) {
                 <ItemDescription>
                   {published.visibleToTeam
                     ? t("Each person's conversations with it are private.")
-                    : t("Teammates can't see it until it has a real name and a description.")}
+                    : t(
+                        "Teammates can't see it until it has a real name and a description.",
+                      )}
                 </ItemDescription>
               </ItemContent>
               {agent.mine ? (
@@ -159,7 +161,7 @@ export function SharingSections({ agent }: { agent: AgentProfile }) {
             }
           >
             {agent.visibility === "public"
-              ? t("It's public, so everyone on OpenBot can already use it.")
+              ? t("It's public, so everyone on CCP-Bot can already use it.")
               : agent.mine
                 ? "Only you can use it."
                 : null}
@@ -168,7 +170,9 @@ export function SharingSections({ agent }: { agent: AgentProfile }) {
       </PageSection>
       {agent.mine && (published || publishable) ? (
         <PageSection
-          description={t("Publishing doesn't change its visibility. You can unpublish at any time.")}
+          description={t(
+            "Publishing doesn't change its visibility. You can unpublish at any time.",
+          )}
           title={published ? t("Who it is published to") : t("Publish")}
         >
           {/* More than one value — an audience, then people and groups — so a summary row and a
@@ -203,7 +207,9 @@ export function SharingSections({ agent }: { agent: AgentProfile }) {
       ) : null}
       {me?.role === "admin" && published ? (
         <PageSection
-          description={t("Pins this Bot at the top of every group member's Bots list. Use * for the whole team.")}
+          description={t(
+            "Pins this Bot at the top of every group member's Bots list. Use * for the whole team.",
+          )}
           title={t("Assign to groups")}
         >
           <Assignments bot={published} />
@@ -257,7 +263,9 @@ function PublishDialog({
             {current ? t("Who it is published to") : t("Publish")}
           </DialogTitle>
           <DialogDescription>
-            {t("Publishing doesn't change its visibility. You can unpublish at any time.")}
+            {t(
+              "Publishing doesn't change its visibility. You can unpublish at any time.",
+            )}
           </DialogDescription>
         </DialogHeader>
         <DialogBody className="mt-4 overflow-y-auto">
@@ -320,7 +328,9 @@ function PublishDialog({
                     />
                   </Field>
                   <Field>
-                    <FieldLabel htmlFor={`${formId}-groups`}>{t("Groups")}</FieldLabel>
+                    <FieldLabel htmlFor={`${formId}-groups`}>
+                      {t("Groups")}
+                    </FieldLabel>
                     <Input
                       id={`${formId}-groups`}
                       onChange={(event) => setGroups(event.target.value)}
@@ -373,7 +383,10 @@ function Assignments({ bot }: { bot: TeamBot }) {
         </p>
       ) : null}
       {assigned.length === 0 ? (
-        <PageEmpty icon={IconUsersGroup} title={t("Not assigned to any group")} />
+        <PageEmpty
+          icon={IconUsersGroup}
+          title={t("Not assigned to any group")}
+        />
       ) : null}
       <PageRows>
         {assigned.map((name) => (
@@ -433,7 +446,9 @@ function AssignDialog({ bot, onClose }: { bot: TeamBot; onClose: () => void }) {
     <Dialog onOpenChange={(next) => !next && onClose()} open>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>{t("Assign")} {bot.name} {t("to a group")}</DialogTitle>
+          <DialogTitle>
+            {t("Assign")} {bot.name} {t("to a group")}
+          </DialogTitle>
           <DialogDescription>
             {t("It's pinned at the top of every member's Bots list.")}
           </DialogDescription>
@@ -447,7 +462,9 @@ function AssignDialog({ bot, onClose }: { bot: TeamBot; onClose: () => void }) {
             }}
           >
             <Field>
-              <FieldLabel htmlFor={`${formId}-group`}>{t("Group, or *")}</FieldLabel>
+              <FieldLabel htmlFor={`${formId}-group`}>
+                {t("Group, or *")}
+              </FieldLabel>
               <Input
                 id={`${formId}-group`}
                 onChange={(event) => setGroup(event.target.value)}

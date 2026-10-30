@@ -1,23 +1,23 @@
-import { isAllowedGatewayUrl, normaliseOpenBotOrigin } from "./origin";
+import { isAllowedGatewayUrl, normaliseCcpBotOrigin } from "./origin";
 
-/** `openbotUrlInvalid`: the policy names an address normaliseOpenBotOrigin refuses; every connect is then refused. */
+/** `ccpbotUrlInvalid`: the policy names an address normaliseCcpBotOrigin refuses; every connect is then refused. */
 export type RecorderPolicy = {
-  openbotUrl: string | null;
-  openbotUrlInvalid: boolean;
+  ccpbotUrl: string | null;
+  ccpbotUrlInvalid: boolean;
   allowedIntelligenceUrls: string[] | null;
 };
 
-function openbotUrlFrom(
+function ccpbotUrlFrom(
   value: unknown,
-): Pick<RecorderPolicy, "openbotUrl" | "openbotUrlInvalid"> {
+): Pick<RecorderPolicy, "ccpbotUrl" | "ccpbotUrlInvalid"> {
   if (value === undefined)
-    return { openbotUrl: null, openbotUrlInvalid: false };
+    return { ccpbotUrl: null, ccpbotUrlInvalid: false };
   const checked =
-    typeof value === "string" ? normaliseOpenBotOrigin(value.trim()) : null;
+    typeof value === "string" ? normaliseCcpBotOrigin(value.trim()) : null;
   // The bad string is dropped here, so no surface can show or parse it.
   return checked?.ok
-    ? { openbotUrl: checked.origin, openbotUrlInvalid: false }
-    : { openbotUrl: null, openbotUrlInvalid: true };
+    ? { ccpbotUrl: checked.origin, ccpbotUrlInvalid: false }
+    : { ccpbotUrl: null, ccpbotUrlInvalid: true };
 }
 
 /** Absent: no restriction. Present: only the valid wss:// entries (ws:// for a loopback IP); none left refuses every pass.
@@ -37,7 +37,7 @@ function allowedUrlsFrom(value: unknown): string[] | null {
 
 function policyFrom(managed: Record<string, unknown>): RecorderPolicy {
   return {
-    ...openbotUrlFrom(managed.OpenBotUrl),
+    ...ccpbotUrlFrom(managed.CcpBotUrl),
     allowedIntelligenceUrls: allowedUrlsFrom(managed.AllowedIntelligenceUrls),
   };
 }
@@ -47,12 +47,12 @@ export async function readPolicy(): Promise<RecorderPolicy> {
 }
 
 /** Whether the policy lets this browser connect to (and stay connected to) `origin`: never under an invalid policy,
- * and only to the pinned OpenBot when one is pinned. */
-export function allowsOpenBot(policy: RecorderPolicy, origin: string): boolean {
-  if (policy.openbotUrlInvalid) return false;
-  if (policy.openbotUrl === null) return true;
-  const checked = normaliseOpenBotOrigin(origin);
-  return checked.ok && checked.origin === policy.openbotUrl;
+ * and only to the pinned CCP-Bot when one is pinned. */
+export function allowsCcpBot(policy: RecorderPolicy, origin: string): boolean {
+  if (policy.ccpbotUrlInvalid) return false;
+  if (policy.ccpbotUrl === null) return true;
+  const checked = normaliseCcpBotOrigin(origin);
+  return checked.ok && checked.origin === policy.ccpbotUrl;
 }
 
 export function onPolicyChanged(

@@ -16,7 +16,7 @@
  * that could not be read, a tool with no recorded effect.
  */
 
-import type { GrantedTool } from "@openbot/toolkit/granted-tool";
+import type { GrantedTool } from "@ccpbot/toolkit/granted-tool";
 import type { AuditInitiator } from "../audit";
 import { REFUSAL_MARKER } from "../plugins/tools";
 

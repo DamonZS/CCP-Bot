@@ -1,5 +1,5 @@
 {
-  "nativeHost": "ai.copilotkit.openbot.recorder",
+  "nativeHost": "app.ccpbot.recorder",
   "extensionId": "icpcnhgjghecmklnjbccdgdicklblcgd",
   "storeIds": {
     "chrome": "",

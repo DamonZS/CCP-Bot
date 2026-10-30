@@ -204,7 +204,9 @@ function SignInCard({
           <Dialog open={open} onOpenChange={setOpen}>
             <DialogContent>
               <DialogHeader>
-                <DialogTitle>{t("Sign in to")} {site}</DialogTitle>
+                <DialogTitle>
+                  {t("Sign in to")} {site}
+                </DialogTitle>
                 <DialogDescription>
                   {t("Goes to your Bot's browser, not into this conversation.")}
                 </DialogDescription>

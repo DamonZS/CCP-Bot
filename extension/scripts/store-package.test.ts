@@ -71,10 +71,10 @@ function builtRecorder(
 ): { dist: string; files: Record<string, string> } {
   const manifest = {
     manifest_version: 3,
-    name: "OpenBot Recorder",
+    name: "CCP-Bot Recorder",
     version: ROOT_VERSION,
     description:
-      "Record a task in your browser so an OpenBot Bot can learn to do it.",
+      "Record a task in your browser so a CCP-Bot Bot can learn to do it.",
     icons: { "16": "icons/16.png", "128": "icons/128.png" },
     action: {
       default_popup: "popup.html",
@@ -213,14 +213,14 @@ test("an e2e build, or a build holding a key file that would reach the Edge pack
   expect(existsSync(out) ? readdirSync(out) : []).toEqual([]);
 });
 
-test("the signing key comes from OPENBOT_RECORDER_SIGNING_KEY, else from ~/.config/openbot-recorder", () => {
+test("the signing key comes from CCPBOT_RECORDER_SIGNING_KEY, else from ~/.config/ccpbot-recorder", () => {
   expect(signingKeyPath({ [SIGNING_KEY_VARIABLE]: "/keys/r.pem" }, "/u")).toBe(
     "/keys/r.pem",
   );
   expect(signingKeyPath({}, "/u")).toBe(
-    "/u/.config/openbot-recorder/recorder-extension.pem",
+    "/u/.config/ccpbot-recorder/recorder-extension.pem",
   );
   expect(signingKeyPath({ [SIGNING_KEY_VARIABLE]: "  " }, "/u")).toBe(
-    "/u/.config/openbot-recorder/recorder-extension.pem",
+    "/u/.config/ccpbot-recorder/recorder-extension.pem",
   );
 });

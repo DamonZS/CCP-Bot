@@ -1,7 +1,7 @@
 import type {
   BrowserApiState,
   LauncherState,
-} from "@openbot/shared/openbot-browser";
+} from "@ccpbot/shared/ccpbot-browser";
 import {
   IconAlertTriangle,
   IconCircleCheck,
@@ -234,7 +234,7 @@ export function stoppedRecording(
 export type Stopped = NonNullable<ReturnType<typeof stoppedRecording>>;
 
 /** What a recording holds, which the person can go by next time: the browser's own pages (a new tab, its settings)
- * and the sites they leave out are never recorded (@openbot/shared/recorder-disclosure says it in full). */
+ * and the sites they leave out are never recorded (@ccpbot/shared/recorder-disclosure says it in full). */
 const WHAT_IT_RECORDS =
   "The Recorder records the pages you open on websites and what you do there, with what each step saves, AI assistant conversations and your narration, in every tab you use while it records, except sites you leave out.";
 
@@ -277,7 +277,7 @@ export function StoppedIcon({
 }
 
 /**
- * The recording Stop ended last, by name, on a page of rows (OpenBot Desktop, a Bot's screen), until the next one
+ * The recording Stop ended last, by name, on a page of rows (CCP-Bot Desktop, a Bot's screen), until the next one
  * starts: Stop says where the recording went and what it held, or that it held nothing. `ended` comes first when
  * something other than Stop ended it, in a sentence saying what did.
  */
@@ -306,7 +306,7 @@ export function StoppedRow({
   );
 }
 
-/** The same, as a line under the bar above a browser shown in the page (hosted OpenBot). */
+/** The same, as a line under the bar above a browser shown in the page (hosted CCP-Bot). */
 export function StoppedNotice({ stopped }: { stopped: Stopped }) {
   return (
     <p
@@ -347,7 +347,7 @@ function progressLine(recording: Recording): string {
 }
 
 /**
- * The recording row on a page of rows (OpenBot Desktop, a Bot's screen): a task name and Record, or while recording its
+ * The recording row on a page of rows (CCP-Bot Desktop, a Bot's screen): a task name and Record, or while recording its
  * name, how long it has run, its actions and Stop. `placeholder` is shorter where the row is narrow (the column beside
  * a Bot's screen), so the field says what it is for rather than half an example.
  */
@@ -421,7 +421,7 @@ export function RecordingRow({
 }
 
 /**
- * The same controls in one line, for the bar above a browser shown in the page (hosted OpenBot). `children` sits
+ * The same controls in one line, for the bar above a browser shown in the page (hosted CCP-Bot). `children` sits
  * before Stop while recording: the narration switch.
  */
 export function RecordingBar({

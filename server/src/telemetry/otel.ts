@@ -9,10 +9,10 @@
  * Configured with the standard OpenTelemetry environment variables, read by the SDK itself:
  * `OTEL_EXPORTER_OTLP_LOGS_ENDPOINT` or `OTEL_EXPORTER_OTLP_ENDPOINT`, `OTEL_EXPORTER_OTLP_HEADERS`
  * (for a collector's API key), `OTEL_SERVICE_NAME`, `OTEL_RESOURCE_ATTRIBUTES`. Nothing set means
- * nothing is exported and nothing is loaded. `OPENBOT_OTEL_EXPORT=off` turns it off with an endpoint
+ * nothing is exported and nothing is loaded. `CCPBOT_OTEL_EXPORT=off` turns it off with an endpoint
  * still configured.
  *
- * Every record carries `openbot.surface`, the counterpart of Grok Bot's `cursor.surface=grok_bot`:
+ * Every record carries `ccpbot.surface`, the counterpart of Grok Bot's `cursor.surface=grok_bot`:
  * `bot` for something a Bot did (computer actions, tool calls, handoffs), `identity` for sign-in and
  * people, `control_plane` for everything an administrator or member configured.
  *
@@ -105,7 +105,7 @@ function flatten(
   const out: Record<string, string | number | boolean> = {};
   for (const [key, value] of Object.entries(payload)) {
     if (value === undefined || value === null) continue;
-    out[`openbot.payload.${key}`] =
+    out[`ccpbot.payload.${key}`] =
       typeof value === "string" ||
       typeof value === "number" ||
       typeof value === "boolean"
@@ -130,7 +130,7 @@ export function parseHeaders(raw: string | undefined): Record<string, string> {
 export function otelConfigured(
   env: Record<string, string | undefined>,
 ): boolean {
-  if (env.OPENBOT_OTEL_EXPORT?.trim().toLowerCase() === "off") return false;
+  if (env.CCPBOT_OTEL_EXPORT?.trim().toLowerCase() === "off") return false;
   return Boolean(
     env.OTEL_EXPORTER_OTLP_LOGS_ENDPOINT?.trim() ||
       env.OTEL_EXPORTER_OTLP_ENDPOINT?.trim(),
@@ -160,11 +160,11 @@ export function createOtelEventExporter(
   });
   const provider = new LoggerProvider({
     resource: resourceFromAttributes({
-      "service.name": env.OTEL_SERVICE_NAME?.trim() || "openbot",
+      "service.name": env.OTEL_SERVICE_NAME?.trim() || "ccpbot",
     }),
     processors: [new BatchLogRecordProcessor({ exporter })],
   });
-  const logger = provider.getLogger("openbot.audit");
+  const logger = provider.getLogger("ccpbot.audit");
 
   return {
     emit(event) {
@@ -178,16 +178,16 @@ export function createOtelEventExporter(
           body: event.eventType,
           eventName: event.eventType,
           attributes: {
-            "openbot.surface": event.surface ?? surfaceOf(event.eventType),
-            "openbot.event_type": event.eventType,
-            "openbot.target_type": event.targetType,
-            ...(event.targetId ? { "openbot.target_id": event.targetId } : {}),
+            "ccpbot.surface": event.surface ?? surfaceOf(event.eventType),
+            "ccpbot.event_type": event.eventType,
+            "ccpbot.target_type": event.targetType,
+            ...(event.targetId ? { "ccpbot.target_id": event.targetId } : {}),
             ...(event.actorUserId
-              ? { "openbot.actor_user_id": event.actorUserId }
+              ? { "ccpbot.actor_user_id": event.actorUserId }
               : {}),
-            "openbot.initiator_kind": event.initiatorKind,
+            "ccpbot.initiator_kind": event.initiatorKind,
             ...(event.initiatorId
-              ? { "openbot.initiator_id": event.initiatorId }
+              ? { "ccpbot.initiator_id": event.initiatorId }
               : {}),
             ...flatten(scrubCommands(event.payload) as Record<string, unknown>),
           },

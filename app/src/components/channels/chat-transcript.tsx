@@ -9,7 +9,7 @@ import { useQuery } from "@tanstack/react-query";
 import {
   readConnectPrompt,
   SHOW_APP_ACCESS_TOOL,
-} from "@openbot/shared/connect-prompt";
+} from "@ccpbot/shared/connect-prompt";
 import {
   IconAlertTriangle,
   IconBox,
@@ -674,8 +674,8 @@ function ResponsibilityFiring({
       <IconClock aria-hidden className="size-4 shrink-0 translate-y-0.5" />
       <div className="min-w-0">
         <p>
-          <span className="font-medium">{t("Responsibility ran.")}</span> {t("Trigger:")}{" "}
-          {describeTrigger(turn.trigger)}
+          <span className="font-medium">{t("Responsibility ran.")}</span>{" "}
+          {t("Trigger:")} {describeTrigger(turn.trigger)}
         </p>
         <p className="whitespace-pre-wrap">{turn.instruction}</p>
         <details className="group mt-1">

@@ -29,7 +29,7 @@ use crate::problem::Problem;
 const SERVICES: [&str; 3] = ["postgres", "supervisor", "agent-computer"];
 
 /**
-The Bots that ship with OpenBot, which only run on an API key.
+The Bots that ship with CCP-Bot, which only run on an API key.
 
 BOTH REFUSE TO START WITHOUT ONE, saying so themselves: "OPENAI_API_KEY is not set. This Bot cannot
 answer without a model." That is correct of them and wrong of us to ignore. Somebody who signs in
@@ -116,7 +116,7 @@ pub const HOST_PROCESSES: [HostProcess; 4] = [
     },
     // `serve`, not `dev`. The dev server sets NODE_ENV to development, and the SDK reads that to
     // decide whether to draw its developer inspector, so a desktop install opened its first window
-    // on CopilotKit's "What's New" panel covering OpenBot entirely. An installed application should
+    // on CopilotKit's "What's New" panel covering CCP-Bot entirely. An installed application should
     // not be running a development server at all: this builds once and serves the build.
     HostProcess {
         name: "app",
@@ -156,7 +156,7 @@ pub fn host_processes(local_browser: bool) -> impl Iterator<Item = &'static Host
 /// than through its shebang. `node_modules/.bin/vite` begins `#!/usr/bin/env node`, so a machine
 /// with bun and no Node starts the app, fails with `node: command not found`, and is restarted
 /// five more times before this gives up on it. Which is what happened on the Linux machine this
-/// was tested on, and would happen to anybody who installed OpenBot without also having Node.
+/// was tested on, and would happen to anybody who installed CCP-Bot without also having Node.
 pub struct HostProcess {
     pub name: &'static str,
     pub cwd: &'static str,
@@ -267,7 +267,7 @@ fn volume_inventory(engine: &Address, root: &Path) -> Result<Vec<String>, Proble
 
 fn postgres_volume_problem(detail: impl Into<String>) -> Problem {
     Problem::with(
-        "OpenBot could not verify whether this installation has saved database data. No encryption key was created. Check the selected container engine and Compose configuration, then try again.",
+        "CCP-Bot could not verify whether this installation has saved database data. No encryption key was created. Check the selected container engine and Compose configuration, then try again.",
         detail,
     )
 }
@@ -424,9 +424,9 @@ fn owned_supervisor_volume(
     let Some(labels) = inspect_local_volume(engine, root, name)? else {
         return Ok(None);
     };
-    Ok((labels["openbot.supervisor"].as_str() == Some("true")
-        && labels["openbot.bot-id"].as_str() == Some(bot)
-        && labels["openbot.namespace"].as_str() == Some(namespace))
+    Ok((labels["ccpbot.supervisor"].as_str() == Some("true")
+        && labels["ccpbot.bot-id"].as_str() == Some(bot)
+        && labels["ccpbot.namespace"].as_str() == Some(namespace))
     .then(|| name.to_owned()))
 }
 
@@ -448,7 +448,7 @@ fn supervisor_namespace(config: &serde_json::Value) -> Option<String> {
 /// ASCII identifier grammar.
 fn resolve_namespace(configured: &str) -> Option<&str> {
     let namespace = match configured.trim() {
-        "" => "openbot",
+        "" => "ccpbot",
         value => value,
     };
     supervisor_identifier(namespace).then_some(namespace)
@@ -515,7 +515,7 @@ impl LeftoverVolumes {
 
 fn leftover_container_problem(detail: impl Into<String>) -> Problem {
     Problem::with(
-        "OpenBot could not verify which containers a previous installation left. Nothing was changed. Check the selected container engine, then try again.",
+        "CCP-Bot could not verify which containers a previous installation left. Nothing was changed. Check the selected container engine, then try again.",
         detail,
     )
 }
@@ -603,9 +603,9 @@ fn owned_container(
         .is_some_and(|project| labels["com.docker.compose.project"].as_str() == Some(project));
     // Matches `namesFor` in supervisor/src/names.ts and `labelsFor` in supervisor/src/docker.ts.
     let supervisor_owned = namespace.is_some_and(|namespace| {
-        labels["openbot.supervisor"].as_str() == Some("true")
-            && labels["openbot.namespace"].as_str() == Some(namespace)
-            && labels["openbot.bot-id"].as_str().is_some_and(|bot| {
+        labels["ccpbot.supervisor"].as_str() == Some("true")
+            && labels["ccpbot.namespace"].as_str() == Some(namespace)
+            && labels["ccpbot.bot-id"].as_str().is_some_and(|bot| {
                 supervisor_identifier(bot) && name == format!("{namespace}-computer-{bot}")
             })
     });
@@ -648,8 +648,8 @@ fn leftover_containers(
             engine,
             root,
             &[
-                ("openbot.supervisor", "true"),
-                ("openbot.namespace", namespace),
+                ("ccpbot.supervisor", "true"),
+                ("ccpbot.namespace", namespace),
             ],
         )?);
     }
@@ -753,7 +753,7 @@ pub fn reset_leftover_volumes(
         || leftovers.volumes != sorted(confirmed)
         || leftovers.container_names() != sorted(confirmed_containers)
     {
-        return Err(Problem::plain("The leftover data no longer matches the containers and volumes you confirmed, or OpenBot could not verify that it owns them. Nothing was removed. Try Start again."));
+        return Err(Problem::plain("The leftover data no longer matches the containers and volumes you confirmed, or CCP-Bot could not verify that it owns them. Nothing was removed. Try Start again."));
     }
     let mut removed: Vec<&str> = Vec::new();
     let removals = leftovers
@@ -781,7 +781,7 @@ pub fn reset_leftover_volumes(
             .output()
             .map_err(|error| {
                 Problem::with(
-                    format!("OpenBot could not remove {name}. {}", so_far()),
+                    format!("CCP-Bot could not remove {name}. {}", so_far()),
                     format!("Could not run {kind} removal: {error}"),
                 )
             })?;
@@ -792,7 +792,7 @@ pub fn reset_leftover_volumes(
                 "It may still be attached to a container."
             };
             return Err(Problem::with(
-                format!("OpenBot could not remove {name}. {why} {} Stop the installation using it, then try Start again.", so_far()),
+                format!("CCP-Bot could not remove {name}. {why} {} Stop the installation using it, then try Start again.", so_far()),
                 format!("{kind} removal exited with {}. Output omitted because it can contain credentials.", output.status),
             ));
         }
@@ -848,9 +848,9 @@ fn postgres_data_volume(config: &serde_json::Value) -> Option<(&str, &serde_json
         })
 }
 
-const MACOS_PODMAN_PORTS_FILE: &str = ".openbot-macos-podman.yml";
+const MACOS_PODMAN_PORTS_FILE: &str = ".ccpbot-macos-podman.yml";
 const MACOS_PODMAN_PORTS: &str = include_str!("macos-podman-ports.yml");
-const HARNESS_PORT_FILE: &str = ".openbot-harness-port.yml";
+const HARNESS_PORT_FILE: &str = ".ccpbot-harness-port.yml";
 
 fn harness_port_overlay(root: &Path, ipv4_only: bool) -> Result<Option<String>, Problem> {
     let values = crate::env::read_already_set(
@@ -859,7 +859,7 @@ fn harness_port_overlay(root: &Path, ipv4_only: bool) -> Result<Option<String>, 
     )
     .map_err(|error| {
         Problem::with(
-            "OpenBot could not read the Bot's local port.",
+            "CCP-Bot could not read the Bot's local port.",
             error.to_string(),
         )
     })?;
@@ -915,13 +915,13 @@ fn compose_start_command(
         .output()
         .map_err(|error| {
             Problem::with(
-                "OpenBot could not read the deployment's Compose settings.",
+                "CCP-Bot could not read the deployment's Compose settings.",
                 error.to_string(),
             )
         })?;
     if !environment.status.success() {
         return Err(Problem::with(
-            "OpenBot could not read the deployment's Compose settings.",
+            "CCP-Bot could not read the deployment's Compose settings.",
             command_said(&environment.stderr),
         ));
     }
@@ -943,7 +943,7 @@ fn compose_start_command(
             if std::fs::read(&overlay).ok().as_deref() != Some(contents.as_bytes()) {
                 std::fs::write(&overlay, contents).map_err(|error| {
                     Problem::with(
-                        "OpenBot could not prepare its local port settings.",
+                        "CCP-Bot could not prepare its local port settings.",
                         error.to_string(),
                     )
                 })?;
@@ -1014,13 +1014,13 @@ pub fn installation_images(
         .output()
         .map_err(|e| {
             Problem::with(
-                "OpenBot could not check which software to install.",
+                "CCP-Bot could not check which software to install.",
                 e.to_string(),
             )
         })?;
     if !output.status.success() {
         return Err(Problem::with(
-            "OpenBot could not check which software to install.",
+            "CCP-Bot could not check which software to install.",
             command_said(&output.stderr),
         ));
     }
@@ -1032,7 +1032,7 @@ pub fn installation_images(
         .collect();
     if images.is_empty() {
         return Err(Problem::plain(
-            "This deployment does not identify the software OpenBot needs to install.",
+            "This deployment does not identify the software CCP-Bot needs to install.",
         ));
     }
     Ok(images.into_iter().collect())
@@ -1143,13 +1143,13 @@ pub fn migrate(
 
 /// The label the supervisor stamps on every container it creates.
 ///
-/// Matching on this rather than on a name prefix. `openbot-` is also the prefix of a kind cluster's
-/// nodes and of anything else somebody has called openbot, and stopping a person's Kubernetes
+/// Matching on this rather than on a name prefix. `ccpbot-` is also the prefix of a kind cluster's
+/// nodes and of anything else somebody has called ccpbot, and stopping a person's Kubernetes
 /// cluster because it shares six letters with this one would be unforgivable.
 /// Written as the whole filter, `label=` and all. Handed to the engine without that prefix it
 /// answers `invalid filter`, and it does so at the moment somebody is being told their stack has
 /// stopped, so the prefix belongs with the label rather than at the call site.
-const SUPERVISOR_FILTER: &str = "label=openbot.supervisor=true";
+const SUPERVISOR_FILTER: &str = "label=ccpbot.supervisor=true";
 
 /// Resolve the same namespace the selected deployment gives its supervisor. Compose owns
 /// interpolation, env-file quoting and defaults; parsing .env independently can select a different
@@ -1220,7 +1220,7 @@ pub fn stop_computers(engine: &Address, root: &Path) -> Result<bool, String> {
         ));
     }
 
-    let namespace_filter = format!("label=openbot.namespace={namespace}");
+    let namespace_filter = format!("label=ccpbot.namespace={namespace}");
     let listed = engine
         .command()
         .args([
@@ -1412,7 +1412,7 @@ fn record_windows_host_processes_with(
 ) -> Result<(), Problem> {
     let problem = |detail| {
         Problem::with(
-            "OpenBot could not verify its Windows host process ownership.",
+            "CCP-Bot could not verify its Windows host process ownership.",
             format!(
                 "{}: {detail}; ownership records retained",
                 host_pids_path(root).display()
@@ -1504,7 +1504,7 @@ fn recorded_host_pid_file(root: &Path) -> Result<Option<RecordedHostPidFile>, Pr
     let path = host_pids_path(root);
     let problem = |detail| {
         Problem::with(
-            "OpenBot could not read its recorded host processes.",
+            "CCP-Bot could not read its recorded host processes.",
             format!("{}: {detail}", path.display()),
         )
     };
@@ -1534,7 +1534,7 @@ fn write_host_pid_file<T: Serialize>(root: &Path, value: &T) -> Result<(), Probl
     let path = host_pids_path(root);
     let problem = |operation: &str, error: &dyn std::fmt::Display| {
         Problem::with(
-            "OpenBot could not record its host processes.",
+            "CCP-Bot could not record its host processes.",
             format!("{}: {operation}: {error}", path.display()),
         )
     };
@@ -1585,7 +1585,7 @@ fn write_host_pid_file<T: Serialize>(root: &Path, value: &T) -> Result<(), Probl
 fn configure_host_process_env(command: &mut Command, name: &str, secrets: &Secrets) {
     command.envs(secrets);
     if name != "server" {
-        command.env_remove("OPENBOT_DESKTOP_HOST_TOKEN");
+        command.env_remove("CCPBOT_DESKTOP_HOST_TOKEN");
     }
 }
 
@@ -1731,7 +1731,7 @@ pub fn replace_windows_host_process_with(
     let pid = child.id();
     let problem = |detail| {
         Problem::with(
-            "OpenBot could not verify its Windows replacement process ownership.",
+            "CCP-Bot could not verify its Windows replacement process ownership.",
             format!("{name}, pid {pid}: {detail}; ownership retained"),
         )
     };
@@ -1772,7 +1772,7 @@ pub fn replace_windows_host_process_with(
 #[cfg(unix)]
 fn unix_ownership_problem(detail: impl Into<String>) -> Problem {
     Problem::with(
-        "OpenBot could not verify its host process ownership.",
+        "CCP-Bot could not verify its host process ownership.",
         detail,
     )
 }
@@ -2158,7 +2158,7 @@ fn stop_windows_host_children_with(
             .try_wait()
             .map_err(|error| {
                 Problem::with(
-                    "OpenBot could not inspect a held host process.",
+                    "CCP-Bot could not inspect a held host process.",
                     format!("{name}: {error}"),
                 )
             })?
@@ -2181,7 +2181,7 @@ fn stop_windows_host_children_with(
         let record = live.and_then(|live| RecordedHostProcess::from_live(name, live))
             .filter(|record| !record.executable_path.is_empty() && !record.command_line.is_empty() && !record.creation_date.is_empty())
             .ok_or_else(|| Problem::with(
-                "OpenBot could not verify a held host process.",
+                "CCP-Bot could not verify a held host process.",
                 format!("{name}, pid {pid}: current direct-child identity is unavailable; ownership retained"),
             ))?;
         // Preserve any earlier instance too. Each is independently verified before termination.
@@ -2422,7 +2422,7 @@ where
         return Ok(true);
     }
     Err(Problem::with(
-        "OpenBot could not stop one of its host processes.",
+        "CCP-Bot could not stop one of its host processes.",
         format!(
             "pid {pid} is still running after SIGKILL; ownership ancestor and records retained"
         ),
@@ -2461,7 +2461,7 @@ fn signal_unix_process(pid: i32, signal: i32) -> Result<bool, Problem> {
         return Ok(false);
     }
     Err(Problem::with(
-        "OpenBot could not stop one of its host processes.",
+        "CCP-Bot could not stop one of its host processes.",
         format!("could not send signal {signal} to pid {pid}: {error}"),
     ))
 }
@@ -2476,7 +2476,7 @@ pub fn stop_processes_under(_root: &Path) -> Result<usize, Problem> {
      *
      * MEASURED ON WINDOWS SERVER 2022. Stop took the five containers down, reported success, and
      * left every host process running: the server on 3001, the worker, and both halves of the app
-     * still answering 200 on 3010. Somebody who pressed Stop still had OpenBot serving.
+     * still answering 200 on 3010. Somebody who pressed Stop still had CCP-Bot serving.
      *
      * So they are found by the ports the deployment publishes, which the shell already owns and
      * already checks for clashes, and each is ended WITH ITS CHILDREN: `bun run serve` starts the
@@ -2503,7 +2503,7 @@ fn stop_windows_processes_with_inventory(
             // A previous Start wrote these PIDs, but a reopened window cannot prove their
             // process instances. Keep that unresolved evidence without authorizing a signal.
             return Err(Problem::with(
-                "OpenBot could not verify its recorded host processes.",
+                "CCP-Bot could not verify its recorded host processes.",
                 format!(
                     "{}: legacy PID-only evidence lacks Windows process-instance identity; cleanup unresolved; ownership records retained",
                     host_pids_path(root).display()
@@ -2544,7 +2544,7 @@ fn stop_windows_processes_under_with(
         })
     }) {
         return Err(Problem::with(
-            "OpenBot could not verify one of its recorded host processes.",
+            "CCP-Bot could not verify one of its recorded host processes.",
             format!(
                 "{}: process inventory lacks usable identity metadata for pid {}; ownership records retained",
                 host_pids_path(root).display(),
@@ -2564,7 +2564,7 @@ fn stop_windows_processes_under_with(
         Err(error) if error.kind() == std::io::ErrorKind::NotFound => {}
         Err(error) => {
             return Err(Problem::with(
-                "OpenBot could not remove its recorded host processes.",
+                "CCP-Bot could not remove its recorded host processes.",
                 format!("{}: could not remove pidfile: {error}", path.display()),
             ));
         }
@@ -2608,7 +2608,7 @@ where
 {
     let mut stopped = 0;
     let mut failures = Vec::new();
-    for pid in verified_openbot_root_pids(recorded, processes) {
+    for pid in verified_ccpbot_root_pids(recorded, processes) {
         // With its children: `bun run serve` starts the real server as a grandchild, so ending
         // only the process holding the port leaves that one behind.
         match taskkill(pid) {
@@ -2622,7 +2622,7 @@ where
 
 fn cleanup_spawn_problem(operation: &str, error: std::io::Error) -> Problem {
     Problem::with(
-        "OpenBot could not inspect or stop its host processes.",
+        "CCP-Bot could not inspect or stop its host processes.",
         format!("could not run {operation}: {error}"),
     )
 }
@@ -2640,14 +2640,14 @@ fn cleanup_status_problem(operation: &str, output: &std::process::Output) -> Pro
         detail.push_str(&stdout);
     }
     Problem::with(
-        "OpenBot could not inspect or stop its host processes.",
+        "CCP-Bot could not inspect or stop its host processes.",
         detail,
     )
 }
 
 fn combined_cleanup_problem(failures: Vec<Problem>) -> Problem {
     Problem::with(
-        "OpenBot could not inspect or stop its host processes.",
+        "CCP-Bot could not inspect or stop its host processes.",
         failures
             .into_iter()
             .map(problem_detail)
@@ -2752,7 +2752,7 @@ fn windows_processes_with(powershell: &Path) -> Result<Vec<WindowsProcess>, Prob
     if !output.status.success() {
         // The inventory includes other processes' command lines. Never echo a partial snapshot.
         return Err(Problem::with(
-            "OpenBot could not inspect its Windows host processes.",
+            "CCP-Bot could not inspect its Windows host processes.",
             format!("{operation} exited with status {}", output.status),
         ));
     }
@@ -2763,7 +2763,7 @@ fn windows_processes_with(powershell: &Path) -> Result<Vec<WindowsProcess>, Prob
 fn windows_process_output(output: &[u8]) -> Result<Vec<WindowsProcess>, Problem> {
     let invalid_encoding = || {
         Problem::with(
-            "OpenBot could not inspect its Windows host processes.",
+            "CCP-Bot could not inspect its Windows host processes.",
             "powershell Get-CimInstance Win32_Process returned invalid UTF-8 or UTF-16LE",
         )
     };
@@ -2796,7 +2796,7 @@ enum WindowsProcessListing {
 pub fn windows_processes_in(listing: &str) -> Result<Vec<WindowsProcess>, Problem> {
     let listing = serde_json::from_str::<WindowsProcessListing>(listing).map_err(|error| {
         Problem::with(
-            "OpenBot could not inspect its Windows host processes.",
+            "CCP-Bot could not inspect its Windows host processes.",
             format!(
                 "powershell Get-CimInstance Win32_Process returned invalid process JSON: {error}"
             ),
@@ -2808,8 +2808,8 @@ pub fn windows_processes_in(listing: &str) -> Result<Vec<WindowsProcess>, Proble
     })
 }
 
-/// Recorded OpenBot root processes whose live identity still matches the pid file.
-pub fn verified_openbot_root_pids(
+/// Recorded CCP-Bot root processes whose live identity still matches the pid file.
+pub fn verified_ccpbot_root_pids(
     recorded: &[RecordedHostProcess],
     processes: &[WindowsProcess],
 ) -> Vec<u32> {
@@ -2825,17 +2825,17 @@ pub fn verified_openbot_root_pids(
         .collect()
 }
 
-/// Recorded OpenBot processes, or their live children, listening on one of the host ports.
+/// Recorded CCP-Bot processes, or their live children, listening on one of the host ports.
 ///
 /// A pid file entry is not ownership by itself: the live process must still match the recorded
 /// executable, command line and creation time before its tree is eligible for cleanup.
-pub fn verified_openbot_pids_listening_on(
+pub fn verified_ccpbot_pids_listening_on(
     listing: &str,
     ports: &[u16],
     recorded: &[RecordedHostProcess],
     processes: &[WindowsProcess],
 ) -> Vec<u32> {
-    let roots = verified_openbot_root_pids(recorded, processes);
+    let roots = verified_ccpbot_root_pids(recorded, processes);
     pids_listening_on(listing, ports)
         .into_iter()
         .filter(|pid| belongs_to_any_root(*pid, &roots, processes))
@@ -3148,7 +3148,7 @@ fn recorded_process_owns_port_windows_with(
     }
     let listed = String::from_utf8_lossy(&listing.stdout);
     let listening = pids_listening_on(&listed, &[port]);
-    let verified = verified_openbot_pids_listening_on(&listed, &[port], &recorded, &processes);
+    let verified = verified_ccpbot_pids_listening_on(&listed, &[port], &recorded, &processes);
     Ok(!listening.is_empty() && listening.iter().all(|pid| verified.contains(pid)))
 }
 
@@ -3198,7 +3198,7 @@ pub fn services_that_exited_among(
         .output()
         .map_err(|error| {
             crate::problem::Problem::with(
-                "OpenBot could not inspect its Compose services.",
+                "CCP-Bot could not inspect its Compose services.",
                 format!("could not run {operation}: {error}"),
             )
         })?;
@@ -3216,7 +3216,7 @@ pub fn services_that_exited_among(
             detail.push_str(&stdout);
         }
         return Err(crate::problem::Problem::with(
-            "OpenBot could not inspect its Compose services.",
+            "CCP-Bot could not inspect its Compose services.",
             detail,
         ));
     }
@@ -3228,7 +3228,7 @@ pub fn services_that_exited_among(
         }
         let Some((service, state)) = line.split_once('\t') else {
             return Err(crate::problem::Problem::with(
-                "OpenBot could not inspect its Compose services.",
+                "CCP-Bot could not inspect its Compose services.",
                 format!("unusable {operation} row: {line}"),
             ));
         };
@@ -3236,7 +3236,7 @@ pub fn services_that_exited_among(
         let state = state.trim();
         if service.is_empty() || state.is_empty() {
             return Err(crate::problem::Problem::with(
-                "OpenBot could not inspect its Compose services.",
+                "CCP-Bot could not inspect its Compose services.",
                 format!("unusable {operation} row: {line}"),
             ));
         }
@@ -3272,8 +3272,8 @@ The ports this deployment's own containers already publish.
 
 MEASURED, AND IT LEAVES A PERSON STUCK. A start that fails after `compose up` leaves the containers
 it raised running, so the next press of Start finds the harness port held and refuses with
-"something is already listening on port 4206, which OpenBot uses for the Bot you picked" — about a
-container OpenBot itself started, which the person never saw and cannot find. There is no way
+"something is already listening on port 4206, which CCP-Bot uses for the Bot you picked" — about a
+container CCP-Bot itself started, which the person never saw and cannot find. There is no way
 forward from that screen.
 
 Our own containers are not a conflict: `compose up` is idempotent and reuses them. The check exists
@@ -3371,7 +3371,7 @@ pub fn port_already_taken_except(
         }
         if something_answers(*port) {
             return Some(format!(
-                "Port {port} for the {name} became unavailable. Try Start again so OpenBot can choose another local port."
+                "Port {port} for the {name} became unavailable. Try Start again so CCP-Bot can choose another local port."
             ));
         }
     }
@@ -3534,7 +3534,7 @@ pub fn startup_problem(problem: Problem, secrets: &Secrets) -> Problem {
         .iter()
         .filter(|(key, value)| {
             !value.is_empty()
-                && (crate::vault::is_secret(key) || key.as_str() == "OPENBOT_DESKTOP_HOST_TOKEN")
+                && (crate::vault::is_secret(key) || key.as_str() == "CCPBOT_DESKTOP_HOST_TOKEN")
         })
         .collect();
     credentials.sort_by_key(|(_, value)| std::cmp::Reverse(value.len()));
@@ -3542,7 +3542,7 @@ pub fn startup_problem(problem: Problem, secrets: &Secrets) -> Problem {
         detail = detail.replace(value, &format!("<{key}>"));
     }
     let mut problem = Problem::with(
-        "OpenBot could not finish starting. Try Start again, or share the details below for help.",
+        "CCP-Bot could not finish starting. Try Start again, or share the details below for help.",
         detail,
     );
     problem.database_reset = database_reset;
@@ -3557,14 +3557,14 @@ pub fn startup_problem(problem: Problem, secrets: &Secrets) -> Problem {
 pub fn deployment_problem(root: &Path) -> Option<String> {
     if !root.exists() {
         return Some(format!(
-            "{} does not exist yet. OpenBot needs a copy of the deployment there before it can \
+            "{} does not exist yet. CCP-Bot needs a copy of the deployment there before it can \
              start one.",
             root.display()
         ));
     }
     if !root.join("docker-compose.yml").exists() {
         return Some(format!(
-            "{} is not an OpenBot deployment: it has no docker-compose.yml.",
+            "{} is not a CCP-Bot deployment: it has no docker-compose.yml.",
             root.display()
         ));
     }
@@ -3595,7 +3595,7 @@ fn missing_script(root: &Path) -> Option<String> {
      * An unreadable manifest and one without the script are different things.
      *
      * Read as one, a `package.json` that will not parse was reported as a deployment "older than
-     * this version of OpenBot", which sent somebody looking for a newer installer over a file with
+     * this version of CCP-Bot", which sent somebody looking for a newer installer over a file with
      * a byte-order mark in front of it. `serde_json` refuses a document that begins with one, and
      * plenty of Windows tooling writes one: `Set-Content -Encoding UTF8` does.
      */
@@ -3617,8 +3617,8 @@ fn missing_script(root: &Path) -> Option<String> {
         return None;
     }
     Some(format!(
-        "The deployment in {} is older than this version of OpenBot: its app has no \"{APP_SCRIPT}\" \
-         script, so there is no way to serve it. Install a newer OpenBot, or delete that directory \
+        "The deployment in {} is older than this version of CCP-Bot: its app has no \"{APP_SCRIPT}\" \
+         script, so there is no way to serve it. Install a newer CCP-Bot, or delete that directory \
          and start again to fetch a deployment that matches.",
         root.display()
     ))
@@ -3629,7 +3629,7 @@ const APP_SCRIPT: &str = "serve";
 
 /// Where the shell keeps the deployment it manages.
 pub fn default_root() -> PathBuf {
-    dirs_home().join("OpenBot")
+    dirs_home().join("CCP-Bot")
 }
 
 /// The deployment directory somebody typed, as a path.
@@ -3690,7 +3690,7 @@ mod tests {
         let secrets = Secrets::from([
             ("OPENAI_API_KEY".into(), "synthetic+key.long".into()),
             (
-                "OPENBOT_DESKTOP_HOST_TOKEN".into(),
+                "CCPBOT_DESKTOP_HOST_TOKEN".into(),
                 "synthetic-host-token".into(),
             ),
             ("APP_PORT".into(), "4567".into()),
@@ -3699,11 +3699,11 @@ mod tests {
             "app stopped: Could not resolve imported module; key=synthetic+key.long",
             "cleanup failed: port 4567 token=synthetic-host-token",
         );
-        original.database_reset = Some("openbot_postgres-data".into());
+        original.database_reset = Some("ccpbot_postgres-data".into());
         let problem = startup_problem(original, &secrets);
         assert_eq!(
             problem.database_reset.as_deref(),
-            Some("openbot_postgres-data")
+            Some("ccpbot_postgres-data")
         );
         assert!(problem.said.len() < 120);
         assert!(!problem.said.contains("Could not resolve"));
@@ -3711,7 +3711,7 @@ mod tests {
         assert!(detail.contains("Could not resolve imported module"));
         assert!(detail.contains("cleanup failed: port 4567"));
         assert!(detail.contains("<OPENAI_API_KEY>"));
-        assert!(detail.contains("<OPENBOT_DESKTOP_HOST_TOKEN>"));
+        assert!(detail.contains("<CCPBOT_DESKTOP_HOST_TOKEN>"));
         assert!(!detail.contains("synthetic+key.long"));
         assert!(!detail.contains("synthetic-host-token"));
     }
@@ -3727,7 +3727,7 @@ mod tests {
 
     #[test]
     fn postgres_volume_uses_resolved_names_and_the_mount_containing_pgdata() {
-        for name in ["openbot_postgres-data", "explicit-external-database"] {
+        for name in ["ccpbot_postgres-data", "explicit-external-database"] {
             let mut config = postgres_config_fixture(name);
             config["services"]["postgres"]["environment"] =
                 serde_json::json!({"PGDATA": "/var/lib/postgresql/data/pgdata"});
@@ -3781,7 +3781,7 @@ mod tests {
                 .join(format!("{}-deployment", address.engine.binary()));
             std::fs::create_dir(&root).unwrap();
             let record = root.join("commands.log");
-            std::env::set_var("OPENBOT_TEST_ENGINE_RECORD", &record);
+            std::env::set_var("CCPBOT_TEST_ENGINE_RECORD", &record);
             std::fs::write(
                 root.join(".fixture-config"),
                 postgres_config_fixture("selected-db").to_string(),
@@ -3825,17 +3825,17 @@ mod tests {
     }
 
     fn leftover_database_fixture(root: &Path) -> serde_json::Value {
-        let mut config = postgres_config_fixture("openbot_postgres-data");
-        config["name"] = "openbot".into();
+        let mut config = postgres_config_fixture("ccpbot_postgres-data");
+        config["name"] = "ccpbot".into();
         std::fs::write(root.join(".fixture-config"), config.to_string()).unwrap();
         std::fs::write(
             root.join(".fixture-volumes"),
-            "unrelated\nopenbot_postgres-data\n",
+            "unrelated\nccpbot_postgres-data\n",
         )
         .unwrap();
         std::fs::write(root.join(".fixture-inspect"), serde_json::json!([{
-            "Name": "openbot_postgres-data", "Driver": "local", "Options": {},
-            "Labels": {"com.docker.compose.project":"openbot", "com.docker.compose.volume":"postgres-data"}
+            "Name": "ccpbot_postgres-data", "Driver": "local", "Options": {},
+            "Labels": {"com.docker.compose.project":"ccpbot", "com.docker.compose.volume":"postgres-data"}
         }]).to_string()).unwrap();
         config
     }
@@ -3852,11 +3852,11 @@ mod tests {
             let root = path.bin.join(format!("{}-reset", address.engine.binary()));
             std::fs::create_dir(&root).unwrap();
             let record = root.join("commands.log");
-            std::env::set_var("OPENBOT_TEST_ENGINE_RECORD", &record);
+            std::env::set_var("CCPBOT_TEST_ENGINE_RECORD", &record);
             leftover_database_fixture(&root);
             assert_eq!(
                 leftover_database_volume(&address, &root, &Secrets::new()).unwrap(),
-                Some("openbot_postgres-data".into())
+                Some("ccpbot_postgres-data".into())
             );
             assert!(reset_leftover_volumes(
                 &address,
@@ -3873,7 +3873,7 @@ mod tests {
                 &address,
                 &root,
                 &Secrets::new(),
-                &["openbot_postgres-data".into()],
+                &["ccpbot_postgres-data".into()],
                 &[],
             )
             .unwrap();
@@ -3887,7 +3887,7 @@ mod tests {
                 .filter(|line| line.contains("volume rm"))
                 .collect();
             assert_eq!(removals.len(), 1);
-            assert!(removals[0].ends_with("volume rm openbot_postgres-data"));
+            assert!(removals[0].ends_with("volume rm ccpbot_postgres-data"));
             assert!(!log.contains("--force") && !log.contains("prune") && !log.contains("down"));
             if address.engine == crate::engine::Engine::Podman {
                 assert!(log.lines().all(|line| line
@@ -3909,7 +3909,7 @@ mod tests {
         let root = path.bin.join("reset-refusals");
         std::fs::create_dir(&root).unwrap();
         let record = root.join("commands.log");
-        std::env::set_var("OPENBOT_TEST_ENGINE_RECORD", &record);
+        std::env::set_var("CCPBOT_TEST_ENGINE_RECORD", &record);
         for scenario in [
             "external",
             "custom-name",
@@ -3954,7 +3954,7 @@ mod tests {
                     config["services"]["other"] = config["services"]["postgres"].clone();
                     config["services"]["other"]["volumes"][0]["source"] = "backup-alias".into();
                     config["volumes"]["backup-alias"] =
-                        serde_json::json!({"name": "openbot_postgres-data"});
+                        serde_json::json!({"name": "ccpbot_postgres-data"});
                     None
                 }
                 "foreign-label" | "missing-label" | "prefix-inspect" => {
@@ -3970,7 +3970,7 @@ mod tests {
                         inspect[0]["Labels"] = serde_json::json!({});
                     }
                     if scenario == "prefix-inspect" {
-                        inspect[0]["Name"] = "openbot_postgres-data-backup".into();
+                        inspect[0]["Name"] = "ccpbot_postgres-data-backup".into();
                     }
                     std::fs::write(root.join(".fixture-inspect"), inspect.to_string()).unwrap();
                     None
@@ -3993,7 +3993,7 @@ mod tests {
                 &address,
                 &root,
                 &Secrets::new(),
-                &["openbot_postgres-data".into()],
+                &["ccpbot_postgres-data".into()],
                 &[],
             )
             .expect_err(scenario);
@@ -4014,7 +4014,7 @@ mod tests {
             if scenario == "attached" {
                 assert!(std::fs::read_to_string(root.join(".fixture-volumes"))
                     .unwrap()
-                    .contains("openbot_postgres-data"));
+                    .contains("ccpbot_postgres-data"));
             }
             if let Some(marker) = marker {
                 std::fs::remove_file(root.join(marker)).unwrap();
@@ -4025,7 +4025,7 @@ mod tests {
     /// A reinstall's Compose project and supervisor volumes, beside look-alikes it does not own.
     fn leftover_volumes_fixture(root: &Path, namespace: &str) {
         let config = serde_json::json!({
-            "name": "openbot",
+            "name": "ccpbot",
             "services": {
                 "postgres": {"volumes": [{
                     "type": "volume", "source": "postgres-data", "target": "/var/lib/postgresql/data"
@@ -4037,15 +4037,15 @@ mod tests {
                 ]}
             },
             "volumes": {
-                "postgres-data": {"name": "openbot_postgres-data"},
-                "agent-profiles": {"name": "openbot_agent-profiles"},
-                "agent-workspace": {"name": "openbot_agent-workspace"},
-                "spire-server-data": {"name": "openbot_spire-server-data"},
-                "unlabeled": {"name": "openbot_unlabeled"},
-                "foreign": {"name": "openbot_foreign"},
+                "postgres-data": {"name": "ccpbot_postgres-data"},
+                "agent-profiles": {"name": "ccpbot_agent-profiles"},
+                "agent-workspace": {"name": "ccpbot_agent-workspace"},
+                "spire-server-data": {"name": "ccpbot_spire-server-data"},
+                "unlabeled": {"name": "ccpbot_unlabeled"},
+                "foreign": {"name": "ccpbot_foreign"},
                 "shared-cache": {"name": "shared-cache", "external": true},
                 "explicit": {"name": "explicitly-named"},
-                "remote": {"name": "openbot_remote", "driver_opts": {"device": "/shared"}}
+                "remote": {"name": "ccpbot_remote", "driver_opts": {"device": "/shared"}}
             }
         });
         std::fs::write(root.join(".fixture-config"), config.to_string()).unwrap();
@@ -4053,18 +4053,18 @@ mod tests {
             root.join(".fixture-volumes"),
             [
                 "unrelated",
-                "openbot_agent-profiles",
-                "openbot_agent-workspace",
-                "openbot_unlabeled",
-                "openbot_foreign",
+                "ccpbot_agent-profiles",
+                "ccpbot_agent-workspace",
+                "ccpbot_unlabeled",
+                "ccpbot_foreign",
                 "shared-cache",
                 "explicitly-named",
-                "openbot_remote",
-                "openbot-profile-general-assistant",
-                "openbot-workspace-general-assistant",
-                "openbot-profile-unlabeled",
-                "openbot-workspace-elsewhere",
-                "openbot-profile-legacy",
+                "ccpbot_remote",
+                "ccpbot-profile-general-assistant",
+                "ccpbot-workspace-general-assistant",
+                "ccpbot-profile-unlabeled",
+                "ccpbot-workspace-elsewhere",
+                "ccpbot-profile-legacy",
                 "other-profile-knowledge",
             ]
             .map(|name| format!("{name}\n"))
@@ -4088,44 +4088,44 @@ mod tests {
         };
         let supervisor = |bot: &str, namespace: &str| {
             serde_json::json!({
-                "openbot.supervisor": "true", "openbot.bot-id": bot, "openbot.namespace": namespace
+                "ccpbot.supervisor": "true", "ccpbot.bot-id": bot, "ccpbot.namespace": namespace
             })
         };
         inspect(
-            "openbot_agent-profiles",
-            compose("openbot", "agent-profiles"),
+            "ccpbot_agent-profiles",
+            compose("ccpbot", "agent-profiles"),
         );
         inspect(
-            "openbot_agent-workspace",
-            compose("openbot", "agent-workspace"),
+            "ccpbot_agent-workspace",
+            compose("ccpbot", "agent-workspace"),
         );
-        inspect("openbot_unlabeled", serde_json::json!({}));
-        inspect("openbot_foreign", compose("another-project", "foreign"));
+        inspect("ccpbot_unlabeled", serde_json::json!({}));
+        inspect("ccpbot_foreign", compose("another-project", "foreign"));
         inspect(
-            "openbot-profile-general-assistant",
-            supervisor("general-assistant", "openbot"),
+            "ccpbot-profile-general-assistant",
+            supervisor("general-assistant", "ccpbot"),
         );
         inspect(
-            "openbot-workspace-general-assistant",
-            supervisor("general-assistant", "openbot"),
+            "ccpbot-workspace-general-assistant",
+            supervisor("general-assistant", "ccpbot"),
         );
-        inspect("openbot-profile-unlabeled", serde_json::json!({}));
+        inspect("ccpbot-profile-unlabeled", serde_json::json!({}));
         inspect(
-            "openbot-workspace-elsewhere",
+            "ccpbot-workspace-elsewhere",
             supervisor("elsewhere", "other"),
         );
         inspect(
-            "openbot-profile-legacy",
-            serde_json::json!({"openbot.supervisor": "true", "openbot.bot-id": "legacy"}),
+            "ccpbot-profile-legacy",
+            serde_json::json!({"ccpbot.supervisor": "true", "ccpbot.bot-id": "legacy"}),
         );
         inspect("other-profile-knowledge", supervisor("knowledge", "other"));
     }
 
     const OWNED_LEFTOVERS: [&str; 4] = [
-        "openbot-profile-general-assistant",
-        "openbot-workspace-general-assistant",
-        "openbot_agent-profiles",
-        "openbot_agent-workspace",
+        "ccpbot-profile-general-assistant",
+        "ccpbot-workspace-general-assistant",
+        "ccpbot_agent-profiles",
+        "ccpbot_agent-workspace",
     ];
 
     #[test]
@@ -4140,16 +4140,16 @@ mod tests {
         let root = path.bin.join("leftover-volumes");
         std::fs::create_dir(&root).unwrap();
         let record = root.join("commands.log");
-        std::env::set_var("OPENBOT_TEST_ENGINE_RECORD", &record);
+        std::env::set_var("CCPBOT_TEST_ENGINE_RECORD", &record);
 
-        leftover_volumes_fixture(&root, "openbot");
+        leftover_volumes_fixture(&root, "ccpbot");
         let found = leftover_volumes(&address, &root, &Secrets::new()).unwrap();
         assert_eq!(found.volumes, OWNED_LEFTOVERS.map(String::from));
         assert_eq!(found.database, None);
         assert!(!found.database_exists);
         assert!(found.resettable());
         let log = std::fs::read_to_string(&record).unwrap();
-        for never_inspected in ["shared-cache", "explicitly-named", "openbot_remote"] {
+        for never_inspected in ["shared-cache", "explicitly-named", "ccpbot_remote"] {
             assert!(
                 !log.contains(&format!("volume inspect {never_inspected}")),
                 "{never_inspected}: {log}"
@@ -4164,27 +4164,27 @@ mod tests {
                 .unwrap()
                 .volumes,
             [
-                "openbot_agent-profiles",
-                "openbot_agent-workspace",
+                "ccpbot_agent-profiles",
+                "ccpbot_agent-workspace",
                 "other-profile-knowledge"
             ]
         );
 
         // The database joins the set when it is verified, and blocks the offer when it is not.
-        leftover_volumes_fixture(&root, "openbot");
+        leftover_volumes_fixture(&root, "ccpbot");
         let mut inventory = std::fs::read_to_string(root.join(".fixture-volumes")).unwrap();
-        inventory.push_str("openbot_postgres-data\n");
+        inventory.push_str("ccpbot_postgres-data\n");
         std::fs::write(root.join(".fixture-volumes"), inventory).unwrap();
         let database = serde_json::json!([{
-            "Name": "openbot_postgres-data", "Driver": "local", "Options": {},
-            "Labels": {"com.docker.compose.project":"openbot", "com.docker.compose.volume":"postgres-data"}
+            "Name": "ccpbot_postgres-data", "Driver": "local", "Options": {},
+            "Labels": {"com.docker.compose.project":"ccpbot", "com.docker.compose.volume":"postgres-data"}
         }]);
         std::fs::write(root.join(".fixture-inspect"), database.to_string()).unwrap();
         let found = leftover_volumes(&address, &root, &Secrets::new()).unwrap();
-        assert_eq!(found.database.as_deref(), Some("openbot_postgres-data"));
+        assert_eq!(found.database.as_deref(), Some("ccpbot_postgres-data"));
         assert!(found.database_exists && found.resettable());
         let mut expected = OWNED_LEFTOVERS.map(String::from).to_vec();
-        expected.push("openbot_postgres-data".into());
+        expected.push("ccpbot_postgres-data".into());
         expected.sort();
         assert_eq!(found.volumes, expected);
 
@@ -4227,8 +4227,8 @@ mod tests {
                 .join(format!("{}-leftover-reset", address.engine.binary()));
             std::fs::create_dir(&root).unwrap();
             let record = root.join("commands.log");
-            std::env::set_var("OPENBOT_TEST_ENGINE_RECORD", &record);
-            leftover_volumes_fixture(&root, "openbot");
+            std::env::set_var("CCPBOT_TEST_ENGINE_RECORD", &record);
+            leftover_volumes_fixture(&root, "ccpbot");
             let owned = OWNED_LEFTOVERS.map(String::from).to_vec();
             let mut duplicated = owned.clone();
             duplicated.push(owned[0].clone());
@@ -4251,20 +4251,20 @@ mod tests {
 
             // The engine refuses a volume a container still uses; nothing is forced.
             std::fs::write(
-                root.join(".fixture-attached-openbot-profile-general-assistant"),
+                root.join(".fixture-attached-ccpbot-profile-general-assistant"),
                 "",
             )
             .unwrap();
             let error = reset_leftover_volumes(&address, &root, &Secrets::new(), &owned, &[])
                 .expect_err("an attached volume is refused");
             assert!(
-                error.said.contains("openbot-profile-general-assistant"),
+                error.said.contains("ccpbot-profile-general-assistant"),
                 "{}",
                 error.said
             );
             assert!(error.said.contains("Nothing was removed"), "{}", error.said);
             assert!(!format!("{error:?}").contains("synthetic-secret"));
-            std::fs::remove_file(root.join(".fixture-attached-openbot-profile-general-assistant"))
+            std::fs::remove_file(root.join(".fixture-attached-ccpbot-profile-general-assistant"))
                 .unwrap();
 
             let mut reordered = owned.clone();
@@ -4276,14 +4276,14 @@ mod tests {
             }
             for kept in [
                 "unrelated",
-                "openbot_unlabeled",
-                "openbot_foreign",
+                "ccpbot_unlabeled",
+                "ccpbot_foreign",
                 "shared-cache",
                 "explicitly-named",
-                "openbot_remote",
-                "openbot-profile-unlabeled",
-                "openbot-workspace-elsewhere",
-                "openbot-profile-legacy",
+                "ccpbot_remote",
+                "ccpbot-profile-unlabeled",
+                "ccpbot-workspace-elsewhere",
+                "ccpbot-profile-legacy",
                 "other-profile-knowledge",
             ] {
                 assert!(remaining.lines().any(|line| line == kept), "{kept}");
@@ -4295,7 +4295,7 @@ mod tests {
                 .map(|(_, name)| name)
                 .collect();
             // One refused attempt, then each confirmed volume once.
-            assert_eq!(removals[0], "openbot-profile-general-assistant");
+            assert_eq!(removals[0], "ccpbot-profile-general-assistant");
             assert_eq!(removals[1..], OWNED_LEFTOVERS);
             assert!(!log.contains("--force") && !log.contains("prune") && !log.contains("down"));
             if address.engine == crate::engine::Engine::Podman {
@@ -4312,19 +4312,19 @@ mod tests {
     /// does not own. Each still mounts the volumes it used, as a real engine reports it.
     fn leftover_containers_fixture(root: &Path, computer_status: &str) {
         let supervisor = |bot: &str, namespace: &str| {
-            format!("openbot.supervisor=true,openbot.bot-id={bot},openbot.namespace={namespace}")
+            format!("ccpbot.supervisor=true,ccpbot.bot-id={bot},ccpbot.namespace={namespace}")
         };
         let lines = [
             format!(
-                "c-computer\topenbot-computer-general-assistant\t{computer_status}\t{}\topenbot-profile-general-assistant,openbot-workspace-general-assistant",
-                supervisor("general-assistant", "openbot")
+                "c-computer\tccpbot-computer-general-assistant\t{computer_status}\t{}\tccpbot-profile-general-assistant,ccpbot-workspace-general-assistant",
+                supervisor("general-assistant", "ccpbot")
             ),
-            "c-compose\topenbot-agent-computer-1\texited\tcom.docker.compose.project=openbot,com.docker.compose.service=agent-computer\topenbot_agent-profiles,openbot_agent-workspace".into(),
+            "c-compose\tccpbot-agent-computer-1\texited\tcom.docker.compose.project=ccpbot,com.docker.compose.service=agent-computer\tccpbot_agent-profiles,ccpbot_agent-workspace".into(),
             format!("c-other-namespace\tother-computer-knowledge\texited\t{}\tother-profile-knowledge", supervisor("knowledge", "other")),
-            "c-unlabeled\topenbot-computer-unlabeled\texited\t\topenbot-profile-unlabeled".into(),
+            "c-unlabeled\tccpbot-computer-unlabeled\texited\t\tccpbot-profile-unlabeled".into(),
             "c-other-project\tanother-project-postgres-1\texited\tcom.docker.compose.project=another-project\t".into(),
-            format!("c-renamed\topenbot-computer-not-this-bot\texited\t{}\t", supervisor("general-assistant", "openbot")),
-            "c-legacy\topenbot-computer-legacy\texited\topenbot.supervisor=true,openbot.bot-id=legacy\topenbot-profile-legacy".into(),
+            format!("c-renamed\tccpbot-computer-not-this-bot\texited\t{}\t", supervisor("general-assistant", "ccpbot")),
+            "c-legacy\tccpbot-computer-legacy\texited\tccpbot.supervisor=true,ccpbot.bot-id=legacy\tccpbot-profile-legacy".into(),
         ];
         std::fs::write(
             root.join(".fixture-containers"),
@@ -4334,8 +4334,8 @@ mod tests {
     }
 
     const OWNED_CONTAINERS: [&str; 2] = [
-        "openbot-agent-computer-1",
-        "openbot-computer-general-assistant",
+        "ccpbot-agent-computer-1",
+        "ccpbot-computer-general-assistant",
     ];
 
     #[test]
@@ -4352,8 +4352,8 @@ mod tests {
                 .join(format!("{}-leftover-containers", address.engine.binary()));
             std::fs::create_dir(&root).unwrap();
             let record = root.join("commands.log");
-            std::env::set_var("OPENBOT_TEST_ENGINE_RECORD", &record);
-            leftover_volumes_fixture(&root, "openbot");
+            std::env::set_var("CCPBOT_TEST_ENGINE_RECORD", &record);
+            leftover_volumes_fixture(&root, "ccpbot");
             leftover_containers_fixture(&root, "exited");
 
             let found = leftover_volumes(&address, &root, &Secrets::new()).unwrap();
@@ -4409,10 +4409,10 @@ mod tests {
                 [
                     "container rm c-compose",
                     "container rm c-computer",
-                    "volume rm openbot-profile-general-assistant",
-                    "volume rm openbot-workspace-general-assistant",
-                    "volume rm openbot_agent-profiles",
-                    "volume rm openbot_agent-workspace",
+                    "volume rm ccpbot-profile-general-assistant",
+                    "volume rm ccpbot-workspace-general-assistant",
+                    "volume rm ccpbot_agent-profiles",
+                    "volume rm ccpbot_agent-workspace",
                 ]
             );
             assert!(!log.contains("--force") && !log.contains("prune") && !log.contains("down"));
@@ -4446,12 +4446,12 @@ mod tests {
         let root = path.bin.join("leftover-running");
         std::fs::create_dir(&root).unwrap();
         let record = root.join("commands.log");
-        std::env::set_var("OPENBOT_TEST_ENGINE_RECORD", &record);
-        leftover_volumes_fixture(&root, "openbot");
+        std::env::set_var("CCPBOT_TEST_ENGINE_RECORD", &record);
+        leftover_volumes_fixture(&root, "ccpbot");
         for status in ["running", "paused", "restarting"] {
             leftover_containers_fixture(&root, status);
             let found = leftover_volumes(&address, &root, &Secrets::new()).unwrap();
-            assert_eq!(found.running, ["openbot-computer-general-assistant"]);
+            assert_eq!(found.running, ["ccpbot-computer-general-assistant"]);
             assert!(!found.resettable(), "{status}");
             let error = reset_leftover_volumes(
                 &address,
@@ -4462,7 +4462,7 @@ mod tests {
             )
             .expect_err("a running container blocks the reset");
             assert!(
-                error.said.contains("openbot-computer-general-assistant")
+                error.said.contains("ccpbot-computer-general-assistant")
                     && error.said.contains("still running")
                     && error.said.contains("Nothing was removed"),
                 "{}",
@@ -4481,7 +4481,7 @@ mod tests {
     #[test]
     fn desktop_approval_transport_credential_reaches_only_the_server() {
         let secrets = Secrets::from([
-            ("OPENBOT_DESKTOP_HOST_TOKEN".into(), "fixture-only".into()),
+            ("CCPBOT_DESKTOP_HOST_TOKEN".into(), "fixture-only".into()),
             ("INTELLIGENCE_API_KEY".into(), "other-fixture".into()),
         ]);
         for name in ["server", "worker", "app"] {
@@ -4489,7 +4489,7 @@ mod tests {
             configure_host_process_env(&mut command, name, &secrets);
             let vars: std::collections::BTreeMap<_, _> = command.get_envs().collect();
             assert_eq!(
-                vars[std::ffi::OsStr::new("OPENBOT_DESKTOP_HOST_TOKEN")],
+                vars[std::ffi::OsStr::new("CCPBOT_DESKTOP_HOST_TOKEN")],
                 (name == "server").then_some(std::ffi::OsStr::new("fixture-only")),
                 "approval credential exposure to {name}"
             );
@@ -5272,10 +5272,10 @@ fn main() {
         ];
         let listing = "TCP 127.0.0.1:3001 0.0.0.0:0 LISTENING 9001\nTCP 127.0.0.1:3010 0.0.0.0:0 LISTENING 9002\n";
         assert_eq!(
-            verified_openbot_root_pids(std::slice::from_ref(&original), &rows),
+            verified_ccpbot_root_pids(std::slice::from_ref(&original), &rows),
             [9000]
         );
-        assert!(verified_openbot_pids_listening_on(
+        assert!(verified_ccpbot_pids_listening_on(
             listing,
             &[3001, 3010],
             std::slice::from_ref(&original),
@@ -5284,7 +5284,7 @@ fn main() {
         .is_empty());
         let replacement = recorded_process("server", 9001, "/Date(2000)/");
         assert_eq!(
-            verified_openbot_pids_listening_on(
+            verified_ccpbot_pids_listening_on(
                 listing,
                 &[3001, 3010],
                 &[original, replacement],
@@ -5925,9 +5925,9 @@ fn main() {
             static LOCK: std::sync::Mutex<()> = std::sync::Mutex::new(());
             let guard = LOCK.lock().unwrap_or_else(|poisoned| poisoned.into_inner());
             let previous = std::env::var_os("PATH");
-            let previous_record = std::env::var_os("OPENBOT_TEST_ENGINE_RECORD");
-            let previous_scenario = std::env::var_os("OPENBOT_FAKE_ENGINE_SCENARIO");
-            let bin = temp_root("openbot-stack-fake-engine-bin");
+            let previous_record = std::env::var_os("CCPBOT_TEST_ENGINE_RECORD");
+            let previous_scenario = std::env::var_os("CCPBOT_FAKE_ENGINE_SCENARIO");
+            let bin = temp_root("ccpbot-stack-fake-engine-bin");
             std::fs::create_dir_all(&bin).unwrap();
             let docker = bin.join(if cfg!(windows) {
                 "docker.exe"
@@ -5960,7 +5960,7 @@ fn main() {
                 path.push(std::env::var_os("SystemRoot").unwrap_or_else(|| "C:\\Windows".into()));
             }
             std::env::set_var("PATH", path);
-            std::env::set_var("OPENBOT_FAKE_ENGINE_SCENARIO", scenario);
+            std::env::set_var("CCPBOT_FAKE_ENGINE_SCENARIO", scenario);
             Self {
                 previous,
                 previous_record,
@@ -5979,14 +5979,14 @@ fn main() {
                 std::env::remove_var("PATH");
             }
             if let Some(previous) = &self.previous_record {
-                std::env::set_var("OPENBOT_TEST_ENGINE_RECORD", previous);
+                std::env::set_var("CCPBOT_TEST_ENGINE_RECORD", previous);
             } else {
-                std::env::remove_var("OPENBOT_TEST_ENGINE_RECORD");
+                std::env::remove_var("CCPBOT_TEST_ENGINE_RECORD");
             }
             if let Some(previous) = &self.previous_scenario {
-                std::env::set_var("OPENBOT_FAKE_ENGINE_SCENARIO", previous);
+                std::env::set_var("CCPBOT_FAKE_ENGINE_SCENARIO", previous);
             } else {
-                std::env::remove_var("OPENBOT_FAKE_ENGINE_SCENARIO");
+                std::env::remove_var("CCPBOT_FAKE_ENGINE_SCENARIO");
             }
             std::fs::remove_dir_all(&self.bin).ok();
         }
@@ -6016,7 +6016,7 @@ fn fixture_containers() -> Vec<FixtureContainer> {
 fn main() {
     let args: Vec<String> = std::env::args().skip(1).collect();
     let joined = args.join(" ");
-    if let Ok(path) = std::env::var("OPENBOT_TEST_ENGINE_RECORD") {
+    if let Ok(path) = std::env::var("CCPBOT_TEST_ENGINE_RECORD") {
         let cwd = std::env::current_dir().unwrap();
         let mut file = std::fs::OpenOptions::new()
             .create(true)
@@ -6025,14 +6025,14 @@ fn main() {
             .unwrap();
         writeln!(file, "{}\t{}", cwd.display(), joined).unwrap();
     }
-    let scenario = std::env::var("OPENBOT_FAKE_ENGINE_SCENARIO").unwrap();
+    let scenario = std::env::var("CCPBOT_FAKE_ENGINE_SCENARIO").unwrap();
     if scenario == "postgres-volume" {
         let actual = if args.first().map(String::as_str) == Some("--connection") { &args[2..] } else { &args[..] };
         let (file, failure) = if actual == ["compose", "config", "--format", "json"] {
             (".fixture-config", ".fixture-config-failure")
         } else if actual == ["volume", "ls", "--format", "{{.Name}}"] {
             (".fixture-volumes", ".fixture-volume-failure")
-        } else if actual == ["volume", "inspect", "openbot_postgres-data"] {
+        } else if actual == ["volume", "inspect", "ccpbot_postgres-data"] {
             (".fixture-inspect", ".fixture-inspect-failure")
         } else if actual.len() == 3 && actual[0] == "volume" && actual[1] == "inspect" {
             let file = format!(".fixture-inspect-{}", actual[2]);
@@ -6044,7 +6044,7 @@ fn main() {
             return;
         } else if actual.len() == 3 && actual[0] == "volume" && actual[1] == "rm" {
             let volume = actual[2].as_str();
-            if (volume == "openbot_postgres-data" && std::path::Path::new(".fixture-attached").exists())
+            if (volume == "ccpbot_postgres-data" && std::path::Path::new(".fixture-attached").exists())
                 || std::path::Path::new(&format!(".fixture-attached-{volume}")).exists()
                 || fixture_containers().iter().any(|container| container.mounts.iter().any(|mount| mount == volume))
             {
@@ -6119,7 +6119,7 @@ fn main() {
         }
         if actual.iter().any(|arg| arg == "up" || arg == "run") {
             let files: Vec<_> = actual.windows(2).filter(|pair| pair[0] == "-f").map(|pair| &pair[1]).collect();
-            if !files.iter().any(|file| file.ends_with(".openbot-macos-podman.yml")) {
+            if !files.iter().any(|file| file.ends_with(".ccpbot-macos-podman.yml")) {
                 eprintln!("Error response from daemon: rootlessport conflict with ID 1");
                 std::process::exit(126);
             }
@@ -6129,7 +6129,7 @@ fn main() {
         panic!("unexpected startup command: {actual:?}");
     }
     if scenario == "computer-stop" {
-        let root = std::path::PathBuf::from(std::env::var("OPENBOT_TEST_ENGINE_RECORD").unwrap()).with_extension("");
+        let root = std::path::PathBuf::from(std::env::var("CCPBOT_TEST_ENGINE_RECORD").unwrap()).with_extension("");
         let race = root.join(".fixture-race").exists();
         let actual = if args.first().map(String::as_str) == Some("--connection") { &args[2..] } else { &args[..] };
         let without_file;
@@ -6161,15 +6161,15 @@ fn main() {
                     ("current", "true", "fixture-selected"),
                     ("other", "true", "fixture-other"),
                     ("unowned", "false", "fixture-selected"),
-                    ("default", "true", "openbot"),
+                    ("default", "true", "ccpbot"),
                 ];
                 if race {
                     labels.extend([("late", "true", "fixture-selected"), ("restarted", "true", "fixture-selected")]);
                 }
                 for (id, supervisor, namespace) in labels {
                     let matches = actual.windows(2).filter(|pair| pair[0] == "--filter").all(|pair| {
-                        pair[1] == format!("label=openbot.supervisor={supervisor}")
-                            || pair[1] == format!("label=openbot.namespace={namespace}")
+                        pair[1] == format!("label=ccpbot.supervisor={supervisor}")
+                            || pair[1] == format!("label=ccpbot.namespace={namespace}")
                     });
                     if matches && (!race || root.join(format!("{id}.running")).exists()) { println!("{id}"); }
                 }
@@ -6246,7 +6246,7 @@ fn main() {
             let previous_scenario = std::env::var_os("DTA028_CLEANUP_SCENARIO");
             let previous_root = std::env::var_os("DTA028_CLEANUP_ROOT");
             let previous_log = std::env::var_os("DTA028_CLEANUP_LOG");
-            let bin = temp_root("openbot-cleanup-command-bin");
+            let bin = temp_root("ccpbot-cleanup-command-bin");
             std::fs::create_dir_all(&bin).unwrap();
             let source = bin.join("cleanup_command.rs");
             std::fs::write(&source, CLEANUP_COMMAND_SOURCE).unwrap();
@@ -6463,7 +6463,7 @@ fn main() {
             return;
         }
         let _fixture = PathFixture::with_broken_engine();
-        let root = temp_root("openbot-service-inspection-spawn");
+        let root = temp_root("ccpbot-service-inspection-spawn");
         std::fs::create_dir_all(&root).unwrap();
 
         let problem =
@@ -6472,7 +6472,7 @@ fn main() {
 
         assert_eq!(
             problem.said,
-            "OpenBot could not inspect its Compose services."
+            "CCP-Bot could not inspect its Compose services."
         );
         assert!(
             problem
@@ -6492,7 +6492,7 @@ fn main() {
             return;
         }
         let _fixture = PathFixture::with_fake_engine("exit17");
-        let root = temp_root("openbot-service-inspection-status");
+        let root = temp_root("ccpbot-service-inspection-status");
         std::fs::create_dir_all(&root).unwrap();
 
         let problem =
@@ -6501,7 +6501,7 @@ fn main() {
 
         assert_eq!(
             problem.said,
-            "OpenBot could not inspect its Compose services."
+            "CCP-Bot could not inspect its Compose services."
         );
         let detail = problem.detail.as_deref().unwrap_or_default();
         assert!(
@@ -6521,7 +6521,7 @@ fn main() {
             return;
         }
         let _fixture = PathFixture::with_fake_engine("empty");
-        let root = temp_root("openbot-service-inspection-empty");
+        let root = temp_root("ccpbot-service-inspection-empty");
         std::fs::create_dir_all(&root).unwrap();
 
         let dead = services_that_exited(&Address::new(crate::engine::Engine::Docker, None), &root)
@@ -6539,7 +6539,7 @@ fn main() {
             return;
         }
         let _fixture = PathFixture::with_fake_engine("blank-lines");
-        let root = temp_root("openbot-service-inspection-blank-lines");
+        let root = temp_root("ccpbot-service-inspection-blank-lines");
         std::fs::create_dir_all(&root).unwrap();
 
         let dead = services_that_exited(&Address::new(crate::engine::Engine::Docker, None), &root)
@@ -6556,7 +6556,7 @@ fn main() {
         ) {
             return;
         }
-        let root = temp_root("openbot-service-inspection-malformed");
+        let root = temp_root("ccpbot-service-inspection-malformed");
         std::fs::create_dir_all(&root).unwrap();
 
         for scenario in ["empty-service", "empty-state"] {
@@ -6567,7 +6567,7 @@ fn main() {
 
             assert_eq!(
                 problem.said,
-                "OpenBot could not inspect its Compose services."
+                "CCP-Bot could not inspect its Compose services."
             );
             assert!(
                 problem
@@ -6588,7 +6588,7 @@ fn main() {
             return;
         }
         let _fixture = PathFixture::with_fake_engine("mixed");
-        let root = temp_root("openbot-service-inspection-rows");
+        let root = temp_root("ccpbot-service-inspection-rows");
         std::fs::create_dir_all(&root).unwrap();
 
         let dead = services_that_exited(&Address::new(crate::engine::Engine::Docker, None), &root)
@@ -6618,7 +6618,7 @@ fn main() {
             attempted.push(pid);
             if pid == 9000 {
                 Err(Problem::with(
-                    "OpenBot could not inspect or stop its host processes.",
+                    "CCP-Bot could not inspect or stop its host processes.",
                     format!("taskkill /PID {pid} /T /F exited with status 5"),
                 ))
             } else {
@@ -6630,7 +6630,7 @@ fn main() {
         assert_eq!(attempted, vec![9000, 9001]);
         assert_eq!(
             problem.said,
-            "OpenBot could not inspect or stop its host processes."
+            "CCP-Bot could not inspect or stop its host processes."
         );
         assert!(
             problem
@@ -6689,7 +6689,7 @@ fn main() {
         ) {
             return;
         }
-        let root = temp_root("openbot-source-bound-windows-cleanup");
+        let root = temp_root("ccpbot-source-bound-windows-cleanup");
         std::fs::create_dir_all(&root).unwrap();
         let fixture = CleanupCommandFixture::new(&root);
         let taskkill = fixture.command("taskkill");
@@ -7081,7 +7081,7 @@ fn main() {
     }
 
     #[test]
-    fn only_recorded_openbot_pids_are_selected_from_netstat_output() {
+    fn only_recorded_ccpbot_pids_are_selected_from_netstat_output() {
         let listing = "\r\nActive Connections\r\n\r\n  Proto  Local Address          Foreign Address        State           PID\r\n  TCP    127.0.0.1:3001         0.0.0.0:0              LISTENING       424242\r\n  TCP    127.0.0.1:3010         0.0.0.0:0              LISTENING       8636\r\n  TCP    [::1]:3010             [::]:0                 LISTENING       8636\r\n";
         let recorded = [recorded_process(
             "server",
@@ -7090,7 +7090,7 @@ fn main() {
         )];
         let processes = [live_process(8636, 7000, "20260909010101.000000-420")];
 
-        let found = super::verified_openbot_pids_listening_on(
+        let found = super::verified_ccpbot_pids_listening_on(
             listing,
             &[3010, 3001],
             &recorded,
@@ -7179,7 +7179,7 @@ fn main() {
         ) {
             return;
         }
-        let root = temp_root("openbot-already-running-windows-owner");
+        let root = temp_root("ccpbot-already-running-windows-owner");
         std::fs::create_dir_all(root.join(".logs")).unwrap();
         let fixture = CleanupCommandFixture::new(&root);
         fixture.scenario("already-running");
@@ -7229,7 +7229,7 @@ fn main() {
         ) {
             return;
         }
-        let root = temp_root("openbot-already-running-no-owner");
+        let root = temp_root("ccpbot-already-running-no-owner");
         std::fs::create_dir_all(root.join(".logs")).unwrap();
         let fixture = CleanupCommandFixture::new(&root);
         fixture.scenario("already-running");
@@ -7360,7 +7360,7 @@ fn main() {
         let processes = [live_process(424242, 7000, "20260909020202.000000-420")];
 
         let found =
-            super::verified_openbot_pids_listening_on(listing, &[3001], &recorded, &processes);
+            super::verified_ccpbot_pids_listening_on(listing, &[3001], &recorded, &processes);
 
         assert!(found.is_empty(), "{found:?}");
     }
@@ -7374,9 +7374,9 @@ fn main() {
             live_process(9000, 8636, "20260909010102.000000-420"),
         ];
 
-        let roots = super::verified_openbot_root_pids(&recorded, &processes);
+        let roots = super::verified_ccpbot_root_pids(&recorded, &processes);
         let found =
-            super::verified_openbot_pids_listening_on(listing, &[3010], &recorded, &processes);
+            super::verified_ccpbot_pids_listening_on(listing, &[3010], &recorded, &processes);
 
         assert_eq!(roots, vec![8636]);
         assert_eq!(found, vec![9000]);
@@ -7495,7 +7495,7 @@ fn main() {
         record_host_pids(&root, &[42]).unwrap();
         assert_eq!(recorded_host_pids(&root).unwrap(), [42]);
         let legacy = recorded_host_processes(&root).unwrap();
-        assert!(verified_openbot_root_pids(&legacy, &[live_process(42, 0, "created")]).is_empty());
+        assert!(verified_ccpbot_root_pids(&legacy, &[live_process(42, 0, "created")]).is_empty());
         let recorded = recorded_process("server", 42, "created");
         write_host_pid_file(
             &root,
@@ -7590,7 +7590,7 @@ fn main() {
             live_process(42, 0, "reused"),
         ] {
             assert!(
-                verified_openbot_root_pids(std::slice::from_ref(&recorded), &[live]).is_empty()
+                verified_ccpbot_root_pids(std::slice::from_ref(&recorded), &[live]).is_empty()
             );
         }
     }
@@ -7909,7 +7909,7 @@ fn main() {
     ///
     /// Windows tooling writes one freely (`Set-Content -Encoding UTF8` does), `serde_json` refuses
     /// a document that begins with one, and the refusal was reported as a deployment older than
-    /// this version of OpenBot. That sent somebody looking for a newer installer over three bytes.
+    /// this version of CCP-Bot. That sent somebody looking for a newer installer over three bytes.
     #[test]
     fn a_byte_order_mark_does_not_make_a_deployment_look_old() {
         let dir = temp_root("bom");
@@ -7939,7 +7939,7 @@ fn main() {
 
     #[test]
     fn a_missing_root_is_named_rather_than_left_to_errno() {
-        let missing = std::env::temp_dir().join("openbot-not-here-at-all");
+        let missing = std::env::temp_dir().join("ccpbot-not-here-at-all");
         let problem = deployment_problem(&missing).expect("a missing root is a problem");
         assert!(problem.contains("does not exist"), "{problem}");
         assert!(!problem.contains("os error"), "leaked an errno: {problem}");
@@ -8009,15 +8009,15 @@ fn main() {
         // whole deployment stops being absolute and lands under wherever the window is running
         // from.
         assert_eq!(
-            root_from("  /home/me/OpenBot  "),
-            PathBuf::from("/home/me/OpenBot")
+            root_from("  /home/me/CCP-Bot  "),
+            PathBuf::from("/home/me/CCP-Bot")
         );
         assert_eq!(
-            root_from("/home/me/OpenBot\n"),
-            PathBuf::from("/home/me/OpenBot")
+            root_from("/home/me/CCP-Bot\n"),
+            PathBuf::from("/home/me/CCP-Bot")
         );
         assert!(
-            root_from(" /home/me/OpenBot").has_root(),
+            root_from(" /home/me/CCP-Bot").has_root(),
             "a leading space turned an absolute path into a relative one"
         );
     }
@@ -8025,10 +8025,10 @@ fn main() {
     #[test]
     fn a_space_inside_the_path_is_part_of_the_path() {
         // Only the ends. "Documents and Settings" is a directory, and a person whose home has a
-        // space in it must still be able to say where OpenBot lives.
+        // space in it must still be able to say where CCP-Bot lives.
         assert_eq!(
-            root_from("/home/me/My Files/OpenBot"),
-            PathBuf::from("/home/me/My Files/OpenBot")
+            root_from("/home/me/My Files/CCP-Bot"),
+            PathBuf::from("/home/me/My Files/CCP-Bot")
         );
         assert_eq!(
             root_from(r"C:\Users\me\Open Bot"),
@@ -8036,8 +8036,8 @@ fn main() {
         );
         // And an ordinary path is handed back exactly as it was.
         assert_eq!(
-            root_from("/home/me/OpenBot"),
-            PathBuf::from("/home/me/OpenBot")
+            root_from("/home/me/CCP-Bot"),
+            PathBuf::from("/home/me/CCP-Bot")
         );
     }
 
@@ -8365,13 +8365,13 @@ fn main() {
         std::fs::write(root.join(MACOS_PODMAN_PORTS_FILE), MACOS_PODMAN_PORTS).unwrap();
         std::fs::write(root.join("docker-compose.override.yml"), "services:\n  supervisor:\n    environment:\n      COMPUTER_NAMESPACE: regression-kept\n    labels:\n      regression: kept\n").unwrap();
         let docker =
-            std::env::var_os("OPENBOT_TEST_COMPOSE_DOCKER").unwrap_or_else(|| "docker".into());
+            std::env::var_os("CCPBOT_TEST_COMPOSE_DOCKER").unwrap_or_else(|| "docker".into());
         let config = |overlay: bool| {
             let mut command = Command::new(&docker);
             command
                 .current_dir(&root)
                 .env_clear()
-                .env("PATH", env!("OPENBOT_TEST_TOOL_PATH"));
+                .env("PATH", env!("CCPBOT_TEST_TOOL_PATH"));
             command.arg("compose");
             if overlay {
                 command.args([
@@ -8443,7 +8443,7 @@ fn main() {
             let line = log.lines().find(|line| line.contains(action)).unwrap();
             let base = line.find("-f docker-compose.yml").unwrap();
             let existing = line.find("-f docker-compose.override.yml").unwrap();
-            let desktop = line.find(".openbot-macos-podman.yml").unwrap();
+            let desktop = line.find(".ccpbot-macos-podman.yml").unwrap();
             assert!(base < existing && existing < desktop, "{line}");
         }
         assert_eq!(
@@ -8490,14 +8490,14 @@ fn main() {
     }
 
     #[test]
-    fn the_bots_computers_are_found_by_label_rather_than_by_a_name_that_starts_with_openbot() {
+    fn the_bots_computers_are_found_by_label_rather_than_by_a_name_that_starts_with_ccpbot() {
         // A name filter would also match a kind cluster's nodes, which are called
-        // openbot-control-plane and openbot-worker and belong to somebody else.
+        // ccpbot-control-plane and ccpbot-worker and belong to somebody else.
         assert!(
             SUPERVISOR_FILTER.starts_with("label="),
             "without this the engine answers `invalid filter`: {SUPERVISOR_FILTER}"
         );
-        assert!(SUPERVISOR_FILTER.contains("openbot.supervisor=true"));
+        assert!(SUPERVISOR_FILTER.contains("ccpbot.supervisor=true"));
         assert!(!SUPERVISOR_FILTER.contains("name="));
     }
 
@@ -8507,7 +8507,7 @@ fn main() {
         std::fs::write(root.join("docker-compose.yml"), "services: {}\n").unwrap();
         std::fs::write(root.join(".fixture-config"), config).unwrap();
         let record = path.bin.join(format!("{label}.log"));
-        std::env::set_var("OPENBOT_TEST_ENGINE_RECORD", &record);
+        std::env::set_var("CCPBOT_TEST_ENGINE_RECORD", &record);
         (root, record)
     }
 
@@ -8653,7 +8653,7 @@ fn main() {
                 )),
                 "{log}"
             );
-            assert!(log.contains(&format!("{prefix}ps --quiet --filter label=openbot.supervisor=true --filter label=openbot.namespace=fixture-selected")), "{log}");
+            assert!(log.contains(&format!("{prefix}ps --quiet --filter label=ccpbot.supervisor=true --filter label=ccpbot.namespace=fixture-selected")), "{log}");
             assert!(
                 log.lines()
                     .any(|line| line.ends_with(&format!("\t{prefix}stop current"))),
@@ -8680,7 +8680,7 @@ fn main() {
             return;
         }
         let path = PathFixture::with_fake_engine("computer-stop");
-        for (index, namespace) in ["openbot", "", "  ", " fixture-selected "]
+        for (index, namespace) in ["ccpbot", "", "  ", " fixture-selected "]
             .iter()
             .enumerate()
         {
@@ -8708,7 +8708,7 @@ fn main() {
             down(&Address::new(crate::engine::Engine::Docker, None), &root).unwrap();
             let log = std::fs::read_to_string(record).unwrap();
             assert!(
-                log.contains(&format!("label=openbot.namespace={namespace}")),
+                log.contains(&format!("label=ccpbot.namespace={namespace}")),
                 "{log}"
             );
             assert!(!log.contains("\tstop "), "{log}");
@@ -8751,7 +8751,7 @@ fn main() {
         if crate::test_support::isolated_process("stack::tests::computer_stop_without_installed_config_never_searches_parent_or_lists_globally") { return; }
         let path = PathFixture::with_fake_engine("computer-stop");
         let record = path.bin.join("no-stack.log");
-        std::env::set_var("OPENBOT_TEST_ENGINE_RECORD", &record);
+        std::env::set_var("CCPBOT_TEST_ENGINE_RECORD", &record);
         let absent = path.bin.join("absent");
         let empty = path.bin.join("empty");
         std::fs::create_dir(&empty).unwrap();
@@ -9053,8 +9053,8 @@ fn main() {
 fn main() {
     let mut said: Vec<String> = std::env::args().skip(1).collect();
     for name in ["COMPUTER_TOKEN", "COMPUTER_BROWSER_BACKEND", "COMPUTER_BROWSER_MODE", "PORT",
-        "PROFILES_DIR", "WORKSPACE_DIR", "OPENBOT_RECORDER_DIR", "COMPUTER_BROWSER_IDLE_MS",
-        "COMPUTER_PEOPLE_ONLY", "INTELLIGENCE_API_KEY", "OPENBOT_DESKTOP_HOST_TOKEN",
+        "PROFILES_DIR", "WORKSPACE_DIR", "CCPBOT_RECORDER_DIR", "COMPUTER_BROWSER_IDLE_MS",
+        "COMPUTER_PEOPLE_ONLY", "INTELLIGENCE_API_KEY", "CCPBOT_DESKTOP_HOST_TOKEN",
         "KEY_ENCRYPTION_KEY"] {
         said.push(format!("{name}={}", std::env::var(name).unwrap_or_else(|_| "<unset>".into())));
     }
@@ -9081,7 +9081,7 @@ fn main() {
                 "synthetic-intelligence".into(),
             ),
             ("KEY_ENCRYPTION_KEY".into(), "synthetic-key".into()),
-            ("OPENBOT_DESKTOP_HOST_TOKEN".into(), "synthetic-host".into()),
+            ("CCPBOT_DESKTOP_HOST_TOKEN".into(), "synthetic-host".into()),
         ]);
         let browser = crate::local_browser::LocalBrowser {
             product: crate::local_browser::Product::Chrome,
@@ -9122,7 +9122,7 @@ fn main() {
                 format!("PROFILES_DIR={}", data.join("profiles").display()),
                 format!("WORKSPACE_DIR={}", data.join("workspace").display()),
                 format!(
-                    "OPENBOT_RECORDER_DIR={}",
+                    "CCPBOT_RECORDER_DIR={}",
                     root.join("extension").join("dist").display()
                 ),
                 "COMPUTER_BROWSER_IDLE_MS=0".into(),
@@ -9130,7 +9130,7 @@ fn main() {
                 // refuses to run a person's browser at all.
                 "COMPUTER_PEOPLE_ONLY=on".into(),
                 "INTELLIGENCE_API_KEY=<unset>".into(),
-                "OPENBOT_DESKTOP_HOST_TOKEN=<unset>".into(),
+                "CCPBOT_DESKTOP_HOST_TOKEN=<unset>".into(),
                 "KEY_ENCRYPTION_KEY=<unset>".into(),
             ]
         );
@@ -9196,7 +9196,7 @@ fn main() {
     /// profile folders it makes are not the person's.
     ///
     /// ```sh
-    /// OPENBOT_LIVE_BROWSER_BUN=<bun> OPENBOT_LIVE_BROWSER_PORT=<port> \
+    /// CCPBOT_LIVE_BROWSER_BUN=<bun> CCPBOT_LIVE_BROWSER_PORT=<port> \
     /// cargo test --lib live_the_persons_browser -- --ignored --nocapture
     /// ```
     #[cfg(unix)]
@@ -9206,8 +9206,8 @@ fn main() {
         let setting = |name: &str| {
             std::env::var(name).unwrap_or_else(|_| panic!("{name} names the live run's input"))
         };
-        let bun = PathBuf::from(setting("OPENBOT_LIVE_BROWSER_BUN"));
-        let port: u16 = setting("OPENBOT_LIVE_BROWSER_PORT").parse().unwrap();
+        let bun = PathBuf::from(setting("CCPBOT_LIVE_BROWSER_BUN"));
+        let port: u16 = setting("CCPBOT_LIVE_BROWSER_PORT").parse().unwrap();
         let scratch = temp_root("live-browser");
         let root = scratch.join("deployment");
         let home = scratch.join("home");
@@ -9218,7 +9218,7 @@ fn main() {
             .args([
                 "archive",
                 "--format=tar.gz",
-                "--prefix=OpenBot-live/",
+                "--prefix=CCP-Bot-live/",
                 "HEAD",
             ])
             .output()
@@ -9428,7 +9428,7 @@ fn main() {
     ) {
         let listing = ancestry_listeners(listeners);
         assert_eq!(
-            verified_openbot_pids_listening_on(&listing, &[3010], recorded, processes),
+            verified_ccpbot_pids_listening_on(&listing, &[3010], recorded, processes),
             expected,
             "listener ownership: {processes:?}"
         );

@@ -7,18 +7,18 @@ import type { Skin, SkinId } from "./types";
 import { t } from "@/lib/i18n";
 
 /*
- * The default is the product as `brand.yaml` names it, so a deployment that renames OpenBot sees
+ * The default is the product as `brand.yaml` names it, so a deployment that renames CCP-Bot sees
  * its own name here too. The description says nothing a rename could make untrue.
  */
-const openbot: Skin = {
-  id: "openbot",
+const ccpbot: Skin = {
+  id: "ccpbot",
   name: appConfig.brand.productName,
   description: t("The standard look, with your conversations in a sidebar."),
 };
 
 /** Keyed by every id in `SKIN_IDS`, so a skin cannot be listed without being registered. */
 export const SKINS: Record<SkinId, Skin> = {
-  openbot,
+  ccpbot,
   openduet,
   opendots,
   openmuse,

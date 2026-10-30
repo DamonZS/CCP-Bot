@@ -7,9 +7,9 @@ import { NoBot } from "./activity";
 import { t } from "@/lib/i18n";
 
 /**
- * Goals: what the centre Bot keeps doing for the person. OpenMuse's "Tracking" is OpenBot's routines,
- * and its "Goals" are OpenBot's responsibilities, which OpenBot itself titles Goals on a Bot's page.
- * Both lists are OpenBot's own, with every switch, Run now, history and Delete they offer.
+ * Goals: what the centre Bot keeps doing for the person. OpenMuse's "Tracking" is CCP-Bot's routines,
+ * and its "Goals" are CCP-Bot's responsibilities, which CCP-Bot itself titles Goals on a Bot's page.
+ * Both lists are CCP-Bot's own, with every switch, Run now, history and Delete they offer.
  */
 export function GoalsScreen() {
   const { bot } = useMuse();

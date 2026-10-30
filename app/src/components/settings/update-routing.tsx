@@ -63,7 +63,9 @@ export function UpdateRoutingSection() {
     reach.data ? reach.data.available[transport] : true;
   return (
     <PageSection
-      description={t("Choose where to receive each type of update when you’re away. All updates remain available in the web app.")}
+      description={t(
+        "Choose where to receive each type of update when you’re away. All updates remain available in the web app.",
+      )}
       title={t("Where updates go")}
     >
       {routing.isPending || reach.isPending ? null : routing.error ? (

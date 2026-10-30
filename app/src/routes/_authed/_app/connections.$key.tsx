@@ -107,7 +107,7 @@ export const Route = createFileRoute("/_authed/_app/connections/$key")({
   component: RouteComponent,
   /*
    * `?linked=` is how the GitHub account-link callback reports back to GitHub's page: `github` on
-   * success, `github-taken` when that account belongs to another OpenBot user, `failed` otherwise.
+   * success, `github-taken` when that account belongs to another CCP-Bot user, `failed` otherwise.
    *
    * `?action=` is the verifier's redirect saying WHICH action the consent just completed was for,
    * so an app's page can land on it rather than on the app.
@@ -344,7 +344,9 @@ function AppConnectionPage() {
     return (
       <PageShell backButton={back} title={server?.title ?? key}>
         <p className="mt-12 text-destructive text-sm" role="alert">
-          {t("Couldn't load this connection. Reload the page, or ask an admin if it keeps happening.")}
+          {t(
+            "Couldn't load this connection. Reload the page, or ask an admin if it keeps happening.",
+          )}
         </p>
       </PageShell>
     );
@@ -359,7 +361,9 @@ function AppConnectionPage() {
     return (
       <PageShell backButton={back} title={key}>
         <p className="mt-12 text-destructive text-sm" role="alert">
-          {t("Couldn't load this app. Reload the page, or ask an admin if it keeps happening.")}
+          {t(
+            "Couldn't load this app. Reload the page, or ask an admin if it keeps happening.",
+          )}
         </p>
       </PageShell>
     );
@@ -376,7 +380,8 @@ function AppConnectionPage() {
     return (
       <PageShell backButton={back} title={server.title}>
         <PageEmpty icon={IconPlugOff} title={t("Not set up yet")}>
-          {t("An admin has to turn on")} {server.title} {t("before anyone can connect it.")}
+          {t("An admin has to turn on")} {server.title}{" "}
+          {t("before anyone can connect it.")}
         </PageEmpty>
       </PageShell>
     );
@@ -418,7 +423,9 @@ function AppConnectionPage() {
               <ItemContent>
                 <ItemTitle>{t("Team account")}</ItemTitle>
                 <ItemDescription>
-                  {t("Shared by your organisation. Bots act as the team account.")}
+                  {t(
+                    "Shared by your organisation. Bots act as the team account.",
+                  )}
                 </ItemDescription>
               </ItemContent>
             </Item>
@@ -530,8 +537,10 @@ function AppConnectionPage() {
           title={entry ? t("Shared account") : t("App not found")}
         >
           {entry
-            ? t("Bots use one shared account for this app, the same for everybody.")
-            : t("OpenBot has no app by that name.")}
+            ? t(
+                "Bots use one shared account for this app, the same for everybody.",
+              )
+            : t("CCP-Bot has no app by that name.")}
         </PageEmpty>
       </PageShell>
     );
@@ -604,7 +613,7 @@ function AppConnectionPage() {
                          * had not, which is the one outcome worse than not offering it.
                          */
                         setNotice(
-                          `You can't disconnect here yet. To stop access now, remove OpenBot in your ${entry.vendor} account's third-party access settings.`,
+                          `You can't disconnect here yet. To stop access now, remove CCP-Bot in your ${entry.vendor} account's third-party access settings.`,
                         )
                       }
                       className="whitespace-nowrap"
@@ -616,7 +625,7 @@ function AppConnectionPage() {
                 </DropdownMenu>
               ) : (
                 /*
-                 * The arrow says this leaves OpenBot. It does: the next thing on screen is the
+                 * The arrow says this leaves CCP-Bot. It does: the next thing on screen is the
                  * vendor's own consent page, and a control that navigates away should look like one.
                  */
                 <Button
@@ -640,7 +649,7 @@ function AppConnectionPage() {
 
       {connection ? (
         <PageSection
-          description={`Review the permissions recorded by ${entry.vendor}. They may include fewer permissions than OpenBot requested.`}
+          description={`Review the permissions recorded by ${entry.vendor}. They may include fewer permissions tha CCP-Bot requested.`}
           title={t("Access")}
         >
           <PageRows>

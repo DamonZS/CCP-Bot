@@ -32,13 +32,13 @@ import type { SnapshotElement } from "./aria-snapshot";
 import type { InputMessage } from "./screencast";
 
 /** The attribute a field gets once a secret has been typed into it. */
-export const SECRET_ATTRIBUTE = "data-openbot-secret";
+export const SECRET_ATTRIBUTE = "data-ccpbot-secret";
 
 /** What a sensitive value is replaced with. Says a value is there without saying what it is. */
 export const MASKED_VALUE = "[hidden: sensitive field]";
 
 /** The attribute a field gets once a person typed into it, or chose in it, while they held the wheel. */
-export const PERSON_FILLED_ATTRIBUTE = "data-openbot-person-filled";
+export const PERSON_FILLED_ATTRIBUTE = "data-ccpbot-person-filled";
 
 /** What a value a person filled in during a takeover is replaced with: filled, and not what with. */
 export const PERSON_FILLED_VALUE = "[hidden: filled in by the person]";

@@ -1,6 +1,6 @@
-import type { BotBrowserApiState } from "@openbot/shared/bot-browser";
+import type { BotBrowserApiState } from "@ccpbot/shared/bot-browser";
 import { IconLock, IconPlayerStop } from "@tabler/icons-react";
-import { RECORDER_COLLECTS_SHORT } from "@openbot/shared/recorder-disclosure";
+import { RECORDER_COLLECTS_SHORT } from "@ccpbot/shared/recorder-disclosure";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { type ReactNode, useId } from "react";
 import {
@@ -353,7 +353,9 @@ function RecordPanel({
     <section aria-label={t("Record a task")}>
       <h2 className="font-semibold text-sm">{t("Record a task")}</h2>
       <p className="mt-1 text-pretty text-muted-foreground text-sm">
-        {t("Do the task in the Bot's browser while you have control. Only what you do is recorded, and it goes to your own Learning space.")}{" "}
+        {t(
+          "Do the task in the Bot's browser while you have control. Only what you do is recorded, and it goes to your own Learning space.",
+        )}{" "}
         {RECORDER_COLLECTS_SHORT}
       </p>
       <PageRows className="mt-3">
@@ -364,7 +366,9 @@ function RecordPanel({
             </ItemMedia>
             <ItemContent>
               <ItemTitle>{t("Someone is recording")}</ItemTitle>
-              <ItemDescription>{t("You can record once they stop.")}</ItemDescription>
+              <ItemDescription>
+                {t("You can record once they stop.")}
+              </ItemDescription>
             </ItemContent>
           </Item>
         ) : (

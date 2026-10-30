@@ -1,6 +1,6 @@
 import { afterAll, afterEach, describe, expect, test } from "bun:test";
 import { randomUUID } from "node:crypto";
-import { FIRING_FRAME, frameFiring } from "@openbot/shared/routine-firing";
+import { FIRING_FRAME, frameFiring } from "@ccpbot/shared/routine-firing";
 import { eq } from "drizzle-orm";
 import { createAgentProfileStore } from "../src/agents/profile-store";
 import type { AgentActor } from "../src/agents/profile-types";

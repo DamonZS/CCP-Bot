@@ -2,7 +2,7 @@ import { expect, test } from "bun:test";
 import {
   DEFAULT_USER_PREFERENCES,
   type UserPreferences,
-} from "@openbot/shared/user-preferences";
+} from "@ccpbot/shared/user-preferences";
 import { Hono } from "hono";
 import type { UserPreferencesStore } from "../src/user-preferences";
 import { userPreferencesRoutes } from "../src/user-preferences-routes";
@@ -54,7 +54,7 @@ test("preferences default to thread and persist separately for each authenticate
       messageListEmphasis: "thread",
       selfHostBannerDismissed: false,
       narration: null,
-      skin: "openbot",
+      skin: "ccpbot",
     },
   });
   const saved = await alice.request(
@@ -67,7 +67,7 @@ test("preferences default to thread and persist separately for each authenticate
       messageListEmphasis: "agent",
       selfHostBannerDismissed: false,
       narration: null,
-      skin: "openbot",
+      skin: "ccpbot",
     },
   });
   expect(await (await appFor("bob").request(path)).json()).toEqual({
@@ -75,7 +75,7 @@ test("preferences default to thread and persist separately for each authenticate
       messageListEmphasis: "thread",
       selfHostBannerDismissed: false,
       narration: null,
-      skin: "openbot",
+      skin: "ccpbot",
     },
   });
 });
@@ -126,7 +126,7 @@ test("saves the self-host banner dismissal without touching message list emphasi
       messageListEmphasis: "agent",
       selfHostBannerDismissed: true,
       narration: null,
-      skin: "openbot",
+      skin: "ccpbot",
     },
   });
   expect(await (await appFor("bob").request(path)).json()).toEqual({
@@ -134,7 +134,7 @@ test("saves the self-host banner dismissal without touching message list emphasi
       messageListEmphasis: "thread",
       selfHostBannerDismissed: false,
       narration: null,
-      skin: "openbot",
+      skin: "ccpbot",
     },
   });
 });
@@ -154,7 +154,7 @@ test("keeps the person's narration choice without touching the others, and start
       messageListEmphasis: "agent",
       selfHostBannerDismissed: false,
       narration: "on",
-      skin: "openbot",
+      skin: "ccpbot",
     },
   });
   await alice.request(path, patch({ narration: "off" }));
@@ -195,10 +195,10 @@ test("saves the skin on the account without touching the other preferences", asy
         preferences: UserPreferences;
       }
     ).preferences.skin,
-  ).toBe("openbot");
+  ).toBe("ccpbot");
 });
 
-test("a skin OpenBot does not ship is refused with the skins it does", async () => {
+test("a skin CCP-Bot does not ship is refused with the skins it does", async () => {
   const { appFor } = fixture();
   const refused = await appFor("alice").request(
     path,
@@ -206,6 +206,6 @@ test("a skin OpenBot does not ship is refused with the skins it does", async () 
   );
   expect(refused.status).toBe(400);
   expect(((await refused.json()) as { error: string }).error).toContain(
-    "openbot, openduet, opendots, openmuse",
+    "ccpbot, openduet, opendots, openmuse",
   );
 });

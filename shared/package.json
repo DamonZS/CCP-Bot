@@ -1,5 +1,5 @@
 {
-  "name": "@openbot/shared",
+  "name": "@ccpbot/shared",
   "license": "MIT",
   "private": true,
   "type": "module",

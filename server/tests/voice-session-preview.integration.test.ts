@@ -1,6 +1,6 @@
 import { afterAll, beforeAll, expect, test } from "bun:test";
 import { randomUUID } from "node:crypto";
-import type { SaveVoiceSessionInput } from "@openbot/shared/voice-session";
+import type { SaveVoiceSessionInput } from "@ccpbot/shared/voice-session";
 import { eq, inArray, sql } from "drizzle-orm";
 import { Hono } from "hono";
 import { createAgentProfileStore } from "../src/agents/profile-store";
@@ -96,7 +96,7 @@ async function fixture() {
   async function post(app: ReturnType<typeof router>) {
     const response = await app.request("/sessions", {
       method: "POST",
-      headers: { "content-type": "application/json", "x-openbot-voice": "1" },
+      headers: { "content-type": "application/json", "x-ccpbot-voice": "1" },
       body: JSON.stringify(input),
     });
     expect(response.status).toBe(200);

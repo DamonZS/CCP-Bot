@@ -1,10 +1,10 @@
 import {
   addressedTo,
   SHOW_APP_ACCESS_TOOL,
-} from "@openbot/shared/connect-prompt";
-import { RESEARCH_TOOLS, type ResearchRole } from "@openbot/shared/research";
-import { type GrantedTool, parametersFor } from "@openbot/toolkit/granted-tool";
-import { HeadlessToolSuspension } from "@openbot/toolkit/headless-tools";
+} from "@ccpbot/shared/connect-prompt";
+import { RESEARCH_TOOLS, type ResearchRole } from "@ccpbot/shared/research";
+import { type GrantedTool, parametersFor } from "@ccpbot/toolkit/granted-tool";
+import { HeadlessToolSuspension } from "@ccpbot/toolkit/headless-tools";
 import { ApprovalRefusedError } from "../approvals/types";
 import type { AuditInitiator } from "../audit";
 import { markUntrusted } from "../untrusted-content";

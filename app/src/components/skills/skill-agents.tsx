@@ -67,8 +67,8 @@ export function SkillAgents({
             })}
           </div>
           <p className="text-muted-foreground text-xs">
-            {t("Bots you pick here offer")} <code>/{slug}</code> {t("when you type")}{" "}
-            <code>/</code>.
+            {t("Bots you pick here offer")} <code>/{slug}</code>{" "}
+            {t("when you type")} <code>/</code>.
           </p>
         </>
       )}

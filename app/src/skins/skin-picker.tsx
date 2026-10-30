@@ -42,8 +42,9 @@ export function SkinPicker() {
         <ItemContent>
           <ItemTitle>{t("Skin")}</ItemTitle>
           <ItemDescription>
-            {t("Change how")} {appConfig.brand.productName} {t("looks for you, on every device. Every skin keeps everything")} {appConfig.brand.productName}{" "}
-            {t("does.")}
+            {t("Change how")} {appConfig.brand.productName}{" "}
+            {t("looks for you, on every device. Every skin keeps everything")}{" "}
+            {appConfig.brand.productName} {t("does.")}
           </ItemDescription>
         </ItemContent>
         <ItemActions>
@@ -80,7 +81,8 @@ export function SkinPicker() {
       </Item>
       {save.isError ? (
         <p className="px-3 pb-3 text-sm text-destructive" role="alert">
-          {t("Couldn't save that skin to your account, so")} {SKINS[skin].name} {t("is back. Try again.")}
+          {t("Couldn't save that skin to your account, so")} {SKINS[skin].name}{" "}
+          {t("is back. Try again.")}
         </p>
       ) : null}
     </>

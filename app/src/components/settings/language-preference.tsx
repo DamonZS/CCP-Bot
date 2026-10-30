@@ -67,14 +67,18 @@ export function LanguagePreference() {
           >
             <SelectTrigger aria-label={t("Language")}>
               <SelectValue>
-                {(LOCALES.find((entry) => entry.value === locale) ?? LOCALES[0])
-                  .label}
+                {t(
+                  (
+                    LOCALES.find((entry) => entry.value === locale) ??
+                    LOCALES[0]
+                  ).label,
+                )}
               </SelectValue>
             </SelectTrigger>
             <SelectContent>
               {LOCALES.map((entry) => (
                 <SelectItem key={entry.value} value={entry.value}>
-                  {entry.label}
+                  {t(entry.label)}
                 </SelectItem>
               ))}
             </SelectContent>

@@ -12,7 +12,9 @@ function LearningSettingsPage() {
   return (
     <PageShell
       title={t("Learning")}
-      description={t("Every recording you make goes into your own Learning space, and the Skills learned there reach every Bot you use. Choose who else's Bots may use them too.")}
+      description={t(
+        "Every recording you make goes into your own Learning space, and the Skills learned there reach every Bot you use. Choose who else's Bots may use them too.",
+      )}
     >
       <LearningSharing />
     </PageShell>

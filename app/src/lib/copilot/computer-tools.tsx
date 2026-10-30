@@ -874,8 +874,9 @@ export function ComputerTools() {
   useFrontendTool({
     available: offered.browser,
     name: "computer_scroll",
-    description:
-      t("Scroll the page down, or up with a negative amount, to bring more of a long page into view."),
+    description: t(
+      "Scroll the page down, or up with a negative amount, to bring more of a long page into view.",
+    ),
     parameters: z.object({
       deltaY: z
         .number()

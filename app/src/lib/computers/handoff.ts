@@ -1,7 +1,7 @@
 import type {
   BrowserChallenge,
   HandoffRequest,
-} from "@openbot/shared/computer-control";
+} from "@ccpbot/shared/computer-control";
 import { callComputer, type ToolOutcome } from "./call";
 import { cancelControl, readControl } from "./control";
 
@@ -14,7 +14,7 @@ const active = new Map<string, number>();
  * nowhere, and that there is nothing to resume.
  */
 const answered = new Set<string>();
-const key = (botId: string) => `openbot:pending-handoff:${botId}`;
+const key = (botId: string) => `ccpbot:pending-handoff:${botId}`;
 
 /** Bookkeeping only. Never persist page text, credentials, or the human's input. */
 export function pendingHandoff(botId: string): PendingHandoff | null {

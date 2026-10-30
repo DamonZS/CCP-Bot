@@ -106,11 +106,15 @@ function IdentityProvidersPage() {
           {t("Add a provider")}
         </Button>
       }
-      description={t("Configure your company’s SAML or OpenID Connect provider. Email domains determine which provider people use to sign in.")}
+      description={t(
+        "Configure your company’s SAML or OpenID Connect provider. Email domains determine which provider people use to sign in.",
+      )}
       title={t("Identity providers")}
     >
       <PageSection
-        description={t("Google, Microsoft and Okta are set in the environment. They don't show here.")}
+        description={t(
+          "Google, Microsoft and Okta are set in the environment. They don't show here.",
+        )}
         title={t("Registered")}
       >
         {failure ? (
@@ -219,7 +223,9 @@ function IdentityProvidersPage() {
                 />
                 {/* Said out loud because it is the field that decides who this applies to. */}
                 <p className="text-muted-foreground text-xs">
-                  {t("Anybody with an address at this domain signs in here. Separate several with commas.")}
+                  {t(
+                    "Anybody with an address at this domain signs in here. Separate several with commas.",
+                  )}
                 </p>
               </div>
 
@@ -266,7 +272,9 @@ function IdentityProvidersPage() {
                       value={draft.metadata}
                     />
                     <p className="text-muted-foreground text-xs">
-                      {t("The file from your identity team. It includes the signing certificate.")}
+                      {t(
+                        "The file from your identity team. It includes the signing certificate.",
+                      )}
                     </p>
                   </div>
                 </>

@@ -55,7 +55,7 @@ const SECTIONS: {
 }[] = [
   {
     title: t("What Bots can reach"),
-    description: t("Control what Bots can access outside OpenBot."),
+    description: t("Control what Bots can access outside CCP-Bot."),
     items: [
       {
         title: t("Credentials"),
@@ -71,7 +71,9 @@ const SECTIONS: {
       },
       {
         title: t("Approvals"),
-        description: t("Choose which actions require approval for members’ Bots."),
+        description: t(
+          "Choose which actions require approval for members’ Bots.",
+        ),
         icon: IconChecks,
         linkOptions: { to: "/admin/approvals" },
       },
@@ -85,8 +87,9 @@ const SECTIONS: {
   },
   {
     title: t("What Bots can do"),
-    description:
-      t("Configure the apps, skills, and UI components available to Bots."),
+    description: t(
+      "Configure the apps, skills, and UI components available to Bots.",
+    ),
     items: [
       {
         title: t("Plugins"),
@@ -102,15 +105,17 @@ const SECTIONS: {
       },
       {
         title: t("Automatic learning"),
-        description:
-          t("Learn from finished conversations and review the skills it proposes."),
+        description: t(
+          "Learn from finished conversations and review the skills it proposes.",
+        ),
         icon: IconFileText,
         linkOptions: { to: "/admin/learning" },
       },
       {
         title: t("UI components"),
-        description:
-          t("Manage custom components that Bots can display in conversations."),
+        description: t(
+          "Manage custom components that Bots can display in conversations.",
+        ),
         icon: IconLayoutGrid,
         linkOptions: { to: "/admin/components" },
       },
@@ -128,21 +133,25 @@ const SECTIONS: {
     items: [
       {
         title: t("People"),
-        description: t("Review members, manage admin roles, and remove access."),
+        description: t(
+          "Review members, manage admin roles, and remove access.",
+        ),
         icon: IconUsers,
         linkOptions: { to: "/admin/people" },
       },
       {
         title: t("Enterprise controls"),
-        description:
-          t("Configure roles, groups, SSO, SCIM, Skill sharing, network policies, allowlists, and Action Recording."),
+        description: t(
+          "Configure roles, groups, SSO, SCIM, Skill sharing, network policies, allowlists, and Action Recording.",
+        ),
         icon: IconShieldCheck,
         linkOptions: { to: "/admin/enterprise" },
       },
       {
         title: t("Identity providers"),
-        description:
-          t("Configure your company’s sign-in provider for each email domain."),
+        description: t(
+          "Configure your company’s sign-in provider for each email domain.",
+        ),
         icon: IconBuildingBank,
         linkOptions: { to: "/admin/identity-providers" },
       },
@@ -154,7 +163,7 @@ const SECTIONS: {
     items: [
       {
         title: t("Audit"),
-        description: t("Review actions taken in OpenBot and who took them."),
+        description: t("Review actions taken in CCP-Bot and who took them."),
         icon: IconListDetails,
         linkOptions: { to: "/admin/audit" },
       },
@@ -165,7 +174,9 @@ const SECTIONS: {
 function RouteComponent() {
   return (
     <PageShell
-      description={t("Manage settings that apply to everyone and every Bot in this deployment.")}
+      description={t(
+        "Manage settings that apply to everyone and every Bot in this deployment.",
+      )}
       title={t("Admin")}
     >
       {SECTIONS.map((section) => (

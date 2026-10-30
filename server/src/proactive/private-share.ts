@@ -18,7 +18,7 @@
  * answers the model with the message.
  */
 import { createHash } from "node:crypto";
-import { HeadlessToolSuspension } from "@openbot/toolkit/headless-tools";
+import { HeadlessToolSuspension } from "@ccpbot/toolkit/headless-tools";
 import {
   type ApprovalContinuation,
   type ApprovalStore,
@@ -27,7 +27,7 @@ import {
   currentApprovalContext,
 } from "../approvals/types";
 
-export const PRIVATE_SHARE_TOOL_REF = "openbot/share_private_information";
+export const PRIVATE_SHARE_TOOL_REF = "ccpbot/share_private_information";
 export const PRIVATE_SHARE_EFFECT = "share_private";
 const ONCE_WINDOW_MS = 30 * 60_000;
 

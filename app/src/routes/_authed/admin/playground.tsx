@@ -208,7 +208,9 @@ function PlaygroundPage() {
           <div>
             <h1 className="font-bold text-2xl">{t("Playground")}</h1>
             <p className="mt-1 max-w-prose text-pretty text-muted-foreground text-sm leading-relaxed">
-              {t("Write a component and publish it without redeploying. Your edits are a draft. Conversations only show what is published.")}
+              {t(
+                "Write a component and publish it without redeploying. Your edits are a draft. Conversations only show what is published.",
+              )}
             </p>
           </div>
         </div>
@@ -273,7 +275,11 @@ function PlaygroundPage() {
             placeholder={t("Show a refund with its amount, reason and status.")}
             value={draft.description}
           />
-          <CodeField label={t("HTML")} onChange={set("html")} value={draft.html} />
+          <CodeField
+            label={t("HTML")}
+            onChange={set("html")}
+            value={draft.html}
+          />
           <CodeField label={t("CSS")} onChange={set("css")} value={draft.css} />
           <CodeField
             label={t("JavaScript")}
@@ -377,7 +383,9 @@ function PlaygroundPage() {
               </ul>
             )}
             <p className="border-border border-t px-4 py-2 text-muted-foreground text-xs">
-              {t("Publishing makes it available to every Bot. Turn it off for one Bot on the UI components page.")}
+              {t(
+                "Publishing makes it available to every Bot. Turn it off for one Bot on the UI components page.",
+              )}
             </p>
           </div>
         </div>
@@ -395,9 +403,13 @@ function PlaygroundPage() {
       >
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>{t("Delete")} {deleting}?</DialogTitle>
+            <DialogTitle>
+              {t("Delete")} {deleting}?
+            </DialogTitle>
             <DialogDescription>
-              {t("It's removed from this deployment, and no Bot can draw it. You can't undo this.")}
+              {t(
+                "It's removed from this deployment, and no Bot can draw it. You can't undo this.",
+              )}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>

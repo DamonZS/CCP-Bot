@@ -3,7 +3,7 @@ import {
   CopilotKitIntelligence,
   LearnedSkillsError,
 } from "@copilotkit/runtime/v2";
-import type { LearningSettings } from "@openbot/shared/learning";
+import type { LearningSettings } from "@ccpbot/shared/learning";
 import {
   clearLearningRevisionFallback,
   createLearningRuntime,
@@ -15,7 +15,7 @@ import { skillSnapshot } from "./fixtures/learned-skills";
 function fixture() {
   let settings: LearningSettings = {
     enabled: true,
-    defaultTarget: { containerId: "openbot" },
+    defaultTarget: { containerId: "ccpbot" },
     agents: {},
   };
   const bindings = new Map<string, string | null>();
@@ -66,13 +66,13 @@ describe("Automatic Learning runtime", () => {
     });
     await f.store.write({
       enabled: false,
-      defaultTarget: { containerId: "openbot" },
+      defaultTarget: { containerId: "ccpbot" },
       agents: {},
     });
     expect(await learning.acquire("bot")).toBeUndefined();
     await f.store.write({
       enabled: true,
-      defaultTarget: { containerId: "openbot" },
+      defaultTarget: { containerId: "ccpbot" },
       agents: { bot: null },
     });
     expect(await learning.acquire("bot")).toBeUndefined();
@@ -164,14 +164,14 @@ describe("Automatic Learning runtime", () => {
       client: f.client,
     });
     const first = { agentId: "bot", threadId: "new-thread", userId: "person" };
-    expect(await learning.containerForThread(first)).toBe("openbot");
+    expect(await learning.containerForThread(first)).toBe("ccpbot");
     f.exists();
     await f.store.write({
       enabled: true,
       defaultTarget: { containerId: "changed" },
       agents: {},
     });
-    expect(await learning.containerForThread(first)).toBe("openbot");
+    expect(await learning.containerForThread(first)).toBe("ccpbot");
     expect(
       await learning.containerForThread({ ...first, threadId: "preexisting" }),
     ).toBeUndefined();
@@ -242,7 +242,7 @@ test("Admin can clear an environment-seeded pin and follow latest", async () => 
   try {
     process.env.CPK_INTELLIGENCE_SKILLS_REVISION = "r1";
     const captured = {
-      containerId: "openbot",
+      containerId: "ccpbot",
       revision: process.env.CPK_INTELLIGENCE_SKILLS_REVISION,
     };
     clearLearningRevisionFallback();
@@ -250,7 +250,7 @@ test("Admin can clear an environment-seeded pin and follow latest", async () => 
     await f.store.write({ enabled: true, defaultTarget: captured, agents: {} });
     await f.store.write({
       enabled: true,
-      defaultTarget: { containerId: "openbot" },
+      defaultTarget: { containerId: "ccpbot" },
       agents: {},
     });
     let requestedRevision: string | undefined;

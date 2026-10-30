@@ -67,7 +67,7 @@ export function GrantList({
     onSuccess: (authorizationUrl) => {
       if (authorizationUrl === null) {
         setNotice(
-          "OpenBot answered without a consent link, so nothing was authorized. Try again, or ask an admin if it keeps happening.",
+          "CCP-Bot answered without a consent link, so nothing was authorized. Try again, or ask an admin if it keeps happening.",
         );
         return;
       }
@@ -142,7 +142,9 @@ export function GrantList({
 
   return (
     <PageSection
-      description={t("Grouped by the permission each action asks for. This matches what the consent screen shows.")}
+      description={t(
+        "Grouped by the permission each action asks for. This matches what the consent screen shows.",
+      )}
       title={t("Actions")}
     >
       {notice ? (
@@ -218,7 +220,9 @@ export function GrantList({
       ))}
       {hidden > 0 ? (
         <p className="text-muted-foreground text-sm">
-          {hidden} {t("more")} {hidden === 1 ? t("action") : t("actions")} {t("not yet authorized. Search to find")} {hidden === 1 ? t("it") : t("one")}.
+          {hidden} {t("more")} {hidden === 1 ? t("action") : t("actions")}{" "}
+          {t("not yet authorized. Search to find")}{" "}
+          {hidden === 1 ? t("it") : t("one")}.
         </p>
       ) : null}
       {term.length > 0 && groups.length === 0 ? (

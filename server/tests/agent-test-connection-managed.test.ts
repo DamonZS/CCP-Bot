@@ -23,7 +23,7 @@ describe("testing an address this deployment runs", () => {
   ) => {
     context.set("actor", {
       id: "user-1",
-      email: "user@openbot.test",
+      email: "user@ccpbot.test",
       role: "user",
     });
     await next();
@@ -36,7 +36,7 @@ describe("testing an address this deployment runs", () => {
     return Bun.serve({
       port: 0,
       fetch: (request: Request) =>
-        request.headers.get("x-openbot-agent-token") === TOKEN
+        request.headers.get("x-ccpbot-agent-token") === TOKEN
           ? new Response('data: {"type":"RUN_STARTED"}\n\n', {
               headers: { "content-type": "text/event-stream" },
             })
@@ -63,7 +63,7 @@ describe("testing an address this deployment runs", () => {
     app: ReturnType<typeof createAgentRoutes>,
     endpoint: string,
   ) {
-    const response = await app.request("http://openbot.test/test-connection", {
+    const response = await app.request("http://ccpbot.test/test-connection", {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ endpoint }),
@@ -118,7 +118,7 @@ describe("testing an address this deployment runs", () => {
     const agent = Bun.serve({
       port: 0,
       fetch: (request: Request) => {
-        offered = request.headers.get("x-openbot-agent-token");
+        offered = request.headers.get("x-ccpbot-agent-token");
         return new Response('data: {"type":"RUN_STARTED"}\n\n', {
           headers: { "content-type": "text/event-stream" },
         });
@@ -139,7 +139,7 @@ describe("testing an address this deployment runs", () => {
     const agent = Bun.serve({
       port: 0,
       fetch: (request: Request) => {
-        offered = request.headers.get("x-openbot-agent-token");
+        offered = request.headers.get("x-ccpbot-agent-token");
         return new Response('data: {"type":"RUN_STARTED"}\n\n', {
           headers: { "content-type": "text/event-stream" },
         });

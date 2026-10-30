@@ -1,4 +1,4 @@
-import type { ListedRecorderConnection } from "@openbot/shared/recorder-api";
+import type { ListedRecorderConnection } from "@ccpbot/shared/recorder-api";
 import { IconBrowser } from "@tabler/icons-react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { Fragment, useState } from "react";
@@ -37,7 +37,7 @@ const connectedAt = new Intl.DateTimeFormat(undefined, {
   timeStyle: "short",
 });
 
-/** The browsers signed in to this OpenBot as you, each with a Disconnect that revokes its sign-in. The row of the copy
+/** The browsers signed in to this CCP-Bot as you, each with a Disconnect that revokes its sign-in. The row of the copy
  * in this browser (`thisInstallId`, from This browser) says so. */
 export function ConnectedBrowsers({
   thisInstallId,
@@ -97,8 +97,8 @@ function ConnectedBrowserRow({
   // is open in, which every row's dialog used to say.
   const which = here
     ? "this browser"
-    : connection.via === "openbot-browser"
-      ? "your OpenBot browser"
+    : connection.via === "ccpbot-browser"
+      ? "your CCP-Bot browser"
       : connection.label;
   return (
     <>
@@ -109,17 +109,17 @@ function ConnectedBrowserRow({
         <ItemContent>
           <ItemTitle>{name}</ItemTitle>
           <ItemDescription>
-            {connection.via === "openbot-browser"
-              ? t("Your OpenBot browser, connected ")
+            {connection.via === "ccpbot-browser"
+              ? t("Your CCP-Bot browser, connected ")
               : t("Connected ")}
             {connectedAt.format(new Date(connection.createdAt))}
             {connection.via === "desktop"
-              ? t(" from OpenBot Desktop")
+              ? t(" from CCP-Bot Desktop")
               : connection.via === "web"
-                ? " from OpenBot"
+                ? " from CCP-Bot"
                 : ""}
             ,{" "}
-            {/* A recording streams to the gateway, not to OpenBot, so its last use lags: it says so instead. */}
+            {/* A recording streams to the gateway, not to CCP-Bot, so its last use lags: it says so instead. */}
             {connection.recording
               ? t("recording now")
               : connection.lastUsedAt
@@ -145,11 +145,16 @@ function ConnectedBrowserRow({
       <Dialog onOpenChange={setAsking} open={asking}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>{t("Disconnect")} {connection.label}?</DialogTitle>
+            <DialogTitle>
+              {t("Disconnect")} {connection.label}?
+            </DialogTitle>
           </DialogHeader>
           <DialogBody className="mt-4 text-sm">
             <p>
-              {t("OpenBot signs the Recorder in")} {which} {t("out. It records nothing for you until you connect it again, and a recording running there stops.")}
+              {t("CCP-Bot signs the Recorder in")} {which}{" "}
+              {t(
+                "out. It records nothing for you until you connect it again, and a recording running there stops.",
+              )}
             </p>
             {revoke.error ? (
               <p className="mt-2 text-destructive" role="alert">

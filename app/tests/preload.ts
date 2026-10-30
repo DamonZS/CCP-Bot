@@ -74,3 +74,13 @@ function printNodesShortly(node: typeof Node): void {
  * drawn calls `mock.module` itself and wins, because a later registration replaces this one.
  */
 mock.module("../src/lib/marks", () => ({ markFor: () => null }));
+
+/**
+ * The suite reads the English source sentences.
+ *
+ * Every `t()` call returns the sentence it was given when the language is English, so the 268 test
+ * files that look for `role="button"` named "Browser" keep asserting what they already assert. The
+ * product's own default is Chinese (`DEFAULT_LOCALE`), and a person switching language stores the
+ * choice; neither is what a test wants to read through, so the suite pins the source language here.
+ */
+(globalThis as { __ccpbotLocale?: string }).__ccpbotLocale = "en";

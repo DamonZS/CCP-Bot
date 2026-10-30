@@ -20,8 +20,8 @@
  */
 import { createHash } from "node:crypto";
 import type { Message } from "@ag-ui/client";
-import { HeadlessToolSuspension } from "@openbot/toolkit/headless-tools";
-import type { TurnRunner } from "@openbot/toolkit/run-turn";
+import { HeadlessToolSuspension } from "@ccpbot/toolkit/headless-tools";
+import type { TurnRunner } from "@ccpbot/toolkit/run-turn";
 import { and, asc, desc, eq, isNull, min, sql } from "drizzle-orm";
 import { Hono, type MiddlewareHandler } from "hono";
 import { z } from "zod";
@@ -222,7 +222,7 @@ export function createGroupStore(
           .values({ kind: GROUP_TURN_KIND, key: turn.messageId, payload: turn })
           .onConflictDoNothing();
         await tx.execute(
-          sql`select pg_notify('openbot_work_offered', ${GROUP_TURN_KIND})`,
+          sql`select pg_notify('ccpbot_work_offered', ${GROUP_TURN_KIND})`,
         );
       });
     },

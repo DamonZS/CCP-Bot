@@ -31,7 +31,7 @@ function signedIn(
   role: "user" | "admin" = "user",
 ): MiddlewareHandler<{ Variables: AppVariables }> {
   return async (context, next) => {
-    context.set("actor", { id, email: `${id}@openbot.test`, role });
+    context.set("actor", { id, email: `${id}@ccpbot.test`, role });
     await next();
   };
 }

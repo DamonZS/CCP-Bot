@@ -69,8 +69,12 @@ export function AccessRequestsSection({ app }: { app?: string }) {
     <PageSection
       description={
         app
-          ? t("People asking for this app. Approve does what they asked, right away.")
-          : t("People asking for an app to be turned on, given to a Bot, or connected. Approve does what they asked, right away.")
+          ? t(
+              "People asking for this app. Approve does what they asked, right away.",
+            )
+          : t(
+              "People asking for an app to be turned on, given to a Bot, or connected. Approve does what they asked, right away.",
+            )
       }
       title={t("Requests")}
     >
@@ -181,7 +185,8 @@ function GrantNote({ request }: { request: AppAccessRequest }) {
     );
   return (
     <>
-      {t("Approving gives")} {bot} {t("only")} {request.appTitle}{t("'s read-only actions. Choose any others on")} {page}.
+      {t("Approving gives")} {bot} {t("only")} {request.appTitle}
+      {t("'s read-only actions. Choose any others on")} {page}.
     </>
   );
 }

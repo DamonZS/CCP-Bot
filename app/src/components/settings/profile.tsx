@@ -84,7 +84,7 @@ export function ProfileSettings() {
   return (
     <PageSection
       title={t("Profile")}
-      description={t("Choose the name OpenBot displays for you.")}
+      description={t("Choose the name CCP-Bot displays for you.")}
     >
       {user && (
         <ProfileNameForm
@@ -109,7 +109,9 @@ export function OnboardingNameStep({
         {t("Let's get to it.")}
       </h1>
       <p className="text-center text-muted-foreground">
-        {t("What should we call you? You can change your name later in Settings.")}
+        {t(
+          "What should we call you? You can change your name later in Settings.",
+        )}
       </p>
       <ProfileNameForm
         initialName={user?.needsName ? "" : (user?.name ?? "")}

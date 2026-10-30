@@ -6,8 +6,8 @@ import {
   HttpAgent,
   type RunAgentInput,
 } from "@ag-ui/client";
-import { HeadlessToolSuspension } from "@openbot/toolkit/headless-tools";
-import { createTurnRunner, type RunnerLike } from "@openbot/toolkit/run-turn";
+import { HeadlessToolSuspension } from "@ccpbot/toolkit/headless-tools";
+import { createTurnRunner, type RunnerLike } from "@ccpbot/toolkit/run-turn";
 import { Hono } from "hono";
 import { Observable } from "rxjs";
 import { serverTurnAdmission } from "../src/agents/turn-admission";

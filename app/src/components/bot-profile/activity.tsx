@@ -130,7 +130,8 @@ function ActivityRow({
       <ItemContent>
         <ItemTitle>{item.title}</ItemTitle>
         <ItemDescription>
-          {KIND_LABEL[item.kind]} · {item.needsYou ? t("needs you") : item.status}
+          {KIND_LABEL[item.kind]} ·{" "}
+          {item.needsYou ? t("needs you") : item.status}
           {when ? ` · ${when}` : ""}
           {item.detail ? ` · ${item.detail}` : ""}
         </ItemDescription>

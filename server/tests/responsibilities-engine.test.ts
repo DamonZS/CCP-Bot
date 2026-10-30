@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { HeadlessToolSuspension } from "@openbot/toolkit/headless-tools";
+import { HeadlessToolSuspension } from "@ccpbot/toolkit/headless-tools";
 import { createResponsibilityEngine } from "../src/responsibilities/engine";
 import {
   parseResponsibilityEvent,

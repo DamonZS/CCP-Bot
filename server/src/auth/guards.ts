@@ -2,14 +2,14 @@ import { eq } from "drizzle-orm";
 import type { Context, MiddlewareHandler } from "hono";
 import type { Database } from "../db/client";
 import { userRoles } from "../db/schema";
-import type { OpenBotRole } from "./roles";
+import type { CcpBotRole } from "./roles";
 
 export type AuthenticatedActor = {
   id: string;
   email: string;
   name?: string | null;
   image?: string | null;
-  role: OpenBotRole;
+  role: CcpBotRole;
 };
 
 export type AuthService = {
@@ -25,14 +25,14 @@ export type AuthService = {
         name?: string | null;
         image?: string | null;
         /** Set only by a server-verified organization authority. */
-        role?: OpenBotRole;
+        role?: CcpBotRole;
       };
     } | null>;
   };
 };
 
 export type RoleRepository = {
-  rolesForUser: (userId: string) => Promise<OpenBotRole[]>;
+  rolesForUser: (userId: string) => Promise<CcpBotRole[]>;
 };
 
 export type AppVariables = {

@@ -72,8 +72,9 @@ export function SkillTools() {
 
   useFrontendTool({
     name: "list_skills",
-    description:
-      t("The skills that already exist in this deployment, one line each, with whose each one is. Read this before writing a skill: a slug is an identity, so reusing one replaces that skill, and a slug that is not the person's own cannot be replaced at all."),
+    description: t(
+      "The skills that already exist in this deployment, one line each, with whose each one is. Read this before writing a skill: a slug is an identity, so reusing one replaces that skill, and a slug that is not the person's own cannot be replaced at all.",
+    ),
     parameters: z.object({}),
     available: authoring,
     handler: async () => {
@@ -87,8 +88,9 @@ export function SkillTools() {
 
   useFrontendTool({
     name: "read_skill",
-    description:
-      t("One existing skill in full, including its instructions. Use this when improving a skill rather than writing a new one — never rewrite an instruction you have not read."),
+    description: t(
+      "One existing skill in full, including its instructions. Use this when improving a skill rather than writing a new one — never rewrite an instruction you have not read.",
+    ),
     parameters: z.object({
       slug: z
         .string()
@@ -110,8 +112,9 @@ export function SkillTools() {
 
   useFrontendTool({
     name: "list_skill_tools",
-    description:
-      t("The `serverId/toolName` refs a skill here can declare, grouped by connector. Declaring a tool grants nothing — the offer a run gets is always the intersection of what the skill names with what the Bot was granted — so a skill may name tools for a connector this Bot does not hold yet."),
+    description: t(
+      "The `serverId/toolName` refs a skill here can declare, grouped by connector. Declaring a tool grants nothing — the offer a run gets is always the intersection of what the skill names with what the Bot was granted — so a skill may name tools for a connector this Bot does not hold yet.",
+    ),
     parameters: z.object({}),
     available: authoring,
     handler: async () => describeToolRefs((await page()).servers),
@@ -119,8 +122,9 @@ export function SkillTools() {
 
   useHumanInTheLoop({
     name: "save_skill",
-    description:
-      t("Put a finished skill in front of the person to save. They see the command, the title and the whole instruction, and nothing is written unless they press the button. Call this once, at the end, after they have agreed to what the skill says — not to check your draft."),
+    description: t(
+      "Put a finished skill in front of the person to save. They see the command, the title and the whole instruction, and nothing is written unless they press the button. Call this once, at the end, after they have agreed to what the skill says — not to check your draft.",
+    ),
     parameters: proposedSkillSchema,
     available: authoring,
     render: ProposedSkillRender,

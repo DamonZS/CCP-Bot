@@ -12,7 +12,9 @@ function SetupPage() {
   return (
     <BotSubpage
       agentId={agentId}
-      description={t("Edit this Bot’s profile, visibility, and runtime settings.")}
+      description={t(
+        "Edit this Bot’s profile, visibility, and runtime settings.",
+      )}
       title={t("Setup")}
     >
       {(agent) => <SetupSections agent={agent} />}

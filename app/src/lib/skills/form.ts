@@ -1,4 +1,4 @@
-import { RESEARCH_ROLES } from "@openbot/shared/research";
+import { RESEARCH_ROLES } from "@ccpbot/shared/research";
 import { z } from "zod";
 
 /**

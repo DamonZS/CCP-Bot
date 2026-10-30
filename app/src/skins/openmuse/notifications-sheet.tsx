@@ -8,8 +8,8 @@ import { LinkRow, MuseEmpty, MuseSheet } from "./ui";
 import { t } from "@/lib/i18n";
 
 /**
- * The bell: what every Bot is waiting on the person for. The list is OpenBot's own `WaitingForYou`,
- * so every question, approval, choice and detail is exactly the one OpenBot's Bot pages show.
+ * The bell: what every Bot is waiting on the person for. The list is CCP-Bot's own `WaitingForYou`,
+ * so every question, approval, choice and detail is exactly the one CCP-Bot's Bot pages show.
  */
 export function NotificationsSheet({ onClose }: { onClose: () => void }) {
   const inbox = useQuery(approvalInboxOptions());

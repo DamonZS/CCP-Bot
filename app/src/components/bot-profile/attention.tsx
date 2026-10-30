@@ -54,7 +54,7 @@ function useAttentionNotifications(bots: BotAttention[] | undefined) {
       try {
         new Notification(`${bot.name} needs you`, {
           body: attentionSummary(bot),
-          tag: `openbot-attention-${bot.agentId}`,
+          tag: `ccpbot-attention-${bot.agentId}`,
         });
       } catch {
         // A browser that refuses the constructor still has the badge.

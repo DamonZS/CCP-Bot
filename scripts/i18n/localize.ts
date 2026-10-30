@@ -104,7 +104,10 @@ function walk(root: string): string[] {
       out.push(...walk(path));
       continue;
     }
-    if (entry.endsWith(".tsx") || (entry.endsWith(".ts") && !entry.endsWith(".test.ts"))) {
+    if (
+      entry.endsWith(".tsx") ||
+      (entry.endsWith(".ts") && !entry.endsWith(".test.ts"))
+    ) {
       out.push(path);
     }
   }
@@ -126,7 +129,11 @@ function isTranslatable(text: string): boolean {
   if (/^(?:[a-z]+-)+[a-z0-9]+$/.test(core) && !/\s/.test(core)) {
     return false;
   }
-  if (/^[#.]?[a-z0-9:._%/()-]+\.(?:png|jpe?g|svg|webp|css|js|ts|tsx|json)$/i.test(core)) {
+  if (
+    /^[#.]?[a-z0-9:._%/()-]+\.(?:png|jpe?g|svg|webp|css|js|ts|tsx|json)$/i.test(
+      core,
+    )
+  ) {
     return false;
   }
   // Single words in lowerCamelCase or snake_case are identifiers someone forgot to pass through a
@@ -285,9 +292,18 @@ function collect(file: string, text: string, hits: Hit[], skipped: Skipped[]) {
       const expression = node.expression;
       if (ts.isStringLiteral(expression)) {
         const owner = enclosingName(expression);
-        if (owner && /(label|title|text|description|caption|hint|summary|status|message|note|narration|placeholder|explain|copy)/i.test(owner)) {
+        if (
+          owner &&
+          /(label|title|text|description|caption|hint|summary|status|message|note|narration|placeholder|explain|copy)/i.test(
+            owner,
+          )
+        ) {
           const value = expression.text;
-          if (/^[A-Z]/.test(value) && !PROTOCOL_TOKENS.has(value) && isTranslatable(value)) {
+          if (
+            /^[A-Z]/.test(value) &&
+            !PROTOCOL_TOKENS.has(value) &&
+            isTranslatable(value)
+          ) {
             const edit = literalEdit(expression);
             if (edit) {
               hits.push({ file, kind: "return-literal", ...edit });

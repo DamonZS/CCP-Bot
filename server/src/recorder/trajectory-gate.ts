@@ -7,7 +7,7 @@ import {
   type LearningSpaceState,
   RECORDER_SIGNED_OUT,
   TRAJECTORY_GATE_REFUSALS,
-} from "@openbot/shared/recorder-api";
+} from "@ccpbot/shared/recorder-api";
 import {
   type AuditStore,
   DEPLOYMENT_INITIATOR,
@@ -38,11 +38,11 @@ const SIGNED_OUT_MESSAGES: Record<
   string
 > = {
   malformed:
-    "This browser is no longer connected to OpenBot. Connect it again.",
-  unknown: "This browser is no longer connected to OpenBot. Connect it again.",
-  removed: "This browser is no longer connected to OpenBot. Connect it again.",
+    "This browser is no longer connected to CCP-Bot. Connect it again.",
+  unknown: "This browser is no longer connected to CCP-Bot. Connect it again.",
+  removed: "This browser is no longer connected to CCP-Bot. Connect it again.",
   organization:
-    "Your organization sign-in ended. Connect this browser to OpenBot again.",
+    "Your organization sign-in ended. Connect this browser to CCP-Bot again.",
 };
 
 /** The pass's refusal about the trajectory's binding; the code is the one the Recorder already reads. */
@@ -110,7 +110,7 @@ export function createTrajectoryConnectHook(deps: {
         null,
         refuse(401, {
           code: "IDENTITY_REQUIRED",
-          message: "Connect this browser to OpenBot to record.",
+          message: "Connect this browser to CCP-Bot to record.",
         }),
       );
     }

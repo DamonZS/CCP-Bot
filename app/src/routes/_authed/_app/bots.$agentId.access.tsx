@@ -12,7 +12,9 @@ function AccessPage() {
   return (
     <BotSubpage
       agentId={agentId}
-      description={t("Manage the skills, apps, and other Bots this Bot can use.")}
+      description={t(
+        "Manage the skills, apps, and other Bots this Bot can use.",
+      )}
       title={t("Skills and access")}
     >
       {(agent) => <AccessSections agent={agent} />}

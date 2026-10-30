@@ -24,7 +24,7 @@ import { join } from "node:path";
  * the lane that has the dependency.
  */
 
-const asked = process.env.OPENBOT_LIVE_SCREEN === "1";
+const asked = process.env.CCPBOT_LIVE_SCREEN === "1";
 
 const TOKEN = "test-computer-token";
 
@@ -59,8 +59,8 @@ const before: Partial<Record<(typeof SET)[number], string | undefined>> = {};
 async function run(botId: string): Promise<string | undefined> {
   const response = await fetch(`${BASE}/run`, {
     headers: {
-      "x-openbot-bot-id": botId,
-      "x-openbot-computer-token": TOKEN,
+      "x-ccpbot-bot-id": botId,
+      "x-ccpbot-computer-token": TOKEN,
     },
   });
   expect(response.status).toBe(200);
@@ -120,8 +120,8 @@ describe.skipIf(!asked)("the run this computer reports", () => {
     const reset = await fetch(`${BASE}/computers/reset`, {
       method: "POST",
       headers: {
-        "x-openbot-bot-id": "bot-5",
-        "x-openbot-computer-token": TOKEN,
+        "x-ccpbot-bot-id": "bot-5",
+        "x-ccpbot-computer-token": TOKEN,
       },
     });
     expect(reset.status).toBe(200);
@@ -138,8 +138,8 @@ describe.skipIf(!asked)("the run this computer reports", () => {
     await fetch(`${BASE}/computers/reset`, {
       method: "POST",
       headers: {
-        "x-openbot-bot-id": "bot-7",
-        "x-openbot-computer-token": TOKEN,
+        "x-ccpbot-bot-id": "bot-7",
+        "x-ccpbot-computer-token": TOKEN,
       },
     });
     expect(await run("bot-6")).toBe(other as string);
@@ -149,7 +149,7 @@ describe.skipIf(!asked)("the run this computer reports", () => {
     // It names a Bot and describes this process's state, so it belongs behind the same secret as
     // everything else here. Only `/health` is open.
     const response = await fetch(`${BASE}/run`, {
-      headers: { "x-openbot-bot-id": "bot-1" },
+      headers: { "x-ccpbot-bot-id": "bot-1" },
     });
     expect(response.status).toBe(401);
   });
@@ -157,8 +157,8 @@ describe.skipIf(!asked)("the run this computer reports", () => {
   test("is not told to a caller with the wrong token", async () => {
     const response = await fetch(`${BASE}/run`, {
       headers: {
-        "x-openbot-bot-id": "bot-1",
-        "x-openbot-computer-token": "not-the-token",
+        "x-ccpbot-bot-id": "bot-1",
+        "x-ccpbot-computer-token": "not-the-token",
       },
     });
     expect(response.status).toBe(401);
@@ -173,8 +173,8 @@ describe.skipIf(!asked)("the run this computer reports", () => {
     const requested = await fetch(`${BASE}/control/request`, {
       method: "POST",
       headers: {
-        "x-openbot-bot-id": "bot-8",
-        "x-openbot-computer-token": TOKEN,
+        "x-ccpbot-bot-id": "bot-8",
+        "x-ccpbot-computer-token": TOKEN,
         "content-type": "application/json",
       },
       body: JSON.stringify({ reason: "Read the run while a human drives" }),
@@ -183,8 +183,8 @@ describe.skipIf(!asked)("the run this computer reports", () => {
     const taken = await fetch(`${BASE}/control/take`, {
       method: "POST",
       headers: {
-        "x-openbot-bot-id": "bot-8",
-        "x-openbot-computer-token": TOKEN,
+        "x-ccpbot-bot-id": "bot-8",
+        "x-ccpbot-computer-token": TOKEN,
         "content-type": "application/json",
       },
       body: JSON.stringify({ requestId: state.request.id }),
@@ -203,9 +203,9 @@ describe.skipIf(!asked)("the run this computer reports", () => {
  */
 describe.skipIf(!asked)("seats on a shared computer", () => {
   const as = (bot: string, person?: string) => ({
-    "x-openbot-bot-id": bot,
-    ...(person ? { "x-openbot-person-id": person } : {}),
-    "x-openbot-computer-token": TOKEN,
+    "x-ccpbot-bot-id": bot,
+    ...(person ? { "x-ccpbot-person-id": person } : {}),
+    "x-ccpbot-computer-token": TOKEN,
   });
 
   test("two people on one Bot have two runs, and neither is the Bot's own", async () => {

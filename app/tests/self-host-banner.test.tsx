@@ -7,7 +7,7 @@ import {
   test,
 } from "bun:test";
 import { GlobalRegistrator } from "@happy-dom/global-registrator";
-import type { UserPreferences } from "@openbot/shared/user-preferences";
+import type { UserPreferences } from "@ccpbot/shared/user-preferences";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { cleanup, fireEvent, render, waitFor } from "@testing-library/react";
 import {
@@ -58,7 +58,7 @@ afterAll(async () => {
   await GlobalRegistrator.unregister();
 });
 
-const banner = { name: "Self-host OpenBot" } as const;
+const banner = { name: "Self-host CCP-Bot" } as const;
 
 function setup({
   enabled = true,
@@ -87,7 +87,7 @@ function setup({
     messageListEmphasis: "thread",
     selfHostBannerDismissed: dismissed,
     narration: null,
-    skin: "openbot",
+    skin: "ccpbot",
   };
   client.setQueryData(
     userPreferencesQueryOptions("alice").queryKey,
@@ -104,11 +104,11 @@ function setup({
 test("offers self-hosting with a link CopilotKit can tell came from the app", () => {
   const { view } = setup();
   expect(
-    view.getByText("Self-host OpenBot for your organization."),
+    view.getByText("Self-host CCP-Bot for your organization."),
   ).toBeTruthy();
   const link = view.getByRole("link", { name: "Talk to an engineer" });
   expect(link.getAttribute("href")).toBe(SELF_HOST_URL);
-  expect(SELF_HOST_URL).toContain("ref=openbot_app");
+  expect(SELF_HOST_URL).toContain("ref=ccpbot_app");
   expect(link.getAttribute("target")).toBe("_blank");
   expect(link.getAttribute("rel")).toBe("noopener noreferrer");
 });

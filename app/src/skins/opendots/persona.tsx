@@ -8,8 +8,8 @@ import { t } from "@/lib/i18n";
 /**
  * OpenDots' coworker home: the Bot you are about to talk to, centred above an empty conversation.
  *
- * Drawn by the frame over OpenBot's own new-conversation page, which leaves that space empty. It
- * holds no state and sends nothing: the To: field and composer beneath are OpenBot's. The stylesheet
+ * Drawn by the frame over CCP-Bot's own new-conversation page, which leaves that space empty. It
+ * holds no state and sends nothing: the To: field and composer beneath are CCP-Bot's. The stylesheet
  * hides it the moment the page shows a message, so it never sits over a conversation.
  */
 export function CoworkerPersona({ botId }: { botId: string }) {
@@ -22,7 +22,7 @@ export function CoworkerPersona({ botId }: { botId: string }) {
       data-opendots-persona
     >
       <div className="flex max-w-[420px] flex-col items-center text-center">
-        {/* OpenBot's own avatar for the Bot; the name below is its label. */}
+        {/* CCP-Bot's own avatar for the Bot; the name below is its label. */}
         <span aria-hidden className="mb-2">
           <AbstractAvatar name={bot.name} seed={bot.avatarSeed} size={64} />
         </span>

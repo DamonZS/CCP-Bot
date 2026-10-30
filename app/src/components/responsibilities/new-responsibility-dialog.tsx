@@ -88,7 +88,9 @@ export function NewResponsibilityDialog({
         <DialogHeader>
           <DialogTitle>{t("New responsibility")}</DialogTitle>
           <DialogDescription>
-            {t("An ongoing goal. The Bot works on it in the conversation you pick.")}
+            {t(
+              "An ongoing goal. The Bot works on it in the conversation you pick.",
+            )}
           </DialogDescription>
         </DialogHeader>
         <DialogBody className="mt-4 overflow-y-auto">
@@ -149,7 +151,9 @@ export function NewResponsibilityDialog({
                 </Field>
                 {fixedBot === undefined ? (
                   <Field>
-                    <FieldLabel htmlFor={`${formId}-bot`}>{t("Bot")}</FieldLabel>
+                    <FieldLabel htmlFor={`${formId}-bot`}>
+                      {t("Bot")}
+                    </FieldLabel>
                     <Select
                       items={Object.fromEntries(
                         availableBots.map((bot) => [bot.id, bot.name]),
@@ -189,7 +193,9 @@ export function NewResponsibilityDialog({
                 </p>
               )}
               <Field>
-                <FieldLabel htmlFor={`${formId}-title`}>{t("Title")}</FieldLabel>
+                <FieldLabel htmlFor={`${formId}-title`}>
+                  {t("Title")}
+                </FieldLabel>
                 <Input
                   id={`${formId}-title`}
                   required
@@ -221,7 +227,9 @@ export function NewResponsibilityDialog({
                   maxLength={3000}
                   value={successCriteria}
                   onChange={(event) => setSuccessCriteria(event.target.value)}
-                  placeholder={t("The report contains the current quarter's graph and a source link.")}
+                  placeholder={t(
+                    "The report contains the current quarter's graph and a source link.",
+                  )}
                 />
               </Field>
               <FieldGroup className="sm:grid sm:grid-cols-2">
@@ -268,7 +276,9 @@ export function NewResponsibilityDialog({
                       value={eventType}
                       onChange={(event) => setEventType(event.target.value)}
                       placeholder={
-                        source === "github" ? t("issues.opened") : t("Event type")
+                        source === "github"
+                          ? t("issues.opened")
+                          : t("Event type")
                       }
                     />
                   </Field>

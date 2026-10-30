@@ -1,4 +1,4 @@
-import { type CapturedEvent, scrubUrl } from "@openbot/shared/recorder-masking";
+import { type CapturedEvent, scrubUrl } from "@ccpbot/shared/recorder-masking";
 
 export type NavigationDetails = {
   tabId: number;

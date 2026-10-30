@@ -138,7 +138,9 @@ function InvalidForm({
     <GalleryFrame title={t("Form unavailable")}>
       <p role="alert" className="text-sm text-muted-foreground">
         {returned
-          ? t("The form had invalid questions. The Bot can send a corrected form.")
+          ? t(
+              "The form had invalid questions. The Bot can send a corrected form.",
+            )
           : t("The form has invalid questions, so it can't be shown.")}
       </p>
       {failed && (
@@ -259,7 +261,9 @@ function FormEntry({
             </dl>
           ) : (
             <p className="text-sm text-muted-foreground">
-              {t("This form has been completed. Its saved answers are unavailable.")}
+              {t(
+                "This form has been completed. Its saved answers are unavailable.",
+              )}
             </p>
           )}
         </div>
@@ -274,7 +278,9 @@ function FormEntry({
           className="space-y-4"
         >
           <p className="text-xs text-muted-foreground">
-            {t("Fields marked * are required. Your answers will be shared with the Bot.")}
+            {t(
+              "Fields marked * are required. Your answers will be shared with the Bot.",
+            )}
           </p>
           {args.fields.map((field) => {
             const id = `${prefix}-${field.id}`;
@@ -384,18 +390,26 @@ export const GALLERY: GalleryComponent[] = [
     name: "askForm",
     title: t("Form"),
     kind: "decision",
-    description:
-      t("Ask the person to fill in a short form and WAIT for their answers. Use when several related details are needed together. Provide up to eight labeled text, email, number, select, or textarea fields with unique IDs. Mark required fields and give options for selects. Never request passwords or secrets. The result has status submitted and values keyed by field ID; numbers are returned as numbers and blank optional fields are omitted."),
+    description: t(
+      "Ask the person to fill in a short form and WAIT for their answers. Use when several related details are needed together. Provide up to eight labeled text, email, number, select, or textarea fields with unique IDs. Mark required fields and give options for selects. Never request passwords or secrets. The result has status submitted and values keyed by field ID; numbers are returned as numbers and blank optional fields are omitted.",
+    ),
     parameters: FormCardArgs,
     Component: FormCard,
     preview: {
       status: "executing",
       args: {
         title: t("Plan your next project"),
-        description: t("Provide a few details to help prepare your first draft."),
+        description: t(
+          "Provide a few details to help prepare your first draft.",
+        ),
         fields: [
           { id: "team", label: t("Team name"), type: "text", required: true },
-          { id: "email", label: t("Work email"), type: "email", required: true },
+          {
+            id: "email",
+            label: t("Work email"),
+            type: "email",
+            required: true,
+          },
           {
             id: "priority",
             label: t("Priority"),

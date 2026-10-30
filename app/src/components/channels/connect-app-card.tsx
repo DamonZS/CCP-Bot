@@ -94,7 +94,9 @@ export function ConnectAppCard({
       data-connect-app={serverId}
     >
       <div className="flex flex-col gap-1">
-        <p className="font-medium text-sm">{t("Connect")} {title}</p>
+        <p className="font-medium text-sm">
+          {t("Connect")} {title}
+        </p>
         <p className="text-muted-foreground text-sm">{message}</p>
       </div>
       {connected ? (
@@ -118,7 +120,8 @@ export function ConnectAppCard({
             params={{ key: serverId }}
             to="/connections/$key"
           >
-            {t("Enter it on")} {title}{t("'s page")}
+            {t("Enter it on")} {title}
+            {t("'s page")}
           </Link>
           {t(", then ask again.")}
         </p>
@@ -142,7 +145,8 @@ export function ConnectAppCard({
                 rel="noreferrer"
                 target="_blank"
               >
-                {t("Open")} {title}{t("'s sign-in")}
+                {t("Open")} {title}
+                {t("'s sign-in")}
               </a>
               .
             </p>

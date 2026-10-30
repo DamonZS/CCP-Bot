@@ -5,8 +5,8 @@ import {
   researchRoleOf,
   researchRoleOfToolName,
   RESEARCH_TOOLS as SHARED_RESEARCH_TOOLS,
-} from "@openbot/shared/research";
-import type { GrantedTool } from "@openbot/toolkit/granted-tool";
+} from "@ccpbot/shared/research";
+import type { GrantedTool } from "@ccpbot/toolkit/granted-tool";
 import { parse } from "yaml";
 import { z } from "zod";
 import {

@@ -4,7 +4,7 @@ import {
   Middleware,
   type RunAgentInput,
 } from "@ag-ui/client";
-import type { GrantedTool } from "@openbot/toolkit/granted-tool";
+import type { GrantedTool } from "@ccpbot/toolkit/granted-tool";
 import { defer, from, type Observable, switchMap } from "rxjs";
 import { z } from "zod";
 import type { MemoryIngestion } from "./ingestion";
@@ -43,22 +43,22 @@ export class PersonalMemoryMiddleware extends Middleware {
               ...(content
                 ? [
                     {
-                      id: "openbot:personal-memory",
+                      id: "ccpbot:personal-memory",
                       role: "system" as const,
                       content,
                     },
                   ]
                 : []),
               ...input.messages.filter(
-                (message) => message.id !== "openbot:personal-memory",
+                (message) => message.id !== "ccpbot:personal-memory",
               ),
             ],
             context: [
               ...input.context.filter(
-                (entry) => entry.description !== "OpenBot personal memory",
+                (entry) => entry.description !== "CCP-Bot personal memory",
               ),
               ...(content
-                ? [{ description: "OpenBot personal memory", value: content }]
+                ? [{ description: "CCP-Bot personal memory", value: content }]
                 : []),
             ],
           },

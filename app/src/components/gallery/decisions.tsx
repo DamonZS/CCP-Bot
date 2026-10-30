@@ -59,7 +59,9 @@ export function ApprovalCard(props: Waiting<ApprovalArgs> & { name?: string }) {
   if (status === "inProgress") {
     return (
       <GalleryFrame title={args.title ?? "Waiting for the Bot…"}>
-        <p className="text-sm text-muted-foreground">{t("Preparing the request…")}</p>
+        <p className="text-sm text-muted-foreground">
+          {t("Preparing the request…")}
+        </p>
       </GalleryFrame>
     );
   }
@@ -158,7 +160,9 @@ export function ChoiceCard(props: Waiting<ChoiceArgs>) {
   if (status === "inProgress") {
     return (
       <GalleryFrame title={args.title ?? "Waiting for the Bot…"}>
-        <p className="text-sm text-muted-foreground">{t("Preparing the question…")}</p>
+        <p className="text-sm text-muted-foreground">
+          {t("Preparing the question…")}
+        </p>
       </GalleryFrame>
     );
   }
@@ -252,8 +256,9 @@ export const GALLERY: GalleryComponent[] = [
     name: "askApproval",
     title: t("Approval"),
     kind: "decision",
-    description:
-      t("Ask the person to approve or decline something, and WAIT for their answer. Use before doing anything you cannot undo, spending money, sending a message, changing a record. You are given their decision and any reason they typed."),
+    description: t(
+      "Ask the person to approve or decline something, and WAIT for their answer. Use before doing anything you cannot undo, spending money, sending a message, changing a record. You are given their decision and any reason they typed.",
+    ),
     parameters: ApprovalCardProps,
     Component: ApprovalCard as GalleryComponent["Component"],
     preview: {
@@ -278,8 +283,9 @@ export const GALLERY: GalleryComponent[] = [
     name: "askChoice",
     title: t("Choice"),
     kind: "decision",
-    description:
-      t("Ask the person to pick one of several options, and WAIT for their answer. Use when you cannot sensibly guess which one they meant. You are given the id of the option they chose."),
+    description: t(
+      "Ask the person to pick one of several options, and WAIT for their answer. Use when you cannot sensibly guess which one they meant. You are given the id of the option they chose.",
+    ),
     parameters: ChoiceCardProps,
     Component: ChoiceCard as GalleryComponent["Component"],
     preview: {

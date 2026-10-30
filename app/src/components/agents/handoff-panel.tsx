@@ -78,19 +78,25 @@ export function HandoffPanel({ agentId }: { agentId: string }) {
           </span>
         ) : null
       }
-      description={t("Choose which Bots this Bot can ask for help. Their answers appear in the same conversation under their own names. This does not change who can ask this Bot for help.")}
+      description={t(
+        "Choose which Bots this Bot can ask for help. Their answers appear in the same conversation under their own names. This does not change who can ask this Bot for help.",
+      )}
       title={t("Bots it can ask")}
     >
       {/* Facts about the deployment rather than rows to act on, so said as sentences. */}
       {enabled ? null : (
         <PageEmpty icon={IconArrowsExchange} title={t("Handoffs are off")}>
-          {t("An admin turned off handing work between Bots. These settings are kept, and they apply again once it's back on.")}
+          {t(
+            "An admin turned off handing work between Bots. These settings are kept, and they apply again once it's back on.",
+          )}
         </PageEmpty>
       )}
 
       {grantable ? null : (
         <PageEmpty icon={IconLock} title={t("Can't hand off work")}>
-          {t("This Bot can't hand work to other Bots. Other Bots can still hand work to it.")}
+          {t(
+            "This Bot can't hand work to other Bots. Other Bots can still hand work to it.",
+          )}
         </PageEmpty>
       )}
 

@@ -295,7 +295,7 @@ describe("two people on one public Bot, on the shared computer", () => {
       port: 0,
       fetch: async (request) => {
         const path = new URL(request.url).pathname;
-        const person = request.headers.get("x-openbot-person-id");
+        const person = request.headers.get("x-ccpbot-person-id");
         asked.push(person);
         if (path === "/run") return Response.json({ run: `run-${person}` });
         // Ada's seat is on her bank; Bo's is on a sign-in page.

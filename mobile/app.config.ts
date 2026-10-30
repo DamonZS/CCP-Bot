@@ -2,16 +2,16 @@ import type { ExpoConfig } from "expo/config";
 
 const projectId = process.env.EXPO_PUBLIC_EAS_PROJECT_ID;
 const config: ExpoConfig = {
-  name: "OpenBot",
-  slug: "openbot",
+  name: "CCP-Bot",
+  slug: "ccpbot",
   version: "0.0.1",
-  scheme: "openbotmobile",
-  ios: { bundleIdentifier: "ai.openbot.mobile", supportsTablet: true },
-  android: { package: "ai.openbot.mobile" },
+  scheme: "ccpbotmobile",
+  ios: { bundleIdentifier: "ai.ccpbot.mobile", supportsTablet: true },
+  android: { package: "ai.ccpbot.mobile" },
   plugins: [
     "expo-router",
     "expo-secure-store",
-    ["expo-notifications", { defaultChannel: "openbot" }],
+    ["expo-notifications", { defaultChannel: "ccpbot" }],
   ],
   extra: { ...(projectId ? { eas: { projectId } } : {}) },
 };

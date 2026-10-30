@@ -4,7 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type { BotBrowserState } from "../../shared/bot-browser";
 import type { ComputerControlState } from "../../shared/computer-control";
-import type { LauncherConnection } from "../../shared/openbot-browser";
+import type { LauncherConnection } from "../../shared/ccpbot-browser";
 import type { MiddlewareHandler } from "hono";
 import type { AuditEventInput, AuditStore } from "../../server/src/audit";
 import type {
@@ -23,16 +23,16 @@ import {
 /**
  * A Bot's browser worked by a person, through the computer itself: the real process, its token, its dispatcher, its
  * control and the Bot's own routes, with bundled Chromium headless and the fixture Recorder (`fixtures/recorder`),
- * which reports every call it receives to the OpenBot it was connected to, so what these tests read about the
+ * which reports every call it receives to the CCP-Bot it was connected to, so what these tests read about the
  * Recorder is the Recorder's side of each call.
  *
  * What it pins: the Bot works as it did with the Recorder in its browser; the bar and Record refuse anyone without the
  * wheel; a recording starts only for the person holding it; and the computer ends the recording, then disconnects the
  * Recorder, whenever the wheel leaves them.
  *
- *   OPENBOT_COMPUTER_BROWSER=1 bun test tests/bot-browser-computer.test.ts
+ *   CCPBOT_COMPUTER_BROWSER=1 bun test tests/bot-browser-computer.test.ts
  */
-const asked = process.env.OPENBOT_COMPUTER_BROWSER === "1";
+const asked = process.env.CCPBOT_COMPUTER_BROWSER === "1";
 const TOKEN = "bot-browser-computer-token";
 const BOT = "sales-bot";
 const PERSON = "person-fedcba9876543210fedcba9876543210";
@@ -46,7 +46,7 @@ type FixtureCall = {
   sending?: boolean;
 };
 const calls: FixtureCall[] = [];
-/** How long the last of a stopped recording takes to reach Intelligence, as this OpenBot tells the fixture Recorder. */
+/** How long the last of a stopped recording takes to reach Intelligence, as this CCP-Bot tells the fixture Recorder. */
 let tailMs = 0;
 
 type Computer = { base: string; child: ReturnType<typeof Bun.spawn> };
@@ -115,8 +115,8 @@ async function call<T = Record<string, unknown>>(
     method: options.body === undefined ? "GET" : "POST",
     headers: {
       "content-type": "application/json",
-      "x-openbot-computer-token": TOKEN,
-      "x-openbot-bot-id": options.botId ?? BOT,
+      "x-ccpbot-computer-token": TOKEN,
+      "x-ccpbot-bot-id": options.botId ?? BOT,
     },
     ...(options.body === undefined
       ? {}
@@ -134,7 +134,7 @@ const callsFor = (method: string) =>
   calls.filter((each) => each.method === method);
 
 const connection = (): LauncherConnection => ({
-  openbotUrl: origin,
+  ccpbotUrl: origin,
   token: "obr_bot-browser-fixture",
   connectionId: "connection-bot-1",
   user: { id: "user-1", name: "Pat Example", email: "pat@example.com" },
@@ -164,8 +164,8 @@ const start = (by: string, title = "File an expense report", on?: Computer) =>
 
 beforeAll(async () => {
   if (!asked) return;
-  root = await mkdtemp(join(tmpdir(), "openbot-bot-browser-computer-"));
-  // The OpenBot the fixture Recorder reports to, and the pages the Bot and the person browse.
+  root = await mkdtemp(join(tmpdir(), "ccpbot-bot-browser-computer-"));
+  // The CCP-Bot the fixture Recorder reports to, and the pages the Bot and the person browse.
   site = Bun.serve({
     hostname: "127.0.0.1",
     port: 0,
@@ -215,7 +215,7 @@ beforeAll(async () => {
   origin = `http://127.0.0.1:${site.port}`;
   // A Bot's own computer, as a supervisor starts each container and a Sandbox each pod: Record runs only on one.
   computer = await startComputer("with-recorder", {
-    OPENBOT_RECORDER_DIR: FIXTURE,
+    CCPBOT_RECORDER_DIR: FIXTURE,
     COMPUTER_BOT_ID: BOT,
   });
 }, 30_000);
@@ -306,7 +306,7 @@ describe.skipIf(!asked)(
       }
       // A person's own computer takes their id, and the Bot's routes still refuse it: their browser has its own routes.
       const own = await startComputer("persons-own", {
-        OPENBOT_RECORDER_DIR: FIXTURE,
+        CCPBOT_RECORDER_DIR: FIXTURE,
         COMPUTER_BOT_ID: PERSON,
       });
       for (const [path, body] of [
@@ -321,7 +321,7 @@ describe.skipIf(!asked)(
 
     test("refuses Record on the computer every Bot shares, before the person's connection reaches the Bot's profile", async () => {
       const shared = await startComputer("shared", {
-        OPENBOT_RECORDER_DIR: FIXTURE,
+        CCPBOT_RECORDER_DIR: FIXTURE,
       });
       await takeWheel("user-1", shared);
       const before = calls.length;
@@ -346,7 +346,7 @@ describe.skipIf(!asked)(
     test("records on a person's own computer, where only their own Bots run", async () => {
       // How the supervisor and a Sandbox start a person's computer: named for the person, no Bot.
       const own = await startComputer("persons-computer", {
-        OPENBOT_RECORDER_DIR: FIXTURE,
+        CCPBOT_RECORDER_DIR: FIXTURE,
         COMPUTER_PERSON_ID: "user-1",
       });
       await takeWheel("user-1", own);
@@ -940,7 +940,7 @@ describe.skipIf(!asked)(
 
     beforeAll(async () => {
       without = await startComputer("without-recorder", {
-        OPENBOT_RECORDER_DIR: "",
+        CCPBOT_RECORDER_DIR: "",
         COMPUTER_BOT_ID: "other-bot",
       });
     }, 30_000);
@@ -998,7 +998,7 @@ describe.skipIf(!asked)(
         status: 503,
         json: {
           error:
-            "This Bot's browser cannot record: the OpenBot Recorder is not installed on its computer.",
+            "This Bot's browser cannot record: the CCP-Bot Recorder is not installed on its computer.",
         },
       });
     }, 60_000);
@@ -1051,7 +1051,7 @@ function serverOn(on: Computer) {
     /** A POST to the server's route under `/api/computers`, as the app makes it. */
     async post(botId: string, path: string, body: unknown) {
       const response = await routes.request(
-        `http://openbot.test/${botId}${path}`,
+        `http://ccpbot.test/${botId}${path}`,
         {
           method: "POST",
           headers: { "content-type": "application/json" },

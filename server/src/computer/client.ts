@@ -1,4 +1,4 @@
-import type { HandoffRequest } from "@openbot/shared/computer-control";
+import type { HandoffRequest } from "@ccpbot/shared/computer-control";
 import type { NavigateResult } from "./schema";
 import { checkNavigationTarget } from "./target";
 
@@ -214,8 +214,8 @@ export function seatHeaders(seat: SeatAddress): Record<string, string> {
   const { botId, personId } =
     typeof seat === "string" ? { botId: seat, personId: undefined } : seat;
   return {
-    "x-openbot-bot-id": botId,
-    ...(personId ? { "x-openbot-person-id": personId } : {}),
+    "x-ccpbot-bot-id": botId,
+    ...(personId ? { "x-ccpbot-person-id": personId } : {}),
   };
 }
 
@@ -261,7 +261,7 @@ export function createComputerTransport(
           ...(init?.headers as Record<string, string> | undefined),
           ...seatHeaders(botId),
           ...(options.token
-            ? { "x-openbot-computer-token": options.token }
+            ? { "x-ccpbot-computer-token": options.token }
             : {}),
         },
         signal: caller

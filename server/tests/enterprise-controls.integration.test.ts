@@ -1,7 +1,7 @@
 import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 import { randomUUID } from "node:crypto";
 import { AbstractAgent } from "@ag-ui/client";
-import { createTurnRunner } from "@openbot/toolkit/run-turn";
+import { createTurnRunner } from "@ccpbot/toolkit/run-turn";
 import { and, eq, inArray, like } from "drizzle-orm";
 import { Hono } from "hono";
 import { EMPTY } from "rxjs";
@@ -98,7 +98,7 @@ async function clean() {
 const recordingBot = `ent-recording-${suite}`;
 const RECORDER_RULE = {
   type: "domain" as const,
-  value: "openbot.acme.test",
+  value: "ccpbot.acme.test",
   ports: "443",
 };
 
@@ -838,7 +838,7 @@ describe("action recording", () => {
 });
 
 describe("OpenTelemetry export", () => {
-  test("audit rows reach an OTLP/HTTP collector tagged with openbot.surface", async () => {
+  test("audit rows reach an OTLP/HTTP collector tagged with ccpbot.surface", async () => {
     const received: string[] = [];
     const collector = Bun.serve({
       hostname: "127.0.0.1",
@@ -867,7 +867,7 @@ describe("OpenTelemetry export", () => {
     collector.stop(true);
     expect(received.length).toBeGreaterThan(0);
     expect(received[0]).toContain("/v1/logs");
-    expect(received.join("")).toContain("openbot.surface");
+    expect(received.join("")).toContain("ccpbot.surface");
     expect(received.join("")).toContain("computer.action_refused");
   });
 });

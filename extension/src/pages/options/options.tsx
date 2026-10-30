@@ -1,4 +1,4 @@
-import type { RecorderConnectVia } from "@openbot/shared/recorder-api";
+import type { RecorderConnectVia } from "@ccpbot/shared/recorder-api";
 import {
   IconBuildingSkyscraper,
   IconLink,
@@ -40,17 +40,17 @@ import { ask as askBackground } from "../ui/runtime";
 type OptionsDeps = { ask: typeof askBackground };
 
 const VIA: Record<RecorderConnectVia, string> = {
-  web: "Connected from OpenBot in your browser",
-  desktop: "Connected from OpenBot Desktop",
-  "openbot-browser": "Connected by OpenBot when it opened this browser",
-  "bot-browser": "Connected by OpenBot while you record in a Bot's browser",
+  web: "Connected from CCP-Bot in your browser",
+  desktop: "Connected from CCP-Bot Desktop",
+  "ccpbot-browser": "Connected by CCP-Bot when it opened this browser",
+  "bot-browser": "Connected by CCP-Bot while you record in a Bot's browser",
 };
 
 function plural(count: number, one: string, many: string) {
   return `${count} ${count === 1 ? one : many}`;
 }
 
-/** The Recorder's one settings page: which OpenBot this browser is connected to, and how to disconnect it; whether the
+/** The Recorder's one settings page: which CCP-Bot this browser is connected to, and how to disconnect it; whether the
  * person narrates their recordings; and the sites they keep out of them, each with Record again. */
 export function Options({ deps }: { deps?: Partial<OptionsDeps> }) {
   const ask = deps?.ask ?? askBackground;
@@ -106,7 +106,7 @@ export function Options({ deps }: { deps?: Partial<OptionsDeps> }) {
 
   if (!state) {
     return (
-      <Page title="OpenBot Recorder" width="prose">
+      <Page title="CCP-Bot Recorder" width="prose">
         {error ? (
           <p className="mt-4 text-destructive text-sm" role="alert">
             {error}
@@ -123,7 +123,7 @@ export function Options({ deps }: { deps?: Partial<OptionsDeps> }) {
   const recording = state.state.phase !== "idle";
   const sending = Math.max(0, state.state.draining - (kept?.recordings ?? 0));
   return (
-    <Page title="OpenBot Recorder" width="prose">
+    <Page title="CCP-Bot Recorder" width="prose">
       <PageSection title="Connection">
         {connection ? (
           <PageRows>
@@ -132,9 +132,9 @@ export function Options({ deps }: { deps?: Partial<OptionsDeps> }) {
                 <IconLink />
               </ItemMedia>
               <ItemContent>
-                <ItemTitle>OpenBot address</ItemTitle>
+                <ItemTitle>CCP-Bot address</ItemTitle>
                 <ItemDescription className="line-clamp-none">
-                  {connection.openbotUrl}
+                  {connection.ccpbotUrl}
                 </ItemDescription>
               </ItemContent>
             </Item>
@@ -158,7 +158,7 @@ export function Options({ deps }: { deps?: Partial<OptionsDeps> }) {
               <ItemContent>
                 <ItemTitle>This browser</ItemTitle>
                 <ItemDescription>
-                  Disconnect this browser from OpenBot.
+                  Disconnect this browser from CCP-Bot.
                 </ItemDescription>
               </ItemContent>
               <ItemActions>
@@ -170,7 +170,7 @@ export function Options({ deps }: { deps?: Partial<OptionsDeps> }) {
           </PageRows>
         ) : (
           <PageEmpty>
-            This browser is not connected to OpenBot. Open OpenBot, go to
+            This browser is not connected to CCP-Bot. Open CCP-Bot, go to
             Settings, Browsers, and choose Connect this browser.
           </PageEmpty>
         )}
@@ -254,10 +254,10 @@ export function Options({ deps }: { deps?: Partial<OptionsDeps> }) {
           </PageRows>
         )}
       </PageSection>
-      {policy.openbotUrl ? (
+      {policy.ccpbotUrl ? (
         <PageSection
           title="Set by your organization"
-          description="Your organization chose which OpenBot this Recorder connects to."
+          description="Your organization chose which CCP-Bot this Recorder connects to."
         >
           <PageRows>
             <Item size="sm">
@@ -265,11 +265,11 @@ export function Options({ deps }: { deps?: Partial<OptionsDeps> }) {
                 <IconBuildingSkyscraper />
               </ItemMedia>
               <ItemContent>
-                <ItemTitle>OpenBot address</ItemTitle>
+                <ItemTitle>CCP-Bot address</ItemTitle>
               </ItemContent>
               <ItemActions>
                 <span className="text-muted-foreground text-sm">
-                  {policy.openbotUrl}
+                  {policy.ccpbotUrl}
                 </span>
               </ItemActions>
             </Item>

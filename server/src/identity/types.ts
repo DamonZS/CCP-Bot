@@ -30,7 +30,7 @@ export class IdentityLinkError extends Error {
 
 export class IdentityConflictError extends Error {
   constructor() {
-    super("This account is already linked to another OpenBot user.");
+    super("This account is already linked to another CCP-Bot user.");
     this.name = "IdentityConflictError";
   }
 }

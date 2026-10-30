@@ -2,7 +2,7 @@ import type {
   LearningAutoAssignState,
   LearningSettings,
   LearningTarget,
-} from "@openbot/shared/learning";
+} from "@ccpbot/shared/learning";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { useId, useState } from "react";
@@ -36,13 +36,17 @@ function automaticMessage(
     automatic.state === "assigned" &&
     settings.defaultTarget?.containerId === automatic.containerId
   )
-    return `OpenBot assigned this Intelligence project's "${automatic.containerId}" container automatically. You can change it here.`;
+    return `CCP-Bot assigned this Intelligence project's "${automatic.containerId}" container automatically. You can change it here.`;
   if (automatic.state === "absent")
     return `This Intelligence project has no "${automatic.containerId}" Learning container yet. Nothing is collected.`;
   if (automatic.state === "not_entitled")
-    return t("This Intelligence project's plan doesn't include Learning. No container was assigned.");
+    return t(
+      "This Intelligence project's plan doesn't include Learning. No container was assigned.",
+    );
   if (automatic.state === "unavailable")
-    return t("Couldn't reach Intelligence to find this project's Learning container. OpenBot will try again.");
+    return t(
+      "Couldn't reach Intelligence to find this project's Learning container. CCP-Bot will try again.",
+    );
   return undefined;
 }
 
@@ -194,11 +198,15 @@ export function LearningPage() {
   return (
     <PageShell
       title={t("Automatic learning")}
-      description={t("Learn from finished conversations, review the skills Intelligence proposes, and give published skills to Bots.")}
+      description={t(
+        "Learn from finished conversations, review the skills Intelligence proposes, and give published skills to Bots.",
+      )}
     >
       <PageSection
         title={t("Participation")}
-        description={t("Container changes apply to new conversations. Existing ones keep their first container. Containers must already exist in the same Intelligence project. Until you save here, OpenBot uses that project's openbot container.")}
+        description={t(
+          "Container changes apply to new conversations. Existing ones keep their first container. Containers must already exist in the same Intelligence project. Until you save here, CCP-Bot uses that project's ccpbot container.",
+        )}
       >
         {settingsQuery.isPending && (
           <p role="status">{t("Loading Learning settings…")}</p>
@@ -242,7 +250,9 @@ export function LearningPage() {
               <ContainerSetup automatic={automatic.data} />
             )}
             <p className="text-muted-foreground text-sm">
-              {t("With no default, Bots without their own container are left out. IDs are 1 to 64 lowercase letters, numbers and single hyphens. Leave revision empty to use the latest published skills.")}
+              {t(
+                "With no default, Bots without their own container are left out. IDs are 1 to 64 lowercase letters, numbers and single hyphens. Leave revision empty to use the latest published skills.",
+              )}
             </p>
             <fieldset className="grid gap-4">
               <legend className="mb-3 font-medium">
@@ -250,7 +260,9 @@ export function LearningPage() {
               </legend>
               {(agents.error || hiddenAgents.error) && (
                 <p role="alert" className="text-destructive">
-                  {t("Couldn't load the Bot list. Saved settings for each Bot are below.")}
+                  {t(
+                    "Couldn't load the Bot list. Saved settings for each Bot are below.",
+                  )}
                 </p>
               )}
               {botIds.map((id) => {
@@ -283,8 +295,12 @@ export function LearningPage() {
                           change({ ...settings, agents: mappings });
                         }}
                       >
-                        <option value="inherit">{t("Use deployment default")}</option>
-                        <option value="exclude">{t("Leave out of Learning")}</option>
+                        <option value="inherit">
+                          {t("Use deployment default")}
+                        </option>
+                        <option value="exclude">
+                          {t("Leave out of Learning")}
+                        </option>
                         <option value="container">
                           {t("Use a specific container")}
                         </option>
@@ -329,7 +345,9 @@ export function LearningPage() {
       </PageSection>
       <PageSection
         title={t("Review and publish")}
-        description={t("Intelligence studies finished conversations and proposes skills. Review and publish them in Intelligence. Bots only use published skills.")}
+        description={t(
+          "Intelligence studies finished conversations and proposes skills. Review and publish them in Intelligence. Bots only use published skills.",
+        )}
       >
         <div className="grid gap-4">
           <label className="grid gap-2 text-sm">
@@ -347,7 +365,9 @@ export function LearningPage() {
               ))}
             </select>
           </label>
-          {overview.isPending && <p role="status">{t("Checking Intelligence…")}</p>}
+          {overview.isPending && (
+            <p role="status">{t("Checking Intelligence…")}</p>
+          )}
           {overview.error && (
             <p role="alert" className="text-destructive">
               {overview.error.message}
@@ -366,7 +386,9 @@ export function LearningPage() {
               </p>
               <dl className="grid grid-cols-2 gap-4 rounded-lg border p-4 text-sm">
                 <div>
-                  <dt className="text-muted-foreground">{t("Threads ready")}</dt>
+                  <dt className="text-muted-foreground">
+                    {t("Threads ready")}
+                  </dt>
                   <dd className="font-semibold text-xl">
                     {snapshot.pendingThreadCount}
                   </dd>
@@ -380,7 +402,9 @@ export function LearningPage() {
                   </dd>
                 </div>
                 <div>
-                  <dt className="text-muted-foreground">{t("Published skills")}</dt>
+                  <dt className="text-muted-foreground">
+                    {t("Published skills")}
+                  </dt>
                   <dd className="font-semibold text-xl">
                     {snapshot.publishedSkillCount}
                   </dd>
@@ -448,7 +472,9 @@ export function LearningPage() {
                             : "A verified snapshot is available."}
                     </p>
                     {delivery.data.revision && (
-                      <p>{t("Loaded revision:")} {delivery.data.revision}</p>
+                      <p>
+                        {t("Loaded revision:")} {delivery.data.revision}
+                      </p>
                     )}
                     {delivery.data.lastCheckedAt && (
                       <p>
@@ -476,7 +502,9 @@ export function LearningPage() {
             {t("Refresh status")}
           </Button>
           <p className="text-muted-foreground text-sm">
-            {t("Managing Learning needs your Intelligence account and project access. OpenBot keeps project credentials on the server. Turning Learning off here keeps settings and conversation assignments. Schedules and publishing stay in Intelligence.")}
+            {t(
+              "Managing Learning needs your Intelligence account and project access. CCP-Bot keeps project credentials on the server. Turning Learning off here keeps settings and conversation assignments. Schedules and publishing stay in Intelligence.",
+            )}
           </p>
         </div>
       </PageSection>

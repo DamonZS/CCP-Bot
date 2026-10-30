@@ -4,7 +4,7 @@ import {
   type BrowserTab,
   browserOpenRequestSchema,
   type LauncherState,
-} from "./openbot-browser";
+} from "./ccpbot-browser";
 
 /*
  * A BOT'S BROWSER, WORKED BY A PERSON: the bar above a Bot's screen (tabs, the address, back, forward and reload) and
@@ -25,7 +25,7 @@ import {
  * computer ended on its own is revoked the next time the server reads that Bot's browser or mints another for it. The
  * recording lands where every Recorder recording lands: the person's own Learning space.
  *
- * NARRATION is the OpenBot page's own speech recognition (`external`), posted to the server and corrected to its clock,
+ * NARRATION is the CCP-Bot page's own speech recognition (`external`), posted to the server and corrected to its clock,
  * exactly as for the hosted person's browser.
  */
 
@@ -35,7 +35,7 @@ import {
  * before this change, or a take with no `by`, has no `heldBy`: nobody may record or use the bar until it is taken again. */
 
 /* THE COMPUTER'S ROUTES (agent-computer), under the computer token like every other route, with the Bot's id in
- * `x-openbot-bot-id`. A person's browser id (`person-…`) is refused with 400: the person's own browser has its own routes
+ * `x-ccpbot-bot-id`. A person's browser id (`person-…`) is refused with 400: the person's own browser has its own routes
  * (`browserComputerPaths`). A computer Bots share refuses that id sooner, with 503, since no person's browser runs there
  * at all (agent-computer's person-access.ts). Every route answers `BotBrowserState`, or `{ error }` with a status below. */
 export const botBrowserComputerPaths = {
@@ -63,8 +63,8 @@ export const botBrowserComputerPaths = {
  * The whole profile goes: cookies, cache, saved passwords, history, site storage, and the Recorder's own storage. A
  * recording running there ends first, and what it has not sent yet is waited for. The computer closes the browser,
  * deletes its user data directory, and forgets the page it described; the server forgets the snapshots and the
- * screenshots it kept of its pages. Nothing else on the computer goes (a Bot's files stay), and nor do OpenBot's
- * Passwords, which are OpenBot's and never were the browser's. A person holding a Bot's wheel keeps it: the browser
+ * screenshots it kept of its pages. Nothing else on the computer goes (a Bot's files stay), and nor do CCP-Bot's
+ * Passwords, which are CCP-Bot's and never were the browser's. A person holding a Bot's wheel keeps it: the browser
  * starts again under them.
  *
  * Deleted while closed, rather than cleared through DevTools (`Storage.clearDataForOrigin`, `Network.clearBrowserCookies`),
@@ -115,7 +115,7 @@ export type BotBrowserState = {
   /** The person a running recording belongs to. */
   recordingBy?: string;
   /**
-   * The person the recording `recorder.lastStopped` names belonged to, so OpenBot tells them, and only them, that it went
+   * The person the recording `recorder.lastStopped` names belonged to, so CCP-Bot tells them, and only them, that it went
    * to their Learning space, after a reload as well. Absent while there is no `lastStopped`.
    */
   lastStoppedBy?: string;

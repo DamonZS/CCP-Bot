@@ -104,14 +104,16 @@ export function ActivityReportCard({
   if (!report) {
     return (
       <GalleryFrame title={t("Report")}>
-        <p className="text-sm text-muted-foreground">{t("Choosing a report…")}</p>
+        <p className="text-sm text-muted-foreground">
+          {t("Choosing a report…")}
+        </p>
       </GalleryFrame>
     );
   }
 
   if (state.status === "reading") {
     return (
-      <GalleryFrame caption="Reading from OpenBot" title={title ?? "Report"}>
+      <GalleryFrame caption="Reading from CCP-Bot" title={title ?? "Report"}>
         <p className="text-sm text-muted-foreground">{t("Reading…")}</p>
       </GalleryFrame>
     );
@@ -155,7 +157,8 @@ function ActivityChart({
     return (
       <GalleryFrame title={title ?? "Bot activity"}>
         <p className="text-sm text-muted-foreground">
-          {t("No Bot has done anything in the last")} {data?.days ?? 7} {t("days.")}
+          {t("No Bot has done anything in the last")} {data?.days ?? 7}{" "}
+          {t("days.")}
         </p>
       </GalleryFrame>
     );
@@ -181,7 +184,7 @@ function ActivityChart({
           </Button>
         ) : undefined
       }
-      caption={`Counted from OpenBot's audit trail, last ${data.days} days`}
+      caption={`Counted from CCP-Bot's audit trail, last ${data.days} days`}
       title={title ?? "Bot activity"}
     >
       <ul className="flex flex-col gap-2">
@@ -224,7 +227,7 @@ function RefusalList({
     return (
       <GalleryFrame title={title ?? "Recent refusals"}>
         <p className="text-sm text-muted-foreground">
-          {t("OpenBot hasn't refused anything.")}
+          {t("CCP-Bot hasn't refused anything.")}
         </p>
       </GalleryFrame>
     );
@@ -247,7 +250,7 @@ function RefusalList({
           </Button>
         ) : undefined
       }
-      caption="Read from OpenBot's audit trail"
+      caption="Read from CCP-Bot's audit trail"
       title={title ?? "Recent refusals"}
     >
       <ul className="flex flex-col gap-2">
@@ -283,8 +286,9 @@ export const GALLERY: GalleryComponent[] = [
     name: "showActivityReport",
     title: t("Activity report"),
     kind: "card",
-    description:
-      t("Show what this deployment has actually been doing, read from its own records rather than from anything you know. Use for 'what have the Bots been up to' and 'what has been refused'. You choose the report and the period; the figures are read for you and you will not see them."),
+    description: t(
+      "Show what this deployment has actually been doing, read from its own records rather than from anything you know. Use for 'what have the Bots been up to' and 'what has been refused'. You choose the report and the period; the figures are read for you and you will not see them.",
+    ),
     parameters: ActivityReportProps,
     Component: ActivityReportCard as GalleryComponent["Component"],
     confirmation:

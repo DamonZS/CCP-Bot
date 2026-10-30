@@ -7,7 +7,7 @@ import { downloadHeaders } from "../../shared/file-download";
 import {
   isPersonBrowserId,
   RECORDER_DIR_ENV,
-} from "../../shared/openbot-browser";
+} from "../../shared/ccpbot-browser";
 import {
   cutAtCodeUnits,
   parseAriaSnapshot,
@@ -148,7 +148,7 @@ const OWNER = computerOwner(process.env);
 const BROWSER_MODE = RUNTIME.mode;
 /*
  * The display this process was started on, kept before the virtual one replaces it. A person's
- * native browser on OpenBot Desktop opens on the person's own desktop, never on the Xvfb display that
+ * native browser on CCP-Bot Desktop opens on the person's own desktop, never on the Xvfb display that
  * a Bot's headed browser uses on Linux. See `personBrowserEnv`.
  */
 const PERSON_DISPLAY = {
@@ -232,11 +232,11 @@ function seatOf(
   query?: URLSearchParams,
 ): { bot: string; seat: string | undefined } {
   const bot =
-    request.headers.get("x-openbot-bot-id")?.trim() ||
+    request.headers.get("x-ccpbot-bot-id")?.trim() ||
     query?.get("bot")?.trim() ||
     DEFAULT_BOT_ID;
   const person =
-    request.headers.get("x-openbot-person-id")?.trim() ||
+    request.headers.get("x-ccpbot-person-id")?.trim() ||
     query?.get("person")?.trim() ||
     undefined;
   try {
@@ -274,7 +274,7 @@ function seatOf(
  * act on: chown the directory, or set `computers.podSecurityContext: null`.
  */
 async function assertWritable(label: string, directory: string) {
-  const probe = join(directory, `.openbot-write-probe-${process.pid}`);
+  const probe = join(directory, `.ccpbot-write-probe-${process.pid}`);
   try {
     await mkdir(directory, { recursive: true });
     await writeFile(probe, "");
@@ -353,7 +353,7 @@ const profiles = createProfiles(
 );
 
 /**
- * The OpenBot Browser: a person's own browser with the Recorder in it, opened for them by the
+ * The CCP-Bot Browser: a person's own browser with the Recorder in it, opened for them by the
  * server. See browser-host.ts, and person-access.ts for what a person's browser id may do here.
  */
 /**
@@ -390,7 +390,7 @@ const botBrowser = createBotBrowserHost({
 });
 
 /**
- * The person's own everyday Chrome or Edge, on OpenBot Desktop's computer only: brought forward, or
+ * The person's own everyday Chrome or Edge, on CCP-Bot Desktop's computer only: brought forward, or
  * handed the Recorder's store page. See real-browser.ts.
  */
 const realBrowser = createRealBrowserHost({
@@ -1006,7 +1006,7 @@ serve<StreamData>({
       if (url.pathname === "/stream") {
         /*
          * The socket carries the Bot in the query because it cannot do it in a header. Every other call here names
-         * its Bot in `x-openbot-bot-id`, but a websocket client sends no custom headers on the upgrade,
+         * its Bot in `x-ccpbot-bot-id`, but a websocket client sends no custom headers on the upgrade,
          * so the stream, and only the stream, also accepts the Bot as a query parameter. The header
          * still wins where there is one.
          */

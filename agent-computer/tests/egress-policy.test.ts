@@ -46,38 +46,38 @@ describe("the network policy rules", () => {
     const policy = {
       mode: "allowlist_only" as const,
       rules: [
-        { type: "domain" as const, value: "openbot.example.com", ports: "443" },
+        { type: "domain" as const, value: "ccpbot.example.com", ports: "443" },
         { type: "domain" as const, value: "gateway.example.com" },
       ],
     };
-    expect(egressDecision(policy, "openbot.example.com", 443).allowed).toBe(
+    expect(egressDecision(policy, "ccpbot.example.com", 443).allowed).toBe(
       true,
     );
-    expect(egressDecision(policy, "openbot.example.com", 8443).allowed).toBe(
+    expect(egressDecision(policy, "ccpbot.example.com", 8443).allowed).toBe(
       false,
     );
     // The ports go with the rule's names, the names under it included.
     expect(
-      egressDecision(policy, "api.openbot.example.com", 8443).allowed,
+      egressDecision(policy, "api.ccpbot.example.com", 8443).allowed,
     ).toBe(false);
     expect(egressDecision(policy, "gateway.example.com", 8443).allowed).toBe(
       true,
     );
     expect(
       parseEgressRules([
-        { type: "domain", value: "OpenBot.Example.com", ports: "443, 8443" },
+        { type: "domain", value: "CCP-Bot.Example.com", ports: "443, 8443" },
         { type: "domain", value: "gateway.example.com", ports: "" },
       ]),
     ).toEqual({
       ok: true,
       rules: [
-        { type: "domain", value: "openbot.example.com", ports: "443,8443" },
+        { type: "domain", value: "ccpbot.example.com", ports: "443,8443" },
         { type: "domain", value: "gateway.example.com" },
       ],
     });
     expect(
       parseEgressRules([
-        { type: "domain", value: "openbot.example.com", ports: "443;80" },
+        { type: "domain", value: "ccpbot.example.com", ports: "443;80" },
       ]).ok,
     ).toBe(false);
   });
@@ -288,7 +288,7 @@ describe("the filter proxy", () => {
     });
     expect(plain).toStartWith("HTTP/1.1 407");
     expect(plain.toLowerCase()).toContain(
-      'proxy-authenticate: basic realm="openbot"',
+      'proxy-authenticate: basic realm="ccpbot"',
     );
 
     // With them, a Bot allowed everything is not held to the other Bot's deny_all.
@@ -626,7 +626,7 @@ describe("the filter proxy", () => {
     const target = await origin();
     const filter = await startEgressFilter({ env: {} });
     const secret = egressFor("sales", {})?.password;
-    // As the server pushes it for a person's hosted browser: OpenBot by name, on its own port.
+    // As the server pushes it for a person's hosted browser: CCP-Bot by name, on its own port.
     const pushed = await handleEgressPolicyRequest(
       "sales",
       new Request("http://computer/egress-policy", {
@@ -637,7 +637,7 @@ describe("the filter proxy", () => {
             rules: [
               {
                 type: "domain",
-                value: "openbot.example.test",
+                value: "ccpbot.example.test",
                 ports: String(target.port),
               },
             ],
@@ -647,12 +647,12 @@ describe("the filter proxy", () => {
     );
     expect(pushed.status).toBe(200);
     setEgressResolver(async (host) =>
-      host === "openbot.example.test" ? ["127.0.0.1"] : [],
+      host === "ccpbot.example.test" ? ["127.0.0.1"] : [],
     );
     expect(
       await connectThrough(
         filter.port,
-        `openbot.example.test:${target.port}`,
+        `ccpbot.example.test:${target.port}`,
         "sales",
         secret,
       ),
@@ -660,7 +660,7 @@ describe("the filter proxy", () => {
     expect(
       await connectThrough(
         filter.port,
-        "openbot.example.test:8443",
+        "ccpbot.example.test:8443",
         "sales",
         secret,
       ),
@@ -709,7 +709,7 @@ describe("the filter proxy", () => {
     setEgressPolicy("sales", { mode: "allow_all", rules: [] });
     const shared = await asABrowser(filter.port, METADATA);
     expect(shared).toContain(
-      "169.254.169.254 is a cloud metadata or link-local address, which OpenBot never opens.",
+      "169.254.169.254 is a cloud metadata or link-local address, which CCP-Bot never opens.",
     );
     expect(shared).not.toMatch(/\bBot\b/);
 

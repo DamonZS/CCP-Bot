@@ -112,7 +112,8 @@ export function DataTable(props: Record<string, unknown>) {
       >
         <table className="w-full border-collapse text-left text-sm">
           <caption className="sr-only">
-            {title}{t(". Select a column heading to sort.")}
+            {title}
+            {t(". Select a column heading to sort.")}
           </caption>
           <thead className="bg-muted/50 text-xs text-muted-foreground">
             <tr>
@@ -224,8 +225,9 @@ export const GALLERY: GalleryComponent[] = [
     name: "showTable",
     title: t("Data table"),
     kind: "card",
-    description:
-      t("Show a sortable table to compare records, plans, or other structured facts. Supply up to eight columns and 100 rows, with exactly one cell per column. Use numbers for quantities so sorting is numeric. Show only data you have; do not invent rows."),
+    description: t(
+      "Show a sortable table to compare records, plans, or other structured facts. Supply up to eight columns and 100 rows, with exactly one cell per column. Use numbers for quantities so sorting is numeric. Show only data you have; do not invent rows.",
+    ),
     parameters: DataTableProps,
     Component: DataTable,
     confirmation: "The sortable table is now on screen for the person.",

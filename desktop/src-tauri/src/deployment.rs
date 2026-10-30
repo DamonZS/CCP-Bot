@@ -16,12 +16,12 @@ use std::path::{Path, PathBuf};
 use serde::{Deserialize, Serialize};
 
 /// Written beside the deployment so the app can tell what it already put there.
-const STAMP: &str = ".openbot-deployment";
+const STAMP: &str = ".ccpbot-deployment";
 
 /// The release asset that says which images this version runs.
 ///
 /// Kept beside the deployment because the tree does not contain it: `docker-compose.yml` names
-/// `openbot-supervisor:latest` and friends as defaults, which are local build names that exist on a
+/// `ccpbot-supervisor:latest` and friends as defaults, which are local build names that exist on a
 /// developer's machine and nowhere else. A desktop install has never built anything, so without
 /// this file Compose asks Docker Hub for images that are not there and reports a denial, which
 /// reads as an authentication problem and is not one.
@@ -92,8 +92,8 @@ pub fn image_variables(root: &Path) -> Result<Vec<(String, String)>, String> {
 ///
 /// Every image reference comes from here, whether Compose reads it or the shell runs it directly.
 /// The alternative was a name built from a version, and an engine given an unqualified name looks
-/// it up on Docker Hub: `openbot-agent-langgraph-agui:v0.0.8` became
-/// `docker.io/library/openbot-agent-langgraph-agui`, and the person was shown "requested access to
+/// it up on Docker Hub: `ccpbot-agent-langgraph-agui:v0.0.8` became
+/// `docker.io/library/ccpbot-agent-langgraph-agui`, and the person was shown "requested access to
 /// the resource is denied", which reads as a credentials problem and is not one.
 ///
 /// An image this release does not publish is named as that. It is the honest answer and the
@@ -108,7 +108,7 @@ pub fn reference(root: &Path, published: &str) -> Result<String, String> {
         .images
         .get(published)
         .map(|image| image.reference.clone())
-        .ok_or_else(|| format!("OpenBot {} does not include {published}.", manifest.version))
+        .ok_or_else(|| format!("CCP-Bot {} does not include {published}.", manifest.version))
 }
 
 /// Every image the stack runs, or a failure that names the one that is missing.
@@ -204,7 +204,7 @@ pub const ALSO_COPIED: [&str; 11] = [
     // `scripts/start-local-chrome-computer.ts` its browser runtime. Without it the server exits at
     // start with `Cannot find module '../../../agent-computer/src/egress'`.
     "agent-computer",
-    // A root workspace the server imports as `@openbot/toolkit`. Without it, `bun install
+    // A root workspace the server imports as `@ccpbot/toolkit`. Without it, `bun install
     // --frozen-lockfile` stops with `Workspace not found "toolkit"`.
     "toolkit",
     "examples",
@@ -256,7 +256,7 @@ pub fn fetch(root: &Path, version: &str) -> Result<(), String> {
 /// else (`..`, an absolute path, a Windows drive prefix) is refused outright.
 fn destination_in(root: &Path, path: &Path) -> Result<Option<PathBuf>, String> {
     // GitHub wraps everything in one directory named for the tag. Strip it, so the deployment
-    // lands at `root` rather than at `root/OpenBot-0.0.7`.
+    // lands at `root` rather than at `root/CCP-Bot-0.0.7`.
     let mut parts = path.components();
     parts.next();
     let relative: PathBuf = parts.collect();
@@ -360,7 +360,7 @@ steadily it was arriving: Bun's 30 MB on a connection under about 1 MB/s, every 
 fn get_waiting(url: &str, idle: std::time::Duration) -> Result<Vec<u8>, String> {
     use std::io::Read;
     let mut response = reqwest::blocking::Client::builder()
-        .user_agent("openbot-desktop")
+        .user_agent("ccpbot-desktop")
         .timeout(idle)
         .build()
         .map_err(|error| format!("could not prepare the download: {error}"))?
@@ -437,7 +437,7 @@ mod tests {
                     (
                         (*name).to_string(),
                         Image {
-                            reference: format!("ghcr.io/copilotkit/openbot-{name}@sha256:abc"),
+                            reference: format!("ghcr.io/copilotkit/ccpbot-{name}@sha256:abc"),
                         },
                     )
                 })
@@ -447,7 +447,7 @@ mod tests {
 
     #[test]
     fn a_deployment_without_an_image_manifest_is_fetched_again_rather_than_refused() {
-        let dir = std::env::temp_dir().join(format!("openbot-manifest-{}", std::process::id()));
+        let dir = std::env::temp_dir().join(format!("ccpbot-manifest-{}", std::process::id()));
         std::fs::create_dir_all(&dir).unwrap();
         let _ = std::fs::remove_file(images_path(&dir));
         record(&dir, "v0.0.7").unwrap();
@@ -509,7 +509,7 @@ mod tests {
 
     #[test]
     fn an_empty_directory_needs_fetching() {
-        let dir = std::env::temp_dir().join(format!("openbot-dep-empty-{}", std::process::id()));
+        let dir = std::env::temp_dir().join(format!("ccpbot-dep-empty-{}", std::process::id()));
         assert!(needs_fetch(&dir, "v0.0.7"));
     }
 
@@ -555,7 +555,7 @@ mod tests {
 
     fn scratch(name: &str) -> PathBuf {
         let dir =
-            std::env::temp_dir().join(format!("openbot-unpack-{name}-{}", std::process::id()));
+            std::env::temp_dir().join(format!("ccpbot-unpack-{name}-{}", std::process::id()));
         let _ = std::fs::remove_dir_all(&dir);
         std::fs::create_dir_all(&dir).expect("the scratch directory is made");
         dir
@@ -565,7 +565,7 @@ mod tests {
     fn the_test_archive_really_carries_the_traversal() {
         // Guards the guard: if the archive did not hold `..` the next test would
         // pass for the wrong reason.
-        let archive = tarball(&[("OpenBot-0.0.8/app/../../escaped.txt", b"owned")]);
+        let archive = tarball(&[("CCP-Bot-0.0.8/app/../../escaped.txt", b"owned")]);
         let decoder = flate2::read::GzDecoder::new(&archive[..]);
         let mut tar = tar::Archive::new(decoder);
         let paths: Vec<String> = tar
@@ -580,7 +580,7 @@ mod tests {
                     .to_string()
             })
             .collect();
-        assert_eq!(paths, ["OpenBot-0.0.8/app/../../escaped.txt"]);
+        assert_eq!(paths, ["CCP-Bot-0.0.8/app/../../escaped.txt"]);
     }
 
     #[test]
@@ -594,7 +594,7 @@ mod tests {
         let root = dir.join("deployment");
         std::fs::create_dir_all(&root).expect("the root is made");
 
-        let archive = tarball(&[("OpenBot-0.0.8/app/../../escaped.txt", b"owned")]);
+        let archive = tarball(&[("CCP-Bot-0.0.8/app/../../escaped.txt", b"owned")]);
         let outcome = unpack(&root, &archive);
 
         let climbed = dir.join("escaped.txt");
@@ -614,10 +614,10 @@ mod tests {
         let dir = scratch("ordinary");
 
         let archive = tarball(&[
-            ("OpenBot-0.0.8/app/index.ts", b"export {}"),
-            ("OpenBot-0.0.8/docker-compose.yml", b"services: {}"),
+            ("CCP-Bot-0.0.8/app/index.ts", b"export {}"),
+            ("CCP-Bot-0.0.8/docker-compose.yml", b"services: {}"),
             // Not part of a deployment: skipped, not refused.
-            ("OpenBot-0.0.8/docs/readme.md", b"# hi"),
+            ("CCP-Bot-0.0.8/docs/readme.md", b"# hi"),
         ]);
         unpack(&dir, &archive).expect("an ordinary download is laid out");
 
@@ -756,11 +756,11 @@ mod tests {
             "extension/public/icons/16.png",
             "extension/keys/public-key.txt",
             "extension/scripts/build.ts",
-            "shared/openbot-browser.ts",
+            "shared/ccpbot-browser.ts",
         ];
         let entries: Vec<(String, &[u8])> = files
             .iter()
-            .map(|file| (format!("OpenBot-0.0.8/{file}"), b"x".as_slice()))
+            .map(|file| (format!("CCP-Bot-0.0.8/{file}"), b"x".as_slice()))
             .collect();
         let archive = tarball(
             &entries
@@ -784,7 +784,7 @@ mod tests {
     /// out by an app that copied less.
     #[test]
     fn a_deployment_without_the_recorders_source_is_fetched_again() {
-        let dir = std::env::temp_dir().join(format!("openbot-dep-recorder-{}", std::process::id()));
+        let dir = std::env::temp_dir().join(format!("ccpbot-dep-recorder-{}", std::process::id()));
         std::fs::create_dir_all(&dir).unwrap();
         std::fs::write(images_path(&dir), "{}").unwrap();
         let before: Vec<String> = layout()
@@ -802,7 +802,7 @@ mod tests {
 
     #[test]
     fn a_recorded_version_is_not_fetched_again() {
-        let dir = std::env::temp_dir().join(format!("openbot-dep-same-{}", std::process::id()));
+        let dir = std::env::temp_dir().join(format!("ccpbot-dep-same-{}", std::process::id()));
         record(&dir, "v0.0.7").unwrap();
         std::fs::write(images_path(&dir), "{}").unwrap();
         assert!(!needs_fetch(&dir, "v0.0.7"));
@@ -818,7 +818,7 @@ mod tests {
     /// A stamp says what it laid out; one that laid out less than this app copies is fetched once.
     #[test]
     fn a_deployment_laid_out_by_an_app_that_copied_less_is_fetched_again() {
-        let dir = std::env::temp_dir().join(format!("openbot-dep-layout-{}", std::process::id()));
+        let dir = std::env::temp_dir().join(format!("ccpbot-dep-layout-{}", std::process::id()));
         std::fs::create_dir_all(&dir).unwrap();
         std::fs::write(images_path(&dir), "{}").unwrap();
         // Exactly what an earlier app wrote.
@@ -835,7 +835,7 @@ mod tests {
     fn an_interrupted_fetch_is_replaced_rather_than_trusted() {
         // Files present, stamp absent: what an interrupted extract leaves behind. The stamp is
         // written last precisely so this case is distinguishable.
-        let dir = std::env::temp_dir().join(format!("openbot-dep-partial-{}", std::process::id()));
+        let dir = std::env::temp_dir().join(format!("ccpbot-dep-partial-{}", std::process::id()));
         std::fs::create_dir_all(dir.join("server")).unwrap();
         std::fs::write(dir.join("docker-compose.yml"), "services: {}\n").unwrap();
         assert!(
@@ -847,7 +847,7 @@ mod tests {
 
     #[test]
     fn unreadable_stamp_is_treated_as_absent_rather_than_fatal() {
-        let dir = std::env::temp_dir().join(format!("openbot-dep-bad-{}", std::process::id()));
+        let dir = std::env::temp_dir().join(format!("ccpbot-dep-bad-{}", std::process::id()));
         std::fs::create_dir_all(&dir).unwrap();
         std::fs::write(stamp_path(&dir), "{ not json").unwrap();
         assert!(installed(&dir).is_none());

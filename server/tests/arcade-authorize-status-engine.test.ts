@@ -85,7 +85,7 @@ const mint = () =>
     account,
     toolkit: "Gmail",
     action: "Gmail.SendEmail",
-    returnUrl: "https://openbot.example/settings/plugins",
+    returnUrl: "https://ccpbot.example/settings/plugins",
   });
 
 describe("the mint reads the status Arcade answered with", () => {

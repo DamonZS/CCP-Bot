@@ -2,7 +2,7 @@ import { and, eq, ne } from "drizzle-orm";
 import type { Database } from "../db/client";
 import { userRoles, users } from "../db/schema";
 
-export type OpenBotRole = "admin" | "user";
+export type CcpBotRole = "admin" | "user";
 
 /**
  * Whether this address is an administrator by configuration.
@@ -25,7 +25,7 @@ export function isConfiguredAdmin(
 export function roleForEmail(
   email: string,
   initialAdminEmails: readonly string[],
-): OpenBotRole {
+): CcpBotRole {
   return isConfiguredAdmin(email, initialAdminEmails) ? "admin" : "user";
 }
 
@@ -40,8 +40,8 @@ export function roleForEmail(
 export async function setRole(
   database: Database,
   userId: string,
-  role: OpenBotRole,
-): Promise<OpenBotRole> {
+  role: CcpBotRole,
+): Promise<CcpBotRole> {
   await database.transaction(async (tx) => {
     await tx
       .delete(userRoles)
@@ -63,7 +63,7 @@ export async function seedRole(
   userId: string,
   email: string,
   initialAdminEmails: readonly string[],
-): Promise<OpenBotRole> {
+): Promise<CcpBotRole> {
   return setRole(database, userId, roleForEmail(email, initialAdminEmails));
 }
 

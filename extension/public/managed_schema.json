@@ -1,9 +1,9 @@
 {
   "type": "object",
   "properties": {
-    "OpenBotUrl": {
-      "title": "OpenBot address",
-      "description": "The HTTPS address of your organization's OpenBot. The Recorder connects only to this address. Chrome ignores a value that is not a string, so check that chrome://policy shows it with no error.",
+    "CcpBotUrl": {
+      "title": "CCP-Bot address",
+      "description": "The HTTPS address of your organization's CCP-Bot. The Recorder connects only to this address. Chrome ignores a value that is not a string, so check that chrome://policy shows it with no error.",
       "type": "string"
     },
     "AllowedIntelligenceUrls": {

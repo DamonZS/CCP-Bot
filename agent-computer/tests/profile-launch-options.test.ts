@@ -11,7 +11,7 @@ afterEach(() => {
     "COMPUTER_BROWSER_BACKEND",
     "COMPUTER_BROWSER_MODE",
     "COMPUTER_SANDBOX",
-    "OPENBOT_RECORDER_DIR",
+    "CCPBOT_RECORDER_DIR",
   ]) {
     if (original[name] === undefined) delete process.env[name];
     else process.env[name] = original[name];
@@ -34,8 +34,8 @@ describe.skipIf(
       process.env.COMPUTER_BROWSER_BACKEND = backend;
       delete process.env.COMPUTER_BROWSER_MODE;
       delete process.env.COMPUTER_SANDBOX;
-      if (recorder) process.env.OPENBOT_RECORDER_DIR = FIXTURE;
-      else delete process.env.OPENBOT_RECORDER_DIR;
+      if (recorder) process.env.CCPBOT_RECORDER_DIR = FIXTURE;
+      else delete process.env.CCPBOT_RECORDER_DIR;
       // Let in only where Bots run in the computer's own Chromium: local Chrome is a window on the person's desktop.
       const withRecorder = recorder && backend === "managed";
       const launch = spyOn(
@@ -47,7 +47,7 @@ describe.skipIf(
       const { createProfiles } = await import(
         `../src/profiles?launch-options=${backend}-${recorder}`
       );
-      const root = await mkdtemp(join(tmpdir(), "openbot-launch-options-"));
+      const root = await mkdtemp(join(tmpdir(), "ccpbot-launch-options-"));
       const profiles = createProfiles(root);
       try {
         await expect(profiles.page("bot-one")).rejects.toThrow(
@@ -147,7 +147,7 @@ describe.skipIf(
       join(import.meta.dir, "fixtures", "recorder"),
     );
     if (!found.ok) throw new Error(found.error);
-    const root = await mkdtemp(join(tmpdir(), "openbot-launch-options-"));
+    const root = await mkdtemp(join(tmpdir(), "ccpbot-launch-options-"));
     const profiles = createProfiles(root);
     try {
       await expect(profiles.page("bot-one")).rejects.toThrow(

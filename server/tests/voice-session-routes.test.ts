@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import type { VoiceSessionRecord } from "@openbot/shared/voice-session";
+import type { VoiceSessionRecord } from "@ccpbot/shared/voice-session";
 import type { MiddlewareHandler } from "hono";
 import type { AppVariables } from "../src/auth/guards";
 import { createVoiceRoutes } from "../src/voice/routes";
@@ -35,7 +35,7 @@ const session: VoiceSessionRecord = {
 };
 const request = (body: unknown = session): RequestInit => ({
   method: "POST",
-  headers: { "content-type": "application/json", "x-openbot-voice": "1" },
+  headers: { "content-type": "application/json", "x-ccpbot-voice": "1" },
   body: JSON.stringify(body),
 });
 

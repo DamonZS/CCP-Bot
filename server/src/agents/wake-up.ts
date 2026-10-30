@@ -15,8 +15,8 @@
  * Bot are bound when the tools are built.
  */
 import { randomUUID } from "node:crypto";
-import type { GrantedTool } from "@openbot/toolkit/granted-tool";
-import { HeadlessToolSuspension } from "@openbot/toolkit/headless-tools";
+import type { GrantedTool } from "@ccpbot/toolkit/granted-tool";
+import { HeadlessToolSuspension } from "@ccpbot/toolkit/headless-tools";
 import { and, asc, eq, isNull, sql } from "drizzle-orm";
 import { z } from "zod";
 import type { AuditInitiator, AuditStore } from "../audit";

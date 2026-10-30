@@ -1,22 +1,22 @@
 # Deployment
 
-OpenBot ships as one container. It carries the app, the API that serves it, and the browser the Bots
+CCP-Bot ships as one container. It carries the app, the API that serves it, and the browser the Bots
 drive, and it can carry its own PostgreSQL as well. It does what it does on a laptop.
 
 ```sh
 # Every release publishes this image, so a deployment needs no clone and no build.
 # `latest` is the most recent; a version tag such as `:v0.0.9` pins one.
-image=ghcr.io/copilotkit/openbot:latest
+image=ghcr.io/copilotkit/ccpbot:latest
 
 # A database you already run.
 docker run -p 3001:3001 --env-file .env "$image"
 
 # Or one inside the container. Nothing else to provision.
 docker run -p 3001:3001 --env-file .env \
-  -e EMBEDDED_POSTGRES=on -v openbot-data:/var/lib/postgresql "$image"
+  -e EMBEDDED_POSTGRES=on -v ccpbot-data:/var/lib/postgresql "$image"
 ```
 
-`docker build -t openbot .` from a clone produces the same thing, for anyone deploying a tree of
+`docker build -t ccpbot .` from a clone produces the same thing, for anyone deploying a tree of
 their own. What a release publishes is digest-pinned in its `container-images.json`, and deploying
 those digests rather than a moving tag is what [releasing.md](releasing.md) recommends.
 
@@ -135,11 +135,11 @@ reachable from this container. Unset it if your `.env` still has the laptop defa
 
 **Authentication is required.** With no identity provider configured, the deployment refuses to start,
 because a public URL where every visitor is an administrator fails silently: it looks like it works.
-Configure Google, Microsoft or Okta, or set `OPENBOT_SINGLE_USER=true` to say you meant an open
+Configure Google, Microsoft or Okta, or set `CCPBOT_SINGLE_USER=true` to say you meant an open
 deployment. `NODE_ENV` does not affect this.
 
-That flag does not cover a public address. `OPENBOT_SINGLE_USER=true` alongside an
-`OPENBOT_PUBLIC_URL`, `OPENBOT_APP_URL` or `TRUSTED_ORIGINS` entry that the public internet routes
+That flag does not cover a public address. `CCPBOT_SINGLE_USER=true` alongside an
+`CCPBOT_PUBLIC_URL`, `CCPBOT_APP_URL` or `TRUSTED_ORIGINS` entry that the public internet routes
 to now refuses to start and names the address, because an open deployment on a public address is
 one where every visitor is the administrator. A private address is a different thing and still
 runs: a home LAN, a Tailscale or VPN address, or a `.local` name is allowed, with a warning at boot
@@ -161,13 +161,13 @@ would race, and a failed migration should stop a deploy rather than leave a half
 serving traffic.
 
 ```sh
-docker run --rm --env-file .env --entrypoint sh openbot \
+docker run --rm --env-file .env --entrypoint sh ccpbot \
   -c "cd /app/server && bun scripts/migrate.ts"
 ```
 
 **`--entrypoint sh`, and it is the load-bearing part of that command.** This image's entrypoint is
 `/init`, which is s6's, and anything after the image name is a `CMD` — which s6 runs *after* it has
-started everything in the image. Without the override, `docker run … openbot sh -c "… migrate.ts"`
+started everything in the image. Without the override, `docker run … ccpbot sh -c "… migrate.ts"`
 brings up the API and Chromium against the database you have not migrated yet, and only then
 migrates it: a second server on an unmigrated schema, which is the race this whole section exists to
 avoid, in the one command meant to avoid it. Replacing the entrypoint runs the migration and nothing
@@ -225,7 +225,7 @@ No shared-memory configuration is needed or possible.
 **Kubernetes.** Everything above describes one container run by hand. A cluster is the other shape,
 and it is the only one that gives each person (or an Isolated Bot) a computer of its own, runs the routines schedule without
 something outside the container, and scales the API past a single replica. That is the Helm chart:
-[charts/openbot/README.md](../charts/openbot/README.md), which covers EKS, GKE, AKS and a plain
+[charts/ccpbot/README.md](../charts/ccpbot/README.md), which covers EKS, GKE, AKS and a plain
 self-hosted cluster from the same templates.
 
 **Azure Container Apps.** Managed ingress with TLS and custom domains. Note the **240-second request

@@ -8,11 +8,11 @@
     <script>
       // localStorage throws in some privacy modes; a theme is not worth taking the app down for.
       try {
-        const dark = window.localStorage.getItem("openbot-theme") === "dark";
+        const dark = window.localStorage.getItem("ccpbot-theme") === "dark";
         document.documentElement.classList.toggle("dark", dark);
         document.documentElement.style.colorScheme = dark ? "dark" : "light";
-        const skin = window.localStorage.getItem("openbot-skin");
-        if (skin && skin !== "openbot") document.documentElement.dataset.skin = skin;
+        const skin = window.localStorage.getItem("ccpbot-skin");
+        if (skin && skin !== "ccpbot") document.documentElement.dataset.skin = skin;
       } catch {}
     </script>
   </head>

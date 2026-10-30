@@ -117,8 +117,12 @@ export function BotProfile({
                 <ItemTitle>{t("Active")}</ItemTitle>
                 <ItemDescription>
                   {lifecycle.data.paused
-                    ? t("Paused. Nothing runs for you until you turn it back on.")
-                    : t("Runs its routines, responsibilities, hand-offs and follow-ups for you.")}
+                    ? t(
+                        "Paused. Nothing runs for you until you turn it back on.",
+                      )
+                    : t(
+                        "Runs its routines, responsibilities, hand-offs and follow-ups for you.",
+                      )}
                 </ItemDescription>
               </ItemContent>
               <ItemActions>
@@ -140,7 +144,8 @@ export function BotProfile({
               <ItemContent>
                 <ItemTitle>{t("Notifications")}</ItemTitle>
                 <ItemDescription>
-                  {NOTIFY_LABEL[lifecycle.data.notify]}{t(". Sidebar badges always show.")}
+                  {NOTIFY_LABEL[lifecycle.data.notify]}
+                  {t(". Sidebar badges always show.")}
                 </ItemDescription>
               </ItemContent>
               <ItemActions>
@@ -180,7 +185,9 @@ export function BotProfile({
                   <ItemContent>
                     <ItemTitle>{t("Browser notifications")}</ItemTitle>
                     <ItemDescription>
-                      {t("Off in this browser. Turn them on to hear when a Bot needs you.")}
+                      {t(
+                        "Off in this browser. Turn them on to hear when a Bot needs you.",
+                      )}
                     </ItemDescription>
                   </ItemContent>
                   <ItemActions>
@@ -210,7 +217,9 @@ export function BotProfile({
                 <IconMessage />
               </ItemMedia>
               <ItemContent>
-                <ItemTitle>{t("Message")} {agent.name}</ItemTitle>
+                <ItemTitle>
+                  {t("Message")} {agent.name}
+                </ItemTitle>
                 <ItemDescription>{t("Start a conversation.")}</ItemDescription>
               </ItemContent>
               <ItemActions>

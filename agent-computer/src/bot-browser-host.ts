@@ -3,7 +3,7 @@
  * and reload) and the Recorder loaded in it, which records only that person. The contract is
  * `shared/bot-browser.ts`; these are its computer routes (`botBrowserComputerPaths`).
  *
- * Under the computer token like every other route, with the Bot's id in `x-openbot-bot-id`; `index.ts` checks the
+ * Under the computer token like every other route, with the Bot's id in `x-ccpbot-bot-id`; `index.ts` checks the
  * token, this checks the id. The server is the only caller: it decides who the signed-in person is and whether they
  * may use the Bot, mints the Recorder connection for the person who pressed Record, and forwards here.
  *
@@ -34,12 +34,12 @@ import {
   browserTabsRequestSchema,
   isPersonBrowserId,
   type LauncherState,
-} from "../../shared/openbot-browser";
+} from "../../shared/ccpbot-browser";
 import { parseBody } from "./browser-host";
 import { createTabBar, type TabbedBrowser } from "./browser-tabs";
 import { type Control, TAKE_CONTROL_FIRST } from "./control";
 import { BrowserNotOpenError } from "./person-access";
-import type { OpenBotBrowser, Profiles } from "./profiles";
+import type { CcpBotBrowser, Profiles } from "./profiles";
 import {
   type RecorderLauncher,
   RecorderUnavailableError,
@@ -76,7 +76,7 @@ export type BotBrowserHostOptions = {
 /** Said to the person, through the server, for each refusal. */
 const SENTENCES = {
   personsBrowser:
-    "These routes are for a Bot's browser. A person's own browser has its own: send a Bot's id in x-openbot-bot-id.",
+    "These routes are for a Bot's browser. A person's own browser has its own: send a Bot's id in x-ccpbot-bot-id.",
   onlyTheHolder:
     "Only the person holding control of this Bot's browser can record in it. Take control first.",
   onlyTheHolderClears:
@@ -84,7 +84,7 @@ const SENTENCES = {
   alreadyRecording: "A recording is already running in this Bot's browser.",
   notRecording: "Nothing is being recorded in this Bot's browser.",
   noRecorder:
-    "This Bot's browser cannot record: the OpenBot Recorder is not installed on its computer.",
+    "This Bot's browser cannot record: the CCP-Bot Recorder is not installed on its computer.",
   recorderDidNotStart:
     "The Recorder in this Bot's browser did not start, so it cannot record. Stop the Bot's computer and try again.",
   notStarted: "This Bot's browser could not be started. Try again.",
@@ -160,7 +160,7 @@ export function createBotBrowserHost(options: BotBrowserHostOptions) {
     return undefined;
   };
 
-  const tabbed = async (view: OpenBotBrowser): Promise<TabbedBrowser> => ({
+  const tabbed = async (view: CcpBotBrowser): Promise<TabbedBrowser> => ({
     context: view.context,
     session: await view.session(),
     window: "screen",
@@ -171,7 +171,7 @@ export function createBotBrowserHost(options: BotBrowserHostOptions) {
 
   const stateOf = async (
     botId: string,
-    view: OpenBotBrowser,
+    view: CcpBotBrowser,
     fresh?: LauncherState,
   ): Promise<BotBrowserState> => {
     const recording = recordingOf(botId);
@@ -198,7 +198,7 @@ export function createBotBrowserHost(options: BotBrowserHostOptions) {
   const closedState: BotBrowserState = { open: false, tabs: [] };
 
   /** The Bot's browser, started if it is not running, as a person's input on the screen starts it. */
-  const running = async (botId: string): Promise<OpenBotBrowser | Response> => {
+  const running = async (botId: string): Promise<CcpBotBrowser | Response> => {
     try {
       await profiles.page(botId);
     } catch (error) {
@@ -324,7 +324,7 @@ export function createBotBrowserHost(options: BotBrowserHostOptions) {
       narration: "external",
     });
     if (!connected.ok) {
-      // The Recorder's own words are for the log: the person is told what happened, in OpenBot's.
+      // The Recorder's own words are for the log: the person is told what happened, in CCP-Bot's.
       console.info(
         JSON.stringify({
           type: "computer-bot-recording-connect-failed",

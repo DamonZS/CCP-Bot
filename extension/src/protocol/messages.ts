@@ -2,18 +2,18 @@ import type {
   LearningSpaceState,
   RecorderConnectVia,
   RecorderMe,
-} from "@openbot/shared/recorder-api";
-import type { CapturedEvent } from "@openbot/shared/recorder-masking";
-import { MAX_TIMESTAMP_MS } from "@openbot/shared/recorder-masking";
+} from "@ccpbot/shared/recorder-api";
+import type { CapturedEvent } from "@ccpbot/shared/recorder-masking";
+import { MAX_TIMESTAMP_MS } from "@ccpbot/shared/recorder-masking";
 import {
   RECORDER_CONNECT_STATUS,
   type RecorderConnectWait,
   type RecorderPageResult,
   type RecorderPageState,
   recorderPageMessageSchema,
-} from "@openbot/shared/recorder-page";
+} from "@ccpbot/shared/recorder-page";
 import { z } from "zod";
-import { normaliseOpenBotOrigin } from "../shared/origin";
+import { normaliseCcpBotOrigin } from "../shared/origin";
 import type { DrainRecord, RecorderNotice } from "../shared/storage";
 
 export const PORT_CONTENT = "recorder:content";
@@ -79,9 +79,9 @@ export type RecorderState = {
   /** Narrated phrases this recording has kept so far: each final phrase placed among its steps, heard by the
    * Recorder itself or passed in by its launcher. Absent while there are none. */
   phrases?: number;
-  /** The recording Stop ended last: the popup says it went to Intelligence, and the launcher tells OpenBot its name,
+  /** The recording Stop ended last: the popup says it went to Intelligence, and the launcher tells CCP-Bot its name,
    * when it stopped and what it held (the person's actions as the badge counted them, and its narrated phrases), so
-   * OpenBot can confirm it too and say when it held nothing. */
+   * CCP-Bot can confirm it too and say when it held nothing. */
   lastStopped?: {
     recordingId: string;
     title?: string;
@@ -173,7 +173,7 @@ export type BackgroundToContent =
 export type StreamSession = {
   recordingId: string;
   title: string;
-  openbotUrl: string;
+  ccpbotUrl: string;
   token: string;
   trajectoryId: string;
   startedAt: number;
@@ -189,7 +189,7 @@ export type StreamSession = {
   e2eHoldRetryMs?: number;
 };
 /** Why a recording ended without the person's Stop, sent to Intelligence with its failed outcome: `disconnected` for a
- * Disconnect (the person's own, or the organization's policy moving the Recorder), `signed-out` for a connection OpenBot
+ * Disconnect (the person's own, or the organization's policy moving the Recorder), `signed-out` for a connection CCP-Bot
  * signed out. Events streamed live before it ended are already in Intelligence. */
 export type StopFailure = "disconnected" | "signed-out";
 export type BackgroundToOffscreen =
@@ -208,7 +208,7 @@ export type BackgroundToOffscreen =
   | { type: "offscreen.stop"; outcome: "failed"; reason: StopFailure } // the browser was disconnected or signed out mid-recording
   | {
       type: "offscreen.recover";
-      openbotUrl: string;
+      ccpbotUrl: string;
       token: string;
       /** The managed policy's pinned Intelligence addresses when it was sent (null: none pinned); the recovered
        * streamers are held to it, since a document opened after a browser start was never told a policy. */
@@ -270,7 +270,7 @@ export type OffscreenToBackground =
   | OffscreenSignedOut; // a pass came back RECORDER_SIGNED_OUT, with the guard's reason; its events stay kept (Decision 19)
 
 /** The connect page's Connect or Cancel. `origin` is the one the page showed (its page.connect.pending answer), in the
- * form a pending connect stores (normaliseOpenBotOrigin's): the service worker refuses a decide whose origin is not the
+ * form a pending connect stores (normaliseCcpBotOrigin's): the service worker refuses a decide whose origin is not the
  * pending connect's, so a connect tab only ever confirms the site it shows. */
 const pageConnectDecideSchema = z
   .object({
@@ -278,7 +278,7 @@ const pageConnectDecideSchema = z
     approve: z.boolean(),
     label: z.string(),
     origin: z.string().refine((value) => {
-      const checked = normaliseOpenBotOrigin(value);
+      const checked = normaliseCcpBotOrigin(value);
       return checked.ok && checked.origin === value;
     }),
   })
@@ -295,7 +295,7 @@ export type PageToBackground =
       /** The narration's language: the page's own, else the browser's (the service worker's browser language when
        * absent or unusable). */
       language?: string;
-      /** Whether the person narrates this recording, when whoever started it asked them (OpenBot's own Record form, by
+      /** Whether the person narrates this recording, when whoever started it asked them (CCP-Bot's own Record form, by
        * the launcher). Absent: the choice they made in the Recorder, and no microphone until they made one. */
       narrate?: boolean;
     }
@@ -319,12 +319,12 @@ export type PageStateResponse = {
   ok: true;
   state: RecorderState;
   connection: {
-    openbotUrl: string;
+    ccpbotUrl: string;
     user: { name: string; email: string };
     via: RecorderConnectVia;
   } | null;
   me: RecorderMe | null;
-  policy: { openbotUrl: string | null; invalid: boolean };
+  policy: { ccpbotUrl: string | null; invalid: boolean };
   notice: RecorderNotice | null;
   /** Whether the person narrates their recordings; null until they chose. */
   narration: "on" | "off" | null;
@@ -336,13 +336,13 @@ export type PageResponse =
   | {
       ok: true;
       pending: { origin: string; via: "web" | "desktop" } | null;
-      /** The connection approving it replaces, when this browser is connected: its OpenBot and the person it is for. */
+      /** The connection approving it replaces, when this browser is connected: its CCP-Bot and the person it is for. */
       replaces?: { origin: string; email: string };
     }
   | { ok: true; learning: LearningSpaceState }
   | { ok: true; available: boolean }
-  | { ok: true; connected: true } // OpenBot Desktop connected this browser, with no Connect page
-  | { ok: true; connected: false; reason: string } // why OpenBot Desktop did not connect this browser, as a code (DesktopConnect)
+  | { ok: true; connected: true } // CCP-Bot Desktop connected this browser, with no Connect page
+  | { ok: true; connected: false; reason: string } // why CCP-Bot Desktop did not connect this browser, as a code (DesktopConnect)
   | { ok: true }
   | { ok: false; error: string };
 
@@ -391,10 +391,10 @@ const pageAgentObservation = z.discriminatedUnion("kind", [
 ]);
 
 const externalToBackgroundSchema = z.discriminatedUnion("type", [
-  z.object({ type: z.literal("openbot.ping") }).strict(),
+  z.object({ type: z.literal("ccpbot.ping") }).strict(),
   z
     .object({
-      type: z.literal("openbot.connect"),
+      type: z.literal("ccpbot.connect"),
       code: z.string().startsWith("obc_").max(80),
     })
     .strict(),
@@ -410,8 +410,8 @@ const externalToBackgroundSchema = z.discriminatedUnion("type", [
       observation: pageAgentObservation,
     })
     .strict(),
-  // What OpenBot's own page asks the Recorder in the same browser (shared/recorder-page.ts): openbot.state,
-  // openbot.record and openbot.stop, answered only for the OpenBot this copy is connected to (openbot-page.ts).
+  // What CCP-Bot's own page asks the Recorder in the same browser (shared/recorder-page.ts): ccpbot.state,
+  // ccpbot.record and ccpbot.stop, answered only for the CCP-Bot this copy is connected to (ccpbot-page.ts).
   ...recorderPageMessageSchema.options,
 ]);
 export type ExternalToBackground = z.infer<typeof externalToBackgroundSchema>;
@@ -426,9 +426,9 @@ export type ExternalResponse =
       ok: true;
       version: string;
       installId: string;
-      /** A trusted OpenBot's connect (connection.ts `trustedConnectRule`): connected now, with no Connect page. */
+      /** A trusted CCP-Bot's connect (connection.ts `trustedConnectRule`): connected now, with no Connect page. */
       connected?: true;
-    } // the connected origin's ping, and a trusted OpenBot's connect; installId = installIdFor(sender.origin)
+    } // the connected origin's ping, and a trusted CCP-Bot's connect; installId = installIdFor(sender.origin)
   | {
       ok: false;
       error:
@@ -438,12 +438,12 @@ export type ExternalResponse =
         | "busy"
         | "invalid"
         | "not-recording"
-        // A trusted OpenBot's code that OpenBot refused, or an OpenBot that did not answer its exchange.
+        // A trusted CCP-Bot's code that CCP-Bot refused, or a CCP-Bot that did not answer its exchange.
         | "exchange-refused"
-        | "openbot-unreachable";
+        | "ccpbot-unreachable";
     }
   | { ok: false; error: "throttled"; retryAfterMs: number }; // too many connects from this origin lately, and how long until it may ask again
-/** Every answer onMessageExternal gives: openbot.state's is a RecorderPageState, openbot.record's and openbot.stop's a
+/** Every answer onMessageExternal gives: ccpbot.state's is a RecorderPageState, ccpbot.record's and ccpbot.stop's a
  * RecorderPageResult. */
 export type ExternalAnswer =
   | ExternalResponse

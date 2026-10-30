@@ -1,8 +1,8 @@
 // The recording controller: Record, the tabs a recording follows, the 50-action notice, Stop, Start over and the
 // drains that keep sending after it. A recording goes to Intelligence only: Record takes a new trajectory id, the
-// offscreen document asks OpenBot for a capture pass (the trajectory joins the person's own Learning space) and streams
+// offscreen document asks CCP-Bot for a capture pass (the trajectory joins the person's own Learning space) and streams
 // every event to Intelligence, and
-// Stop queues the outcome and lets the outbox drain. OpenBot hears nothing of the recording itself, only what the
+// Stop queues the outcome and lets the outbox drain. CCP-Bot hears nothing of the recording itself, only what the
 // Recorder is doing (its phase, the recording's title and how many actions so far, activity.ts), for the Browser
 // button's red dot. The phase lives in a
 // reducer (`reduceRecorder`), persisted to storage.session after every transition so a restarted service worker finds
@@ -15,13 +15,13 @@ import {
   type RecorderMe,
   recorderPaths,
   TRAJECTORY_GATE_REFUSALS,
-} from "@openbot/shared/recorder-api";
+} from "@ccpbot/shared/recorder-api";
 import {
   type CapturedEvent,
   scrubText,
   scrubTranscript,
   scrubUrl,
-} from "@openbot/shared/recorder-masking";
+} from "@ccpbot/shared/recorder-masking";
 import type {
   BackgroundToContent,
   BackgroundToOffscreen,
@@ -44,10 +44,10 @@ import {
   KEPT_FOR_PERSON_MS,
   RECORDER_ACTION_NOTICE_AT,
 } from "../shared/limits";
-import { OpenBotError, openbotJson } from "../shared/openbot-client";
+import { CcpBotError, ccpbotJson } from "../shared/ccpbot-client";
 import { isRecordablePage } from "../shared/origin";
 import {
-  allowsOpenBot,
+  allowsCcpBot,
   onPolicyChanged,
   type RecorderPolicy,
   readPolicy,
@@ -130,8 +130,8 @@ export type RecordingDeps = {
 
 /** Called by the router after Task 8's handler answered: `connected` after a successful `page.connect.decide` (web or Desktop),
  * `disconnected` after `page.disconnect` (the person's own Disconnect). `connectionLost` is connection.ts's: the
- * keep-alive's signed-out answer, the organization's policy moving the Recorder away from the connection's OpenBot, or a
- * connection to another OpenBot, or for another person, replacing it. */
+ * keep-alive's signed-out answer, the organization's policy moving the Recorder away from the connection's CCP-Bot, or a
+ * connection to another CCP-Bot, or for another person, replacing it. */
 type ConnectionEvents = {
   connected(): Promise<void>;
   disconnected(): Promise<void>;
@@ -191,7 +191,7 @@ export function recordingRecovery(): RecordingRecovery | null {
 const READY_TIMEOUT_MS = 5_000;
 const STOP_WATCHDOG_MS = 120_000;
 const ME_FRESH_MS = 60_000;
-/** How often a running recording asks OpenBot whether its connection still stands. */
+/** How often a running recording asks CCP-Bot whether its connection still stands. */
 const CONNECTION_CHECK_MS = 30_000;
 /** While the offscreen port is down, content events wait here; beyond either cap the oldest go, counted (Decision 19). */
 const QUEUE_EVENTS = 2_000;
@@ -242,11 +242,11 @@ export function heldEvents(
 }
 
 const SENTENCES = {
-  noConnection: "Connect this browser to OpenBot first.",
+  noConnection: "Connect this browser to CCP-Bot first.",
   badSite: "That is not a website the Recorder can leave out.",
   // The install grants website access; only the person's own Site access setting can withhold it afterwards.
   noAccess:
-    "Site access is off for OpenBot Recorder. Open your browser's Extensions page, choose Details on OpenBot Recorder and set Site access to On all sites.",
+    "Site access is off for CCP-Bot Recorder. Open your browser's Extensions page, choose Details on CCP-Bot Recorder and set Site access to On all sites.",
   busy: "A recording is already running.",
   notRecording: "Nothing is being recorded.",
   noVoice: "This recording has no voice.",
@@ -257,23 +257,23 @@ const SENTENCES = {
   documentFailed: "The Recorder could not start recording. Try again.",
   restartUnreachable:
     "The Recorder could not start over just now. Your recording goes on; try again in a moment.",
-  signedOut: `This browser was disconnected from OpenBot. Your recording stopped, and everything in it is kept in this browser for ${KEPT_FOR_PERSON_DAYS} days, until you connect again.`,
+  signedOut: `This browser was disconnected from CCP-Bot. Your recording stopped, and everything in it is kept in this browser for ${KEPT_FOR_PERSON_DAYS} days, until you connect again.`,
   organizationSignedOut: `Your organization sign-in ended. Your recording stopped, and everything in it is kept in this browser for ${KEPT_FOR_PERSON_DAYS} days, until you connect again.`,
-  policyMoved: `Your organization moved the Recorder to another OpenBot. Your recording stopped, and everything in it is kept in this browser for ${KEPT_FOR_PERSON_DAYS} days.`,
+  policyMoved: `Your organization moved the Recorder to another CCP-Bot. Your recording stopped, and everything in it is kept in this browser for ${KEPT_FOR_PERSON_DAYS} days.`,
   policyRefused:
-    "Your organization's Recorder policy does not allow this OpenBot. Ask your IT team.",
-  replaced: `This browser was connected to another OpenBot or person. Your recording stopped, and everything in it is kept in this browser for ${KEPT_FOR_PERSON_DAYS} days, until you connect again.`,
-  keptSignedOut: "This browser was disconnected from OpenBot.",
+    "Your organization's Recorder policy does not allow this CCP-Bot. Ask your IT team.",
+  replaced: `This browser was connected to another CCP-Bot or person. Your recording stopped, and everything in it is kept in this browser for ${KEPT_FOR_PERSON_DAYS} days, until you connect again.`,
+  keptSignedOut: "This browser was disconnected from CCP-Bot.",
   keptOrganization: "Your organization sign-in ended.",
-  keptPolicy: "Your organization moved the Recorder to another OpenBot.",
-  keptReplaced: "This browser was connected to another OpenBot or person.",
+  keptPolicy: "Your organization moved the Recorder to another CCP-Bot.",
+  keptReplaced: "This browser was connected to another CCP-Bot or person.",
   authorityUnavailable: TRAJECTORY_GATE_REFUSALS.authorityUnavailable.message,
-  forbidden: "OpenBot does not let you record. Ask whoever runs it.",
+  forbidden: "CCP-Bot does not let you record. Ask whoever runs it.",
 } as const;
 
 type SignedOutReason = "revoked" | "removed" | "organization";
-/** Why a connection went without the person's Disconnect: OpenBot signed it out, the policy moved the Recorder, or the
- * person connected this browser to another OpenBot, or as another person, on the Connect page. */
+/** Why a connection went without the person's Disconnect: CCP-Bot signed it out, the policy moved the Recorder, or the
+ * person connected this browser to another CCP-Bot, or as another person, on the Connect page. */
 type LostReason = SignedOutReason | "policy" | "replaced";
 
 /** The sentences that say a stopped recording is kept until something happens: a Disconnect discards it, so they go. */
@@ -302,8 +302,8 @@ const keptSentence = (reason: LostReason): string =>
         ? SENTENCES.keptReplaced
         : SENTENCES.keptSignedOut;
 
-/** Record found the policy no longer allows the connection's OpenBot (connection.ts forgets it in a moment). */
-const POLICY_REFUSED = new Error("The policy does not allow this OpenBot.");
+/** Record found the policy no longer allows the connection's CCP-Bot (connection.ts forgets it in a moment). */
+const POLICY_REFUSED = new Error("The policy does not allow this CCP-Bot.");
 
 /** Record ended by a stop (Stop, Disconnect, a sign-out) before its recording was live: it rolls back. */
 const CANCELLED = new Error("Record was cancelled before it started.");
@@ -551,7 +551,7 @@ const defaultDeps: RecordingDeps = {
 /** The live recording: whom it belongs to and the token its passes are asked for with. */
 type Live = {
   recordingId: string;
-  openbotUrl: string;
+  ccpbotUrl: string;
   token: string;
   userId: string;
 };
@@ -562,14 +562,14 @@ type StopMode =
   | { kind: "disconnect" }; // the person's Disconnect: discarded right after
 
 const signedOutReason = (error: unknown): SignedOutReason | null =>
-  error instanceof OpenBotError && error.signedOut
+  error instanceof CcpBotError && error.signedOut
     ? (error.body?.reason ?? "revoked")
     : null;
 
-/** What the popup says when OpenBot refused a request: the Recorder's own sentence for what OpenBot answered, never the
+/** What the popup says when CCP-Bot refused a request: the Recorder's own sentence for what CCP-Bot answered, never the
  * text in its answer, which the popup would show in the Recorder's own voice. */
 const sentenceFor = (error: unknown, fallback: string): string => {
-  if (!(error instanceof OpenBotError)) return fallback;
+  if (!(error instanceof CcpBotError)) return fallback;
   if (error.body?.code === RECORDER_AUTHORITY_UNAVAILABLE)
     return SENTENCES.authorityUnavailable;
   return error.status === 403 ? SENTENCES.forbidden : fallback;
@@ -577,7 +577,7 @@ const sentenceFor = (error: unknown, fallback: string): string => {
 
 const ownedBy = (drain: DrainRecord, connection: ConnectionRecord): boolean =>
   drain.userId === connection.user.id &&
-  drain.openbotUrl === connection.openbotUrl;
+  drain.ccpbotUrl === connection.ccpbotUrl;
 
 function report(what: string): (error: unknown) => void {
   return (error) => console.error(`Recorder: ${what} failed`, error);
@@ -586,7 +586,7 @@ function report(what: string): (error: unknown) => void {
 function liveFrom(record: DrainRecord, token: string): Live {
   return {
     recordingId: record.recordingId,
-    openbotUrl: record.openbotUrl,
+    ccpbotUrl: record.ccpbotUrl,
     token,
     userId: record.userId,
   };
@@ -608,7 +608,7 @@ export function installRecording(
    * most): a save whose body held one carries what they entered, though it reads [redacted] (network/index.ts). Kept as
    * `digests` are. */
   const typedSecrets = new Map<number, string[]>();
-  /** The person's own Learning space as OpenBot last described it: a recording starts with it, for its popup line. Kept
+  /** The person's own Learning space as CCP-Bot last described it: a recording starts with it, for its popup line. Kept
    * in storage.session too (`learning`), so a service worker that started after the popup asked still has it. */
   let learningSpace: LearningSpaceState | undefined;
   /** The live recording's narration when its launcher passes it in (`external`): the language its phrases are in, and
@@ -674,7 +674,7 @@ export function installRecording(
    * trajectory (a recording Start over replaced, still draining) leaves that capture alone. */
   let shown: { recordingId: string; trajectoryIds: Set<string> } | null = null;
 
-  /** What this browser is recording, told to OpenBot whenever the phase or the recording changes and every 30 s while
+  /** What this browser is recording, told to CCP-Bot whenever the phase or the recording changes and every 30 s while
    * one runs (activity.ts): with the live recording's connection, else the stored one, whatever made it. A signed-out
    * answer goes the way the connection check's does. */
   const activity = createActivityReport({
@@ -682,21 +682,21 @@ export function installRecording(
     target: async () => {
       if (live)
         return {
-          openbotUrl: live.openbotUrl,
+          ccpbotUrl: live.ccpbotUrl,
           token: live.token,
           userId: live.userId,
         };
       const connection = await currentConnection();
       return connection
         ? {
-            openbotUrl: connection.openbotUrl,
+            ccpbotUrl: connection.ccpbotUrl,
             token: connection.token,
             userId: connection.user.id,
           }
         : null;
     },
     signedOut: (reason, target) =>
-      handleSignedOut(reason, target.token, target.userId, target.openbotUrl),
+      handleSignedOut(reason, target.token, target.userId, target.ccpbotUrl),
     timers: deps.timers,
   });
 
@@ -788,7 +788,7 @@ export function installRecording(
     for (const [tabId, typed] of (await readSession("typedSecrets")) ?? [])
       typedSecrets.set(tabId, typed);
     // The popup asks when it opens, and Chrome may stop this worker before the person presses Record: the next one takes
-    // up what OpenBot said, while the connection that asked is still the one connected.
+    // up what CCP-Bot said, while the connection that asked is still the one connected.
     const space = await readSession("learning");
     if (
       space &&
@@ -815,7 +815,7 @@ export function installRecording(
     openSteps(live.recordingId, takeRestored(live.recordingId));
   })();
   ready.catch(report("loading the recorder state"));
-  // A service worker that restarted while a recording runs tells OpenBot again, and goes on every 30 s.
+  // A service worker that restarted while a recording runs tells CCP-Bot again, and goes on every 30 s.
   void ready.then(
     () => {
       if (state.phase !== "idle") activity.changed();
@@ -1513,7 +1513,7 @@ export function installRecording(
   }
 
   const networkDeps: NetworkCaptureDeps = {
-    openbotUrl: () => live?.openbotUrl ?? null,
+    ccpbotUrl: () => live?.ccpbotUrl ?? null,
     // A tab on a site the person keeps out stays unattached until it reaches another site; one already attached when it
     // moved there has every call and AG-UI observation dropped here, as one to the site from another tab is.
     recordable: (url) => isRecordablePage(url) && !excludedUrl(url),
@@ -1604,7 +1604,7 @@ export function installRecording(
       const active: DrainRecord = {
         recordingId,
         title,
-        openbotUrl: connection.openbotUrl,
+        ccpbotUrl: connection.ccpbotUrl,
         userId: connection.user.id,
         userName: connection.user.name,
         trajectoryIds: [trajectoryId],
@@ -1614,15 +1614,15 @@ export function installRecording(
       saved = true;
       const policy = await deps.readPolicy();
       if (attempt.cancelled) throw CANCELLED;
-      if (!allowsOpenBot(policy, connection.openbotUrl)) throw POLICY_REFUSED;
-      // The microphone opens only for a person who chose to narrate: OpenBot says so with the Record it passes on (its
+      if (!allowsCcpBot(policy, connection.ccpbotUrl)) throw POLICY_REFUSED;
+      // The microphone opens only for a person who chose to narrate: CCP-Bot says so with the Record it passes on (its
       // own Record form asked them), anything else goes by the choice made in the Recorder, and none yet is no.
       const narrate =
         message.narrate ?? (await readLocal("narration")) === "on";
       const session: StreamSession = {
         recordingId,
         title,
-        openbotUrl: connection.openbotUrl,
+        ccpbotUrl: connection.ccpbotUrl,
         token: connection.token,
         trajectoryId,
         startedAt,
@@ -1660,7 +1660,7 @@ export function installRecording(
         throw CANCELLED;
       live = {
         recordingId,
-        openbotUrl: connection.openbotUrl,
+        ccpbotUrl: connection.ccpbotUrl,
         token: connection.token,
         userId: connection.user.id,
       };
@@ -1837,7 +1837,7 @@ export function installRecording(
         : {
             type: "offscreen.stop",
             outcome: "failed",
-            // Only OpenBot signs a connection out; a policy move and a replaced connection disconnect it here.
+            // Only CCP-Bot signs a connection out; a policy move and a replaced connection disconnect it here.
             reason:
               mode.kind === "disconnect" ||
               mode.reason === "policy" ||
@@ -1899,7 +1899,7 @@ export function installRecording(
               recordingId,
               ...(state.title !== undefined ? { title: state.title } : {}),
               stoppedAt: deps.now(),
-              // What it held, for OpenBot to say: the badge's count and the phrases placed, both final now.
+              // What it held, for CCP-Bot to say: the badge's count and the phrases placed, both final now.
               actions: state.actions,
               phrases: state.phrases ?? 0,
             },
@@ -1910,7 +1910,7 @@ export function installRecording(
       await markWaiting(
         (drain) =>
           drain.userId === current.userId &&
-          drain.openbotUrl === current.openbotUrl &&
+          drain.ccpbotUrl === current.ccpbotUrl &&
           (mode.kind !== "signed-out" ||
             mode.forgot ||
             drain.recordingId === recordingId),
@@ -1941,10 +1941,10 @@ export function installRecording(
 
   // ---- The connection check while recording -------------------------------------------------
 
-  /** While a recording runs, OpenBot is asked every 30 s whether the connection it records under still stands: a
-   * browser revoked in OpenBot's Settings, or a connection OpenBot signed out, would otherwise go on streaming until the
+  /** While a recording runs, CCP-Bot is asked every 30 s whether the connection it records under still stands: a
+   * browser revoked in CCP-Bot's Settings, or a connection CCP-Bot signed out, would otherwise go on streaming until the
    * popup or the 12-hour keep-alive asked. A signed-out answer ends the recording through the sign-out path (a failed
-   * outcome, reason signed-out, its streams halted, everything kept for its person). OpenBot not answering, or
+   * outcome, reason signed-out, its streams halted, everything kept for its person). CCP-Bot not answering, or
    * answering anything else, says nothing about the connection: the recording goes on through an outage, and the next
    * check asks again. */
   let connectionCheck: unknown = null;
@@ -1965,8 +1965,8 @@ export function installRecording(
     const current = live;
     if (!current || state.phase !== "recording") return;
     try {
-      await openbotJson<RecorderMe>(
-        { openbotUrl: current.openbotUrl, token: current.token },
+      await ccpbotJson<RecorderMe>(
+        { ccpbotUrl: current.ccpbotUrl, token: current.token },
         recorderPaths.me,
       );
     } catch (error) {
@@ -1976,10 +1976,10 @@ export function installRecording(
           reason,
           current.token,
           current.userId,
-          current.openbotUrl,
+          current.ccpbotUrl,
         );
     }
-    // Still recording (OpenBot answered, could not answer, or the person connected again first): asked again later.
+    // Still recording (CCP-Bot answered, could not answer, or the person connected again first): asked again later.
     if (live && state.phase === "recording" && connectionCheck === null)
       watchConnection();
   }
@@ -2037,14 +2037,14 @@ export function installRecording(
     );
   }
 
-  /** OpenBot answered that the connection a request used is gone: forget it (only if it is still the stored one), stop
-   * a recording that used it, and keep everything for its person on that OpenBot (their drains on another OpenBot are
+  /** CCP-Bot answered that the connection a request used is gone: forget it (only if it is still the stored one), stop
+   * a recording that used it, and keep everything for its person on that CCP-Bot (their drains on another CCP-Bot are
    * another connection's). */
   async function handleSignedOut(
     reason: SignedOutReason,
     token: string,
     userId: string,
-    openbotUrl: string,
+    ccpbotUrl: string,
   ): Promise<void> {
     const forgot = await forgetConnection(reason, token);
     haltStreams(token);
@@ -2056,14 +2056,14 @@ export function installRecording(
       await stopRecording({ kind: "signed-out", reason, forgot });
     } else if (forgot)
       await markWaiting(
-        (drain) => drain.userId === userId && drain.openbotUrl === openbotUrl,
+        (drain) => drain.userId === userId && drain.ccpbotUrl === ccpbotUrl,
         reason,
       );
   }
 
   /** The live recording's person connected this browser again: connecting revoked the token its passes were asked
    * with, so it takes the new one, as do the stored session (for a reopened document) and the document's stream.
-   * Resolves true when it switched; a recording of another person, or on another OpenBot, keeps its own token. */
+   * Resolves true when it switched; a recording of another person, or on another CCP-Bot, keeps its own token. */
   async function adoptConnection(): Promise<boolean> {
     const connection = await currentConnection();
     const current = live;
@@ -2072,7 +2072,7 @@ export function installRecording(
       !current ||
       state.phase !== "recording" ||
       current.userId !== connection.user.id ||
-      current.openbotUrl !== connection.openbotUrl ||
+      current.ccpbotUrl !== connection.ccpbotUrl ||
       current.token === connection.token
     )
       return false;
@@ -2096,7 +2096,7 @@ export function installRecording(
     token,
   }: OffscreenSignedOut): Promise<void> {
     if (live && live.token === token && state.phase === "recording") {
-      await handleSignedOut(reason, token, live.userId, live.openbotUrl);
+      await handleSignedOut(reason, token, live.userId, live.ccpbotUrl);
       return;
     }
     const connection = await currentConnection();
@@ -2106,10 +2106,10 @@ export function installRecording(
     await markWaiting((drain) => ownedBy(drain, connection), reason);
   }
 
-  /** The organization's policy moved the Recorder away from this connection's OpenBot (connection.ts forgot it), or a
-   * connection to another OpenBot, or for another person, replaced it (connection.ts `endReplaced`, which revokes its
+  /** The organization's policy moved the Recorder away from this connection's CCP-Bot (connection.ts forgot it), or a
+   * connection to another CCP-Bot, or for another person, replaced it (connection.ts `endReplaced`, which revokes its
    * token next): the live recording that used it stops, the document stops sending with its token, and everything is
-   * kept for its person on that OpenBot, as a sign-out keeps it. */
+   * kept for its person on that CCP-Bot, as a sign-out keeps it. */
   async function connectionEnded(
     connection: ConnectionRecord,
     reason: "policy" | "replaced",
@@ -2319,7 +2319,7 @@ export function installRecording(
   }
 
   /** The person who recorded kept drains is connected again (or, `recovering`, the browser started): the document
-   * sends everything their drains still hold. Drains of another person, or of another OpenBot, keep waiting: they are
+   * sends everything their drains still hold. Drains of another person, or of another CCP-Bot, keep waiting: they are
    * never sent under someone else's connection, and recovery marks them waiting for their person. */
   async function sendDrains(options: { recovering: boolean }): Promise<void> {
     await finishDiscards();
@@ -2349,7 +2349,7 @@ export function installRecording(
       const policy = await deps.readPolicy();
       port.postMessage({
         type: "offscreen.recover",
-        openbotUrl: connection.openbotUrl,
+        ccpbotUrl: connection.ccpbotUrl,
         token: connection.token,
         allowedIntelligenceUrls: policy.allowedIntelligenceUrls,
         version: chrome.runtime.getManifest().version,
@@ -2495,7 +2495,7 @@ export function installRecording(
     const policy = await deps.readPolicy();
     await sendToDocument({
       type: "offscreen.recover",
-      openbotUrl: connection.openbotUrl,
+      ccpbotUrl: connection.ccpbotUrl,
       token: connection.token,
       allowedIntelligenceUrls: policy.allowedIntelligenceUrls,
       version: chrome.runtime.getManifest().version,
@@ -2534,7 +2534,7 @@ export function installRecording(
     )
       return cached.value;
     try {
-      const value = await openbotJson<RecorderMe>(connection, recorderPaths.me);
+      const value = await ccpbotJson<RecorderMe>(connection, recorderPaths.me);
       await writeSession("me", { value, fetchedAt: deps.now() });
       return value;
     } catch (error) {
@@ -2546,11 +2546,11 @@ export function installRecording(
           reason,
           connection.token,
           connection.user.id,
-          connection.openbotUrl,
+          connection.ccpbotUrl,
         );
         return null;
       }
-      // OpenBot cannot answer for now: the last answer for this connection, if any.
+      // CCP-Bot cannot answer for now: the last answer for this connection, if any.
       return cached?.value.connectionId === connection.connectionId
         ? cached.value
         : null;
@@ -2573,15 +2573,15 @@ export function installRecording(
       }),
       connection: connection
         ? {
-            openbotUrl: connection.openbotUrl,
+            ccpbotUrl: connection.ccpbotUrl,
             user: { name: connection.user.name, email: connection.user.email },
             via: connection.via,
           }
         : null,
       me: connection ? me : null,
       policy: {
-        openbotUrl: policy.openbotUrl,
-        invalid: policy.openbotUrlInvalid,
+        ccpbotUrl: policy.ccpbotUrl,
+        invalid: policy.ccpbotUrlInvalid,
       },
       notice,
       narration: (await readLocal("narration")) ?? null,
@@ -2594,7 +2594,7 @@ export function installRecording(
     const connection = await currentConnection();
     if (!connection) return { ok: false, error: SENTENCES.noConnection };
     try {
-      const answer = await openbotJson<RecorderLearningResponse>(
+      const answer = await ccpbotJson<RecorderLearningResponse>(
         connection,
         recorderPaths.learning,
       );
@@ -2611,11 +2611,11 @@ export function installRecording(
           reason,
           connection.token,
           connection.user.id,
-          connection.openbotUrl,
+          connection.ccpbotUrl,
         );
       return {
         ok: false,
-        error: sentenceFor(error, "OpenBot did not answer. Try again."),
+        error: sentenceFor(error, "CCP-Bot did not answer. Try again."),
       };
     }
   }
@@ -2918,7 +2918,7 @@ export function installRecording(
   //
   // A recording follows every tab the person uses while it runs (David, 2026-10-22), in any window: the tab Record
   // started in, a tab a followed tab opened (onCreatedTarget above), any tab they switch to and any tab they open. A tab
-  // is used when it becomes the active tab of its window (tabs.onActivated: a click on it, a keyboard switch, OpenBot's
+  // is used when it becomes the active tab of its window (tabs.onActivated: a click on it, a keyboard switch, CCP-Bot's
   // own tab strip), when its window comes to the front (windows.onFocusChanged: the active tab of the window the person
   // moved to is the one they now use), and when it is opened (tabs.onCreated: the new-tab button, a bookmark opened in
   // the background). A tab that was open before Record and that the person never goes to is never followed.
@@ -3206,7 +3206,7 @@ export function installRecording(
           loss.reason,
           connection.token,
           connection.user.id,
-          connection.openbotUrl,
+          connection.ccpbotUrl,
         );
     },
 

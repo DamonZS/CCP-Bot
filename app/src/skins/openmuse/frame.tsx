@@ -43,7 +43,7 @@ import { NotificationsSheet } from "./notifications-sheet";
 import { type MuseIcon, RoundButton } from "./ui";
 import { t } from "@/lib/i18n";
 
-/** The deployment's own name, from its brand.yaml: the name OpenBot's sidebar shows. */
+/** The deployment's own name, from its brand.yaml: the name CCP-Bot's sidebar shows. */
 const PRODUCT = appConfig.brand.productName;
 
 const TABS: { id: MuseTab; label: string; icon: MuseIcon }[] = [
@@ -55,12 +55,12 @@ const TABS: { id: MuseTab; label: string; icon: MuseIcon }[] = [
 ];
 
 /**
- * OpenMuse's shell around every OpenBot page: one centred column, the agent at the top, a bell for
- * what waits on you, and a floating pill of five tabs. The page itself is OpenBot's, untouched —
- * conversations are OpenBot's own chat routes, rendered as `children`.
+ * OpenMuse's shell around every CCP-Bot page: one centred column, the agent at the top, a bell for
+ * what waits on you, and a floating pill of five tabs. The page itself is CCP-Bot's, untouched —
+ * conversations are CCP-Bot's own chat routes, rendered as `children`.
  */
 export function OpenMuseFrame({ children }: { children: ReactNode }) {
-  // The roster's socket. OpenBot opens it in its sidebar, which this frame replaces.
+  // The roster's socket. CCP-Bot opens it in its sidebar, which this frame replaces.
   useChannelEvents();
   const pathname = useRouterState({
     select: (state) => state.location.pathname,
@@ -146,7 +146,7 @@ export function OpenMuseFrame({ children }: { children: ReactNode }) {
                 label={t("Open conversations and menu")}
                 onClick={() => setSheet("menu")}
               >
-                {/* OpenBot's own "a Bot needs you" mark, worn as OpenMuse's dot. */}
+                {/* CCP-Bot's own "a Bot needs you" mark, worn as OpenMuse's dot. */}
                 <span className="openmuse-menu-badge">
                   <BotsNavBadge />
                 </span>
@@ -162,7 +162,7 @@ export function OpenMuseFrame({ children }: { children: ReactNode }) {
                 type="button"
               >
                 {/*
-                 * The Bot's own OpenBot avatar, the one its page and the Bots roster draw. With no Bot
+                 * The Bot's own CCP-Bot avatar, the one its page and the Bots roster draw. With no Bot
                  * yet, the deployment's own mark stands in.
                  */}
                 <span className="mt-1 mb-1 flex size-11 items-center justify-center min-[900px]:size-[52px] [&>[role=img]]:size-full! [&_svg]:size-full">
@@ -209,8 +209,8 @@ export function OpenMuseFrame({ children }: { children: ReactNode }) {
           </header>
         </div>
         {/*
-         * A tab's own screen sits in OpenMuse's 760px column. Any other OpenBot page, and a conversation
-         * with its side panel open, takes OpenBot's own width on a wide screen; the bars stay centred.
+         * A tab's own screen sits in OpenMuse's 760px column. Any other CCP-Bot page, and a conversation
+         * with its side panel open, takes CCP-Bot's own width on a wide screen; the bars stay centred.
          */}
         <main
           className={cn(
@@ -270,7 +270,7 @@ export function OpenMuseFrame({ children }: { children: ReactNode }) {
   );
 }
 
-/** Activity, Ideas and Goals are this skin's own screens; Apps is OpenBot's Connections. */
+/** Activity, Ideas and Goals are this skin's own screens; Apps is CCP-Bot's Connections. */
 function TabLink({
   tab,
   label,

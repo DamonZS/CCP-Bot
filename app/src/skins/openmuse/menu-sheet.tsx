@@ -49,8 +49,8 @@ import {
 import { t } from "@/lib/i18n";
 
 /**
- * OpenMuse's menu: the main chat, a new chat, every conversation OpenBot keeps, and a way to every
- * other OpenBot surface. Nothing here is OpenMuse's own data; each row opens an OpenBot route.
+ * OpenMuse's menu: the main chat, a new chat, every conversation CCP-Bot keeps, and a way to every
+ * other CCP-Bot surface. Nothing here is OpenMuse's own data; each row opens a CCP-Bot route.
  */
 export function MenuSheet({ onClose }: { onClose: () => void }) {
   const { bot } = useMuse();
@@ -134,7 +134,9 @@ export function MenuSheet({ onClose }: { onClose: () => void }) {
           searching={searching}
         />
         <p className={museText.small}>
-          {t("A conversation stays with the Bots in it. Pin one to keep it at the top.")}
+          {t(
+            "A conversation stays with the Bots in it. Pin one to keep it at the top.",
+          )}
         </p>
         <Divider className="my-1.5" />
         <div>
@@ -143,7 +145,7 @@ export function MenuSheet({ onClose }: { onClose: () => void }) {
             render={<Link onClick={onClose} to="/" />}
             title={t("Home")}
           />
-          {/* OpenBot's own destinations, from the one list its sidebar draws. */}
+          {/* CCP-Bot's own destinations, from the one list its sidebar draws. */}
           {navigation.map((item) => (
             <LinkRow
               icon={item.icon}
@@ -175,7 +177,7 @@ export function MenuSheet({ onClose }: { onClose: () => void }) {
 
 /**
  * One conversation, laid out as this look lists a side chat: its Bots' faces and title, then its actions as pills.
- * Pin and delete are the same two OpenBot offers on its sidebar row.
+ * Pin and delete are the same two CCP-Bot offers on its sidebar row.
  */
 function ConversationRow({
   channel,
@@ -222,7 +224,7 @@ function ConversationRow({
           />
         }
       >
-        {/* The same faces OpenBot's own conversation list draws: the Bot, or the group's Bots. */}
+        {/* The same faces CCP-Bot's own conversation list draws: the Bot, or the group's Bots. */}
         <span className="mt-0.5 shrink-0">
           <ChannelAvatar
             participantIds={channel.agentIds}

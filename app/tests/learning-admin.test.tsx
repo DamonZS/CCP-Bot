@@ -1,6 +1,6 @@
 import { afterAll, afterEach, beforeAll, expect, test } from "bun:test";
 import { GlobalRegistrator } from "@happy-dom/global-registrator";
-import type { LearningSettings } from "@openbot/shared/learning";
+import type { LearningSettings } from "@ccpbot/shared/learning";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
   createMemoryHistory,
@@ -146,13 +146,13 @@ function serve(body: unknown) {
 test.each([
   [
     { enabled: true, defaultTarget: null, agents: {} },
-    { state: "absent", containerId: "openbot" },
-    'This Intelligence project has no "openbot" Learning container yet',
+    { state: "absent", containerId: "ccpbot" },
+    'This Intelligence project has no "ccpbot" Learning container yet',
   ],
   [
-    { enabled: true, defaultTarget: { containerId: "openbot" }, agents: {} },
-    { state: "assigned", containerId: "openbot" },
-    'OpenBot assigned this Intelligence project\'s "openbot" container automatically',
+    { enabled: true, defaultTarget: { containerId: "ccpbot" }, agents: {} },
+    { state: "assigned", containerId: "ccpbot" },
+    'CCP-Bot assigned this Intelligence project\'s "ccpbot" container automatically',
   ],
   [
     { enabled: true, defaultTarget: null, agents: {} },
@@ -182,7 +182,7 @@ test("a deployment that chose its own container hears nothing about automatic as
   await waitFor(() =>
     expect(view.queryByText("Loading Learning settings…")).toBeNull(),
   );
-  expect(view.queryByText("OpenBot assigned", { exact: false })).toBeNull();
+  expect(view.queryByText("CCP-Bot assigned", { exact: false })).toBeNull();
   expect(
     view.queryByText("Learning container yet", { exact: false }),
   ).toBeNull();
@@ -193,12 +193,12 @@ test("a missing container shows exactly what to run, and a Create button only wh
     "Sign in once with npx --yes copilotkit@latest login, then run bun scripts/setup-learning.ts.";
   serve({
     settings: { enabled: true, defaultTarget: null, agents: {} },
-    automatic: { state: "absent", containerId: "openbot", instructions },
+    automatic: { state: "absent", containerId: "ccpbot", instructions },
   });
   const cannot = page();
   await cannot.findByText(instructions, { exact: false });
   expect(
-    cannot.queryByRole("button", { name: "Create the openbot container" }),
+    cannot.queryByRole("button", { name: "Create the ccpbot container" }),
   ).toBeNull();
   cleanup();
 
@@ -210,21 +210,21 @@ test("a missing container shows exactly what to run, and a Create button only wh
       if (path.endsWith("/container") && init?.method === "POST") {
         created++;
         return Response.json({
-          automatic: { state: "assigned", containerId: "openbot" },
+          automatic: { state: "assigned", containerId: "ccpbot" },
         });
       }
       if (path.endsWith("/settings"))
         return Response.json({
           settings:
             created > 0
-              ? { ...settings, defaultTarget: { containerId: "openbot" } }
+              ? { ...settings, defaultTarget: { containerId: "ccpbot" } }
               : settings,
           automatic:
             created > 0
-              ? { state: "assigned", containerId: "openbot" }
+              ? { state: "assigned", containerId: "ccpbot" }
               : {
                   state: "absent",
-                  containerId: "openbot",
+                  containerId: "ccpbot",
                   instructions,
                   canCreate: true,
                 },
@@ -236,14 +236,14 @@ test("a missing container shows exactly what to run, and a Create button only wh
   );
   const can = page();
   fireEvent.click(
-    await can.findByRole("button", { name: "Create the openbot container" }),
+    await can.findByRole("button", { name: "Create the ccpbot container" }),
   );
   await can.findByText("container automatically", { exact: false });
   expect(created).toBe(1);
   // Let the refetch the creation started settle before the DOM is torn down.
   await waitFor(() =>
     expect(
-      can.queryByRole("button", { name: "Create the openbot container" }),
+      can.queryByRole("button", { name: "Create the ccpbot container" }),
     ).toBeNull(),
   );
   await new Promise((resolve) => setTimeout(resolve, 50));

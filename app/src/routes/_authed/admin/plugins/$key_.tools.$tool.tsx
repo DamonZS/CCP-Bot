@@ -117,7 +117,9 @@ function RouteComponent() {
           title={server ? t("Tool not found") : t("This connector is off")}
         >
           {server
-            ? t("It may have been removed since the tool list was last refreshed.")
+            ? t(
+                "It may have been removed since the tool list was last refreshed.",
+              )
             : t("Turn it on to see its tools.")}
         </PageEmpty>
       </PageShell>
@@ -154,8 +156,12 @@ function RouteComponent() {
       <PageSection
         description={
           tool.effect === "write"
-            ? t("This tool changes something at the vendor. Boundaries about writes apply to it.")
-            : t("This tool only reads. Boundaries about writes don't apply to it.")
+            ? t(
+                "This tool changes something at the vendor. Boundaries about writes apply to it.",
+              )
+            : t(
+                "This tool only reads. Boundaries about writes don't apply to it.",
+              )
         }
         title={t("What it does")}
       >
@@ -169,7 +175,9 @@ function RouteComponent() {
             <ItemContent>
               <ItemTitle>{t("Effect")}</ItemTitle>
               <ItemDescription>
-                {t("Set by the connector, not the tool's name. Anything unknown counts as a write.")}
+                {t(
+                  "Set by the connector, not the tool's name. Anything unknown counts as a write.",
+                )}
               </ItemDescription>
             </ItemContent>
             <ItemActions>
@@ -188,7 +196,9 @@ function RouteComponent() {
       </PageSection>
 
       <PageSection
-        description={t("A Bot can call this tool only while its switch is on. Turning it off applies from the next call.")}
+        description={t(
+          "A Bot can call this tool only while its switch is on. Turning it off applies from the next call.",
+        )}
         title={t("Bots")}
       >
         {bots.length === 0 ? (

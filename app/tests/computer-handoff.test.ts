@@ -9,7 +9,7 @@ import {
 import type {
   ComputerControlState,
   HandoffStatus,
-} from "@openbot/shared/computer-control";
+} from "@ccpbot/shared/computer-control";
 import { releaseControl, takeControl } from "../src/lib/computers/control";
 import {
   awaitHandoff,

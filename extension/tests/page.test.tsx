@@ -62,13 +62,13 @@ test("a prose page renders the title as the h1 and the description under it", ()
 test("a popup page renders the same header", () => {
   const { getByRole, getByText } = render(
     <Page
-      title="OpenBot Recorder"
+      title="CCP-Bot Recorder"
       description="Record a task."
       width="popup"
     />,
   );
   expect(getByRole("heading", { level: 1 }).textContent).toBe(
-    "OpenBot Recorder",
+    "CCP-Bot Recorder",
   );
   expect(getByText("Record a task.")).toBeTruthy();
 });

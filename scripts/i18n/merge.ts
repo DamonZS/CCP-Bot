@@ -57,10 +57,9 @@ function readChunks(): Map<string, string> {
     name.endsWith(".zh.json"),
   );
   for (const file of files) {
-    const map = JSON.parse(readFileSync(`${CHUNK_DIR}/${file}`, "utf8")) as Record<
-      string,
-      string
-    >;
+    const map = JSON.parse(
+      readFileSync(`${CHUNK_DIR}/${file}`, "utf8"),
+    ) as Record<string, string>;
     for (const [key, value] of Object.entries(map)) {
       // An empty value would render as English anyway (see `t`), but it usually means the
       // translator skipped a line, so it is treated as missing rather than as a translation.
@@ -74,7 +73,9 @@ function readChunks(): Map<string, string> {
 
 const existing = readExisting();
 const translated = readChunks();
-const inventory = JSON.parse(readFileSync("scripts/i18n/inventory.json", "utf8")) as {
+const inventory = JSON.parse(
+  readFileSync("scripts/i18n/inventory.json", "utf8"),
+) as {
   entries: { source: string; count: number }[];
 };
 
@@ -89,7 +90,10 @@ const missing = inventory.entries
 
 const keys = [...merged.keys()].sort((a, b) => a.localeCompare(b, "en"));
 const body = keys
-  .map((key) => `  ${JSON.stringify(key)}: ${JSON.stringify(merged.get(key) as string)},`)
+  .map(
+    (key) =>
+      `  ${JSON.stringify(key)}: ${JSON.stringify(merged.get(key) as string)},`,
+  )
   .join("\n");
 
 const header = `/**

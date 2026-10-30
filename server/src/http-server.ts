@@ -1,8 +1,8 @@
-import { DICTATION_HTTP_IDLE_SECONDS } from "@openbot/shared/dictation";
+import { DICTATION_HTTP_IDLE_SECONDS } from "@ccpbot/shared/dictation";
 import { serve } from "bun";
 import { computerAccessCheck } from "./agents/computer-access";
 import type { AgentProfileStore } from "./agents/profile-store";
-import type { OpenBotRole } from "./auth/roles";
+import type { CcpBotRole } from "./auth/roles";
 import { botBrowserRequestSeconds } from "./browser/bot-browser";
 import { browserRequestSeconds } from "./browser/routes";
 import { websocket as channelSocket } from "./channels/socket";
@@ -37,7 +37,7 @@ export function startHttpServer(deps: {
   config: DeploymentConfig;
   resolveRequestActor: (
     request: Request,
-  ) => Promise<{ id: string; name: string; role: OpenBotRole }>;
+  ) => Promise<{ id: string; name: string; role: CcpBotRole }>;
   agentProfileStore: AgentProfileStore;
   computerGateway: ComputerGateway | undefined;
   app: {
@@ -120,7 +120,7 @@ export function startHttpServer(deps: {
         // And which Bot, which the guard above does not answer. This socket carries that Bot's screen,
         // so signing in is not enough: without this, anybody signed in watches anybody's Bot work. And
         // seeing a Team Bot is not enough either: its screen is its owner's signed-in browser. A person's
-        // own OpenBot browser is that person's alone, an administrator's neither: the same check says so.
+        // own CCP-Bot browser is that person's alone, an administrator's neither: the same check says so.
         if (
           !(await computerAccessCheck(agentProfileStore)(
             { id: actor.id, role: actor.role },

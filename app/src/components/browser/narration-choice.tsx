@@ -1,4 +1,4 @@
-import type { NarrationPreference } from "@openbot/shared/user-preferences";
+import type { NarrationPreference } from "@ccpbot/shared/user-preferences";
 import { IconMicrophone } from "@tabler/icons-react";
 import { useMutation } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
@@ -22,7 +22,7 @@ import { t } from "@/lib/i18n";
 
 /**
  * Whether the person narrates their recordings: their own preference, kept on their account so every browser they
- * open OpenBot in knows it. Null until they chose, which the Record button asks before their first recording, and
+ * open CCP-Bot in knows it. Null until they chose, which the Record button asks before their first recording, and
  * which keeps the microphone closed. `choose` keeps a new answer, here and in every browser.
  *
  * Undefined while it is not known: the preferences still loading, or not readable. That is not "never chose": read as
@@ -104,15 +104,21 @@ export function NarrationChoiceDialog({
         <DialogHeader>
           <DialogTitle>{t("Narrate while you record?")}</DialogTitle>
           <DialogDescription>
-            {t("Talk through the task as you do it, and the recording keeps what you say as text, so your Bots learn why you did each step.")}
+            {t(
+              "Talk through the task as you do it, and the recording keeps what you say as text, so your Bots learn why you did each step.",
+            )}
           </DialogDescription>
         </DialogHeader>
         <DialogBody className="mt-4 text-muted-foreground text-sm">
           <p>
-            {t("Your browser turns your speech into text on your own computer. Your voice never leaves it, and no recording of it is kept.")}
+            {t(
+              "Your browser turns your speech into text on your own computer. Your voice never leaves it, and no recording of it is kept.",
+            )}
           </p>
           <p className="mt-2">
-            {t("OpenBot keeps your answer for every recording. You can change it any time with the Narration switch on this page.")}
+            {t(
+              "CCP-Bot keeps your answer for every recording. You can change it any time with the Narration switch on this page.",
+            )}
           </p>
         </DialogBody>
         <DialogFooter className="mt-4">

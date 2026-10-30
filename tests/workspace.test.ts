@@ -27,16 +27,16 @@ function packagesStartedBy(script: string, workspaces: string[]): string[] {
   );
 }
 
-describe("OpenBot workspace", () => {
+describe("CCP-Bot workspace", () => {
   test("defines the app, server, worker, shared, toolkit and extension packages", () => {
     const manifest = rootManifest();
     const names: Record<string, string> = {
       app: "app",
       server: "server",
       worker: "worker",
-      shared: "@openbot/shared",
-      toolkit: "@openbot/toolkit",
-      extension: "@openbot/recorder-extension",
+      shared: "@ccpbot/shared",
+      toolkit: "@ccpbot/toolkit",
+      extension: "@ccpbot/recorder-extension",
     };
 
     expect(manifest.workspaces).toEqual(Object.keys(names));

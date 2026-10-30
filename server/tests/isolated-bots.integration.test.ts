@@ -155,7 +155,7 @@ const call = (
   body?: unknown,
   available = true,
 ) =>
-  appFor(actor, available).request(`http://openbot.test${path}`, {
+  appFor(actor, available).request(`http://ccpbot.test${path}`, {
     method,
     headers: { "content-type": "application/json" },
     ...(body === undefined ? {} : { body: JSON.stringify(body) }),
@@ -611,7 +611,7 @@ describe("whether it is in effect", () => {
     );
     expect(refused.status).toBe(400);
     expect((await refused.json()).error).toBe(
-      "This OpenBot can't give a Bot a computer of its own, so it runs on yours.",
+      "This CCP-Bot can't give a Bot a computer of its own, so it runs on yours.",
     );
     // Turning it off is still allowed here.
     const off = await call(

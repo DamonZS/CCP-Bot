@@ -1,5 +1,5 @@
-import { downloadHeaders } from "@openbot/shared/file-download";
-import { isPersonBrowserId } from "@openbot/shared/openbot-browser";
+import { downloadHeaders } from "@ccpbot/shared/file-download";
+import { isPersonBrowserId } from "@ccpbot/shared/ccpbot-browser";
 import type { Context, MiddlewareHandler } from "hono";
 import { Hono } from "hono";
 import type { BotAccessCheck } from "../agents/profile-policy";
@@ -70,7 +70,7 @@ export function createComputerRoutes(
   auditReader?: AuditReader,
   /**
    * The bar above a Bot's screen and Record, for the person holding its wheel (browser/bot-browser.ts), at
-   * `/:botId/browser`. Absent where this OpenBot has no Recorder: nothing about it is mounted.
+   * `/:botId/browser`. Absent where this CCP-Bot has no Recorder: nothing about it is mounted.
    */
   botBrowser?: BotBrowser,
 ) {
@@ -113,7 +113,7 @@ export function createComputerRoutes(
     }
 
     /*
-     * A person's own OpenBot browser, named for the person (browser/person.ts), answers here only what its live screen
+     * A person's own CCP-Bot browser, named for the person (browser/person.ts), answers here only what its live screen
      * reads, and only to that person: who holds the wheel, whether it is up, and a picture of the page. Asked here and
      * not of `canUseBot`, which a deployment with no profile store answers yes to for everybody. Nothing that acts as a
      * Bot (a click through the boundary, a command, a file) reaches a person's browser: no Bot uses one yet.
@@ -1090,7 +1090,7 @@ async function act(
  * Compared against rather than imported from `auth/dev-actor` because the computer must not depend on the
  * authentication module's internals; this is the one fact about it that matters here.
  */
-const DEV_ACTOR_EMAIL = "dev@openbot.local";
+const DEV_ACTOR_EMAIL = "dev@ccpbot.local";
 
 /** The audit identity derived from the signed-in actor, with the same FK rule as every acting call. A Bot's browser's
  * routes, which sit under these, use it too (browser/bot-browser.ts). */

@@ -206,7 +206,9 @@ function SignScreen() {
         >
           {options?.ssoRequired ? (
             <p className="mb-3 text-center text-sm text-muted-foreground">
-              {t("Your organization requires you to sign in with your company account.")}
+              {t(
+                "Your organization requires you to sign in with your company account.",
+              )}
             </p>
           ) : null}
           {providers.length > 0 && !options?.ssoRequired ? (
@@ -227,7 +229,9 @@ function SignScreen() {
               {providers.length > 0 ? (
                 <div className="mb-3 flex items-center gap-3">
                   <Separator className="flex-1" />
-                  <span className="text-muted-foreground text-xs">{t("or")}</span>
+                  <span className="text-muted-foreground text-xs">
+                    {t("or")}
+                  </span>
                   <Separator className="flex-1" />
                 </div>
               ) : null}

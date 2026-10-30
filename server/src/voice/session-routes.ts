@@ -1,4 +1,4 @@
-import type { VoiceSessionRecord } from "@openbot/shared/voice-session";
+import type { VoiceSessionRecord } from "@ccpbot/shared/voice-session";
 import { Hono } from "hono";
 import { bodyLimit } from "hono/body-limit";
 import type { AgentActor } from "../agents/profile-types";
@@ -52,7 +52,7 @@ export function createVoiceSessionRoutes(services?: VoiceSessionServices) {
         context.json({ error: "Voice transcript is too large." }, 413),
     }),
     async (context) => {
-      if (context.req.header("x-openbot-voice") !== "1")
+      if (context.req.header("x-ccpbot-voice") !== "1")
         return context.json({ error: "Invalid voice request." }, 403);
       if (!services)
         return context.json(

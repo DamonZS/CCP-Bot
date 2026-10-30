@@ -247,7 +247,9 @@ export function RuleForm({
           <DialogHeader>
             <DialogTitle>{label}</DialogTitle>
             <DialogDescription>
-              {t("Use * to match anything. mcp/gmail/* means every Gmail tool. A target of *.example.com means every page on that site.")}
+              {t(
+                "Use * to match anything. mcp/gmail/* means every Gmail tool. A target of *.example.com means every page on that site.",
+              )}
             </DialogDescription>
           </DialogHeader>
           <DialogBody className="mt-4">
@@ -271,7 +273,9 @@ export function RuleForm({
                 {field("scope", "Target", "*, a site, a folder, a Bot name")}
                 {botField ? field("botId", "Bot", "* for every Bot") : null}
                 <Field>
-                  <FieldLabel htmlFor={`${id}-behaviour`}>{t("Behaviour")}</FieldLabel>
+                  <FieldLabel htmlFor={`${id}-behaviour`}>
+                    {t("Behaviour")}
+                  </FieldLabel>
                   <LabelSelect
                     id={`${id}-behaviour`}
                     labels={BEHAVIOUR_LABELS}

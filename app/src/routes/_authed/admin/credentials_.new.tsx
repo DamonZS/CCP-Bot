@@ -75,7 +75,9 @@ function NewCredentialPage() {
   return (
     <PageShell
       backButton={BACK}
-      description={t("Save a credential for this deployment. You won’t be able to view the secret after saving it.")}
+      description={t(
+        "Save a credential for this deployment. You won’t be able to view the secret after saving it.",
+      )}
       title={t("Add credential")}
     >
       <form
@@ -122,7 +124,9 @@ function NewCredentialPage() {
                   <Field data-invalid={isInvalid}>
                     <FieldLabel htmlFor={field.name}>{t("Type")}</FieldLabel>
                     <FieldDescription>
-                      {t("A model provider's key, or one a connector signs in with.")}
+                      {t(
+                        "A model provider's key, or one a connector signs in with.",
+                      )}
                     </FieldDescription>
                     <Select
                       items={KIND_LABEL}
@@ -141,7 +145,9 @@ function NewCredentialPage() {
                       <SelectContent>
                         <SelectGroup>
                           <SelectItem value="model">{t("Model")}</SelectItem>
-                          <SelectItem value="connector">{t("Connector")}</SelectItem>
+                          <SelectItem value="connector">
+                            {t("Connector")}
+                          </SelectItem>
                         </SelectGroup>
                       </SelectContent>
                     </Select>
@@ -158,7 +164,9 @@ function NewCredentialPage() {
                   field.state.meta.isTouched && !field.state.meta.isValid;
                 return (
                   <Field data-invalid={isInvalid}>
-                    <FieldLabel htmlFor={field.name}>{t("Provider")}</FieldLabel>
+                    <FieldLabel htmlFor={field.name}>
+                      {t("Provider")}
+                    </FieldLabel>
                     <Input
                       aria-invalid={isInvalid}
                       id={field.name}
@@ -185,7 +193,9 @@ function NewCredentialPage() {
                   <Field data-invalid={isInvalid}>
                     <FieldLabel htmlFor={field.name}>{t("Key ID")}</FieldLabel>
                     <FieldDescription>
-                      {t("Tells this key apart from others for the same provider.")}
+                      {t(
+                        "Tells this key apart from others for the same provider.",
+                      )}
                     </FieldDescription>
                     <Input
                       aria-invalid={isInvalid}
@@ -251,7 +261,9 @@ function NewCredentialPage() {
             {([kind, provider, keyId]) =>
               liveCredentialFor(credentials.data, kind, provider, keyId) ? (
                 <p className="mt-5 text-amber-600 text-sm dark:text-amber-500">
-                  {t("This key already has an active credential. Saving replaces it and revokes the old one.")}
+                  {t(
+                    "This key already has an active credential. Saving replaces it and revokes the old one.",
+                  )}
                 </p>
               ) : null
             }

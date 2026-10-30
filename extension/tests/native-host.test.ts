@@ -16,11 +16,11 @@ afterEach(() => {
 
 test("a good handoff reply becomes the address and code", async () => {
   fake.native.reply = () => ({
-    openbotUrl: "http://127.0.0.1:7478",
+    ccpbotUrl: "http://127.0.0.1:7478",
     code: "obc_abc",
   });
   expect(await askDesktopForHandoff()).toEqual({
-    openbotUrl: "http://127.0.0.1:7478",
+    ccpbotUrl: "http://127.0.0.1:7478",
     code: "obc_abc",
   });
   expect(fake.native.sent).toEqual([{ type: "handoff" }]);
@@ -34,12 +34,12 @@ test("the host's own error code comes through, a reply of another shape is hando
       { error: "organization-unavailable" },
     ],
     [{ error: "not-installed" }, { error: "not-installed" }],
-    [{ openbotUrl: "http://127.0.0.1:7478" }, { error: "handoff-failed" }],
+    [{ ccpbotUrl: "http://127.0.0.1:7478" }, { error: "handoff-failed" }],
     [
-      { openbotUrl: "http://127.0.0.1:7478", code: "abc" },
+      { ccpbotUrl: "http://127.0.0.1:7478", code: "abc" },
       { error: "handoff-failed" },
     ],
-    [{ openbotUrl: 5, code: "obc_abc" }, { error: "handoff-failed" }],
+    [{ ccpbotUrl: 5, code: "obc_abc" }, { error: "handoff-failed" }],
     [{ ok: false }, { error: "handoff-failed" }],
   ] as const) {
     fake.native.reply = () => reply;
@@ -47,11 +47,11 @@ test("the host's own error code comes through, a reply of another shape is hando
   }
   fake.native.reply = () => ({
     ok: true,
-    openbotUrl: "http://127.0.0.1:7478",
+    ccpbotUrl: "http://127.0.0.1:7478",
     code: "obc_abc",
   });
   expect(await askDesktopForHandoff()).toEqual({
-    openbotUrl: "http://127.0.0.1:7478",
+    ccpbotUrl: "http://127.0.0.1:7478",
     code: "obc_abc",
   });
 });
@@ -110,7 +110,7 @@ test("the ping waits out the Desktop host's 2 s deadline, and gives up at 3 s", 
 test("a handoff waits out the host's 7 s deadline, and gives up at 8 s", async () => {
   jest.useFakeTimers();
   try {
-    const handoff = { openbotUrl: "http://127.0.0.1:7478", code: "obc_abc" };
+    const handoff = { ccpbotUrl: "http://127.0.0.1:7478", code: "obc_abc" };
     fake.native.reply = answerAfter(7_000, handoff);
     const slow = askDesktopForHandoff();
     jest.advanceTimersByTime(7_000);

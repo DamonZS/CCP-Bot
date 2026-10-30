@@ -1,4 +1,4 @@
-# OpenBot docs
+# CCP-Bot docs
 
 
 
@@ -14,7 +14,7 @@
   - [Google Drive](plugins/google-drive.md)
   - [Notion](plugins/notion.md)
 - [Deployment](deployment.md): the container, what is in the image, minimum sizes, and the platform notes.
-- [Kubernetes](../charts/openbot/README.md): the Helm chart, what a cluster needs before it, and the values that differ per cloud.
+- [Kubernetes](../charts/ccpbot/README.md): the Helm chart, what a cluster needs before it, and the values that differ per cloud.
 - [Releasing](releasing.md): how a release is proposed, reviewed and published.
 - [Windows desktop signing](windows-signing.md): protected Azure Key Vault signing and verification of the app and NSIS installer.
 - [Desktop provider OAuth](../desktop/PROVIDER_OAUTH.md): what a distributor configures to offer Google and xAI sign-in in a desktop build.

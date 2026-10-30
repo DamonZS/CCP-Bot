@@ -12,7 +12,9 @@ function MemoryPage() {
     <CapabilitiesShell>
       <MemoryList
         action={<RememberFact />}
-        description={t("Manage what your Bots remember about you. Facts you add are shared with all Bots; learned facts stay with the Bot that learned them.")}
+        description={t(
+          "Manage what your Bots remember about you. Facts you add are shared with all Bots; learned facts stay with the Bot that learned them.",
+        )}
       />
     </CapabilitiesShell>
   );

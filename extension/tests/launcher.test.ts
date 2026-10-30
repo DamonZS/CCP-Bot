@@ -1,5 +1,5 @@
 // The Recorder's launcher API, end to end through the Recorder's own code: the real service worker (connection,
-// recording, router, setup) and the real offscreen document side by side over a fake OpenBot and Intelligence, driven
+// recording, router, setup) and the real offscreen document side by side over a fake CCP-Bot and Intelligence, driven
 // through `globalThis[LAUNCHER_GLOBAL]` as the process that launched the browser drives it over its DevTools pipe. The
 // steps are rows of the full end-to-end run (fixtures/e2e-held-steps.json).
 import { afterEach, beforeEach, expect, test } from "bun:test";
@@ -9,16 +9,16 @@ import {
   LAUNCHER_GLOBAL,
   type LauncherApi,
   type LauncherConnection,
-} from "@openbot/shared/openbot-browser";
+} from "@ccpbot/shared/ccpbot-browser";
 import {
   type LearningSpaceState,
   RECORDER_SIGNED_OUT,
   recorderPaths,
-} from "@openbot/shared/recorder-api";
+} from "@ccpbot/shared/recorder-api";
 import {
   type CapturedEvent,
   sha256HexSync,
-} from "@openbot/shared/recorder-masking";
+} from "@ccpbot/shared/recorder-masking";
 import { IDBKeyRange as FakeIDBKeyRange, IDBFactory } from "fake-indexeddb";
 import { installConnection } from "../src/background/connection";
 import { installLauncher } from "../src/background/launcher";
@@ -43,7 +43,7 @@ import { fakeMicrophone, fakeSpeech } from "./support/fake-speech";
 const EXTENSION_ID = "test";
 const ada = { id: "p1", name: "Ada", email: "ada@example.test" };
 const ORDER = "http://127.0.0.1:7420/orders/1043";
-const TOKEN = "obr_openbot-browser-token";
+const TOKEN = "obr_ccpbot-browser-token";
 
 const rows = JSON.parse(
   readFileSync(
@@ -66,25 +66,25 @@ async function until(check: () => boolean | Promise<boolean>, label: string) {
   }
 }
 
-// ---- The fake OpenBot and Intelligence --------------------------------------------------------
+// ---- The fake CCP-Bot and Intelligence --------------------------------------------------------
 
 let gateway: FakeGateway;
-/** The tokens OpenBot still knows, and how often each asked who it is for. */
+/** The tokens CCP-Bot still knows, and how often each asked who it is for. */
 let liveTokens = new Set<string>();
 let meAsked: string[] = [];
-/** Whose each token is, as OpenBot answers who a connection is for; Ada's unless a test hands out another's. */
+/** Whose each token is, as CCP-Bot answers who a connection is for; Ada's unless a test hands out another's. */
 let tokenOwners = new Map<string, typeof ada>();
-/** Every call the Recorder made to OpenBot's own routes, as `<method> <path>`. */
-let openbotAsked: string[] = [];
-/** The person's own Learning space, as OpenBot answers the Recorder's popup; none until a test sets one. */
+/** Every call the Recorder made to CCP-Bot's own routes, as `<method> <path>`. */
+let ccpbotAsked: string[] = [];
+/** The person's own Learning space, as CCP-Bot answers the Recorder's popup; none until a test sets one. */
 let learning: LearningSpaceState | null = null;
-/** The token OpenBot mints for OpenBot Desktop's code, and the tokens the Recorder asked OpenBot to revoke. */
+/** The token CCP-Bot mints for CCP-Bot Desktop's code, and the tokens the Recorder asked CCP-Bot to revoke. */
 const DESKTOP_TOKEN = "obr_desktop-made";
 let revokedTokens: string[] = [];
-/** While set, OpenBot answers the exchange of OpenBot Desktop's code only once it resolves. */
+/** While set, CCP-Bot answers the exchange of CCP-Bot Desktop's code only once it resolves. */
 let exchangeHeld: Promise<void> | null = null;
 let exchangeArrived = () => {};
-/** OpenBot taking OpenBot Desktop's code, when it is asked to and once `exchangeHeld` lets it. */
+/** CCP-Bot taking CCP-Bot Desktop's code, when it is asked to and once `exchangeHeld` lets it. */
 async function exchange(): Promise<Response> {
   exchangeArrived();
   if (exchangeHeld) await exchangeHeld;
@@ -100,7 +100,7 @@ function route(request: Request): Response | Promise<Response> | null {
   const token =
     request.headers.get("authorization")?.replace(/^Bearer /, "") ?? "";
   if (path.startsWith("/api/recorder/"))
-    openbotAsked.push(`${request.method} ${path}`);
+    ccpbotAsked.push(`${request.method} ${path}`);
   if (path === recorderPaths.connections && request.method === "POST")
     return exchange();
   if (path === recorderPaths.currentConnection && request.method === "DELETE") {
@@ -113,7 +113,7 @@ function route(request: Request): Response | Promise<Response> | null {
     if (!liveTokens.has(token))
       return Response.json(
         {
-          error: "This browser is no longer connected to OpenBot.",
+          error: "This browser is no longer connected to CCP-Bot.",
           code: RECORDER_SIGNED_OUT,
           reason: "revoked",
         },
@@ -263,7 +263,7 @@ const launcher = () =>
 const connection = (
   overrides: Partial<LauncherConnection> = {},
 ): LauncherConnection => ({
-  openbotUrl: gateway.httpUrl,
+  ccpbotUrl: gateway.httpUrl,
   token: TOKEN,
   connectionId: `c-${TOKEN}`,
   user: ada,
@@ -334,7 +334,7 @@ beforeEach(async () => {
   liveTokens = new Set([TOKEN]);
   tokenOwners = new Map();
   meAsked = [];
-  openbotAsked = [];
+  ccpbotAsked = [];
   learning = null;
   revokedTokens = [];
   exchangeHeld = null;
@@ -384,14 +384,14 @@ test("connect stores the connection as an approved Connect does, with no Connect
   ).toEqual({ ok: true });
 
   expect(stored()).toMatchObject({
-    openbotUrl: gateway.httpUrl,
+    ccpbotUrl: gateway.httpUrl,
     token: TOKEN,
     connectionId: `c-${TOKEN}`,
     user: ada,
-    via: "openbot-browser",
+    via: "ccpbot-browser",
     narration: "external",
   });
-  // OpenBot said who the connection is for, as the popup asks when it opens, and the keep-alive is satisfied.
+  // CCP-Bot said who the connection is for, as the popup asks when it opens, and the keep-alive is satisfied.
   expect(meAsked).toEqual([TOKEN]);
   expect(fake.storage.session.get("me")).toMatchObject({
     value: { user: ada, connectionId: `c-${TOKEN}` },
@@ -407,12 +407,12 @@ test("connect stores the connection as an approved Connect does, with no Connect
   ).toMatchObject({
     ok: true,
     connection: {
-      openbotUrl: gateway.httpUrl,
+      ccpbotUrl: gateway.httpUrl,
       user: { name: "Ada", email: ada.email },
-      via: "openbot-browser",
+      via: "ccpbot-browser",
     },
   });
-  // With the connection it holds by id, which OpenBot keeps rather than making another at every open.
+  // With the connection it holds by id, which CCP-Bot keeps rather than making another at every open.
   expect(await launcher().state()).toEqual({
     connected: true,
     userId: ada.id,
@@ -435,15 +435,15 @@ test("connect stores the connection as an approved Connect does, with no Connect
   expect(stored()?.connectedAt).toBe(connectedAt);
 });
 
-test("connect refuses an address the Recorder would not connect to, a malformed request and a policy that pins another OpenBot", async () => {
-  for (const openbotUrl of [
-    "http://openbot.example.com",
+test("connect refuses an address the Recorder would not connect to, a malformed request and a policy that pins another CCP-Bot", async () => {
+  for (const ccpbotUrl of [
+    "http://ccpbot.example.com",
     "http://localhost:3010",
-    "https://openbot.example.com/app",
+    "https://ccpbot.example.com/app",
     "javascript:alert(1)",
   ]) {
     const answer = await launcher().connect({
-      connection: connection({ openbotUrl }),
+      connection: connection({ ccpbotUrl }),
       narration: "own",
     });
     expect(answer.ok).toBe(false);
@@ -464,20 +464,20 @@ test("connect refuses an address the Recorder would not connect to, a malformed 
     await (launcher().connect as (input: unknown) => Promise<unknown>)(null),
   ).toMatchObject({ ok: false });
 
-  fake.storage.setManaged({ OpenBotUrl: "https://openbot.example.com" });
+  fake.storage.setManaged({ CcpBotUrl: "https://ccpbot.example.com" });
   await settle();
   expect(
     await launcher().connect({ connection: connection(), narration: "own" }),
   ).toEqual({
     ok: false,
     error:
-      "Your organization's Recorder policy does not allow this OpenBot. Ask your IT team.",
+      "Your organization's Recorder policy does not allow this CCP-Bot. Ask your IT team.",
   });
   expect(stored()).toBeUndefined();
   expect(meAsked).toEqual([]);
 });
 
-test("a connection OpenBot already signed out is refused and forgotten, with the signed-out notice", async () => {
+test("a connection CCP-Bot already signed out is refused and forgotten, with the signed-out notice", async () => {
   liveTokens.clear();
   expect(
     await launcher().connect({ connection: connection(), narration: "own" }),
@@ -492,7 +492,7 @@ test("a connection OpenBot already signed out is refused and forgotten, with the
 
 test("a revoked connection handed to a Recorder holding a good one is refused and leaves the good one, recording or not", async () => {
   // Two opens of one browser that cross: the older one's connection was revoked by the newer one's, and it reaches the
-  // Recorder last. The Recorder asks OpenBot before it takes a connection, so the one that stands keeps it.
+  // Recorder last. The Recorder asks CCP-Bot before it takes a connection, so the one that stands keeps it.
   expect(
     await launcher().connect({ connection: connection(), narration: "own" }),
   ).toEqual({ ok: true });
@@ -511,13 +511,13 @@ test("a revoked connection handed to a Recorder holding a good one is refused an
   });
 });
 
-test("disconnect forgets the connection OpenBot revoked at once and reports signed out, as OpenBot's own signed-out answer does", async () => {
+test("disconnect forgets the connection CCP-Bot revoked at once and reports signed out, as CCP-Bot's own signed-out answer does", async () => {
   // The second end-to-end run: Disconnect in Settings, Browsers, and the Recorder went on reporting itself connected
-  // until its next call to OpenBot, which on a quiet browser is the keep-alive, twelve hours away.
+  // until its next call to CCP-Bot, which on a quiet browser is the keep-alive, twelve hours away.
   await launcher().connect({ connection: connection(), narration: "external" });
-  // OpenBot revoked the connection, then told the browser.
+  // CCP-Bot revoked the connection, then told the browser.
   liveTokens.delete(TOKEN);
-  const asked = openbotAsked.length;
+  const asked = ccpbotAsked.length;
   expect(await launcher().disconnect()).toEqual({ ok: true });
 
   expect(stored()).toBeUndefined();
@@ -543,13 +543,13 @@ test("disconnect forgets the connection OpenBot revoked at once and reports sign
     connection: null,
     notice: { kind: "signed-out", reason: "revoked" },
   });
-  // OpenBot revoked the token itself, so it is not asked to again, nor asked who the token is for.
-  expect(openbotAsked.slice(asked)).toEqual([]);
+  // CCP-Bot revoked the token itself, so it is not asked to again, nor asked who the token is for.
+  expect(ccpbotAsked.slice(asked)).toEqual([]);
   // Record is refused until the launcher hands in a connection again.
   openOrder();
   expect(
     await launcher().record({ action: "start", title: "After Disconnect" }),
-  ).toEqual({ ok: false, error: "Connect this browser to OpenBot first." });
+  ).toEqual({ ok: false, error: "Connect this browser to CCP-Bot first." });
 
   // Told again, or told with nothing stored: nothing more happens.
   expect(await launcher().disconnect()).toEqual({ ok: true });
@@ -557,7 +557,7 @@ test("disconnect forgets the connection OpenBot revoked at once and reports sign
     kind: "signed-out",
     reason: "revoked",
   });
-  expect(openbotAsked.slice(asked)).toEqual([]);
+  expect(ccpbotAsked.slice(asked)).toEqual([]);
 });
 
 test("a recording disconnect finds running stops as a sign-out stops one, kept for its person, and goes to Intelligence once the browser is connected again", async () => {
@@ -592,9 +592,9 @@ test("a recording disconnect finds running stops as a sign-out stops one, kept f
   ]);
   expect(names(trajectoryId)).not.toContain("click");
 
-  // Record after Disconnect: OpenBot connects the browser again first, and the kept recording goes, its outcome saying
+  // Record after Disconnect: CCP-Bot connects the browser again first, and the kept recording goes, its outcome saying
   // the browser was signed out.
-  const NEXT = "obr_openbot-browser-token-next";
+  const NEXT = "obr_ccpbot-browser-token-next";
   liveTokens.add(NEXT);
   expect(
     await launcher().connect({
@@ -626,14 +626,14 @@ test("a recording disconnect finds running stops as a sign-out stops one, kept f
   );
 }, 15_000);
 
-test("an OpenBot browser shows no setup tab and no Connect page: none on a later launch, and the first launch's are closed", async () => {
-  // OpenBot Desktop's native host answers in this profile too, and hands over a code its OpenBot takes.
+test("a CCP-Bot browser shows no setup tab and no Connect page: none on a later launch, and the first launch's are closed", async () => {
+  // CCP-Bot Desktop's native host answers in this profile too, and hands over a code its CCP-Bot takes.
   fake.native.reply = (message) =>
     (message as { type: string }).type === "ping"
       ? { ok: true }
-      : { ok: true, openbotUrl: gateway.httpUrl, code: "obc_fixture" };
+      : { ok: true, ccpbotUrl: gateway.httpUrl, code: "obc_fixture" };
 
-  // The first launch: the install opens its setup tab, and connects through OpenBot Desktop, before the launcher does.
+  // The first launch: the install opens its setup tab, and connects through CCP-Bot Desktop, before the launcher does.
   fake.fireInstalled("install");
   await until(
     () => fake.opened.length === 1 && stored()?.via === "desktop",
@@ -645,9 +645,9 @@ test("an OpenBot browser shows no setup tab and no Connect page: none on a later
   ).toEqual({ ok: true });
   expect([...fake.removed].sort()).toEqual(opened.sort());
   expect(fake.storage.session.get("pendingConnect")).toBeUndefined();
-  expect(stored()).toMatchObject({ via: "openbot-browser", token: TOKEN });
-  // The connection the install made on its own is revoked: OpenBot would otherwise count this browser as one of the
-  // person's own that OpenBot Desktop connected.
+  expect(stored()).toMatchObject({ via: "ccpbot-browser", token: TOKEN });
+  // The connection the install made on its own is revoked: CCP-Bot would otherwise count this browser as one of the
+  // person's own that CCP-Bot Desktop connected.
   expect(revokedTokens).toEqual([DESKTOP_TOKEN]);
 
   // The next launch: the Recorder is loaded afresh (an install again) with its storage, the connection in it.
@@ -664,14 +664,14 @@ test("an OpenBot browser shows no setup tab and no Connect page: none on a later
       (message) => (message as { type: string }).type === "handoff",
     ),
   ).toHaveLength(1);
-  expect(stored()).toMatchObject({ via: "openbot-browser", token: TOKEN });
+  expect(stored()).toMatchObject({ via: "ccpbot-browser", token: TOKEN });
 });
 
-test("the launcher's connection that comes while the install's OpenBot Desktop code is exchanged keeps that one out, revoked", async () => {
+test("the launcher's connection that comes while the install's CCP-Bot Desktop code is exchanged keeps that one out, revoked", async () => {
   fake.native.reply = (message) =>
     (message as { type: string }).type === "ping"
       ? { ok: true }
-      : { ok: true, openbotUrl: gateway.httpUrl, code: "obc_fixture" };
+      : { ok: true, ccpbotUrl: gateway.httpUrl, code: "obc_fixture" };
   const release = Promise.withResolvers<void>();
   const arrived = Promise.withResolvers<void>();
   exchangeHeld = release.promise;
@@ -690,7 +690,7 @@ test("the launcher's connection that comes while the install's OpenBot Desktop c
     () => revokedTokens.includes(DESKTOP_TOKEN),
     "the install's own connection revoked",
   );
-  expect(stored()).toMatchObject({ via: "openbot-browser", token: TOKEN });
+  expect(stored()).toMatchObject({ via: "ccpbot-browser", token: TOKEN });
   expect(fake.storage.local.get("notice")).toBeUndefined();
 });
 
@@ -947,7 +947,7 @@ test("speaking is refused while nothing records and in a browser that hears its 
   });
   // A page that heard the person stop as the recording ended says so after it: there is nothing to hold.
   expect(await launcher().speaking({ since: null })).toEqual({ ok: true });
-  // OpenBot's Record form asked the person, and they chose to narrate.
+  // CCP-Bot's Record form asked the person, and they chose to narrate.
   await record(clock, "Own voice", { narrate: true });
   await until(() => speech.instances.length === 1, "the speech recognition");
   expect(await launcher().speaking({ since: clock - 500 })).toEqual({
@@ -969,7 +969,7 @@ test("speaking is refused while nothing records and in a browser that hears its 
 test("the Recorder says whether it hears the person: off while nothing records, listening, muted, or unavailable when the microphone is refused", async () => {
   await launcher().connect({ connection: connection(), narration: "own" });
   expect((await launcher().state()).voice).toBe("off");
-  // OpenBot's Record form asked the person, and they chose to narrate.
+  // CCP-Bot's Record form asked the person, and they chose to narrate.
   await record(clock, "Own voice", { narrate: true });
   await until(() => speech.instances.length === 1, "the speech recognition");
   speech.instances[0]?.begin();
@@ -1007,7 +1007,7 @@ test("the Recorder says whether it hears the person: off while nothing records, 
   expect((await launcher().state()).voice).toBeUndefined();
 }, 15_000);
 
-test("Stop leaves the recording it ended, by name, for OpenBot to confirm it went to the person's Learning space", async () => {
+test("Stop leaves the recording it ended, by name, for CCP-Bot to confirm it went to the person's Learning space", async () => {
   await launcher().connect({ connection: connection(), narration: "external" });
   const trajectoryId = await record(clock, "Archive order 1043");
   const recordingId = (await launcher().state()).recordingId;
@@ -1026,7 +1026,7 @@ test("Stop leaves the recording it ended, by name, for OpenBot to confirm it wen
     () => names(trajectoryId).filter((name) => name === "outcome").length === 2,
     "the recording stopped",
   );
-  // Nothing was done and nothing said in it: both counts say so, for OpenBot to say nothing was recorded.
+  // Nothing was done and nothing said in it: both counts say so, for CCP-Bot to say nothing was recorded.
   expect((await launcher().state()).lastStopped).toEqual({
     recordingId: recordingId ?? "",
     title: "Archive order 1043",
@@ -1081,7 +1081,7 @@ test("a stopped recording a disconnect catches part sent is kept for its person,
 }, 15_000);
 
 test("Stop reports what the recording held: narration alone is something, and actions and phrases are both counted", async () => {
-  // The fifth end-to-end run: a recording of three narrated phrases and no clicks reached Intelligence, and OpenBot's
+  // The fifth end-to-end run: a recording of three narrated phrases and no clicks reached Intelligence, and CCP-Bot's
   // page said nothing was recorded, from the only count it had, the actions.
   await launcher().connect({ connection: connection(), narration: "external" });
   const click = rows.archiveClick;
@@ -1182,7 +1182,7 @@ test("a recording a sign-out stops leaves what it held too", async () => {
       endedAt: click.timestamp + 200,
     }),
   ).toEqual({ ok: true });
-  // OpenBot revoked the connection and said so: the recording stops as a sign-out stops one.
+  // CCP-Bot revoked the connection and said so: the recording stops as a sign-out stops one.
   liveTokens.delete(TOKEN);
   clock = click.timestamp + 1_000;
   expect(await launcher().disconnect()).toEqual({ ok: true });
@@ -1195,7 +1195,7 @@ test("a recording a sign-out stops leaves what it held too", async () => {
 
 test("a recording the person's Learning space will not take is not confirmed as gone there", async () => {
   await launcher().connect({ connection: connection(), narration: "external" });
-  // No Learning space is assigned to them, as OpenBot answers the Recorder's popup.
+  // No Learning space is assigned to them, as CCP-Bot answers the Recorder's popup.
   learning = { state: "unassigned", containerId: null };
   expect(
     await fake.sendFromPage(
@@ -1307,7 +1307,7 @@ test("no runtime message reaches the launcher API: not from a page, a content sc
       narration: "own",
     },
     { type: LAUNCHER_GLOBAL, method: "connect", args: [connection()] },
-    { type: "openbotLauncher.connect", connection: connection() },
+    { type: "ccpbotLauncher.connect", connection: connection() },
     { type: "launcher.record", action: "start", title: "x" },
   ];
   for (const message of asks) {

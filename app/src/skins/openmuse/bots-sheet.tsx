@@ -24,7 +24,7 @@ import { Divider, ErrorNotice, LinkRow, MuseSheet, museText } from "./ui";
 import { t } from "@/lib/i18n";
 
 /**
- * Who sits at the centre of the frame. This look has one agent; OpenBot has a roster, so this is the
+ * Who sits at the centre of the frame. This look has one agent; CCP-Bot has a roster, so this is the
  * one place the difference shows, and it stays a sheet behind the name rather than a fixture.
  */
 export function BotsSheet({ onClose }: { onClose: () => void }) {

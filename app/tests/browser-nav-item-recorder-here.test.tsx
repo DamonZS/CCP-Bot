@@ -11,12 +11,12 @@ import {
   type BrowserApiState,
   type BrowserWindow,
   browserApiPaths,
-} from "@openbot/shared/openbot-browser";
-import { recorderPaths } from "@openbot/shared/recorder-api";
+} from "@ccpbot/shared/ccpbot-browser";
+import { recorderPaths } from "@ccpbot/shared/recorder-api";
 import {
   RECORDER_EXTENSION_ID,
   RECORDER_STORE_IDS,
-} from "@openbot/shared/recorder-extension";
+} from "@ccpbot/shared/recorder-extension";
 import {
   environmentManager,
   focusManager,
@@ -48,12 +48,12 @@ import {
 import { settleReactWork } from "./settle-react-work";
 
 /**
- * The sidebar's Browser button when OpenBot is open in the person's own Chrome or Edge, working with the Recorder in
- * that browser over the contract in shared/recorder-page.ts (`openbot.state`, `openbot.record`, `openbot.stop`), and
- * connecting it as Settings, Browsers does (`openbot.connect`). The Recorder is a stand-in that answers exactly as the
+ * The sidebar's Browser button when CCP-Bot is open in the person's own Chrome or Edge, working with the Recorder in
+ * that browser over the contract in shared/recorder-page.ts (`ccpbot.state`, `ccpbot.record`, `ccpbot.stop`), and
+ * connecting it as Settings, Browsers does (`ccpbot.connect`). The Recorder is a stand-in that answers exactly as the
  * contract types it (recorder-page.fixture.ts); the server is a stand-in for its Browser and Recorder routes.
  *
- * Where the page cannot reach an extension at all (OpenBot Desktop's own app window, Safari, Firefox) the button is
+ * Where the page cannot reach an extension at all (CCP-Bot Desktop's own app window, Safari, Firefox) the button is
  * what it was: browser-nav-item.test.tsx covers that behaviour, and the last tests here prove each of those places
  * still gets it.
  */
@@ -80,7 +80,7 @@ const EDGE_STORE_ID = "a".repeat(32);
 const requests: string[] = [];
 let state: BrowserApiState;
 let connectionsFail = false;
-/** The signed-in person's narration choice as OpenBot keeps it on their account; undefined: no account to read. */
+/** The signed-in person's narration choice as CCP-Bot keeps it on their account; undefined: no account to read. */
 let accountNarration: "on" | "off" | null | undefined;
 const preferenceWrites: unknown[] = [];
 
@@ -178,7 +178,7 @@ afterEach(() => {
   delete RECORDER_STORE_IDS.edge;
 });
 
-/** OpenBot open in Google Chrome (or Edge) holding `recorders`; none: no extension gave the page `sendMessage`. */
+/** CCP-Bot open in Google Chrome (or Edge) holding `recorders`; none: no extension gave the page `sendMessage`. */
 function inBrowser(
   brands: "chrome" | "edge",
   recorders: FakeRecorder[] | null,
@@ -261,7 +261,7 @@ test("with the Recorder here and connected, one click opens a popover where Reco
   recorder.connected = true;
   inBrowser("chrome", [recorder]);
   const { view, router } = draw();
-  // Hosted OpenBot, which used to send this button to the browser in the page: here it is the browser it is open in.
+  // Hosted CCP-Bot, which used to send this button to the browser in the page: here it is the browser it is open in.
   const button = await view.findByRole("button", { name: "Browser" });
   expect(view.queryByRole("link", { name: "Browser" })).toBeNull();
   expect(button.getAttribute("aria-haspopup")).toBe("dialog");
@@ -290,8 +290,8 @@ test("with the Recorder here and connected, one click opens a popover where Reco
   );
   await user.click(record);
   await waitFor(() =>
-    expect(sent(recorder, "openbot.record")).toEqual([
-      { type: "openbot.record", title: "Submit the receipt" },
+    expect(sent(recorder, "ccpbot.record")).toEqual([
+      { type: "ccpbot.record", title: "Submit the receipt" },
     ]),
   );
   // The popover and the dot read the Recorder's own report, with no wait for the server.
@@ -315,7 +315,7 @@ test("with the Recorder here and connected, one click opens a popover where Reco
   );
 
   await user.click(view.getByRole("button", { name: "Stop" }));
-  await waitFor(() => expect(sent(recorder, "openbot.stop").length).toBe(1));
+  await waitFor(() => expect(sent(recorder, "ccpbot.stop").length).toBe(1));
   await view.findByRole("dialog", { name: "Record a task" });
   expect(view.getByRole("status").textContent).toBe(
     "Saved “Submit the receipt” to your Learning space: 3 actions.",
@@ -328,7 +328,7 @@ test("with the Recorder here and connected, one click opens a popover where Reco
 }, 15_000);
 
 test("Record here carries the person's narration choice from their account, and asks before their first recording as the Browser page does", async () => {
-  // OpenBot keeps the choice on the person's account and its own Record form passes it on; Record from the everyday
+  // CCP-Bot keeps the choice on the person's account and its own Record form passes it on; Record from the everyday
   // browser left it out, so the Recorder went by its own setting.
   const recorder = new FakeRecorder();
   recorder.connected = true;
@@ -346,12 +346,12 @@ test("Record here carries the person's narration choice from their account, and 
   };
   await recordTask("Submit the receipt");
   await waitFor(() =>
-    expect(sent(recorder, "openbot.record")).toEqual([
-      { type: "openbot.record", title: "Submit the receipt", narrate: false },
+    expect(sent(recorder, "ccpbot.record")).toEqual([
+      { type: "ccpbot.record", title: "Submit the receipt", narrate: false },
     ]),
   );
   await user.click(await view.findByRole("button", { name: "Stop" }));
-  await waitFor(() => expect(sent(recorder, "openbot.stop").length).toBe(1));
+  await waitFor(() => expect(sent(recorder, "ccpbot.stop").length).toBe(1));
   await user.keyboard("{Escape}");
 
   // A person who never chose is asked first, and the answer goes with the Record and is kept.
@@ -361,14 +361,14 @@ test("Record here carries the person's narration choice from their account, and 
   const question = await view.findByRole("dialog", {
     name: "Narrate while you record?",
   });
-  expect(sent(recorder, "openbot.record")).toHaveLength(1);
+  expect(sent(recorder, "ccpbot.record")).toHaveLength(1);
   await user.click(
     within(question).getByRole("button", { name: "Record with narration" }),
   );
   await waitFor(() =>
-    expect(sent(recorder, "openbot.record")).toEqual([
-      { type: "openbot.record", title: "Submit the receipt", narrate: false },
-      { type: "openbot.record", title: "Book the room", narrate: true },
+    expect(sent(recorder, "ccpbot.record")).toEqual([
+      { type: "ccpbot.record", title: "Submit the receipt", narrate: false },
+      { type: "ccpbot.record", title: "Book the room", narrate: true },
     ]),
   );
   expect(preferenceWrites).toEqual([{ narration: "on" }]);
@@ -448,7 +448,7 @@ test("the dot is read from the Recorder every second while it records and rarely
   inBrowser("chrome", [recorder]);
   const { view } = draw();
   await view.findByRole("button", { name: "Browser" });
-  const asked = () => sent(recorder, "openbot.state").length;
+  const asked = () => sent(recorder, "ccpbot.state").length;
   await waitFor(() => expect(asked()).toBe(1));
   await act(() => Bun.sleep(2200));
   expect(asked()).toBe(1);
@@ -519,23 +519,23 @@ test("with the Recorder here but not connected, one click connects it as Setting
   const { view } = draw();
   const user = userEvent.setup({ document });
   await user.click(await view.findByRole("button", { name: "Browser" }));
-  // A code minted by the server, handed to the Recorder with openbot.connect.
+  // A code minted by the server, handed to the Recorder with ccpbot.connect.
   await waitFor(() =>
-    expect(sent(recorder, "openbot.connect")).toEqual([
-      { type: "openbot.connect", code: `obc_${"x".repeat(20)}` },
+    expect(sent(recorder, "ccpbot.connect")).toEqual([
+      { type: "ccpbot.connect", code: `obc_${"x".repeat(20)}` },
     ]),
   );
   expect(requests).toContain(`POST ${recorderPaths.connectCodes}`);
-  await view.findByText("Confirm in the OpenBot Recorder tab that opened.");
+  await view.findByText("Confirm in the CCP-Bot Recorder tab that opened.");
   expect(
-    view.getByRole("dialog", { name: "Connect the OpenBot Recorder" }),
+    view.getByRole("dialog", { name: "Connect the CCP-Bot Recorder" }),
   ).toBeTruthy();
 
-  // The person clicks Connect on the Recorder's page; OpenBot hears of it within the 2 s it asks in while it waits.
+  // The person clicks Connect on the Recorder's page; CCP-Bot hears of it within the 2 s it asks in while it waits.
   recorder.confirm();
   await view.findByRole("dialog", { name: "Record a task" }, { timeout: 3000 });
   // One connect, however long it waited.
-  expect(sent(recorder, "openbot.connect").length).toBe(1);
+  expect(sent(recorder, "ccpbot.connect").length).toBe(1);
   await user.type(
     view.getByRole("textbox", { name: "Task name" }),
     "Approve the leave{Enter}",
@@ -544,33 +544,33 @@ test("with the Recorder here but not connected, one click connects it as Setting
 }, 10_000);
 
 test("a Cancel on the Recorder's Connect page reaches the popover within a second, which says so and offers Connect again", async () => {
-  // After a Cancel, OpenBot used to go on saying "Confirm in the OpenBot Recorder tab that opened." for up to five
+  // After a Cancel, CCP-Bot used to go on saying "Confirm in the CCP-Bot Recorder tab that opened." for up to five
   // minutes: nothing told it the person had cancelled.
   const recorder = new FakeRecorder();
   inBrowser("chrome", [recorder]);
   const { view } = draw();
   const user = userEvent.setup({ document });
   await user.click(await view.findByRole("button", { name: "Browser" }));
-  await view.findByText("Confirm in the OpenBot Recorder tab that opened.");
+  await view.findByText("Confirm in the CCP-Bot Recorder tab that opened.");
   recorder.cancel();
   await view.findByText(
-    "You cancelled in the OpenBot Recorder tab. Nothing was connected.",
+    "You cancelled in the CCP-Bot Recorder tab. Nothing was connected.",
     {},
     { timeout: 1500 },
   );
   // Connect again asks the Recorder again, and waits on its Connect page afresh.
   await user.click(view.getByRole("button", { name: "Connect this browser" }));
-  await view.findByText("Confirm in the OpenBot Recorder tab that opened.");
-  expect(sent(recorder, "openbot.connect").length).toBe(2);
+  await view.findByText("Confirm in the CCP-Bot Recorder tab that opened.");
+  expect(sent(recorder, "ccpbot.connect").length).toBe(2);
   recorder.closeTab();
   await view.findByText(
-    "The OpenBot Recorder tab closed before you confirmed. Nothing was connected.",
+    "The CCP-Bot Recorder tab closed before you confirmed. Nothing was connected.",
     {},
     { timeout: 1500 },
   );
 }, 10_000);
 
-test("for a trusted OpenBot the one click connects the Recorder with no Connect page, and the popover opens on Record", async () => {
+test("for a trusted CCP-Bot the one click connects the Recorder with no Connect page, and the popover opens on Record", async () => {
   const recorder = new FakeRecorder();
   recorder.trusted = true;
   inBrowser("edge", [recorder]);
@@ -578,7 +578,7 @@ test("for a trusted OpenBot the one click connects the Recorder with no Connect 
   const user = userEvent.setup({ document });
   await user.click(await view.findByRole("button", { name: "Browser" }));
   await view.findByRole("dialog", { name: "Record a task" });
-  expect(sent(recorder, "openbot.connect").length).toBe(1);
+  expect(sent(recorder, "ccpbot.connect").length).toBe(1);
   expect(recorder.connected).toBe(true);
   // The popover opened on the connect message, with nothing in it to focus, so focus sat on the popover; it moves to
   // the task name once that appears, so the person can type at once (the real-browser run found it left behind).
@@ -588,7 +588,7 @@ test("for a trusted OpenBot the one click connects the Recorder with no Connect 
     ),
   );
   expect(
-    view.queryByText("Confirm in the OpenBot Recorder tab that opened."),
+    view.queryByText("Confirm in the CCP-Bot Recorder tab that opened."),
   ).toBeNull();
 });
 
@@ -601,33 +601,33 @@ test("a connect the Recorder refuses says why in its own sentence, and Try again
   await user.click(await view.findByRole("button", { name: "Browser" }));
   const alert = await view.findByRole("alert");
   expect(alert.textContent).toBe(
-    "Your organization set the Recorder to another OpenBot.",
+    "Your organization set the Recorder to another CCP-Bot.",
   );
   // Reopening the popover does not ask again by itself.
   await user.keyboard("{Escape}");
   await waitFor(() => expect(popover()).toBeNull());
   await user.click(view.getByRole("button", { name: "Browser" }));
   await view.findByRole("alert");
-  expect(sent(recorder, "openbot.connect").length).toBe(1);
+  expect(sent(recorder, "ccpbot.connect").length).toBe(1);
 
   recorder.refuseConnect = null;
   recorder.trusted = true;
   await user.click(view.getByRole("button", { name: "Try again" }));
   await view.findByRole("dialog", { name: "Record a task" });
-  expect(sent(recorder, "openbot.connect").length).toBe(2);
+  expect(sent(recorder, "ccpbot.connect").length).toBe(2);
 });
 
 for (const [error, sentence] of [
   [
     "exchange-refused",
-    "OpenBot didn't accept the Recorder's connect request. Try again.",
+    "CCP-Bot didn't accept the Recorder's connect request. Try again.",
   ],
   [
-    "openbot-unreachable",
-    "The Recorder couldn't reach OpenBot to connect. Check your connection and try again.",
+    "ccpbot-unreachable",
+    "The Recorder couldn't reach CCP-Bot to connect. Check your connection and try again.",
   ],
 ] as const) {
-  test(`a trusted connect the Recorder could not complete with OpenBot (${error}) says so in OpenBot's words`, async () => {
+  test(`a trusted connect the Recorder could not complete with CCP-Bot (${error}) says so in CCP-Bot's words`, async () => {
     const recorder = new FakeRecorder();
     recorder.trusted = true;
     recorder.refuseConnect = error;
@@ -656,7 +656,7 @@ for (const [brands, store, url, name] of [
 ] as const) {
   test(`in ${name} with no Recorder, one click opens its store page there in a new tab with a short note, and once it is added the button connects it`, async () => {
     published();
-    // No extension lists OpenBot in its externally_connectable, so the page has no `chrome.runtime` at all.
+    // No extension lists CCP-Bot in its externally_connectable, so the page has no `chrome.runtime` at all.
     inBrowser(brands, null);
     const { view, router } = draw();
     const link = await view.findByRole("link", { name: "Browser" });
@@ -669,12 +669,12 @@ for (const [brands, store, url, name] of [
     await user.click(link);
     await waitFor(() => expect(toasts()).toEqual([storeTabSentence(store)]));
     expect(storeTabSentence(store)).toBe(
-      `The OpenBot Recorder's page is open in a new tab. Add it to ${name} to record from OpenBot.`,
+      `The CCP-Bot Recorder's page is open in a new tab. Add it to ${name} to record from CCP-Bot.`,
     );
     expect(router.state.location.pathname).toBe("/");
     expect(browserRoutes()).toEqual([]);
 
-    // The person adds it, which gives this page `chrome.runtime` at once, and comes back to OpenBot's tab.
+    // The person adds it, which gives this page `chrome.runtime` at once, and comes back to CCP-Bot's tab.
     const recorder = new FakeRecorder();
     undo.push(installChromeRuntime([recorder]));
     act(() => {
@@ -706,7 +706,7 @@ test("before the Recorder is published, Chrome with no Recorder keeps today's bu
   expect(link.getAttribute("href")).toBe("/browser");
 });
 
-test("before the Recorder is published, Chrome with no Recorder keeps today's button: on OpenBot Desktop, the one that opens the person's browser", async () => {
+test("before the Recorder is published, Chrome with no Recorder keeps today's button: on CCP-Bot Desktop, the one that opens the person's browser", async () => {
   state = closedState("native");
   inBrowser("chrome", []);
   const { view } = draw();
@@ -719,7 +719,7 @@ test("before the Recorder is published, Chrome with no Recorder keeps today's bu
   );
 });
 
-test("a Recorder from before openbot.state keeps today's button, as OpenBot cannot drive it from here", async () => {
+test("a Recorder from before ccpbot.state keeps today's button, as CCP-Bot cannot drive it from here", async () => {
   const recorder = new FakeRecorder();
   recorder.connected = true;
   recorder.older = true;
@@ -727,10 +727,10 @@ test("a Recorder from before openbot.state keeps today's button, as OpenBot cann
   const { view } = draw();
   const link = await view.findByRole("link", { name: "Browser" });
   expect(link.getAttribute("href")).toBe("/browser");
-  expect(sent(recorder, "openbot.state").length).toBe(1);
+  expect(sent(recorder, "ccpbot.state").length).toBe(1);
 });
 
-test("OpenBot Desktop's own app window on Windows (WebView2, which reports Edge's brand) keeps today's button and asks no extension anything", async () => {
+test("CCP-Bot Desktop's own app window on Windows (WebView2, which reports Edge's brand) keeps today's button and asks no extension anything", async () => {
   state = closedState("native");
   const recorder = new FakeRecorder();
   recorder.connected = true;
@@ -755,7 +755,7 @@ for (const [where, setUp] of [
     () => setBrowserBrands(null),
   ],
   [
-    "OpenBot Desktop's own app window on macOS (a WebKit view)",
+    "CCP-Bot Desktop's own app window on macOS (a WebKit view)",
     () => setBrowserBrands(null),
   ],
   ["Chrome on a phone", () => setBrowserBrands("chrome", { mobile: true })],

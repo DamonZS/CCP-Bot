@@ -125,7 +125,9 @@ function EnterprisePage() {
 
   return (
     <PageShell
-      description={t("Manage member permissions, network access for Bot computers, and recording settings. All changes appear in Audit.")}
+      description={t(
+        "Manage member permissions, network access for Bot computers, and recording settings. All changes appear in Audit.",
+      )}
       title={t("Enterprise controls")}
     >
       {failure ? (
@@ -195,7 +197,9 @@ function EnterpriseSections({
   return (
     <>
       <PageSection
-        description={t("Addresses in INITIAL_ADMIN_EMAILS can always use social sign-in as an emergency way in. Each of those sign-ins shows in Audit.")}
+        description={t(
+          "Addresses in INITIAL_ADMIN_EMAILS can always use social sign-in as an emergency way in. Each of those sign-ins shows in Audit.",
+        )}
         title={t("Sign-in")}
       >
         <PageRows>
@@ -207,8 +211,12 @@ function EnterpriseSections({
               <ItemTitle>{t("Require SSO")}</ItemTitle>
               <ItemDescription>
                 {settings.ssoRequired
-                  ? t("People can only sign in through a registered SAML or OpenID Connect provider.")
-                  : t("People can also sign in with Google, Microsoft or Okta.")}
+                  ? t(
+                      "People can only sign in through a registered SAML or OpenID Connect provider.",
+                    )
+                  : t(
+                      "People can also sign in with Google, Microsoft or Okta.",
+                    )}
               </ItemDescription>
             </ItemContent>
             <ItemActions>
@@ -230,7 +238,9 @@ function EnterpriseSections({
               <ItemDescription className="line-clamp-none">
                 {data.scim.configured
                   ? `Directory base URL ${data.scim.baseUrl ?? "(set BETTER_AUTH_URL)"} with the SCIM_BEARER_TOKEN bearer token. Deprovisioning ends sessions, blocks the address, retires connector credentials and stops their computers.`
-                  : t("Off. Set SCIM_BEARER_TOKEN to accept provisioning from Okta, Entra or another directory.")}
+                  : t(
+                      "Off. Set SCIM_BEARER_TOKEN to accept provisioning from Okta, Entra or another directory.",
+                    )}
               </ItemDescription>
             </ItemContent>
             <ItemActions>
@@ -243,7 +253,9 @@ function EnterpriseSections({
       </PageSection>
 
       <PageSection
-        description={t("Each switch applies to the whole organization. A role can override it, and a directory group can get a capability the organization has off.")}
+        description={t(
+          "Each switch applies to the whole organization. A role can override it, and a directory group can get a capability the organization has off.",
+        )}
         title={t("Capabilities")}
       >
         <PageRows>
@@ -260,7 +272,9 @@ function EnterpriseSections({
                     <ItemDescription>
                       {effective
                         ? capability.description
-                        : t("Off for everybody, unless a role or group turns it on.")}
+                        : t(
+                            "Off for everybody, unless a role or group turns it on.",
+                          )}
                     </ItemDescription>
                   </ItemContent>
                   <ItemActions>
@@ -303,7 +317,9 @@ function EnterpriseSections({
       </PageSection>
 
       <PageSection
-        description={t("Each person's recordings teach Skills in their own Learning space, and those Skills reach the Bots that person uses. A shared Skill puts its person's recorded and narrated text in front of everybody's Bots.")}
+        description={t(
+          "Each person's recordings teach Skills in their own Learning space, and those Skills reach the Bots that person uses. A shared Skill puts its person's recorded and narrated text in front of everybody's Bots.",
+        )}
         title={t("Learning")}
       >
         <PageRows>
@@ -315,8 +331,12 @@ function EnterpriseSections({
               <ItemTitle>{t("Skill sharing")}</ItemTitle>
               <ItemDescription className="line-clamp-none">
                 {settings.skillSharing
-                  ? t("People may open their Skills to every Bot in Settings, Learning.")
-                  : t("Off. Each person's Skills reach only the Bots they use, even Skills they opened before.")}
+                  ? t(
+                      "People may open their Skills to every Bot in Settings, Learning.",
+                    )
+                  : t(
+                      "Off. Each person's Skills reach only the Bots they use, even Skills they opened before.",
+                    )}
               </ItemDescription>
             </ItemContent>
             <ItemActions>
@@ -334,7 +354,9 @@ function EnterpriseSections({
       </PageSection>
 
       <PageSection
-        description={t("Control where Bot computers can connect. Changes apply within seconds without a restart. Group policies override the organization’s policy unless it is locked.")}
+        description={t(
+          "Control where Bot computers can connect. Changes apply within seconds without a restart. Group policies override the organization’s policy unless it is locked.",
+        )}
         title={t("Network")}
       >
         <PageRows>
@@ -383,7 +405,9 @@ function EnterpriseSections({
                   <IconNetwork />
                 </ItemMedia>
                 <ItemContent>
-                  <ItemTitle>{t("Group:")} {policy.scopeId}</ItemTitle>
+                  <ItemTitle>
+                    {t("Group:")} {policy.scopeId}
+                  </ItemTitle>
                   <ItemDescription>{summarizePolicy(policy)}</ItemDescription>
                 </ItemContent>
                 <ItemActions>
@@ -406,7 +430,9 @@ function EnterpriseSections({
       </PageSection>
 
       <PageSection
-        description={t("With the allowlist on, Bots can only call tools on the MCP servers approved here. Calls to any other server are refused.")}
+        description={t(
+          "With the allowlist on, Bots can only call tools on the MCP servers approved here. Calls to any other server are refused.",
+        )}
         title={t("MCP servers")}
       >
         <PageRows>
@@ -419,7 +445,9 @@ function EnterpriseSections({
               <ItemDescription>
                 {settings.mcpAllowlist.enabled
                   ? `${settings.mcpAllowlist.servers.length} approved`
-                  : t("Off. Bots can use any registered server they have access to.")}
+                  : t(
+                      "Off. Bots can use any registered server they have access to.",
+                    )}
               </ItemDescription>
             </ItemContent>
             <ItemActions>
@@ -486,7 +514,9 @@ function EnterpriseSections({
               <ItemTitle>{t("Model allowlist")}</ItemTitle>
               <ItemDescription>
                 {settings.modelAllowlist.enabled
-                  ? t("A built-in Bot on an unlisted model is refused before it runs.")
+                  ? t(
+                      "A built-in Bot on an unlisted model is refused before it runs.",
+                    )
                   : t("Off. Any model can be used.")}
               </ItemDescription>
             </ItemContent>
@@ -531,7 +561,9 @@ function EnterpriseSections({
       </PageSection>
 
       <PageSection
-        description={t("Set OTEL_EXPORTER_OTLP_ENDPOINT to stream audit events and Bot actions to your OpenTelemetry collector or SIEM. They are tagged openbot.surface.")}
+        description={t(
+          "Set OTEL_EXPORTER_OTLP_ENDPOINT to stream audit events and Bot actions to your OpenTelemetry collector or SIEM. They are tagged ccpbot.surface.",
+        )}
         title={t("Recording and export")}
       >
         <PageRows>
@@ -568,7 +600,9 @@ function EnterpriseSections({
               <ItemDescription>
                 {data.otel.configured
                   ? t("Exporting over OTLP/HTTP.")
-                  : t("Not set up. Set OTEL_EXPORTER_OTLP_ENDPOINT on the server.")}
+                  : t(
+                      "Not set up. Set OTEL_EXPORTER_OTLP_ENDPOINT on the server.",
+                    )}
               </ItemDescription>
             </ItemContent>
             <ItemActions>
@@ -582,7 +616,9 @@ function EnterpriseSections({
       </PageSection>
 
       <PageSection
-        description={t("Stopping a computer ends its running Bots and keeps its disk. The Bot gets a fresh computer next session. To stop one person's computers, go to People.")}
+        description={t(
+          "Stopping a computer ends its running Bots and keeps its disk. The Bot gets a fresh computer next session. To stop one person's computers, go to People.",
+        )}
         title={t("Computers")}
       >
         <PageRows>
@@ -622,7 +658,9 @@ function EnterpriseSections({
         />
       ) : null}
       <ListDialog
-        description={t("Enter one model per line as provider/model, for example openai/gpt-5.6-terra.")}
+        description={t(
+          "Enter one model per line as provider/model, for example openai/gpt-5.6-terra.",
+        )}
         initial={settings.modelAllowlist.models}
         onClose={() => setModelsOpen(false)}
         onSave={(models) =>
@@ -696,7 +734,9 @@ function RecordedActions() {
       </p>
     );
   if (actions.data.length === 0)
-    return <PageEmpty icon={IconTerminal2} title={t("No commands recorded yet")} />;
+    return (
+      <PageEmpty icon={IconTerminal2} title={t("No commands recorded yet")} />
+    );
   return (
     <PageRows>
       {actions.data.map((action, index) => (
@@ -801,8 +841,12 @@ function OverridesDialog({
           </Select>
           <p className="text-muted-foreground text-xs">
             {scope?.kind === "group"
-              ? t("A group can only add. Grant gives its members the capability even when the organization has it off.")
-              : t("A role's setting replaces the organization switch for everybody with that role.")}
+              ? t(
+                  "A group can only add. Grant gives its members the capability even when the organization has it off.",
+                )
+              : t(
+                  "A role's setting replaces the organization switch for everybody with that role.",
+                )}
           </p>
           {scope
             ? data.capabilities.map((capability) => {
@@ -837,7 +881,9 @@ function OverridesDialog({
                       </SelectTrigger>
                       <SelectContent>
                         <SelectGroup>
-                          <SelectItem value="inherit">{t("Inherit")}</SelectItem>
+                          <SelectItem value="inherit">
+                            {t("Inherit")}
+                          </SelectItem>
                           <SelectItem value="on">
                             {scope.kind === "group" ? t("Grant") : t("On")}
                           </SelectItem>
@@ -971,14 +1017,19 @@ function NetworkDialog({
                 className="font-mono text-xs"
                 id="network-rules"
                 onChange={(event) => setRules(event.target.value)}
-                placeholder={t("example.com\n*.corp.example\n10.0.0.0/8 443,5432")}
+                placeholder={t(
+                  "example.com\n*.corp.example\n10.0.0.0/8 443,5432",
+                )}
                 rows={8}
                 value={rules}
               />
               <p className="text-muted-foreground text-xs">
-                {t("One per line. A domain covers its subdomains. *.name covers only subdomains. An IP range can list ports. Defaults are")}{" "}
+                {t(
+                  "One per line. A domain covers its subdomains. *.name covers only subdomains. An IP range can list ports. Defaults are",
+                )}{" "}
                 {data.defaultDestinations.slice(0, 4).join(", ")} {t("and")}{" "}
-                {data.defaultDestinations.length - 4} {t("more package and source hosts.")}
+                {data.defaultDestinations.length - 4}{" "}
+                {t("more package and source hosts.")}
               </p>
             </div>
             {initial.scopeKind === "organization" ? (

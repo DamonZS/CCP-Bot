@@ -22,7 +22,9 @@ export function TeamBotConsents() {
   const clear = useMutation(clearTeamBotConsentsMutationOptions());
   return (
     <PageSection
-      description={t("A Bot shared with you uses its owner's apps. It uses yours only where you said yes in a conversation.")}
+      description={t(
+        "A Bot shared with you uses its owner's apps. It uses yours only where you said yes in a conversation.",
+      )}
       title={t("Shared Bots")}
     >
       {clear.error ? (

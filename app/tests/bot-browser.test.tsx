@@ -11,15 +11,15 @@ import {
   type BotBrowserApiState,
   type BotBrowserState,
   botBrowserApiPaths,
-} from "@openbot/shared/bot-browser";
-import type { ComputerControlState } from "@openbot/shared/computer-control";
+} from "@ccpbot/shared/bot-browser";
+import type { ComputerControlState } from "@ccpbot/shared/computer-control";
 import {
   browserNarrationRequestSchema,
   browserNavigateRequestSchema,
   browserRecordingRequestSchema,
   browserTabsRequestSchema,
   type LauncherState,
-} from "@openbot/shared/openbot-browser";
+} from "@ccpbot/shared/ccpbot-browser";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { cleanup, render, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -488,7 +488,7 @@ test("while the Bot holds the wheel the bar shows where the Bot is, read only, a
 
 test("where the Bots share one computer, the screen says why it cannot record, and offers no Record, while the bar still works", async () => {
   recordRefused =
-    "This OpenBot can't record in a Bot's browser, because its Bots share one computer.";
+    "This CCP-Bot can't record in a Bot's browser, because its Bots share one computer.";
   control = heldBy(ME);
   const { dialog } = await openScreen();
   const panel = within(dialog.getByRole("region", { name: "Record a task" }));
@@ -518,7 +518,7 @@ test("taking control makes the bar live at once, and it works the Bot's browser 
   await user.click(dialog.getByRole("button", { name: "Forward" }));
   await user.click(dialog.getByRole("button", { name: "Reload" }));
   await user.clear(address(dialog));
-  await user.type(address(dialog), "openbot.ai{Enter}");
+  await user.type(address(dialog), "ccpbot.ai{Enter}");
 
   await waitFor(() =>
     expect(writes()).toEqual([
@@ -555,7 +555,7 @@ test("taking control makes the bar live at once, and it works the Bot's browser 
       {
         path: botBrowserApiPaths.navigate(botId),
         method: "POST",
-        body: { url: "https://openbot.ai" },
+        body: { url: "https://ccpbot.ai" },
       },
     ]),
   );
@@ -918,12 +918,12 @@ test("a new tab takes the focus into its address bar, as Chrome does", async () 
   );
   await waitFor(() => expect(document.activeElement).toBe(address(dialog)));
   // What the person types goes to the address, not to the Bot's page.
-  await user.keyboard("openbot.ai{Enter}");
+  await user.keyboard("ccpbot.ai{Enter}");
   await waitFor(() =>
     expect(writes().at(-1)).toEqual({
       path: botBrowserApiPaths.navigate(botId),
       method: "POST",
-      body: { url: "https://openbot.ai" },
+      body: { url: "https://ccpbot.ai" },
     }),
   );
 });
@@ -1155,12 +1155,12 @@ test("taking control gives the Bot's screen the keyboard, and the bar and Record
 
   // An address typed in the bar goes there, and the keyboard goes back to the page it opens.
   await user.click(address(dialog));
-  await user.keyboard("openbot.ai{Enter}");
+  await user.keyboard("ccpbot.ai{Enter}");
   await waitFor(() =>
     expect(writes().at(-1)).toEqual({
       path: botBrowserApiPaths.navigate(botId),
       method: "POST",
-      body: { url: "https://openbot.ai" },
+      body: { url: "https://ccpbot.ai" },
     }),
   );
   await waitFor(() => expect(document.activeElement).toBe(screen));
