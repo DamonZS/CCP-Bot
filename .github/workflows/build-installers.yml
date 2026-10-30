@@ -1,0 +1,142 @@
+name: build-installers
+
+# Builds the desktop installers people actually double-click: a `.msi` and an NSIS `.exe` on Windows,
+# a `.dmg` on macOS — x64 and arm64 for the Mac, because the two are different machines and neither
+# can run the other's build.
+#
+# The installers are attached to the same release the container images go to, so one version number
+# names everything a deployment might need. `<owner>/<repo>/releases/latest` then answers with the
+# whole set, which is how CCP's one-click install finds them: it reads the release, picks the asset
+# for the platform it runs on, and runs it.
+#
+# UNSIGNED ON PURPOSE, FOR NOW. Nobody has a code-signing certificate for this repository, and a
+# workflow that waits for one would produce nothing. The consequence is stated rather than hidden:
+# Windows shows "Unknown publisher" and SmartScreen, macOS needs the quarantine attribute cleared
+# (`xattr -dr com.apple.quarantine`) or a right-click Open. Adding `APPLE_CERTIFICATE`,
+# `APPLE_SIGNING_IDENTITY`, `TAURI_SIGNING_PRIVATE_KEY` and a Windows certificate to the repository
+# secrets is what removes that — the steps below already read them if they exist.
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Tag to build for, when re-running by hand (defaults to the pushed tag)"
+        required: false
+
+concurrency:
+  group: build-installers-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: ${{ matrix.name }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: windows-x64
+            os: windows-latest
+            bundles: nsis,msi
+            artifact: ccpbot-windows-x64
+          - name: macos-arm64
+            os: macos-latest
+            bundles: dmg
+            artifact: ccpbot-macos-arm64
+          - name: macos-x64
+            os: macos-13
+            bundles: dmg
+            artifact: ccpbot-macos-x64
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.4.3
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      # The bundler links the frontend before it packs the app, and `beforeBuildCommand` is
+      # `bun run build`: without desktop's own dependencies that command fails on a missing vite,
+      # and the failure names the frontend rather than the install that never happened. `desktop/` is
+      # not a workspace of the root install, so it needs its own.
+      - name: Install the desktop dependencies
+        working-directory: desktop
+        run: bun install --frozen-lockfile
+
+      - uses: swatinem/rust-cache@v2
+        with:
+          workspaces: desktop/src-tauri -> target
+
+      # Read from the environment by the bundler when present, ignored when not: this is the whole
+      # difference between an unsigned installer and a signed one, with no branch in the workflow.
+      - name: Build the installers
+        working-directory: desktop
+        env:
+          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
+          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+          APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+        run: bun run tauri build --bundles ${{ matrix.bundles }}
+
+      # `bundle/` holds one directory per bundle type; the globs are the filenames the bundler writes,
+      # so a rename there fails this step loudly instead of shipping an empty artifact.
+      - name: Collect the bundles
+        shell: bash
+        run: |
+          mkdir -p out
+          find desktop/src-tauri/target/release/bundle -type f \
+            \( -name '*.msi' -o -name '*.exe' -o -name '*.dmg' \) -print0 \
+            | xargs -0 -I{} cp {} out/ 2>/dev/null || true
+          ls -l out
+          test -n "$(ls -A out)" || { echo "the bundler produced no installer"; exit 1; }
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact }}
+          path: out/*
+          if-no-files-found: error
+
+  attach:
+    name: attach to the release
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Resolve the tag
+        id: version
+        env:
+          INPUT_TAG: ${{ inputs.tag }}
+        run: |
+          tag="${INPUT_TAG:-${GITHUB_REF_NAME}}"
+          echo "tag=${tag}" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: ccpbot-*
+          merge-multiple: true
+          path: installers
+
+      - name: Upload to the release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ steps.version.outputs.tag }}
+          REPO: ${{ github.repository }}
+        run: |
+          ls -l installers
+          # The release may not exist yet if this ran before publish-images; creating it here and
+          # letting that job upload its manifest to it is the same end state either way.
+          gh release view "$TAG" --repo "$REPO" >/dev/null 2>&1 \
+            || gh release create "$TAG" --repo "$REPO" --title "CCP-Bot $TAG" --notes "CCP-Bot $TAG"
+          gh release upload "$TAG" installers/* --repo "$REPO" --clobber
+          # A tag pushed twice leaves the old release as a draft, which downloads 404 for anybody
+          # without a token. Publishing explicitly makes the end state the same either way.
+          gh release edit "$TAG" --repo "$REPO" --draft=false
+          gh release view "$TAG" --repo "$REPO" --json tagName,isDraft,assets | jq -r '.assets[].name'
