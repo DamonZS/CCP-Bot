@@ -1,8 +1,14 @@
 name: build-installers
 
 # Builds the desktop installers people actually double-click: a `.msi` and an NSIS `.exe` on Windows,
-# a `.dmg` on macOS — x64 and arm64 for the Mac, because the two are different machines and neither
-# can run the other's build.
+# and an Apple-silicon `.dmg` on macOS.
+#
+# ONE MAC BUNDLE, ON PURPOSE. Every Mac this project is used on is Apple silicon, and an Intel `.dmg`
+# would be the expensive half of the matrix for nobody: the `macos-13` runner spends most of an hour
+# queued (both v0.2.3 runs sat `queued` for 40 minutes while the other two jobs finished), and the
+# bundle it produces cannot run on an Apple-silicon Mac at all. So the Intel build is gone rather
+# than dead weight, and CCP's installer pick refuses a foreign-architecture asset by name instead of
+# handing an Intel Mac an ARM build that would fail on launch.
 #
 # The installers are attached to the same release the container images go to, so one version number
 # names everything a deployment might need. `<owner>/<repo>/releases/latest` then answers with the
@@ -47,10 +53,6 @@ jobs:
             os: macos-latest
             bundles: dmg
             artifact: ccpbot-macos-arm64
-          - name: macos-x64
-            os: macos-13
-            bundles: dmg
-            artifact: ccpbot-macos-x64
     steps:
       - uses: actions/checkout@v4
 
