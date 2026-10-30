@@ -30,16 +30,25 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
+        # `name` is the published name the deployment manifest keys on; `image` is what the registry
+        # path is called. They differ on purpose: `server` is `ccpbot`, and the manifest reader in
+        # desktop/src-tauri/src/deployment.rs looks up `server`, so the two vocabularies have to stay
+        # separable instead of being collapsed into one.
         include:
-          - name: ccpbot
+          - name: server
+            image: ccpbot
             dockerfile: server/Dockerfile
-          - name: ccpbot-agent-computer
+          - name: agent-computer
+            image: ccpbot-agent-computer
             dockerfile: agent-computer/Dockerfile
-          - name: ccpbot-supervisor
+          - name: supervisor
+            image: ccpbot-supervisor
             dockerfile: supervisor/Dockerfile
-          - name: ccpbot-agent-bot
+          - name: agent-bot
+            image: ccpbot-agent-bot
             dockerfile: agent-bot/Dockerfile
-          - name: ccpbot-agent-langgraph
+          - name: agent-langgraph
+            image: ccpbot-agent-langgraph
             dockerfile: agent-langgraph/Dockerfile
     steps:
       - uses: actions/checkout@v4
@@ -74,24 +83,25 @@ jobs:
           platforms: linux/amd64
           push: true
           tags: |
-            ghcr.io/${{ steps.owner.outputs.name }}/${{ matrix.name }}:${{ steps.version.outputs.tag }}
-            ghcr.io/${{ steps.owner.outputs.name }}/${{ matrix.name }}:latest
+            ghcr.io/${{ steps.owner.outputs.name }}/${{ matrix.image }}:${{ steps.version.outputs.tag }}
+            ghcr.io/${{ steps.owner.outputs.name }}/${{ matrix.image }}:latest
           labels: |
             org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
             org.opencontainers.image.version=${{ steps.version.outputs.tag }}
             org.opencontainers.image.revision=${{ github.sha }}
-          cache-from: type=gha,scope=${{ matrix.name }}
-          cache-to: type=gha,scope=${{ matrix.name }},mode=max
+          cache-from: type=gha,scope=${{ matrix.image }}
+          cache-to: type=gha,scope=${{ matrix.image }},mode=max
 
       # A digest, not a tag, is what the deployment pins: a tag can be moved after the version that
       # was tested, and the release manifest is the record of what was tested.
       - name: Record the digest
         env:
           NAME: ${{ matrix.name }}
+          IMAGE: ${{ matrix.image }}
           DIGEST: ${{ steps.build.outputs.digest }}
           TAG: ${{ steps.version.outputs.tag }}
         run: |
-          jq -n --arg reference "ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/${NAME}@${DIGEST}" \
+          jq -n --arg reference "ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/${IMAGE}@${DIGEST}" \
                 --arg name "$NAME" \
                 --arg version "$TAG" \
                 '{version: $version, images: {($name): {reference: $reference}}}' \
@@ -136,6 +146,16 @@ jobs:
             '{version: $version, images: (map(.images) | add)}' \
             manifests/manifest-*.json > container-images.json
           jq . container-images.json
+
+      # A manifest that is missing one name is worse than no manifest: `pin()` in deployment.rs
+      # refuses the partial set, but only after somebody has downloaded a deployment, so it is
+      # cheaper to fail here where the reason is one line of output.
+      - name: Check every image the stack runs is in the manifest
+        run: |
+          for name in server supervisor agent-computer agent-bot agent-langgraph; do
+            jq -e --arg n "$name" '.images | has($n)' container-images.json > /dev/null \
+              || { echo "container-images.json has no entry for ${name}"; exit 1; }
+          done
 
       - name: Publish the release
         env:
