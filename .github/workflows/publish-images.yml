@@ -1,6 +1,14 @@
 name: publish-images
 
-# Builds the five images the stack runs and publishes them to GitHub Container Registry.
+# Builds every image the stack runs and publishes them to GitHub Container Registry.
+#
+# The list is NOT repeated here: it is `.github/published-images.json`, the same file the desktop
+# harness test reads and the same file the release's `container-images.json` keys on. Three places
+# have to agree about image names — the build matrix, the manifest every deployment pins, and the
+# harnesses a Bot can be registered against — and the way they stop agreeing is that one of them
+# carries a copy. So the workflow reads the list and derives the registry path from the name:
+# `ccpbot` is published as-is (the all-in-one image the Kubernetes chart serves every role from),
+# everything else is prefixed, so `server` becomes `ccpbot-server`.
 #
 # Registration happens here rather than on a workstation because the credentials differ: a release
 # needs `packages: write` on the repository itself, which `GITHUB_TOKEN` has and a developer's
@@ -24,32 +32,54 @@ permissions:
   packages: write
 
 jobs:
+  plan:
+    name: plan
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.matrix.outputs.matrix }}
+    steps:
+      - uses: actions/checkout@v4
+
+      # `_about` is documentation for a human reading the file; it is not an image. Every other key
+      # is the published name, and its value is the Dockerfile that builds it.
+      - name: Build the matrix from published-images.json
+        id: matrix
+        run: |
+          matrix=$(jq -c '
+            to_entries
+            | map(select(.key | startswith("_") | not))
+            | map({
+                name: .key,
+                image: (if .key == "ccpbot" then "ccpbot" else "ccpbot-\(.key)" end),
+                dockerfile: .value
+              })
+          ' .github/published-images.json)
+          echo "matrix=${matrix}" >> "$GITHUB_OUTPUT"
+          echo "$matrix" | jq -r '.[] | "\(.name) <- \(.dockerfile)"'
+
+      # A Dockerfile on disk that nothing publishes is a component nobody can deploy, and a listed
+      # image with no Dockerfile fails the build an hour into the release instead of here.
+      - name: Every listed Dockerfile exists, and every Dockerfile is listed
+        run: |
+          jq -r 'to_entries | map(select(.key | startswith("_") | not)) | .[] | .value' \
+            .github/published-images.json | while read -r file; do
+              test -f "$file" || { echo "published-images.json names ${file}, which is not in the tree"; exit 1; }
+            done
+          git ls-files '*Dockerfile' | grep -v '/tests/fixtures/' | while read -r file; do
+              jq -e --arg f "$file" \
+                '[to_entries[] | select(.key | startswith("_") | not) | .value] | index($f)' \
+                .github/published-images.json > /dev/null \
+                || { echo "${file} builds an image nothing publishes"; exit 1; }
+            done
+
   publish:
     name: ${{ matrix.name }}
+    needs: plan
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        # `name` is the published name the deployment manifest keys on; `image` is what the registry
-        # path is called. They differ on purpose: `server` is `ccpbot`, and the manifest reader in
-        # desktop/src-tauri/src/deployment.rs looks up `server`, so the two vocabularies have to stay
-        # separable instead of being collapsed into one.
-        include:
-          - name: server
-            image: ccpbot
-            dockerfile: server/Dockerfile
-          - name: agent-computer
-            image: ccpbot-agent-computer
-            dockerfile: agent-computer/Dockerfile
-          - name: supervisor
-            image: ccpbot-supervisor
-            dockerfile: supervisor/Dockerfile
-          - name: agent-bot
-            image: ccpbot-agent-bot
-            dockerfile: agent-bot/Dockerfile
-          - name: agent-langgraph
-            image: ccpbot-agent-langgraph
-            dockerfile: agent-langgraph/Dockerfile
+        include: ${{ fromJSON(needs.plan.outputs.matrix) }}
     steps:
       - uses: actions/checkout@v4
 
@@ -136,8 +166,8 @@ jobs:
           path: manifests
 
       # `container-images.json` is the contract the desktop installer reads: one digest per
-      # published name. Composing it from the five job artifacts keeps it a single source of truth
-      # even though the images are built independently.
+      # published name. Composing it from the job artifacts keeps it a single source of truth even
+      # though the images are built independently.
       - name: Compose container-images.json
         env:
           TAG: ${{ steps.version.outputs.tag }}
@@ -150,12 +180,13 @@ jobs:
       # A manifest that is missing one name is worse than no manifest: `pin()` in deployment.rs
       # refuses the partial set, but only after somebody has downloaded a deployment, so it is
       # cheaper to fail here where the reason is one line of output.
-      - name: Check every image the stack runs is in the manifest
+      - name: Check every image the release names is in the manifest
         run: |
-          for name in server supervisor agent-computer agent-bot agent-langgraph; do
-            jq -e --arg n "$name" '.images | has($n)' container-images.json > /dev/null \
-              || { echo "container-images.json has no entry for ${name}"; exit 1; }
-          done
+          jq -r 'to_entries | map(select(.key | startswith("_") | not)) | .[].key' \
+            .github/published-images.json | while read -r name; do
+              jq -e --arg n "$name" '.images | has($n)' container-images.json > /dev/null \
+                || { echo "container-images.json has no entry for ${name}"; exit 1; }
+            done
 
       - name: Publish the release
         env:

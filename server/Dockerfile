@@ -72,6 +72,12 @@ COPY server server
 COPY shared shared
 COPY toolkit toolkit
 COPY examples examples
+# The one source tree outside `server/` that the API imports at runtime: `server/src/computer/
+# policy-network` reaches `../../../agent-computer/src/egress` for the egress rule the computer
+# container is held to. Without it the container starts and dies on `Cannot find module`, which is
+# what a staging deploy showed. Only `src` is copied: the directory's own dependencies are the
+# browser image's, and nothing below imports from here at runtime.
+COPY agent-computer/src agent-computer/src
 # Its source and manifest, not its tests. Run it with `bun ../worker/src/index.ts` from the working
 # directory below; it reaches the server's source by relative import, so it needs `server/` beside
 # it, which is already here.

@@ -1,0 +1,30 @@
+{
+  "_about": [
+    "Every image a release publishes, as published-name -> the Dockerfile that builds it.",
+    "Read by three places that must agree: .github/workflows/publish-images.yml (the build matrix),",
+    "container-images.json in the release (the digest manifest every deployment pins), and",
+    "desktop/src-tauri/src/harness.rs's every_image_is_one_a_release_publishes.",
+    "The registry path is derived from the name: `ccpbot` stays as it is (the all-in-one image the",
+    "Kubernetes chart serves every role from), everything else is prefixed, so `server` is published",
+    "as ghcr.io/<owner>/ccpbot-server and `agent-crewai` as ghcr.io/<owner>/ccpbot-agent-crewai."
+  ],
+  "ccpbot": "Dockerfile",
+  "server": "server/Dockerfile",
+  "supervisor": "supervisor/Dockerfile",
+  "agent-computer": "agent-computer/Dockerfile",
+  "agent-bot": "agent-bot/Dockerfile",
+  "agent-langgraph": "agent-langgraph/Dockerfile",
+  "agent-langgraph-agui": "agent-langgraph-agui/Dockerfile",
+  "agent-adk": "agent-adk/Dockerfile",
+  "agent-ag2": "agent-ag2/Dockerfile",
+  "agent-agno": "agent-agno/Dockerfile",
+  "agent-antigravity": "agent-antigravity/Dockerfile",
+  "agent-claude-sdk": "agent-claude-sdk/Dockerfile",
+  "agent-crewai": "agent-crewai/Dockerfile",
+  "agent-langroid": "agent-langroid/Dockerfile",
+  "agent-llamaindex": "agent-llamaindex/Dockerfile",
+  "agent-mastra": "agent-mastra/Dockerfile",
+  "agent-microsoft": "agent-microsoft/Dockerfile",
+  "agent-pydantic-ai": "agent-pydantic-ai/Dockerfile",
+  "agent-strands": "agent-strands/Dockerfile"
+}
