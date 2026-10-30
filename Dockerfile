@@ -166,7 +166,13 @@ COPY scripts/composio-smoke.ts scripts/composio-smoke.ts
 COPY --from=app-build /src/app/dist app/dist
 ENV APP_DIST_DIR=/app/app/dist
 
-COPY docker/s6 /etc/s6-overlay
+# `--chmod` because the exec bit is not something git carries faithfully across every checkout this
+# repository is cloned to, and these land in a directory s6 execs: `run` and `up` are the service
+# scripts, and `scripts/*.sh` are what they call. A checkout that produced them mode 0644 — which
+# every Windows clone does — built an image whose services all died at start with
+# `unable to exec /etc/s6-overlay/scripts/postgres-init.sh: Permission denied` (exit 126), and the
+# API never came up. Setting the mode here makes the image independent of who cloned it.
+COPY --chmod=0755 docker/s6 /etc/s6-overlay
 
 # PostgreSQL, for the deployment that wants one thing to run rather than two.
 #
