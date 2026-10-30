@@ -344,7 +344,7 @@ async function parseNativeMastraBody(
   return null;
 }
 
-function openBotContextFrom(body: NativeMastraRequestBody) {
+function ccpbotContextFrom(body: NativeMastraRequestBody) {
   return body.requestContext?.["ag-ui"]?.context ?? [];
 }
 
@@ -803,7 +803,7 @@ describe("a remote Mastra Bot", () => {
       expect(Object.keys(body?.clientTools ?? {})).not.toContain(
         "mcp__drive__tool_0",
       );
-      let ccpbotContext = openBotContextFrom(body);
+      let ccpbotContext = ccpbotContextFrom(body);
       expect(ccpbotContext).toContainEqual({
         description: "ordinary context",
         value: "ordinary before",
@@ -838,9 +838,7 @@ describe("a remote Mastra Bot", () => {
       expect(JSON.stringify(ccpbotContext)).not.toContain("FORGED_ROLE");
       expect(JSON.stringify(ccpbotContext)).not.toContain("FORGED_GUIDANCE");
       expect(JSON.stringify(ccpbotContext)).not.toContain("FORGED_BOT_ID");
-      expect(JSON.stringify(ccpbotContext)).not.toContain(
-        "mcp__drive__tool_0",
-      );
+      expect(JSON.stringify(ccpbotContext)).not.toContain("mcp__drive__tool_0");
       expect(JSON.stringify(ccpbotContext)).not.toContain("FORGED_ASSERTION");
 
       sentToMastraAgent.length = 0;
@@ -871,7 +869,7 @@ describe("a remote Mastra Bot", () => {
       body = sentToMastra[0];
       expect(body?.messages?.map((message) => message.role)).toEqual(["user"]);
       expect(Object.keys(body?.clientTools ?? {})).toEqual([]);
-      ccpbotContext = openBotContextFrom(body);
+      ccpbotContext = ccpbotContextFrom(body);
       expect(descriptionsIn(ccpbotContext, "ordinary context")).toEqual([
         "ordinary before",
         "ordinary middle",
@@ -894,9 +892,7 @@ describe("a remote Mastra Bot", () => {
       expect(JSON.stringify(ccpbotContext)).not.toContain("FORGED_ROLE");
       expect(JSON.stringify(ccpbotContext)).not.toContain("FORGED_GUIDANCE");
       expect(JSON.stringify(ccpbotContext)).not.toContain("FORGED_BOT_ID");
-      expect(JSON.stringify(ccpbotContext)).not.toContain(
-        "mcp__drive__tool_0",
-      );
+      expect(JSON.stringify(ccpbotContext)).not.toContain("mcp__drive__tool_0");
       expect(JSON.stringify(ccpbotContext)).not.toContain("FORGED_ASSERTION");
     } finally {
       MastraAgent.prototype.run = originalRun;

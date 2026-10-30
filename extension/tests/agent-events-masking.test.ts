@@ -264,7 +264,7 @@ type Started = {
 };
 
 /** CCP-Bot's tool list and context as its chat sends them with every run: end-to-end run 3's run request. */
-function openBotSetup(): { tools: Tool[]; context: unknown[] } {
+function ccpbotSetup(): { tools: Tool[]; context: unknown[] } {
   const fixture = JSON.parse(
     readFileSync(
       join(import.meta.dir, "fixtures/e2e-run3-ccpbot-run.json"),
@@ -278,7 +278,7 @@ function openBotSetup(): { tools: Tool[]; context: unknown[] } {
 /** A conversation as CCP-Bot's page sends it: each run offers CCP-Bot's 39 tools beside the conversation's own, with
  * CCP-Bot's 5 context entries, in its request and in a RUN_STARTED that echoes the request. */
 function onCcpBot(observations: AgentObservation[]): AgentObservation[] {
-  const { tools, context } = openBotSetup();
+  const { tools, context } = ccpbotSetup();
   const dressed = (input: unknown) => {
     const own = input as { tools?: Tool[] };
     return { ...own, tools: [...(own.tools ?? []), ...tools], context };
@@ -333,7 +333,7 @@ for (const transport of ["sse", "intelligence"] as const)
     const [first, followUp, ...more] = runStarts(emitted);
     expect(more).toHaveLength(0);
     // The Thread's first run carries the page's whole setup, every tool by name.
-    const { tools } = openBotSetup();
+    const { tools } = ccpbotSetup();
     expect(first?.event.input.tools?.map(({ name }) => name)).toEqual([
       "showGreeting",
       ...tools.map(({ name }) => name),
@@ -363,7 +363,7 @@ for (const transport of ["sse", "intelligence"] as const)
       expect(bytes(event)).toBeLessThanOrEqual(EVENT_BUDGET_BYTES);
     const [started] = runStarts(emitted);
     expect(started?.truncated).toBe(true);
-    const { tools } = openBotSetup();
+    const { tools } = ccpbotSetup();
     expect(started?.event.input.tools?.map(({ name }) => name)).toEqual([
       "showGreeting",
       ...tools.map(({ name }) => name),
