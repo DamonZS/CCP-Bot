@@ -98,6 +98,12 @@ jobs:
       # service definition and its own change; this job covers what the workbench actually renders.
       - name: Interface tests
         run: bun test app/tests --timeout 20000
+      # TEMPORARY diagnostic: the auth-client file fails only here. Remove once explained.
+      - name: Diagnose the auth client alone
+        run: bun test app/tests/auth-client.test.ts --timeout 20000 || true
+      - name: Diagnose the starter
+        run: |
+          bun -e 'const mod = await import("./app/src/lib/auth/client.ts"); const asked = []; (globalThis).window = { location: { origin: "http://localhost:3010" } }; await mod.signInWith("google", async (input) => { asked.push(input.provider); return {}; }); console.log("PROBE asked=", JSON.stringify(asked), "window=", typeof globalThis.window, "bun=", Bun.version);' || true
 
   chart:
     name: chart (${{ matrix.target }})
