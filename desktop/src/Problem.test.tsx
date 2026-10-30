@@ -62,7 +62,7 @@ for (const Component of [Failure, InlineFailure]) {
     );
     const help = view.getByRole("link", { name: "Get setup help" });
     expect(help.getAttribute("href")).toBe(
-      "https://github.com/CopilotKit/OpenBot/issues/new/choose",
+      "https://github.com/DamonZS/CCP-Bot/issues/new/choose",
     );
     expect(help.getAttribute("target")).toBe("_blank");
     expect(help.getAttribute("rel")).toBe("noreferrer");
@@ -72,7 +72,7 @@ for (const Component of [Failure, InlineFailure]) {
       {
         command: "plugin:opener|open_url",
         args: {
-          url: "https://github.com/CopilotKit/OpenBot/issues/new/choose",
+          url: "https://github.com/DamonZS/CCP-Bot/issues/new/choose",
         },
       },
     ]);
@@ -104,7 +104,7 @@ test("setup help reports a failed browser open and allows retry", async () => {
   const failure = await view.findByText(/Could not open your browser/);
   expect(failure.textContent).toContain("synthetic browser refusal");
   expect(failure.textContent).toContain(
-    "https://github.com/CopilotKit/OpenBot/issues/new/choose",
+    "https://github.com/DamonZS/CCP-Bot/issues/new/choose",
   );
 
   invokeFailure = null;

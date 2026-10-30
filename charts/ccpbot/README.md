@@ -7,16 +7,28 @@ only difference between them is values.
 
 Four things this chart assumes and does not create.
 
-**An image the cluster can pull.** A release publishes `ghcr.io/copilotkit/ccpbot:vX.Y.Z`
-publicly, and that tag is what `image.tag` wants. It is built for **`linux/amd64` only**, so an
-arm64 node group (Graviton on EKS, Tau T2A on GKE, Ampere on AKS) cannot run it: the pods sit in
-`ImagePullBackOff`, which is the same thing a wrong tag or a missing pull secret looks like, so the
-node pool being the wrong shape is the last thing anybody checks. Either run amd64 nodes, or build the image for the
-architecture you have and push it somewhere the cluster can reach. Check before assuming:
+**An image the cluster can pull.** `image.repository` defaults to `ghcr.io/damonzs/ccpbot`, which
+`.github/workflows/publish-images.yml` fills on every `v*` tag: the five images are built on
+`linux/amd64` and pushed as `<repository>:<tag>` plus `:latest`. Nothing is published until that
+workflow has run once for the tag you want, so check before deploying:
 
 ```sh
-docker manifest inspect ghcr.io/copilotkit/ccpbot:v0.0.9 | grep architecture
+docker manifest inspect ghcr.io/damonzs/ccpbot:v0.2.0 | jq -r .mediaType
 ```
+
+The packages come out of the first run **private**, and a private package needs a pull secret even
+in the same account's cluster. Either make the five packages public once in the repository's
+*Settings → Packages*, or pull them with a token that can read packages:
+
+```sh
+kubectl create secret docker-registry ghcr \
+  --docker-server=ghcr.io --docker-username=<user> --docker-password=<token-with-read:packages>
+# then: --set imagePullSecrets[0].name=ghcr
+```
+
+Images are `linux/amd64` only. An arm64 node group (Graviton on EKS, Tau T2A on GKE, Ampere on AKS)
+shows `ImagePullBackOff`, which looks exactly like a wrong tag or a missing pull secret, so check the
+node pool before believing the registry is at fault.
 
 **Intelligence credentials.** CCP-Bot requires CopilotKit Intelligence and the chart refuses to
 install without `secrets.intelligenceApiKey`. It comes from the CLI, on any machine with a browser:
