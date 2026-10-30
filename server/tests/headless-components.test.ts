@@ -141,12 +141,15 @@ describe("headless components mirror the compiled gallery", () => {
     // The TYPES come from the app's install for the same reason the values do: `server` has no
     // React. A bare `typeof import("react")` does not resolve from here, and an unresolved type
     // import is not an error bun can see — it silently makes both casts `any`.
+    // The TYPES come from the ROOT install, not `app/node_modules/@types`: this fork's
+    // `bun install` hoists the type packages to the repository root, so `app/` has no
+    // `node_modules` directory to point at, and the runtime `require` above resolves the same way.
     const { createElement } = appRequire(
       "react",
-    ) as typeof import("../../app/node_modules/@types/react");
+    ) as typeof import("../../node_modules/@types/react");
     const { renderToStaticMarkup } = appRequire(
       "react-dom/server",
-    ) as typeof import("../../app/node_modules/@types/react-dom/server");
+    ) as typeof import("../../node_modules/@types/react-dom/server");
     const args = {
       title: "Open issues by team",
       basis: "given",
