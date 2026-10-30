@@ -40,15 +40,24 @@ pub struct Installed {
 ///
 /// A release asset rather than a branch, and https rather than git, so nothing needs a git client
 /// or credentials to get a deployment.
+///
+/// `codeload.github.com` rather than `github.com/.../archive`: the second is only a redirector onto
+/// the first, and the redirector is the host networks block or route around, while the CDN that
+/// actually serves the bytes answers from those same networks. One hop fewer, and one host fewer
+/// that has to be reachable before an install can start.
 pub fn tarball_url(version: &str) -> String {
-    format!("https://github.com/DamonZS/CCP-Bot/archive/refs/tags/{version}.tar.gz")
+    format!("https://codeload.github.com/DamonZS/CCP-Bot/tar.gz/refs/tags/{version}")
 }
 
 /// Where the release publishes its image manifest.
+///
+/// The release JSON rather than `releases/download/<version>/<file>`: a release asset is served
+/// through the same `github.com` host as the redirector above, which is the host most likely to be
+/// unreachable, while `api.github.com` is a different host. The response names the asset's id, and
+/// `release_asset` turns that into an api.github.com URL for the bytes themselves.
 pub fn images_url(version: &str) -> String {
-    format!("https://github.com/DamonZS/CCP-Bot/releases/download/{version}/{IMAGES}")
+    format!("https://api.github.com/repos/DamonZS/CCP-Bot/releases/tags/{version}")
 }
-
 pub fn images_path(root: &Path) -> PathBuf {
     root.join(IMAGES)
 }
@@ -329,7 +338,11 @@ pub fn unpack(root: &Path, body: &[u8]) -> Result<(), String> {
 /// Parsed here rather than at start-up so a release missing an image fails while the person is
 /// still looking at a screen that says what is being fetched, not later inside Compose's output.
 fn fetch_images(root: &Path, version: &str) -> Result<(), String> {
-    let body = get(&images_url(version))
+    let described = get(&images_url(version))
+        .map_err(|error| format!("could not look up the release for {version}: {error}"))?;
+    let asset = release_asset(&described, IMAGES)
+        .map_err(|error| format!("could not find the image list for {version}: {error}"))?;
+    let body = get_asset(&asset)
         .map_err(|error| format!("could not fetch the image list for {version}: {error}"))?;
     let manifest: Images = serde_json::from_slice(&body)
         .map_err(|error| format!("the image list for {version} is not readable: {error}"))?;
@@ -337,13 +350,49 @@ fn fetch_images(root: &Path, version: &str) -> Result<(), String> {
     std::fs::write(images_path(root), &body)
         .map_err(|error| format!("could not write {IMAGES}: {error}"))
 }
+/// The api.github.com URL for one asset of a release.
+///
+/// The id rather than the name: `assets/<id>` serves the bytes whatever they are called, and asking
+/// for it with `Accept: application/octet-stream` gets them rather than another JSON envelope. A
+/// release that does not carry the file is named as such here, while somebody is still watching a
+/// screen that says what is being fetched.
+fn release_asset(response: &[u8], name: &str) -> Result<String, String> {
+    #[derive(Deserialize)]
+    struct Asset {
+        id: u64,
+        name: String,
+    }
+    #[derive(Deserialize)]
+    struct Release {
+        assets: Vec<Asset>,
+    }
 
+    let release: Release = serde_json::from_slice(response)
+        .map_err(|error| format!("the release response is not readable: {error}"))?;
+    let asset = release
+        .assets
+        .iter()
+        .find(|asset| asset.name == name)
+        .ok_or_else(|| format!("the release publishes no {name}"))?;
+    Ok(format!(
+        "https://api.github.com/repos/DamonZS/CCP-Bot/releases/assets/{}",
+        asset.id
+    ))
+}
 /// Fetch a URL into memory.
 ///
 /// Shared with `install.rs`, which fetches the engine's installers through it and then checks their
 /// digests. One client, one user agent, one set of TLS defaults.
 pub fn get(url: &str) -> Result<Vec<u8>, String> {
-    get_waiting(url, IDLE_TIMEOUT)
+    get_waiting(url, IDLE_TIMEOUT, None)
+}
+
+/// Fetch a release asset.
+///
+/// `releases/assets/<id>` answers with the same metadata envelope as everything else unless the
+/// request says which representation it wants, so this asks for the bytes.
+pub fn get_asset(url: &str) -> Result<Vec<u8>, String> {
+    get_waiting(url, IDLE_TIMEOUT, Some("application/octet-stream"))
 }
 
 /// How long a download may go without receiving anything before it is given up.
@@ -357,14 +406,22 @@ read on a stream, but `bytes()` waits for the whole body within it, and reports 
 as "error decoding response body". So any download that took longer than 30 seconds failed, however
 steadily it was arriving: Bun's 30 MB on a connection under about 1 MB/s, every time.
 */
-fn get_waiting(url: &str, idle: std::time::Duration) -> Result<Vec<u8>, String> {
+fn get_waiting(
+    url: &str,
+    idle: std::time::Duration,
+    accept: Option<&str>,
+) -> Result<Vec<u8>, String> {
     use std::io::Read;
-    let mut response = reqwest::blocking::Client::builder()
+    let mut request = reqwest::blocking::Client::builder()
         .user_agent("ccpbot-desktop")
         .timeout(idle)
         .build()
         .map_err(|error| format!("could not prepare the download: {error}"))?
-        .get(url)
+        .get(url);
+    if let Some(accept) = accept {
+        request = request.header(reqwest::header::ACCEPT, accept);
+    }
+    let mut response = request
         .send()
         .map_err(|error| format!("could not reach {url}: {error}"))?;
     if !response.status().is_success() {
@@ -415,7 +472,7 @@ mod tests {
         // Six pieces 300 ms apart take 1.8 s in all, longer than the 1 s allowed between pieces.
         // `bytes()` gave up here with "error decoding response body"; a stream does not.
         let (url, served) = dripping(6, std::time::Duration::from_millis(300));
-        let body = get_waiting(&url, std::time::Duration::from_secs(1)).unwrap();
+        let body = get_waiting(&url, std::time::Duration::from_secs(1), None).unwrap();
         assert_eq!(body, b"data".repeat(6));
         served.join().unwrap();
     }
@@ -423,7 +480,7 @@ mod tests {
     #[test]
     fn a_download_that_stalls_is_given_up() {
         let (url, served) = dripping(2, std::time::Duration::from_millis(1500));
-        let error = get_waiting(&url, std::time::Duration::from_millis(500)).unwrap_err();
+        let error = get_waiting(&url, std::time::Duration::from_millis(500), None).unwrap_err();
         assert!(error.starts_with("the download did not finish"), "{error}");
         served.join().unwrap();
     }
@@ -492,21 +549,30 @@ mod tests {
     #[test]
     fn the_image_manifest_is_fetched_from_the_same_version_as_the_tree() {
         let url = images_url("v0.0.7");
-        assert!(url.contains("/download/v0.0.7/"), "{url}");
-        assert!(url.ends_with("container-images.json"), "{url}");
-    }
-
-    #[test]
-    fn the_tarball_is_a_tag_rather_than_a_branch() {
-        let url = tarball_url("v0.0.7");
-        assert!(url.contains("/refs/tags/v0.0.7"), "{url}");
-        assert!(!url.contains("/heads/"), "a branch is not a version: {url}");
+        assert!(url.ends_with("/releases/tags/v0.0.7"), "{url}");
         assert!(
-            url.starts_with("https://"),
-            "must not need a git client: {url}"
+            url.starts_with("https://api.github.com/"),
+            "the manifest must not ride the host the redirector lives on: {url}"
         );
     }
 
+    #[test]
+    fn the_release_names_the_asset_the_id_points_at() {
+        let release =
+            br#"{"assets":[{"id":7,"name":"notes.txt"},{"id":41,"name":"container-images.json"}]}"#;
+        assert_eq!(
+            release_asset(release, "container-images.json").unwrap(),
+            "https://api.github.com/repos/DamonZS/CCP-Bot/releases/assets/41"
+        );
+
+        for body in [
+            b"not json".as_slice(),
+            br#"{"assets":[]}"#.as_slice(),
+            br#"{"assets":[{"id":7,"name":"notes.txt"}]}"#.as_slice(),
+        ] {
+            assert!(release_asset(body, "container-images.json").is_err());
+        }
+    }
     #[test]
     fn an_empty_directory_needs_fetching() {
         let dir = std::env::temp_dir().join(format!("ccpbot-dep-empty-{}", std::process::id()));
@@ -554,8 +620,7 @@ mod tests {
     }
 
     fn scratch(name: &str) -> PathBuf {
-        let dir =
-            std::env::temp_dir().join(format!("ccpbot-unpack-{name}-{}", std::process::id()));
+        let dir = std::env::temp_dir().join(format!("ccpbot-unpack-{name}-{}", std::process::id()));
         let _ = std::fs::remove_dir_all(&dir);
         std::fs::create_dir_all(&dir).expect("the scratch directory is made");
         dir
