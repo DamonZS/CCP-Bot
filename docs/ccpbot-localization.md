@@ -139,5 +139,20 @@ app 的 268 个测试文件断言的是英文原文（`role="button"` 名字 "Br
 | 品牌残留 | `git ls-files` + 排除白名单后 grep `openbot` | 仅 CHANGELOG 与上游外链 |
 | Rust 清单 | `cargo metadata --offline --no-deps`（`desktop/src-tauri`） | 包 `ccpbot-desktop` |
 
-已知遗留：`app/package.json` 的 `build` 脚本用相对路径 `node_modules/vite/bin/vite.js`，在 bun 把依赖
-提升到仓库根时找不到该文件（上游原有行为），因此构建用上一行的显式路径执行。
+已知遗留：
+
+- `app/package.json` 的 `build` 脚本用相对路径 `node_modules/vite/bin/vite.js`，在 bun 把依赖提升到仓库
+  根时找不到该文件（上游原有行为），因此构建用上一行的显式路径执行。
+- `bun test app/tests` 共 269 个文件：`2135 pass / 3 fail`。三个失败都在
+  `app/tests/serve.test.ts` 的 upstream websocket handshake 用例，且**在基线 commit `5899bd4` 上
+  以完全相同的方式失败**（45 pass / 3 fail，隔离运行同样复现），属本机环境的上游既有问题，与本次
+  改动无关。
+- 相对时间戳原先让 ICU 决定语言（`Intl.RelativeTimeFormat(undefined, …)`），中文界面上会夹出英文。
+  现在按 `currentLocale()` 每种语言建一个 formatter 并缓存；顺带让两个依赖 "Ada asked 5 minutes ago"
+  的用例从失败转为通过（它们在基线上同样是失败的）。
+
+## 后续候选（未做）
+
+- server 的用户可见错误文案（会经 API 冒泡到界面）、Tauri 桌面端原生文案（51.6k 行 Rust）、
+  extension popup 文案仍是英文。它们需要各自的语言协商方案（服务端要按请求语言选词典），
+  不在本次 app 界面工作范围内。
