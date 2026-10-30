@@ -94,6 +94,11 @@ jobs:
         run: bun install --frozen-lockfile
       - name: Seed the development env file
         run: cp .env.example .env
+      # `bun test` does not run `pretest`, and eight files here render the app sidebar or a skin,
+      # which import `@/lib/generated/application-config` — a gitignored file this step produces.
+      # Without it they fail to import and the run reports them as unnamed failures.
+      - name: Generate the application configuration
+        run: bun run generate:app-config
       # The interface suite only. The server suite needs PostgreSQL and real websockets, which is a
       # service definition and its own change; this job covers what the workbench actually renders.
       #
