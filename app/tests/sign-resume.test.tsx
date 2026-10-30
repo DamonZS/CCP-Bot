@@ -40,13 +40,17 @@ let domainSignInSpy: DomainSignInSpy = async () => {};
  * real client dropping a callbackURL it was handed — is pinned in `auth-client.test.ts`, which
  * drives the real functions through their injectable starter. The two together cover the handoff.
  */
-mock.module("@/lib/auth/client", () => ({
-  providerName: () => "Google",
-  signInWith: (...args: Parameters<SignInSpy>) => signInSpy(...args),
-  signInWithEmailDomain: (...args: Parameters<DomainSignInSpy>) =>
-    domainSignInSpy(...args),
-}));
-const { Route } = await import("@/routes/sign");
+/*
+ * THE REPLACEMENT GOES ON IN `beforeAll`, NOT AT MODULE SCOPE. bun installs module mocks
+ * process-wide, and it imports every test file before running any of them: installed at module
+ * scope, this replacement was in force while files collected after this one resolved
+ * `@/lib/auth/client`, and CI showed the consequence — `auth-client.test.ts`, which deliberately
+ * drives the REAL functions through their injectable starters, saw `providerName("microsoft")` come
+ * back "Google" and a starter it passed never called. Installed inside the hook, it covers this
+ * file's own tests and reaches no other file's imports; `afterAll` hands the real client back.
+ */
+type SignRoute = (typeof import("@/routes/sign"))["Route"];
+let Route: SignRoute;
 
 beforeAll(() => {
   GlobalRegistrator.register();
@@ -54,6 +58,16 @@ beforeAll(() => {
   (
     window as unknown as { happyDOM: { setURL(url: string): void } }
   ).happyDOM.setURL("http://localhost:3010/");
+});
+beforeAll(async () => {
+  mock.module("@/lib/auth/client", () => ({
+    providerName: () => "Google",
+    signInWith: (...args: Parameters<SignInSpy>) => signInSpy(...args),
+    signInWithEmailDomain: (...args: Parameters<DomainSignInSpy>) =>
+      domainSignInSpy(...args),
+  }));
+  // After the replacement, so the sign screen this suite renders takes the spied module.
+  ({ Route } = await import("@/routes/sign"));
 });
 afterEach(() => {
   cleanup();

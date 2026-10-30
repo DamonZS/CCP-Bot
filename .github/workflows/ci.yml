@@ -97,12 +97,14 @@ jobs:
       # The interface suite only. The server suite needs PostgreSQL and real websockets, which is a
       # service definition and its own change; this job covers what the workbench actually renders.
       #
-      # `--max-concurrency=1` because `mock.module` is process-wide: `sign-resume.test.tsx`
-      # replaces `@/lib/auth/client` for its own duration, and on the four-core runner another file
-      # overlapped it, so `auth-client.test.ts` asserted against the mock. One file at a time is
-      # slower and the only scheduling the mock cannot reach across.
+      # `--max-concurrency=1` stood here to keep a module mock from reaching another file, and it
+      # did not work: it limits concurrency inside a file, not between them, and the suite stayed
+      # red with it in place. The leak is fixed at its source instead — `sign-resume.test.tsx`
+      # installs its replacement inside `beforeAll`, so it is in force only while its own tests
+      # run (`mock.module` is process-wide, and at module scope it was live while files collected
+      # after that one resolved `@/lib/auth/client`).
       - name: Interface tests
-        run: bun test app/tests --timeout 20000 --max-concurrency=1
+        run: bun test app/tests --timeout 20000
   chart:
     name: chart (${{ matrix.target }})
     runs-on: ubuntu-latest
