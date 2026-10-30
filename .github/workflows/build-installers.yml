@@ -72,10 +72,13 @@ jobs:
         with:
           workspaces: desktop/src-tauri -> target
 
-      # Read from the environment by the bundler when present, ignored when not: this is the whole
-      # difference between an unsigned installer and a signed one, with no branch in the workflow.
-      - name: Build the installers
-        working-directory: desktop
+      # Signing is turned on only when a secret actually holds something. An empty
+      # `APPLE_CERTIFICATE` is not "no signature": the bundler reads "a certificate was given",
+      # tries to import zero bytes, and fails the whole bundle — which is exactly how the first run
+      # of this workflow died on macOS (`failed to import keychain certificate`). Promoting the
+      # values only when they are non-empty keeps an unsigned build a build.
+      - name: Enable signing when the repository holds a certificate
+        shell: bash
         env:
           APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
           APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
@@ -85,6 +88,25 @@ jobs:
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+        run: |
+          for name in APPLE_CERTIFICATE APPLE_CERTIFICATE_PASSWORD APPLE_SIGNING_IDENTITY \
+                      APPLE_ID APPLE_PASSWORD APPLE_TEAM_ID \
+                      TAURI_SIGNING_PRIVATE_KEY TAURI_SIGNING_PRIVATE_KEY_PASSWORD; do
+            value="${!name:-}"
+            if [ -n "$value" ]; then
+              {
+                echo "$name<<__${name}__"
+                echo "$value"
+                echo "__${name}__"
+              } >> "$GITHUB_ENV"
+              echo "$name: set"
+            else
+              echo "$name: not set"
+            fi
+          done
+
+      - name: Build the installers
+        working-directory: desktop
         run: bun run tauri build --bundles ${{ matrix.bundles }}
 
       # `bundle/` holds one directory per bundle type; the globs are the filenames the bundler writes,
