@@ -15,7 +15,7 @@ MIT）基础上完成了
 ## 快速开始（源码模式）
 
 ```bash
-git clone https://github.com/DamonZS/ccp.git
+git clone https://github.com/DamonZS/CCP-Bot.git
 cd ccp
 cp .env.example .env      # 然后填入 CPK_INTELLIGENCE_API_KEY 等密钥
 bun install
