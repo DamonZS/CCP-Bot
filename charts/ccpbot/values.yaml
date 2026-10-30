@@ -12,10 +12,10 @@ fullnameOverride: ""
 
 image:
   repository: ghcr.io/damonzs/ccpbot
-  # The image repository above is this fork's namespace; it is not published yet, so a
-  # cluster install must either build and push the images yourself (`docker build -f
-  # Dockerfile -t ghcr.io/damonzs/ccpbot:v<tag> .`) or set `image.repository` to whatever
-  # registry you do publish to. `docker compose` needs none of this: it builds from source.
+  # Published by `.github/workflows/publish-images.yml` on every `v*` tag, so `tag: ""`
+  # (which resolves to `v<appVersion>`) names an image that exists. A cluster that needs its
+  # own registry, or a fork that has never run that workflow, sets `image.repository` to the
+  # registry it does publish to. `docker compose` needs none of this: it builds from source.
   # Empty means the chart's appVersion prefixed with `v` (the form published tags take), so an
   # upgrade of the chart moves the image with it. A value set here is used verbatim.
   tag: ""

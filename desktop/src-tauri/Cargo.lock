@@ -430,6 +430,29 @@ dependencies = [
 ]
 
 [[package]]
+name = "ccpbot-desktop"
+version = "0.2.0"
+dependencies = [
+ "base64 0.22.1",
+ "flate2",
+ "libc",
+ "portable-pty",
+ "rand 0.9.5",
+ "reqwest 0.12.28",
+ "serde",
+ "serde_json",
+ "sha2",
+ "tar",
+ "tauri",
+ "tauri-build",
+ "tauri-plugin-dialog",
+ "tauri-plugin-opener",
+ "tauri-plugin-shell",
+ "tauri-plugin-single-instance",
+ "zip",
+]
+
+[[package]]
 name = "cesu8"
 version = "1.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2504,29 +2527,6 @@ dependencies = [
  "dunce",
  "is-wsl",
  "libc",
-]
-
-[[package]]
-name = "ccpbot-desktop"
-version = "0.2.0"
-dependencies = [
- "base64 0.22.1",
- "flate2",
- "libc",
- "portable-pty",
- "rand 0.9.5",
- "reqwest 0.12.28",
- "serde",
- "serde_json",
- "sha2",
- "tar",
- "tauri",
- "tauri-build",
- "tauri-plugin-dialog",
- "tauri-plugin-opener",
- "tauri-plugin-shell",
- "tauri-plugin-single-instance",
- "zip",
 ]
 
 [[package]]
