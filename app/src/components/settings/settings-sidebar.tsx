@@ -20,6 +20,7 @@ import {
   SidebarMenuItem,
   SidebarRail,
 } from "@/components/ui/sidebar";
+import { t } from "@/lib/i18n";
 
 const appLinkOptions = { to: "/" } satisfies LinkOptions;
 
@@ -36,7 +37,7 @@ export const SETTINGS_SIDEBAR_ITEMS: {
   title: string;
 }[] = [
   {
-    title: "General",
+    title: t("General"),
     icon: IconSettings,
     /* `/settings` prefixes every other route here, and would otherwise light up on all of them. */
     exact: true,
@@ -44,37 +45,37 @@ export const SETTINGS_SIDEBAR_ITEMS: {
   },
   {
     /* Where updates go for every Bot at once; how much each Bot sends is on that Bot's page. */
-    title: "Notifications",
+    title: t("Notifications"),
     icon: IconBell,
     linkOptions: { to: "/settings/notifications" },
   },
   {
     /* Whether Bots ask first, and rules for every Bot. Team settings are an administrator's. */
-    title: "Approvals",
+    title: t("Approvals"),
     icon: IconChecks,
     linkOptions: { to: "/settings/approvals" },
   },
   {
     /* The browsers signed in to the Recorder extension as you; each can be disconnected here. */
-    title: "Browsers",
+    title: t("Browsers"),
     icon: IconBrowser,
     linkOptions: { to: "/settings/browsers" },
   },
   {
     /* Who else's Bots use the Skills learned from your recordings: none, all, or the ones you open. */
-    title: "Learning",
+    title: t("Learning"),
     icon: IconSchool,
     linkOptions: { to: "/settings/learning" },
   },
   {
     /* Logins saved from a Bot's private sign-in form. */
-    title: "Passwords",
+    title: t("Passwords"),
     icon: IconKey,
     linkOptions: { to: "/settings/passwords" },
   },
   {
     /* The same mark Admin gives UI Components. It is the same subject seen from the other side. */
-    title: "Components gallery",
+    title: t("Components gallery"),
     icon: IconLayoutGrid,
     linkOptions: { to: "/settings/components-gallery" },
   },
@@ -93,7 +94,7 @@ export function SettingsSidebar({
               render={(props) => (
                 <Link {...appLinkOptions} {...props}>
                   <IconArrowLeft className="mr-2 h-4 w-4" />
-                  Back to app
+                  {t("Back to app")}
                 </Link>
               )}
             />

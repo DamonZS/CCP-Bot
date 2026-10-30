@@ -16,6 +16,7 @@ import {
   ItemTitle,
 } from "@/components/ui/item";
 import { cn } from "@/lib/utils";
+import { t } from "@/lib/i18n";
 
 /*
  * OpenMuse's primitives, rebuilt on OpenBot's own. Each one is an OpenBot component — Button, Item,
@@ -31,7 +32,7 @@ export const museText = {
   muted: "text-[14px] leading-[21px] text-muted-foreground",
   small: "text-[11px] leading-[17px] text-muted-foreground",
   heading: "text-[16px] font-semibold tracking-[-0.25px] text-foreground",
-  title: "text-[23px] font-semibold tracking-[-0.7px] text-foreground",
+  title: t("text-[23px] font-semibold tracking-[-0.7px] text-foreground"),
 } as const;
 
 type MuseButtonLook = { primary?: boolean; small?: boolean; danger?: boolean };
@@ -330,7 +331,7 @@ export function MuseSheet({
               </DialogDescription>
             ) : null}
           </div>
-          <RoundButton icon={IconX} label="Close" onClick={onClose} />
+          <RoundButton icon={IconX} label={t("Close")} onClick={onClose} />
         </div>
         <div
           className="min-h-0 flex-1 overflow-y-auto p-5 min-[600px]:p-6"

@@ -13,6 +13,7 @@ import { Switch } from "@/components/ui/switch";
 import type { NarrationProblem } from "@/lib/browser/narration";
 import type { NarrationChoice } from "./narration-choice";
 import type { NarrationControls } from "./use-narration";
+import { t } from "@/lib/i18n";
 
 const GOES_ON = "Recording still works.";
 
@@ -56,7 +57,7 @@ export function narrationProblemSentence(
     case "language":
       return `This browser can't turn ${languageName(language)} speech into text on your computer, so narration is off. ${GOES_ON}`;
     case "network":
-      return "Can't reach this browser's speech service. Narration tries again in a moment.";
+      return t("Can't reach this browser's speech service. Narration tries again in a moment.");
   }
 }
 
@@ -69,14 +70,14 @@ export function downloadingSentence(language: string): string {
 function nativeNarrationSentence(voice: LauncherState["voice"]): string {
   switch (voice) {
     case "listening":
-      return "Listening. Say what you're doing as you go.";
+      return t("Listening. Say what you're doing as you go.");
     case "muted":
-      return "Muted in the Recorder, so what you say isn't recorded. Turn it on again from the Recorder's button in your browser's toolbar.";
+      return t("Muted in the Recorder, so what you say isn't recorded. Turn it on again from the Recorder's button in your browser's toolbar.");
     case "unavailable":
       return `The Recorder can't hear your microphone, so what you say isn't recorded. The Recorder's button in your browser's toolbar says why. ${GOES_ON}`;
     // Nothing is being recorded yet, or the Recorder has not said.
     default:
-      return "On. The Recorder hears your microphone while you record, so say what you're doing as you go.";
+      return t("On. The Recorder hears your microphone while you record, so say what you're doing as you go.");
   }
 }
 
@@ -86,11 +87,11 @@ function narrationChoiceSentence(
 ) {
   switch (narration) {
     case "on":
-      return "On. The Recorder in your browser listens to your microphone while you record, and turns your speech into text on your computer.";
+      return t("On. The Recorder in your browser listens to your microphone while you record, and turns your speech into text on your computer.");
     case "off":
-      return "Off. The Recorder doesn't open your microphone.";
+      return t("Off. The Recorder doesn't open your microphone.");
     case null:
-      return "Not chosen yet. Record asks before your first recording, and the microphone stays closed until you say yes.";
+      return t("Not chosen yet. Record asks before your first recording, and the microphone stays closed until you say yes.");
   }
 }
 
@@ -120,7 +121,7 @@ export function NativeNarrationRow({
           {on ? <IconMicrophone /> : <IconMicrophoneOff />}
         </ItemMedia>
         <ItemContent>
-          <ItemTitle>Narration</ItemTitle>
+          <ItemTitle>{t("Narration")}</ItemTitle>
           {choice.narration !== undefined ? (
             <ItemDescription className="line-clamp-none">
               {narrationChoiceSentence(choice.narration)}
@@ -129,7 +130,7 @@ export function NativeNarrationRow({
         </ItemContent>
         <ItemActions>
           <Switch
-            aria-label="Narration"
+            aria-label={t("Narration")}
             checked={on}
             disabled={!known}
             onCheckedChange={choice.choose}
@@ -145,7 +146,7 @@ export function NativeNarrationRow({
         {hearing ? <IconMicrophone /> : <IconMicrophoneOff />}
       </ItemMedia>
       <ItemContent>
-        <ItemTitle>Narration</ItemTitle>
+        <ItemTitle>{t("Narration")}</ItemTitle>
         <ItemDescription className="line-clamp-none">
           {voice === "listening" ? (
             <span className="inline-flex items-center gap-1.5">
@@ -200,12 +201,12 @@ export function NarrationSwitch({
             aria-hidden="true"
             className="size-1.5 shrink-0 rounded-full bg-emerald-500 motion-safe:animate-pulse"
           />
-          Listening
+          {t("Listening")}
         </span>
       ) : null}
       <Icon aria-hidden="true" className="size-4 text-muted-foreground" />
       <label htmlFor={id} id={labelId} className="text-muted-foreground">
-        Narration
+        {t("Narration")}
       </label>
       {/* Named by the label's id as well: the switch is a span with role="switch", which `htmlFor` cannot name. */}
       <Switch
@@ -311,7 +312,7 @@ export function NarrationRow({
         )}
       </ItemMedia>
       <ItemContent>
-        <ItemTitle id={labelId}>Narration</ItemTitle>
+        <ItemTitle id={labelId}>{t("Narration")}</ItemTitle>
         <ItemDescription className="line-clamp-none" role="status">
           {listening ? (
             <span className="inline-flex items-center gap-1.5">

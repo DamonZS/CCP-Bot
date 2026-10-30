@@ -46,6 +46,7 @@ import { routinesQueryOptions } from "@/lib/routines/queries";
 import { cn } from "@/lib/utils";
 import { queryClient } from "@/query-client";
 import type { Place } from "./place";
+import { t } from "@/lib/i18n";
 
 /** OpenDots' sidebar row: a quiet line of text that lights lavender when it is the page. */
 export const navItem =
@@ -168,11 +169,11 @@ function BotsSection({
   const dots = agents.data ? dotOrder(agents.data) : [];
   const bots = useNavigationItems().find((item) => item.id === "bots");
   return (
-    <section aria-label="Bots">
+    <section aria-label={t("Bots")}>
       <NavLabel
         actions={
           <IconAction
-            label="Create Bot"
+            label={t("Create Bot")}
             onClick={onNavigate}
             render={(props) => (
               <Link {...props} search={{ new: true }} to="/bots" />
@@ -182,19 +183,19 @@ function BotsSection({
           </IconAction>
         }
       >
-        BOTS
+        {t("BOTS")}
       </NavLabel>
       {agents.isPending ? null : agents.error ? (
         <p className="px-3.5 py-1.5 text-[12px] text-destructive" role="alert">
-          Couldn't load your Bots. Reload the page.
+          {t("Couldn't load your Bots. Reload the page.")}
         </p>
       ) : dots.length === 0 ? (
         <p className="px-3.5 py-1.5 text-[12px] leading-relaxed text-(--opendots-faint)">
-          No Bots yet. Use + to create one.
+          {t("No Bots yet. Use + to create one.")}
         </p>
       ) : (
         <nav
-          aria-label="Your Bots"
+          aria-label={t("Your Bots")}
           className="grid max-h-[32vh] gap-[3px] overflow-y-auto"
         >
           {dots.map((agent) => {
@@ -259,7 +260,7 @@ function BotsSection({
           to={bots.to}
         >
           <bots.icon />
-          <span className="min-w-0 flex-1 truncate">All {bots.label}</span>
+          <span className="min-w-0 flex-1 truncate">{t("All")} {bots.label}</span>
         </Link>
       ) : null}
     </section>
@@ -311,13 +312,13 @@ function ThreadRow({
             </span>
             {channel.pinned ? (
               <IconPin
-                aria-label="Pinned"
+                aria-label={t("Pinned")}
                 className="size-3! text-(--opendots-faint)"
               />
             ) : null}
             {unread ? (
               <span
-                aria-label="Unread"
+                aria-label={t("Unread")}
                 className="size-1.5 shrink-0 rounded-full bg-(--opendots-teal)"
                 role="img"
               />
@@ -335,14 +336,14 @@ function ThreadRow({
             }}
           >
             {channel.pinned ? <IconPinnedOff /> : <IconPin />}
-            {channel.pinned ? "Unpin conversation" : "Pin conversation"}
+            {channel.pinned ? t("Unpin conversation") : t("Pin conversation")}
           </ContextMenuItem>
           <ContextMenuItem
             onClick={() => setConfirming(true)}
             variant="destructive"
           >
             <IconTrash />
-            Delete conversation…
+            {t("Delete conversation…")}
           </ContextMenuItem>
         </ContextMenuContent>
       </ContextMenu>
@@ -385,7 +386,7 @@ function RecentChats({
   };
   return (
     <section
-      aria-label="Recent chats"
+      aria-label={t("Recent chats")}
       className="mt-4 flex min-h-0 flex-1 flex-col max-md:flex-none"
     >
       <NavLabel
@@ -393,13 +394,13 @@ function RecentChats({
           <>
             <IconAction
               aria-pressed={searching}
-              label={searching ? "Close search" : "Search conversations"}
+              label={searching ? t("Close search") : t("Search conversations")}
               onClick={() => (searching ? closeSearch() : setSearching(true))}
             >
               {searching ? <IconX /> : <IconSearch />}
             </IconAction>
             <IconAction
-              label="New conversation"
+              label={t("New conversation")}
               onClick={onNavigate}
               render={(props) => <Link {...props} {...newChat} />}
             >
@@ -409,19 +410,19 @@ function RecentChats({
         }
         className="mt-[18px]"
       >
-        RECENT CHATS
+        {t("RECENT CHATS")}
       </NavLabel>
       {searching ? (
         <div className="mb-2 px-1">
           <Input
-            aria-label="Search conversations"
+            aria-label={t("Search conversations")}
             autoFocus
             className="h-8 rounded-[9px] bg-background text-[13px]"
             onChange={(event) => setSearch(event.target.value)}
             onKeyDown={(event) => {
               if (event.key === "Escape") closeSearch();
             }}
-            placeholder="Find a conversation…"
+            placeholder={t("Find a conversation…")}
             value={search}
           />
         </div>
@@ -432,13 +433,13 @@ function RecentChats({
       >
         {channels.isPending ? null : channels.error ? (
           <p className="px-3.5 py-1.5 text-[12px] text-(--opendots-error-ink)">
-            Couldn't load your conversations. Reload the page.
+            {t("Couldn't load your conversations. Reload the page.")}
           </p>
         ) : visible.length === 0 ? (
           <p className="px-3.5 py-1.5 text-[12px] leading-relaxed text-(--opendots-faint)">
             {search.trim()
               ? `No conversation has “${search.trim()}” in its name or latest message.`
-              : "No conversations yet. Start one with New chat."}
+              : t("No conversations yet. Start one with New chat.")}
           </p>
         ) : (
           visible.map((channel) => (
@@ -502,7 +503,7 @@ function WorkspaceLinks({
   const navigation = useNavigationItems().filter((item) => item.id !== "bots");
   return (
     <nav
-      aria-label="Workspace"
+      aria-label={t("Workspace")}
       className="mt-auto border-t border-(--opendots-line) pt-2.5"
     >
       <Link
@@ -513,7 +514,7 @@ function WorkspaceLinks({
         to="/s/$screen"
       >
         <IconClockHour3 />
-        <span className="min-w-0 flex-1 truncate">Routines</span>
+        <span className="min-w-0 flex-1 truncate">{t("Routines")}</span>
         <Count value={routines.data?.routines.length} />
       </Link>
       <Link
@@ -524,7 +525,7 @@ function WorkspaceLinks({
         to="/s/$screen"
       >
         <IconBook />
-        <span className="min-w-0 flex-1 truncate">Memories</span>
+        <span className="min-w-0 flex-1 truncate">{t("Memories")}</span>
         <Count value={memories.data?.length} />
       </Link>
       {/* OpenBot's own destinations, from the one list every frame reads. */}
@@ -577,7 +578,7 @@ function UserRow() {
       </span>
       <IconAction
         disabled={signOut.isPending}
-        label="Sign out"
+        label={t("Sign out")}
         onClick={async () => {
           await signOut.mutateAsync();
           await navigate({ to: "/sign" });
@@ -615,7 +616,7 @@ export function OpenDotsSidebar({
         onClick={onNavigate}
       >
         <IconPlus />
-        <span>New chat</span>
+        <span>{t("New chat")}</span>
       </Link>
       <BotsSection
         channels={channels.data}

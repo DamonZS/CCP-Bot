@@ -2,6 +2,7 @@ import { z } from "zod";
 import type { GalleryComponent } from "@/lib/copilot/gallery-registry";
 import { Badge, GalleryFrame, type Tone } from "./frame";
 import { byPosition } from "./positions";
+import { t } from "@/lib/i18n";
 
 const tone = z
   .enum(["neutral", "positive", "caution", "negative"])
@@ -143,7 +144,7 @@ export function ChecklistCard({
             done === items.length && items.length > 0 ? "positive" : "neutral"
           }
         >
-          {done} of {items.length}
+          {done} {t("of")} {items.length}
         </Badge>
       }
       caption={caption}
@@ -226,44 +227,44 @@ export function NoticeCard({
 export const GALLERY: GalleryComponent[] = [
   {
     name: "showRecord",
-    title: "Record",
+    title: t("Record"),
     kind: "card",
     description:
-      "Show one thing and its fields, an order, a person, a ticket. Use instead of describing a record in prose.",
+      t("Show one thing and its fields, an order, a person, a ticket. Use instead of describing a record in prose."),
     parameters: RecordCardProps,
     Component: RecordCard as GalleryComponent["Component"],
     preview: {
-      title: "Invoice 2043",
-      subtitle: "Northwind Traders",
+      title: t("Invoice 2043"),
+      subtitle: t("Northwind Traders"),
       status: "Approved",
       fields: [
-        { label: "Amount", value: "$4,280.00" },
-        { label: "Raised", value: "12 March" },
-        { label: "Owner", value: "Priya Raman" },
+        { label: t("Amount"), value: "$4,280.00" },
+        { label: t("Raised"), value: "12 March" },
+        { label: t("Owner"), value: "Priya Raman" },
       ],
     },
     confirmation: "The record is now on screen for the person.",
   },
   {
     name: "showMetrics",
-    title: "Headline figures",
+    title: t("Headline figures"),
     kind: "card",
     description:
-      "Show up to six headline figures, each with an optional movement. Use for a summary somebody reads at a glance.",
+      t("Show up to six headline figures, each with an optional movement. Use for a summary somebody reads at a glance."),
     parameters: MetricsCardProps,
     Component: MetricsCard as GalleryComponent["Component"],
     preview: {
-      title: "This month",
+      title: t("This month"),
       metrics: [
         {
-          label: "Revenue",
+          label: t("Revenue"),
           value: "$412k",
           change: "+12% on last month",
           changeTone: "positive",
         },
-        { label: "Open deals", value: "38" },
+        { label: t("Open deals"), value: "38" },
         {
-          label: "Churn",
+          label: t("Churn"),
           value: "1.4%",
           change: "+0.3pt",
           changeTone: "caution",
@@ -274,14 +275,14 @@ export const GALLERY: GalleryComponent[] = [
   },
   {
     name: "showChecklist",
-    title: "Checklist",
+    title: t("Checklist"),
     kind: "card",
     description:
-      "Show a list of things and which are done. Reporting only, the person cannot tick these, so do not use it to ask for anything.",
+      t("Show a list of things and which are done. Reporting only, the person cannot tick these, so do not use it to ask for anything."),
     parameters: ChecklistCardProps,
     Component: ChecklistCard as GalleryComponent["Component"],
     preview: {
-      title: "Before the release",
+      title: t("Before the release"),
       items: [
         { text: "Migrations applied", done: true },
         { text: "Changelog written", done: true },
@@ -292,14 +293,14 @@ export const GALLERY: GalleryComponent[] = [
   },
   {
     name: "showNotice",
-    title: "Notice",
+    title: t("Notice"),
     kind: "card",
     description:
-      "Show a headline, a short explanation and optional supporting points. Use instead of writing several paragraphs of prose.",
+      t("Show a headline, a short explanation and optional supporting points. Use instead of writing several paragraphs of prose."),
     parameters: NoticeCardProps,
     Component: NoticeCard as GalleryComponent["Component"],
     preview: {
-      title: "Certificate expires in 30 days",
+      title: t("Certificate expires in 30 days"),
       body: "The checkout certificate has an owner now, and this is the first of the new alerts.",
       tone: "caution",
       points: ["Owner: Platform", "Renews automatically once approved"],

@@ -17,6 +17,7 @@ import { useComputerControl } from "@/lib/computers/use-control";
 import { useConversation } from "@/lib/copilot/conversation";
 import { useToolPlace } from "@/lib/copilot/tool-place";
 import { ComputerView } from "./computer-view";
+import { t } from "@/lib/i18n";
 
 /**
  * A BOT ASKING THE PERSON TO TAKE OVER ITS BROWSER (`computer_request_help`), drawn where it happened in the
@@ -61,21 +62,21 @@ function endedAs(outcome: HelpOutcome): {
   detail?: string;
 } {
   if (outcome.handoffStatus === "completed")
-    return { title: "Taken over and handed back", done: true };
-  if (outcome.stopped) return { title: "Stopped waiting for you", done: false };
+    return { title: t("Taken over and handed back"), done: true };
+  if (outcome.stopped) return { title: t("Stopped waiting for you"), done: false };
   switch (outcome.handoffStatus) {
     case "cancelled":
-      return { title: "Nobody took over", done: false };
+      return { title: t("Nobody took over"), done: false };
     case "expired":
-      return { title: "Nobody took over in time", done: false };
+      return { title: t("Nobody took over in time"), done: false };
     case "interrupted":
       return {
-        title: "The computer stopped before this was done",
+        title: t("The computer stopped before this was done"),
         done: false,
       };
     default:
       return {
-        title: "Couldn't wait for you",
+        title: t("Couldn't wait for you"),
         done: false,
         ...(outcome.reason ? { detail: outcome.reason } : {}),
       };
@@ -120,7 +121,7 @@ export function HelpRequestCard({
     );
 
   const ended = handedBackHere
-    ? { title: "Taken over and handed back", done: true }
+    ? { title: t("Taken over and handed back"), done: true }
     : endedAs(outcome ?? {});
   /*
    * The Bot's turn ended on the hand-back without a word. Its tool result asks it to say what it does next, and it
@@ -160,22 +161,22 @@ export function HelpRequestCard({
                 aria-hidden="true"
                 className="mr-1 inline size-3.5 align-[-2px]"
               />
-              The Bot asked: “{asked}”
+              {t("The Bot asked: “")}{asked}”
             </>
           ) : (
             "The Bot asked you to take over its browser."
           )}
           {ended.detail ? ` ${ended.detail}` : null}
-          {handedBackHere ? " The Bot is carrying on." : null}
+          {handedBackHere ? t(" The Bot is carrying on.") : null}
           {silent
-            ? " The Bot stopped here without saying what it does next."
+            ? t(" The Bot stopped here without saying what it does next.")
             : null}
         </ItemDescription>
       </ItemContent>
       {silent ? (
         <ItemActions>
           <Button onClick={() => ask?.("Please carry on.")} size="sm">
-            Carry on
+            {t("Carry on")}
           </Button>
         </ItemActions>
       ) : null}

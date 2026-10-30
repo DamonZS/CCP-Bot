@@ -3,6 +3,7 @@ import type { GalleryComponent } from "@/lib/copilot/gallery-registry";
 import { GalleryFrame } from "./frame";
 import { seriesColour } from "./palette";
 import { byPosition } from "./positions";
+import { t } from "@/lib/i18n";
 
 const point = z.object({
   label: z
@@ -96,13 +97,13 @@ function Sources({ basis, sources, asOf: when }: Provenance) {
     <p className="mt-3 text-xs text-muted-foreground">
       {unchecked ? (
         <span className="text-amber-700 dark:text-amber-400">
-          From the Bot's own knowledge. Not checked against a source.
+          {t("From the Bot's own knowledge. Not checked against a source.")}
         </span>
       ) : null}
       {named.length > 0 ? (
         <>
           {unchecked ? " · " : null}
-          {"Sources: "}
+          {t("Sources: ")}
           {byPosition(named).map(({ item: entry, key }, index) => (
             <span key={key}>
               {index > 0 ? ", " : null}
@@ -155,7 +156,7 @@ function formatNumber(value: unknown): string {
 function Empty() {
   return (
     <p className="py-10 text-center text-sm text-muted-foreground">
-      There is no data to chart.
+      {t("There is no data to chart.")}
     </p>
   );
 }
@@ -542,55 +543,55 @@ export function ProgressChartCard({
 export const GALLERY: GalleryComponent[] = [
   {
     name: "showBarChart",
-    title: "Bar chart",
+    title: t("Bar chart"),
     kind: "chart",
     description:
-      "Show values as a bar chart. Use when comparing a handful of named things, teams, months, categories. Not for a trend over time, which is showLineChart.",
+      t("Show values as a bar chart. Use when comparing a handful of named things, teams, months, categories. Not for a trend over time, which is showLineChart."),
     parameters: BarChartProps,
     Component: BarChartCard as GalleryComponent["Component"],
     preview: {
       basis: "given",
-      title: "Revenue by team",
-      caption: "Sales leads, and Engineering is closing the gap.",
+      title: t("Revenue by team"),
+      caption: t("Sales leads, and Engineering is closing the gap."),
       points: [
-        { label: "Sales", value: 120 },
-        { label: "Engineering", value: 80 },
-        { label: "Support", value: 45 },
+        { label: t("Sales"), value: 120 },
+        { label: t("Engineering"), value: 80 },
+        { label: t("Support"), value: 45 },
       ],
     },
     confirmation: "The bar chart is now on screen for the person.",
   },
   {
     name: "showPieChart",
-    title: "Donut chart",
+    title: t("Donut chart"),
     kind: "chart",
     description:
-      "Show how a whole is divided, as a donut with a legend. Use only when the parts sum to something meaningful, and prefer a bar chart above about six slices.",
+      t("Show how a whole is divided, as a donut with a legend. Use only when the parts sum to something meaningful, and prefer a bar chart above about six slices."),
     parameters: PieChartProps,
     Component: PieChartCard as GalleryComponent["Component"],
     preview: {
       basis: "given",
-      title: "Where the month went",
+      title: t("Where the month went"),
       points: [
-        { label: "Build", value: 48 },
-        { label: "Support", value: 26 },
-        { label: "Meetings", value: 26 },
+        { label: t("Build"), value: 48 },
+        { label: t("Support"), value: 26 },
+        { label: t("Meetings"), value: 26 },
       ],
     },
     confirmation: "The donut chart is now on screen for the person.",
   },
   {
     name: "showLineChart",
-    title: "Line chart",
+    title: t("Line chart"),
     kind: "chart",
     description:
-      "Show one or more series over an ordered axis, usually time. Every series must have one value per label.",
+      t("Show one or more series over an ordered axis, usually time. Every series must have one value per label."),
     parameters: LineChartProps,
     Component: LineChartCard as GalleryComponent["Component"],
     preview: {
       basis: "given",
-      title: "Signups",
-      caption: "Six weeks, one release.",
+      title: t("Signups"),
+      caption: t("Six weeks, one release."),
       labels: ["W1", "W2", "W3", "W4", "W5", "W6"],
       series: [{ name: "Signups", values: [120, 180, 160, 240, 300, 420] }],
     },
@@ -598,16 +599,16 @@ export const GALLERY: GalleryComponent[] = [
   },
   {
     name: "showAreaChart",
-    title: "Area chart",
+    title: t("Area chart"),
     kind: "chart",
     description:
-      "The same as showLineChart with the area under each line filled. Use for volume or accumulation rather than for a rate.",
+      t("The same as showLineChart with the area under each line filled. Use for volume or accumulation rather than for a rate."),
     parameters: AreaChartProps,
     Component: AreaChartCard as GalleryComponent["Component"],
     preview: {
       basis: "given",
-      title: "Storage used",
-      caption: "Growing steadily since the migration.",
+      title: t("Storage used"),
+      caption: t("Growing steadily since the migration."),
       labels: ["Jan", "Feb", "Mar", "Apr", "May"],
       series: [{ name: "TB", values: [12, 19, 26, 31, 44] }],
     },
@@ -615,19 +616,19 @@ export const GALLERY: GalleryComponent[] = [
   },
   {
     name: "showProgress",
-    title: "Progress against target",
+    title: t("Progress against target"),
     kind: "chart",
     description:
-      "Show values against their targets as progress bars. Use for 'are we there yet' questions, budget spent against budget, done against planned.",
+      t("Show values against their targets as progress bars. Use for 'are we there yet' questions, budget spent against budget, done against planned."),
     parameters: ProgressChartProps,
     Component: ProgressChartCard as GalleryComponent["Component"],
     preview: {
       basis: "given",
-      title: "Migration to the new runtime",
-      caption: "Two services left.",
+      title: t("Migration to the new runtime"),
+      caption: t("Two services left."),
       points: [
-        { label: "Services moved", value: 18, target: 20 },
-        { label: "Tests ported", value: 240, target: 240 },
+        { label: t("Services moved"), value: 18, target: 20 },
+        { label: t("Tests ported"), value: 240, target: 240 },
       ],
     },
     confirmation: "The progress chart is now on screen for the person.",

@@ -28,13 +28,14 @@ import {
   type CredentialStatus,
   credentialListQueryOptions,
 } from "@/lib/credentials/queries";
+import { t } from "@/lib/i18n";
 
 export const Route = createFileRoute("/_authed/admin/credentials_/new")({
   component: NewCredentialPage,
 });
 
 const BACK = {
-  label: "Credentials",
+  label: t("Credentials"),
   linkProps: { to: "/admin/credentials" as const },
 };
 
@@ -74,8 +75,8 @@ function NewCredentialPage() {
   return (
     <PageShell
       backButton={BACK}
-      description="Save a credential for this deployment. You won’t be able to view the secret after saving it."
-      title="Add credential"
+      description={t("Save a credential for this deployment. You won’t be able to view the secret after saving it.")}
+      title={t("Add credential")}
     >
       <form
         noValidate
@@ -91,7 +92,7 @@ function NewCredentialPage() {
                 render={(props) => <Link {...props} to="/admin/credentials" />}
                 variant="outline"
               >
-                Cancel
+                {t("Cancel")}
               </Button>
               <form.Subscribe
                 selector={(state) => [state.canSubmit, state.isSubmitting]}
@@ -104,8 +105,8 @@ function NewCredentialPage() {
                     type="submit"
                   >
                     {isSubmitting || createCredential.isPending
-                      ? "Saving…"
-                      : "Save credential"}
+                      ? t("Saving…")
+                      : t("Save credential")}
                   </Button>
                 )}
               </form.Subscribe>
@@ -119,9 +120,9 @@ function NewCredentialPage() {
                   field.state.meta.isTouched && !field.state.meta.isValid;
                 return (
                   <Field data-invalid={isInvalid}>
-                    <FieldLabel htmlFor={field.name}>Type</FieldLabel>
+                    <FieldLabel htmlFor={field.name}>{t("Type")}</FieldLabel>
                     <FieldDescription>
-                      A model provider's key, or one a connector signs in with.
+                      {t("A model provider's key, or one a connector signs in with.")}
                     </FieldDescription>
                     <Select
                       items={KIND_LABEL}
@@ -139,8 +140,8 @@ function NewCredentialPage() {
                       </SelectTrigger>
                       <SelectContent>
                         <SelectGroup>
-                          <SelectItem value="model">Model</SelectItem>
-                          <SelectItem value="connector">Connector</SelectItem>
+                          <SelectItem value="model">{t("Model")}</SelectItem>
+                          <SelectItem value="connector">{t("Connector")}</SelectItem>
                         </SelectGroup>
                       </SelectContent>
                     </Select>
@@ -157,7 +158,7 @@ function NewCredentialPage() {
                   field.state.meta.isTouched && !field.state.meta.isValid;
                 return (
                   <Field data-invalid={isInvalid}>
-                    <FieldLabel htmlFor={field.name}>Provider</FieldLabel>
+                    <FieldLabel htmlFor={field.name}>{t("Provider")}</FieldLabel>
                     <Input
                       aria-invalid={isInvalid}
                       id={field.name}
@@ -166,7 +167,7 @@ function NewCredentialPage() {
                       onChange={(event) =>
                         field.handleChange(event.target.value)
                       }
-                      placeholder="OpenAI"
+                      placeholder={t("OpenAI")}
                       value={field.state.value}
                     />
                     {isInvalid ? (
@@ -182,9 +183,9 @@ function NewCredentialPage() {
                   field.state.meta.isTouched && !field.state.meta.isValid;
                 return (
                   <Field data-invalid={isInvalid}>
-                    <FieldLabel htmlFor={field.name}>Key ID</FieldLabel>
+                    <FieldLabel htmlFor={field.name}>{t("Key ID")}</FieldLabel>
                     <FieldDescription>
-                      Tells this key apart from others for the same provider.
+                      {t("Tells this key apart from others for the same provider.")}
                     </FieldDescription>
                     <Input
                       aria-invalid={isInvalid}
@@ -194,7 +195,7 @@ function NewCredentialPage() {
                       onChange={(event) =>
                         field.handleChange(event.target.value)
                       }
-                      placeholder="production"
+                      placeholder={t("production")}
                       value={field.state.value}
                     />
                     {isInvalid ? (
@@ -210,7 +211,7 @@ function NewCredentialPage() {
                   field.state.meta.isTouched && !field.state.meta.isValid;
                 return (
                   <Field data-invalid={isInvalid}>
-                    <FieldLabel htmlFor={field.name}>Secret</FieldLabel>
+                    <FieldLabel htmlFor={field.name}>{t("Secret")}</FieldLabel>
                     <Input
                       aria-invalid={isInvalid}
                       autoComplete="off"
@@ -250,15 +251,14 @@ function NewCredentialPage() {
             {([kind, provider, keyId]) =>
               liveCredentialFor(credentials.data, kind, provider, keyId) ? (
                 <p className="mt-5 text-amber-600 text-sm dark:text-amber-500">
-                  This key already has an active credential. Saving replaces it
-                  and revokes the old one.
+                  {t("This key already has an active credential. Saving replaces it and revokes the old one.")}
                 </p>
               ) : null
             }
           </form.Subscribe>
           {createCredential.error ? (
             <p className="mt-5 text-destructive text-sm" role="alert">
-              Couldn't save the credential. Try again.
+              {t("Couldn't save the credential. Try again.")}
             </p>
           ) : null}
         </PageCard>

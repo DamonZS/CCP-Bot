@@ -1,6 +1,7 @@
 import type { Skin } from "../types";
 import { OpenDotsFrame } from "./frame";
 import { MemoriesScreen, RoutinesScreen } from "./screens";
+import { t } from "@/lib/i18n";
 
 /*
  * OpenDots over OpenBot. The frame is OpenDots' rail, Dots sidebar, top bar and computer pane; the
@@ -12,7 +13,7 @@ export const opendots: Skin = {
   id: "opendots",
   name: "OpenDots",
   description:
-    "A compact sidebar of your Bots, with each Bot's computer beside the conversation.",
+    t("A compact sidebar of your Bots, with each Bot's computer beside the conversation."),
   Frame: OpenDotsFrame,
   screens: {
     routines: RoutinesScreen,

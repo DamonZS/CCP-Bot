@@ -31,6 +31,7 @@ import {
   ItemTitle,
 } from "@/components/ui/item";
 import { Separator } from "@/components/ui/separator";
+import { t } from "@/lib/i18n";
 
 export const Route = createFileRoute("/_authed/admin/")({
   component: RouteComponent,
@@ -53,107 +54,107 @@ const SECTIONS: {
   }[];
 }[] = [
   {
-    title: "What Bots can reach",
-    description: "Control what Bots can access outside OpenBot.",
+    title: t("What Bots can reach"),
+    description: t("Control what Bots can access outside OpenBot."),
     items: [
       {
-        title: "Credentials",
-        description: "Manage this deployment’s keys and tokens.",
+        title: t("Credentials"),
+        description: t("Manage this deployment’s keys and tokens."),
         icon: IconKey,
         linkOptions: { to: "/admin/credentials" },
       },
       {
-        title: "Boundaries",
-        description: "Define actions that no Bot may take.",
+        title: t("Boundaries"),
+        description: t("Define actions that no Bot may take."),
         icon: IconShieldCheck,
         linkOptions: { to: "/admin/boundaries" },
       },
       {
-        title: "Approvals",
-        description: "Choose which actions require approval for members’ Bots.",
+        title: t("Approvals"),
+        description: t("Choose which actions require approval for members’ Bots."),
         icon: IconChecks,
         linkOptions: { to: "/admin/approvals" },
       },
       {
-        title: "Computers",
-        description: "Manage the computers that run Bot tools.",
+        title: t("Computers"),
+        description: t("Manage the computers that run Bot tools."),
         icon: IconDeviceDesktop,
         linkOptions: { to: "/admin/computers" },
       },
     ],
   },
   {
-    title: "What Bots can do",
+    title: t("What Bots can do"),
     description:
-      "Configure the apps, skills, and UI components available to Bots.",
+      t("Configure the apps, skills, and UI components available to Bots."),
     items: [
       {
-        title: "Plugins",
-        description: "Connect services and choose which Bots can use them.",
+        title: t("Plugins"),
+        description: t("Connect services and choose which Bots can use them."),
         icon: IconPuzzle,
         linkOptions: { to: "/admin/plugins" },
       },
       {
-        title: "Skills",
-        description: "Create reusable instructions people can run with /.",
+        title: t("Skills"),
+        description: t("Create reusable instructions people can run with /."),
         icon: IconFileText,
         linkOptions: { to: "/admin/skills" },
       },
       {
-        title: "Automatic learning",
+        title: t("Automatic learning"),
         description:
-          "Learn from finished conversations and review the skills it proposes.",
+          t("Learn from finished conversations and review the skills it proposes."),
         icon: IconFileText,
         linkOptions: { to: "/admin/learning" },
       },
       {
-        title: "UI components",
+        title: t("UI components"),
         description:
-          "Manage custom components that Bots can display in conversations.",
+          t("Manage custom components that Bots can display in conversations."),
         icon: IconLayoutGrid,
         linkOptions: { to: "/admin/components" },
       },
       {
-        title: "Playground",
-        description: "Write a component and watch it render as you type.",
+        title: t("Playground"),
+        description: t("Write a component and watch it render as you type."),
         icon: IconCode,
         linkOptions: { to: "/admin/playground" },
       },
     ],
   },
   {
-    title: "Who can get in",
+    title: t("Who can get in"),
     description: "",
     items: [
       {
-        title: "People",
-        description: "Review members, manage admin roles, and remove access.",
+        title: t("People"),
+        description: t("Review members, manage admin roles, and remove access."),
         icon: IconUsers,
         linkOptions: { to: "/admin/people" },
       },
       {
-        title: "Enterprise controls",
+        title: t("Enterprise controls"),
         description:
-          "Configure roles, groups, SSO, SCIM, Skill sharing, network policies, allowlists, and Action Recording.",
+          t("Configure roles, groups, SSO, SCIM, Skill sharing, network policies, allowlists, and Action Recording."),
         icon: IconShieldCheck,
         linkOptions: { to: "/admin/enterprise" },
       },
       {
-        title: "Identity providers",
+        title: t("Identity providers"),
         description:
-          "Configure your company’s sign-in provider for each email domain.",
+          t("Configure your company’s sign-in provider for each email domain."),
         icon: IconBuildingBank,
         linkOptions: { to: "/admin/identity-providers" },
       },
     ],
   },
   {
-    title: "What happened",
+    title: t("What happened"),
     description: "",
     items: [
       {
-        title: "Audit",
-        description: "Review actions taken in OpenBot and who took them.",
+        title: t("Audit"),
+        description: t("Review actions taken in OpenBot and who took them."),
         icon: IconListDetails,
         linkOptions: { to: "/admin/audit" },
       },
@@ -164,8 +165,8 @@ const SECTIONS: {
 function RouteComponent() {
   return (
     <PageShell
-      description="Manage settings that apply to everyone and every Bot in this deployment."
-      title="Admin"
+      description={t("Manage settings that apply to everyone and every Bot in this deployment.")}
+      title={t("Admin")}
     >
       {SECTIONS.map((section) => (
         <PageSection

@@ -4,6 +4,7 @@ import {
   type BotAttention,
   botAttentionQueryOptions,
 } from "@/lib/bot-lifecycle/queries";
+import { t } from "@/lib/i18n";
 
 /** Questions, approvals and stalled hand-offs: the things only the person can move forward. */
 export function needsInput(bot: BotAttention): number {
@@ -91,7 +92,7 @@ export function BotsNavBadge() {
   if (bots.some((bot) => bot.unread > 0)) {
     return (
       <span
-        aria-label="Unread messages"
+        aria-label={t("Unread messages")}
         className="ml-auto size-2 rounded-full bg-primary"
         role="img"
       />

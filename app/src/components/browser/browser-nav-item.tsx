@@ -39,6 +39,7 @@ import {
   RecordHerePanel,
 } from "./recorder-here-popover";
 import { elapsed, RecordingMark, useSecondsSince } from "./recording";
+import { t } from "@/lib/i18n";
 
 const BUTTON_CLASS = "hover:bg-foreground/5 h-10";
 
@@ -210,7 +211,7 @@ function OpenWindowButton({ activity }: { activity?: RecorderActivity }) {
       <BrowserLabel>
         {opening ? (
           <span className="ml-auto text-xs text-muted-foreground">
-            Opening…
+            {t("Opening…")}
           </span>
         ) : recording ? (
           <RecordingDot {...recording} />
@@ -510,7 +511,7 @@ function BrowserLabel({ children }: { children?: ReactNode }) {
       <div className="size-[28px] flex items-center justify-center">
         <IconBrowser />
       </div>
-      <span className="text-sm">Browser</span>
+      <span className="text-sm">{t("Browser")}</span>
       {children}
     </>
   );

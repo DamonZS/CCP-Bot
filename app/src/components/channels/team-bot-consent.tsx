@@ -5,6 +5,7 @@ import {
   type TeamBotConsentDecision,
   teamBotConsentMutationOptions,
 } from "@/lib/team-bots";
+import { t } from "@/lib/i18n";
 
 /**
  * A Team Bot asking to use this person's own account on one server, where its owner has not
@@ -36,7 +37,7 @@ export function TeamBotConsentCard({
       {chosen ? (
         <p className="text-muted-foreground" role="status">
           {chosen === "skip"
-            ? "Skipped. Nothing of yours was used."
+            ? t("Skipped. Nothing of yours was used.")
             : chosen === "allow_once"
               ? "Allowed once. Ask the Bot to try again."
               : chosen === "allow_all_team_bots"
@@ -50,7 +51,7 @@ export function TeamBotConsentCard({
             onClick={() => choose("allow_once")}
             size="sm"
           >
-            Allow once
+            {t("Allow once")}
           </Button>
           <Button
             disabled={answer.isPending}
@@ -58,7 +59,7 @@ export function TeamBotConsentCard({
             size="sm"
             variant="outline"
           >
-            Always allow for this Bot
+            {t("Always allow for this Bot")}
           </Button>
           <Button
             disabled={answer.isPending}
@@ -66,7 +67,7 @@ export function TeamBotConsentCard({
             size="sm"
             variant="outline"
           >
-            Always allow for all Team Bots
+            {t("Always allow for all Team Bots")}
           </Button>
           <Button
             disabled={answer.isPending}
@@ -74,7 +75,7 @@ export function TeamBotConsentCard({
             size="sm"
             variant="ghost"
           >
-            Skip
+            {t("Skip")}
           </Button>
         </div>
       )}

@@ -4,6 +4,7 @@ import { openduet } from "./openduet";
 import { openmuse } from "./openmuse";
 import { useSkinId } from "./store";
 import type { Skin, SkinId } from "./types";
+import { t } from "@/lib/i18n";
 
 /*
  * The default is the product as `brand.yaml` names it, so a deployment that renames OpenBot sees
@@ -12,7 +13,7 @@ import type { Skin, SkinId } from "./types";
 const openbot: Skin = {
   id: "openbot",
   name: appConfig.brand.productName,
-  description: "The standard look, with your conversations in a sidebar.",
+  description: t("The standard look, with your conversations in a sidebar."),
 };
 
 /** Keyed by every id in `SKIN_IDS`, so a skin cannot be listed without being registered. */

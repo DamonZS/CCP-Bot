@@ -24,6 +24,7 @@ import {
 } from "@/lib/app-access/queries";
 import { relativeTime } from "@/lib/relative-time";
 import { queryClient } from "@/query-client";
+import { t } from "@/lib/i18n";
 
 /**
  * The requests people have filed for an administrator to answer: switch an app on, give it to a
@@ -56,9 +57,9 @@ export function AccessRequestsSection({ app }: { app?: string }) {
   if (inbox.isPending) return null;
   if (inbox.error)
     return (
-      <PageSection title="Requests">
+      <PageSection title={t("Requests")}>
         <p className="mt-4 text-destructive text-sm" role="alert">
-          Couldn't load access requests. Reload the page.
+          {t("Couldn't load access requests. Reload the page.")}
         </p>
       </PageSection>
     );
@@ -68,10 +69,10 @@ export function AccessRequestsSection({ app }: { app?: string }) {
     <PageSection
       description={
         app
-          ? "People asking for this app. Approve does what they asked, right away."
-          : "People asking for an app to be turned on, given to a Bot, or connected. Approve does what they asked, right away."
+          ? t("People asking for this app. Approve does what they asked, right away.")
+          : t("People asking for an app to be turned on, given to a Bot, or connected. Approve does what they asked, right away.")
       }
-      title="Requests"
+      title={t("Requests")}
     >
       <PageRows>
         {requests.map((request, index) => (
@@ -117,7 +118,7 @@ function AccessRequestRow({ request }: { request: AppAccessRequest }) {
       <ItemContent>
         <ItemTitle>{askedFor(request)}</ItemTitle>
         <ItemDescription className="line-clamp-none">
-          {who} asked {relativeTime(request.createdAt)}
+          {who} {t("asked")} {relativeTime(request.createdAt)}
           {request.kind === "connect_shared" && request.botName
             ? `, for ${request.botName}`
             : ""}
@@ -134,7 +135,7 @@ function AccessRequestRow({ request }: { request: AppAccessRequest }) {
           size="sm"
           variant="ghost"
         >
-          {dismiss.isPending ? "Dismissing…" : "Dismiss"}
+          {dismiss.isPending ? t("Dismissing…") : t("Dismiss")}
         </Button>
         <Button
           disabled={busy}
@@ -144,7 +145,7 @@ function AccessRequestRow({ request }: { request: AppAccessRequest }) {
           }}
           size="sm"
         >
-          {approve.isPending ? "Approving…" : "Approve"}
+          {approve.isPending ? t("Approving…") : t("Approve")}
         </Button>
       </ItemActions>
       {error ? (
@@ -180,8 +181,7 @@ function GrantNote({ request }: { request: AppAccessRequest }) {
     );
   return (
     <>
-      Approving gives {bot} only {request.appTitle}'s read-only actions. Choose
-      any others on {page}.
+      {t("Approving gives")} {bot} {t("only")} {request.appTitle}{t("'s read-only actions. Choose any others on")} {page}.
     </>
   );
 }

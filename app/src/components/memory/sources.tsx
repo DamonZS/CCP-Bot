@@ -49,6 +49,7 @@ import {
   memorySourcesQueryOptions,
 } from "@/lib/memory";
 import { queryClient } from "@/query-client";
+import { t } from "@/lib/i18n";
 
 /**
  * Connected apps a Bot reads facts from. Given a Bot, only that Bot's sources, and a new one is that
@@ -111,11 +112,11 @@ export function MemorySources({ agentId: fixedBot }: { agentId?: string }) {
           variant="ghost"
         >
           <IconPlus />
-          Add source
+          {t("Add source")}
         </Button>
       }
-      description="Apps you connected that this Bot can read show up here, and you can add more. Sources refresh every 15 minutes. Only this Bot sees what they hold."
-      title="App sources"
+      description={t("Apps you connected that this Bot can read show up here, and you can add more. Sources refresh every 15 minutes. Only this Bot sees what they hold.")}
+      title={t("App sources")}
     >
       {sources.isPending ? null : sources.error ? (
         <p role="alert" className="mt-4 text-destructive text-sm">
@@ -135,13 +136,13 @@ export function MemorySources({ agentId: fixedBot }: { agentId?: string }) {
               variant="outline"
             >
               <IconPlus />
-              Add source
+              {t("Add source")}
             </Button>
           }
           icon={IconPlugConnected}
-          title="No sources yet"
+          title={t("No sources yet")}
         >
-          Apps this Bot can read from show up here.
+          {t("Apps this Bot can read from show up here.")}
         </PageEmpty>
       ) : (
         <PageRows>
@@ -159,7 +160,7 @@ export function MemorySources({ agentId: fixedBot }: { agentId?: string }) {
                       ? source.syncStatus === "succeeded"
                         ? "Up to date"
                         : source.syncStatus
-                      : "Turned off"}
+                      : t("Turned off")}
                     {source.lastSyncAt
                       ? ` · Last read ${new Date(source.lastSyncAt).toLocaleString()}`
                       : ""}
@@ -180,7 +181,7 @@ export function MemorySources({ agentId: fixedBot }: { agentId?: string }) {
                           action.mutate({ sourceId: source.id, name: "sync" })
                         }
                       >
-                        Sync now
+                        {t("Sync now")}
                       </Button>
                       <Button
                         size="sm"
@@ -189,7 +190,7 @@ export function MemorySources({ agentId: fixedBot }: { agentId?: string }) {
                           action.mutate({ sourceId: source.id, name: "remove" })
                         }
                       >
-                        Remove
+                        {t("Remove")}
                       </Button>
                     </div>
                   </ItemFooter>
@@ -221,9 +222,9 @@ export function MemorySources({ agentId: fixedBot }: { agentId?: string }) {
       <Dialog onOpenChange={setAdding} open={adding}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Add a source</DialogTitle>
+            <DialogTitle>{t("Add a source")}</DialogTitle>
             <DialogDescription>
-              OpenBot reads it now, then every 15 minutes while it's on.
+              {t("OpenBot reads it now, then every 15 minutes while it's on.")}
             </DialogDescription>
           </DialogHeader>
           <DialogBody className="mt-4 overflow-y-auto">
@@ -286,7 +287,7 @@ export function MemorySources({ agentId: fixedBot }: { agentId?: string }) {
               <FieldGroup>
                 {fixedBot === undefined ? (
                   <Field>
-                    <FieldLabel htmlFor={`${id}-bot`}>Bot</FieldLabel>
+                    <FieldLabel htmlFor={`${id}-bot`}>{t("Bot")}</FieldLabel>
                     <Select
                       items={bots.data?.map((bot) => ({
                         value: bot.id,
@@ -300,7 +301,7 @@ export function MemorySources({ agentId: fixedBot }: { agentId?: string }) {
                       value={agentId || null}
                     >
                       <SelectTrigger className="w-full" id={`${id}-bot`}>
-                        <SelectValue placeholder="Choose a Bot" />
+                        <SelectValue placeholder={t("Choose a Bot")} />
                       </SelectTrigger>
                       <SelectContent>
                         {bots.data?.map((bot) => (
@@ -313,7 +314,7 @@ export function MemorySources({ agentId: fixedBot }: { agentId?: string }) {
                   </Field>
                 ) : null}
                 <Field>
-                  <FieldLabel htmlFor={`${id}-action`}>What to read</FieldLabel>
+                  <FieldLabel htmlFor={`${id}-action`}>{t("What to read")}</FieldLabel>
                   <Select
                     items={tools.data?.map((tool) => ({
                       value: tool.ref,
@@ -327,7 +328,7 @@ export function MemorySources({ agentId: fixedBot }: { agentId?: string }) {
                     value={toolRef || null}
                   >
                     <SelectTrigger className="w-full" id={`${id}-action`}>
-                      <SelectValue placeholder="Choose what to read" />
+                      <SelectValue placeholder={t("Choose what to read")} />
                     </SelectTrigger>
                     <SelectContent>
                       {tools.data?.map((tool) => (
@@ -342,14 +343,14 @@ export function MemorySources({ agentId: fixedBot }: { agentId?: string }) {
                   ) : null}
                 </Field>
                 <Field>
-                  <FieldLabel htmlFor={`${id}-name`}>Source name</FieldLabel>
+                  <FieldLabel htmlFor={`${id}-name`}>{t("Source name")}</FieldLabel>
                   <Input
                     id={`${id}-name`}
                     required
                     maxLength={160}
                     value={title}
                     onChange={(event) => setTitle(event.target.value)}
-                    placeholder="My project documents"
+                    placeholder={t("My project documents")}
                   />
                 </Field>
                 {settings.map(({ name, schema }) => (
@@ -371,7 +372,7 @@ export function MemorySources({ agentId: fixedBot }: { agentId?: string }) {
                           className="w-full"
                           id={`${id}-arg-${name}`}
                         >
-                          <SelectValue placeholder="Choose a value" />
+                          <SelectValue placeholder={t("Choose a value")} />
                         </SelectTrigger>
                         <SelectContent>
                           {(schema.enum ?? ["true", "false"]).map((value) => (
@@ -418,7 +419,7 @@ export function MemorySources({ agentId: fixedBot }: { agentId?: string }) {
               size="sm"
               variant="outline"
             >
-              Cancel
+              {t("Cancel")}
             </Button>
             <Button
               disabled={add.isPending || !toolRef}
@@ -426,7 +427,7 @@ export function MemorySources({ agentId: fixedBot }: { agentId?: string }) {
               size="sm"
               type="submit"
             >
-              {add.isPending ? "Reading source…" : "Add and sync source"}
+              {add.isPending ? t("Reading source…") : t("Add and sync source")}
             </Button>
           </DialogFooter>
         </DialogContent>

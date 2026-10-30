@@ -3,6 +3,7 @@ import { z } from "zod";
 import { ToolLine } from "@/components/channels/tool-line";
 import { HANDED_OVER } from "@/lib/copilot/markers";
 import { saidItWentAhead } from "@/lib/plugins/tool-result";
+import { t } from "@/lib/i18n";
 
 /**
  * How a Bot handing work to another Bot reads in the transcript.
@@ -44,7 +45,7 @@ export function HandoffTool() {
       const running = status !== "complete" && result === undefined;
       return (
         <ToolLine
-          label={asked ? `Asked ${asked}` : "Asked another Bot"}
+          label={asked ? `Asked ${asked}` : t("Asked another Bot")}
           detail={given?.task}
           running={running}
           refused={!running && refused(result)}
@@ -58,12 +59,12 @@ export function HandoffTool() {
             {given?.task ? <p>{given.task}</p> : null}
             {given?.constraints ? (
               <p className="text-muted-foreground">
-                Constraints: {given.constraints}
+                {t("Constraints:")} {given.constraints}
               </p>
             ) : null}
             {given?.expecting ? (
               <p className="text-muted-foreground">
-                Wanted back: {given.expecting}
+                {t("Wanted back:")} {given.expecting}
               </p>
             ) : null}
             {typeof result === "string" ? (

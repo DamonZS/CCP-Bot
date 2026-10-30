@@ -19,6 +19,7 @@ import {
   learningSettingsQueryOptions,
   saveLearningSettings,
 } from "@/lib/learning/queries";
+import { t } from "@/lib/i18n";
 
 export const Route = createFileRoute("/_authed/admin/learning")({
   component: LearningPage,
@@ -39,9 +40,9 @@ function automaticMessage(
   if (automatic.state === "absent")
     return `This Intelligence project has no "${automatic.containerId}" Learning container yet. Nothing is collected.`;
   if (automatic.state === "not_entitled")
-    return "This Intelligence project's plan doesn't include Learning. No container was assigned.";
+    return t("This Intelligence project's plan doesn't include Learning. No container was assigned.");
   if (automatic.state === "unavailable")
-    return "Couldn't reach Intelligence to find this project's Learning container. OpenBot will try again.";
+    return t("Couldn't reach Intelligence to find this project's Learning container. OpenBot will try again.");
   return undefined;
 }
 
@@ -58,7 +59,7 @@ function TargetFields({
   return (
     <div className="grid gap-3 sm:grid-cols-2">
       <label className="grid gap-2 text-sm" htmlFor={`${fieldId}-container`}>
-        {label} container ID
+        {label} {t("container ID")}
         <Input
           id={`${fieldId}-container`}
           aria-label={`${label} container ID`}
@@ -75,13 +76,13 @@ function TargetFields({
         />
       </label>
       <label className="grid gap-2 text-sm" htmlFor={`${fieldId}-revision`}>
-        Exact revision (optional)
+        {t("Exact revision (optional)")}
         <Input
           id={`${fieldId}-revision`}
           aria-label={`${label} revision`}
           value={target?.revision ?? ""}
           disabled={!target}
-          placeholder="Latest published"
+          placeholder={t("Latest published")}
           maxLength={256}
           onChange={(event) => {
             if (target)
@@ -123,11 +124,11 @@ function ContainerSetup({
             onClick={() => create.mutate()}
           >
             {create.isPending
-              ? "Creating…"
+              ? t("Creating…")
               : `Create the ${automatic.containerId} container`}
           </Button>
           <span className="text-muted-foreground">
-            Uses this deployment's credential, not the runtime key.
+            {t("Uses this deployment's credential, not the runtime key.")}
           </span>
         </div>
       )}
@@ -138,7 +139,7 @@ function ContainerSetup({
       )}
       {automatic.instructions && (
         <p>
-          <span className="font-medium">To create it: </span>
+          <span className="font-medium">{t("To create it:")} </span>
           {automatic.instructions}
         </p>
       )}
@@ -192,15 +193,15 @@ export function LearningPage() {
 
   return (
     <PageShell
-      title="Automatic learning"
-      description="Learn from finished conversations, review the skills Intelligence proposes, and give published skills to Bots."
+      title={t("Automatic learning")}
+      description={t("Learn from finished conversations, review the skills Intelligence proposes, and give published skills to Bots.")}
     >
       <PageSection
-        title="Participation"
-        description="Container changes apply to new conversations. Existing ones keep their first container. Containers must already exist in the same Intelligence project. Until you save here, OpenBot uses that project's openbot container."
+        title={t("Participation")}
+        description={t("Container changes apply to new conversations. Existing ones keep their first container. Containers must already exist in the same Intelligence project. Until you save here, OpenBot uses that project's openbot container.")}
       >
         {settingsQuery.isPending && (
-          <p role="status">Loading Learning settings…</p>
+          <p role="status">{t("Loading Learning settings…")}</p>
         )}
         {settingsQuery.error && (
           <p role="alert" className="text-destructive">
@@ -223,10 +224,10 @@ export function LearningPage() {
                   change({ ...settings, enabled: event.target.checked })
                 }
               />
-              Turn on automatic learning and skill delivery
+              {t("Turn on automatic learning and skill delivery")}
             </label>
             <TargetFields
-              label="Default"
+              label={t("Default")}
               target={settings.defaultTarget}
               onChange={(defaultTarget) =>
                 change({ ...settings, defaultTarget })
@@ -241,18 +242,15 @@ export function LearningPage() {
               <ContainerSetup automatic={automatic.data} />
             )}
             <p className="text-muted-foreground text-sm">
-              With no default, Bots without their own container are left out.
-              IDs are 1 to 64 lowercase letters, numbers and single hyphens.
-              Leave revision empty to use the latest published skills.
+              {t("With no default, Bots without their own container are left out. IDs are 1 to 64 lowercase letters, numbers and single hyphens. Leave revision empty to use the latest published skills.")}
             </p>
             <fieldset className="grid gap-4">
               <legend className="mb-3 font-medium">
-                Per-Bot participation
+                {t("Per-Bot participation")}
               </legend>
               {(agents.error || hiddenAgents.error) && (
                 <p role="alert" className="text-destructive">
-                  Couldn't load the Bot list. Saved settings for each Bot are
-                  below.
+                  {t("Couldn't load the Bot list. Saved settings for each Bot are below.")}
                 </p>
               )}
               {botIds.map((id) => {
@@ -285,10 +283,10 @@ export function LearningPage() {
                           change({ ...settings, agents: mappings });
                         }}
                       >
-                        <option value="inherit">Use deployment default</option>
-                        <option value="exclude">Leave out of Learning</option>
+                        <option value="inherit">{t("Use deployment default")}</option>
+                        <option value="exclude">{t("Leave out of Learning")}</option>
                         <option value="container">
-                          Use a specific container
+                          {t("Use a specific container")}
                         </option>
                       </select>
                     </label>
@@ -313,11 +311,11 @@ export function LearningPage() {
             </fieldset>
             <div className="flex items-center gap-3">
               <Button type="submit" disabled={save.isPending}>
-                {save.isPending ? "Saving…" : "Save Learning settings"}
+                {save.isPending ? t("Saving…") : t("Save Learning settings")}
               </Button>
               {saved && (
                 <p role="status" className="text-sm">
-                  Settings saved.
+                  {t("Settings saved.")}
                 </p>
               )}
             </div>
@@ -330,18 +328,18 @@ export function LearningPage() {
         )}
       </PageSection>
       <PageSection
-        title="Review and publish"
-        description="Intelligence studies finished conversations and proposes skills. Review and publish them in Intelligence. Bots only use published skills."
+        title={t("Review and publish")}
+        description={t("Intelligence studies finished conversations and proposes skills. Review and publish them in Intelligence. Bots only use published skills.")}
       >
         <div className="grid gap-4">
           <label className="grid gap-2 text-sm">
-            Show the container for
+            {t("Show the container for")}
             <select
               className={selectClass}
               value={selected}
               onChange={(event) => setSelected(event.target.value)}
             >
-              <option value="">Deployment default</option>
+              <option value="">{t("Deployment default")}</option>
               {botIds.map((id) => (
                 <option key={id} value={id}>
                   {nameFor(id)}
@@ -349,7 +347,7 @@ export function LearningPage() {
               ))}
             </select>
           </label>
-          {overview.isPending && <p role="status">Checking Intelligence…</p>}
+          {overview.isPending && <p role="status">{t("Checking Intelligence…")}</p>}
           {overview.error && (
             <p role="alert" className="text-destructive">
               {overview.error.message}
@@ -368,27 +366,27 @@ export function LearningPage() {
               </p>
               <dl className="grid grid-cols-2 gap-4 rounded-lg border p-4 text-sm">
                 <div>
-                  <dt className="text-muted-foreground">Threads ready</dt>
+                  <dt className="text-muted-foreground">{t("Threads ready")}</dt>
                   <dd className="font-semibold text-xl">
                     {snapshot.pendingThreadCount}
                   </dd>
                 </div>
                 <div>
                   <dt className="text-muted-foreground">
-                    Candidates to review
+                    {t("Candidates to review")}
                   </dt>
                   <dd className="font-semibold text-xl">
                     {snapshot.pendingCandidateCount}
                   </dd>
                 </div>
                 <div>
-                  <dt className="text-muted-foreground">Published skills</dt>
+                  <dt className="text-muted-foreground">{t("Published skills")}</dt>
                   <dd className="font-semibold text-xl">
                     {snapshot.publishedSkillCount}
                   </dd>
                 </div>
                 <div>
-                  <dt className="text-muted-foreground">Insights</dt>
+                  <dt className="text-muted-foreground">{t("Insights")}</dt>
                   <dd className="font-semibold text-xl">
                     {snapshot.insightCount}
                   </dd>
@@ -396,7 +394,7 @@ export function LearningPage() {
               </dl>
               <p className="text-sm">
                 {snapshot.hasActiveRun
-                  ? "An analysis is running."
+                  ? t("An analysis is running.")
                   : snapshot.latestRunStatus
                     ? `Latest analysis: ${snapshot.latestRunStatus}.`
                     : "No analysis has run yet."}
@@ -407,7 +405,7 @@ export function LearningPage() {
                   target="_blank"
                   rel="noreferrer"
                 >
-                  Manage Learning in Intelligence
+                  {t("Manage Learning in Intelligence")}
                 </a>
                 {snapshot.links.candidates && (
                   <a
@@ -415,7 +413,7 @@ export function LearningPage() {
                     target="_blank"
                     rel="noreferrer"
                   >
-                    Review skill candidates
+                    {t("Review skill candidates")}
                   </a>
                 )}
                 {snapshot.links.runs && (
@@ -424,7 +422,7 @@ export function LearningPage() {
                     target="_blank"
                     rel="noreferrer"
                   >
-                    View analysis runs
+                    {t("View analysis runs")}
                   </a>
                 )}
               </div>
@@ -432,9 +430,9 @@ export function LearningPage() {
           )}
           {selected && (
             <div className="grid gap-2 rounded-lg border p-4 text-sm">
-              <h3 className="font-medium">Skill delivery</h3>
+              <h3 className="font-medium">{t("Skill delivery")}</h3>
               {delivery.isPending ? (
-                <p>Checking delivery…</p>
+                <p>{t("Checking delivery…")}</p>
               ) : delivery.error ? (
                 <p role="alert">{delivery.error.message}</p>
               ) : (
@@ -442,7 +440,7 @@ export function LearningPage() {
                   <>
                     <p>
                       {!delivery.data.configured
-                        ? "Delivery is off for this Bot."
+                        ? t("Delivery is off for this Bot.")
                         : !delivery.data.initialized
                           ? "Waiting for the first verified skill snapshot."
                           : delivery.data.stale
@@ -450,11 +448,11 @@ export function LearningPage() {
                             : "A verified snapshot is available."}
                     </p>
                     {delivery.data.revision && (
-                      <p>Loaded revision: {delivery.data.revision}</p>
+                      <p>{t("Loaded revision:")} {delivery.data.revision}</p>
                     )}
                     {delivery.data.lastCheckedAt && (
                       <p>
-                        Last checked:{" "}
+                        {t("Last checked:")}{" "}
                         {new Date(delivery.data.lastCheckedAt).toLocaleString()}
                       </p>
                     )}
@@ -475,13 +473,10 @@ export function LearningPage() {
               if (selected) void delivery.refetch();
             }}
           >
-            Refresh status
+            {t("Refresh status")}
           </Button>
           <p className="text-muted-foreground text-sm">
-            Managing Learning needs your Intelligence account and project
-            access. OpenBot keeps project credentials on the server. Turning
-            Learning off here keeps settings and conversation assignments.
-            Schedules and publishing stay in Intelligence.
+            {t("Managing Learning needs your Intelligence account and project access. OpenBot keeps project credentials on the server. Turning Learning off here keeps settings and conversation assignments. Schedules and publishing stay in Intelligence.")}
           </p>
         </div>
       </PageSection>

@@ -32,6 +32,7 @@ import {
 } from "@/lib/learning/mutations";
 import { personalLearningQueryOptions } from "@/lib/learning/queries";
 import { queryClient } from "@/query-client";
+import { t } from "@/lib/i18n";
 
 /** The three choices, each with the one plain line that says who sees what. */
 export const SHARING_CHOICES: {
@@ -43,21 +44,21 @@ export const SHARING_CHOICES: {
   {
     mode: "closed",
     icon: IconLock,
-    title: "Only my Bots",
-    description: "Only the Bots you use draw on your Skills.",
+    title: t("Only my Bots"),
+    description: t("Only the Bots you use draw on your Skills."),
   },
   {
     mode: "open",
     icon: IconUsersGroup,
-    title: "Everyone's Bots",
-    description: "Every Bot on OpenBot draws on all of your Skills.",
+    title: t("Everyone's Bots"),
+    description: t("Every Bot on OpenBot draws on all of your Skills."),
   },
   {
     mode: "choose",
     icon: IconListCheck,
-    title: "The Skills I choose",
+    title: t("The Skills I choose"),
     description:
-      "Every Bot draws on the Skills you open below; your own Bots use all of them.",
+      t("Every Bot draws on the Skills you open below; your own Bots use all of them."),
   },
 ];
 
@@ -112,7 +113,7 @@ export function LearningSharing() {
   return (
     <>
       <PageSection
-        title="Who else's Bots use your Skills"
+        title={t("Who else's Bots use your Skills")}
         description={choiceSentence(data)}
       >
         <PageRows>
@@ -160,8 +161,8 @@ export function LearningSharing() {
       </PageSection>
       {mode === "choose" ? (
         <PageSection
-          title="Your Skills"
-          description="Open a Skill to let every Bot on OpenBot use it."
+          title={t("Your Skills")}
+          description={t("Open a Skill to let every Bot on OpenBot use it.")}
         >
           {data.skills === null || data.skills.length === 0 ? (
             <PageEmpty>{emptySentence(data)}</PageEmpty>
@@ -183,8 +184,8 @@ export function LearningSharing() {
                         <ItemTitle>{skill.name}</ItemTitle>
                         <ItemDescription>
                           {open
-                            ? "Every Bot may use it."
-                            : "Only your Bots use it."}
+                            ? t("Every Bot may use it.")
+                            : t("Only your Bots use it.")}
                           {skill.description ? ` ${skill.description}` : ""}
                         </ItemDescription>
                       </ItemContent>

@@ -1,6 +1,7 @@
 import Avatar from "boring-avatars";
 import { memo } from "react";
 import { cn } from "@/lib/utils";
+import { t } from "@/lib/i18n";
 
 /**
  * Memoized roster avatar. Row updates usually change preview/timestamp only, and
@@ -113,7 +114,7 @@ function GroupFaces({
 function TypingBadge() {
   return (
     <div className="absolute -bottom-0.5 -right-0.5 flex items-center gap-0.5 rounded-full bg-sidebar p-0.5 ring-2 ring-sidebar">
-      <span className="sr-only">Working…</span>
+      <span className="sr-only">{t("Working…")}</span>
       <Dot className="[animation-delay:-0.3s]" />
       <Dot className="[animation-delay:-0.15s]" />
       <Dot />

@@ -27,6 +27,7 @@ import {
   pressOrbWhenReady,
   useComposerPresence,
 } from "./orb-dictation";
+import { t } from "@/lib/i18n";
 
 /** The header's side discs: 46px, past the 44px a finger needs. */
 const SIDE = 46;
@@ -144,7 +145,7 @@ export function TabHeader({
     >
       <button
         aria-expanded={menuOpen}
-        aria-label="Menu"
+        aria-label={t("Menu")}
         className={cn(DISC, "pointer-events-auto mt-2")}
         onClick={onMenu}
         style={{ width: SIDE, height: SIDE }}
@@ -171,7 +172,7 @@ export function TabHeader({
         <DoingPill line={doingLine(working, conversation.work)} />
       </div>
       <Link
-        aria-label="Your settings"
+        aria-label={t("Your settings")}
         to={settings?.to ?? "/settings"}
         className={cn(DISC, "pointer-events-auto mt-2")}
         style={{ width: SIDE, height: SIDE }}
@@ -269,7 +270,7 @@ export function PageHeader({ main }: { main: HTMLElement | null }) {
   return (
     <header className="relative z-20 flex h-[72px] shrink-0 items-start gap-2 px-4 pt-3">
       <button
-        aria-label={back?.label ? `Back to ${back.label}` : "Back"}
+        aria-label={back?.label ? `Back to ${back.label}` : t("Back")}
         className={DISC}
         onClick={() => {
           if (back) void router.navigate({ href: back.href });

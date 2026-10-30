@@ -17,6 +17,7 @@ import {
   type PublishedSandboxed,
   publishedSandboxedQueryOptions,
 } from "@/lib/sandboxed/queries";
+import { t } from "@/lib/i18n";
 
 /**
  * Browser-authored components use the same component grants as compiled gallery components, but
@@ -104,7 +105,7 @@ function SandboxedTool({
 
       // Wait for complete arguments because sandbox source is injected once per keyed instance.
       if (props.status !== "complete") {
-        return <ToolLine label="Drawing" detail={component.name} running />;
+        return <ToolLine label={t("Drawing")} detail={component.name} running />;
       }
 
       return (

@@ -35,6 +35,7 @@ import {
   StoppedRow,
   useRecording,
 } from "./recording";
+import { t } from "@/lib/i18n";
 
 const TITLE = "Browser";
 const DESCRIPTION =
@@ -61,7 +62,7 @@ export function BrowserPage() {
     return (
       <PageShell title={TITLE}>
         <p className="mt-6 text-destructive text-sm" role="alert">
-          Couldn't load your browser. Reload the page.
+          {t("Couldn't load your browser. Reload the page.")}
         </p>
       </PageShell>
     );
@@ -110,7 +111,7 @@ function OpenedBrowser({ state }: { state: BrowserApiState }) {
             </p>
             {open.error ? (
               <Button onClick={() => open.mutate()} size="sm" variant="outline">
-                Try again
+                {t("Try again")}
               </Button>
             ) : null}
           </div>
@@ -162,7 +163,7 @@ function NativeBrowser({
   const recording = useRecording(state, choice);
   return (
     <PageShell title={TITLE} description={DESCRIPTION}>
-      <PageSection title="Your browser">
+      <PageSection title={t("Your browser")}>
         <PageRows>
           <Item size="sm">
             <ItemMedia variant="icon">
@@ -184,7 +185,7 @@ function NativeBrowser({
                 size="sm"
                 variant="outline"
               >
-                {state.open ? "Bring to front" : "Open"}
+                {state.open ? t("Bring to front") : t("Open")}
               </Button>
             </ItemActions>
           </Item>
@@ -195,7 +196,7 @@ function NativeBrowser({
           </p>
         ) : null}
       </PageSection>
-      <PageSection title="Record a task" description={RECORDING_DESCRIPTION}>
+      <PageSection title={t("Record a task")} description={RECORDING_DESCRIPTION}>
         <PageRows>
           <RecordingRow recording={recording} />
           {recording.stopped ? (

@@ -34,11 +34,53 @@ const PLAIN_TEXT_ATTRIBUTES = new Set([
   "title",
 ]);
 
+/**
+ * Property names whose value is read by a person. Deliberately narrow: `message`, `name` and
+ * `title` also appear in request payloads, and a translated payload field is a silent server bug.
+ */
+const TEXT_PROPERTY_NAMES = new Set([
+  "ariaLabel",
+  "caption",
+  "description",
+  "directoryLabel",
+  "emptyDescription",
+  "emptyLabel",
+  "emptyTitle",
+  "hint",
+  "label",
+  "placeholder",
+  "subtitle",
+  "title",
+  "tooltip",
+]);
+
+/** Values that look like copy but are protocol: headers, methods, encodings. */
+const PROTOCOL_TOKENS = new Set([
+  "Bearer",
+  "Basic",
+  "GET",
+  "POST",
+  "PUT",
+  "PATCH",
+  "DELETE",
+  "HEAD",
+  "OPTIONS",
+  "JSON",
+  "UTF-8",
+  "UTC",
+  "OK",
+]);
+
 const IMPORT_FROM_APP = "@/lib/i18n";
 
 type Mode = "scan" | "apply";
 
-type Kind = "jsx-text" | "attribute" | "jsx-expression";
+type Kind =
+  | "jsx-text"
+  | "attribute"
+  | "jsx-expression"
+  | "return-literal"
+  | "property";
 
 type Hit = {
   file: string;
@@ -62,7 +104,7 @@ function walk(root: string): string[] {
       out.push(...walk(path));
       continue;
     }
-    if (entry.endsWith(".tsx")) {
+    if (entry.endsWith(".tsx") || (entry.endsWith(".ts") && !entry.endsWith(".test.ts"))) {
       out.push(path);
     }
   }
@@ -105,28 +147,66 @@ function collapse(raw: string): string {
 }
 
 function collect(file: string, text: string, hits: Hit[], skipped: Skipped[]) {
+  // `.ts` modules have no JSX, and parsing them as TSX would read `<T>` type parameters as elements.
+  const kind = file.endsWith(".tsx") ? ts.ScriptKind.TSX : ts.ScriptKind.TS;
   const source = ts.createSourceFile(
     file,
     text,
     ts.ScriptTarget.ESNext,
     true,
-    ts.ScriptKind.TSX,
+    kind,
   );
 
   const lineOf = (node: ts.Node) =>
     source.getLineAndCharacterOfPosition(node.getStart(source)).line;
 
-  /** A string literal that is safe to wrap, as a `t(...)` expression. */
-  function literalEdit(node: ts.StringLiteral | ts.NoSubstitutionTemplateLiteral) {
+  /** The name of the function, property or variable that a node sits directly inside. */
+  function enclosingName(node: ts.Node): string | null {
+    let current: ts.Node | undefined = node.parent;
+    while (current) {
+      if (
+        ts.isFunctionDeclaration(current) ||
+        ts.isFunctionExpression(current) ||
+        ts.isMethodDeclaration(current)
+      ) {
+        const name = (current as ts.FunctionLikeDeclaration).name;
+        if (name && ts.isIdentifier(name)) {
+          return name.text;
+        }
+      }
+      if (ts.isVariableDeclaration(current) && ts.isIdentifier(current.name)) {
+        return current.name.text;
+      }
+      if (ts.isPropertyAssignment(current) && ts.isIdentifier(current.name)) {
+        return current.name.text;
+      }
+      current = current.parent;
+    }
+    return null;
+  }
+
+  /**
+   * A string literal that is safe to wrap, as a `t(...)` expression.
+   *
+   * `bare` is the difference between the two places a literal can sit. Inside braces — a child
+   * expression, a ternary branch, a returned value — `t("x")` is already an expression. As the whole
+   * value of an attribute it is not: `<Input aria-label=t("x") />` is a syntax error, and the
+   * braces have to be part of the edit.
+   */
+  function literalEdit(
+    node: ts.StringLiteral | ts.NoSubstitutionTemplateLiteral,
+    bare = false,
+  ) {
     const value = node.text;
     if (!isTranslatable(value)) {
       return null;
     }
+    const call = `t(${JSON.stringify(value)})`;
     return {
       start: node.getStart(source),
       end: node.getEnd(),
       source: value,
-      replacement: `t(${JSON.stringify(value)})`,
+      replacement: bare ? `{${call}}` : call,
     };
   }
 
@@ -164,7 +244,8 @@ function collect(file: string, text: string, hits: Hit[], skipped: Skipped[]) {
       const initializer = node.initializer;
       if (PLAIN_TEXT_ATTRIBUTES.has(name)) {
         if (ts.isStringLiteral(initializer)) {
-          const edit = literalEdit(initializer);
+          // The whole value of the attribute, so the edit has to supply the braces.
+          const edit = literalEdit(initializer, true);
           if (edit) {
             hits.push({ file, kind: "attribute", ...edit });
           }
@@ -187,6 +268,49 @@ function collect(file: string, text: string, hits: Hit[], skipped: Skipped[]) {
               hits.push({ file, kind: "jsx-expression", ...edit });
             }
           }
+        }
+      }
+    }
+
+    /*
+     * `return "Starting…"` inside a helper that names what it is describing.
+     *
+     * The function-name guard is what makes this safe: a literal returned from `describePhase` or
+     * `statusLabel` is copy, while a literal returned from `normaliseHeader` is a value somebody's
+     * request depends on. Protocol tokens are excluded separately because they live in exactly those
+     * label functions — `Formatter.title` returning "Bearer" would otherwise be translated into a
+     * header that no server accepts.
+     */
+    if (ts.isReturnStatement(node) && node.expression) {
+      const expression = node.expression;
+      if (ts.isStringLiteral(expression)) {
+        const owner = enclosingName(expression);
+        if (owner && /(label|title|text|description|caption|hint|summary|status|message|note|narration|placeholder|explain|copy)/i.test(owner)) {
+          const value = expression.text;
+          if (/^[A-Z]/.test(value) && !PROTOCOL_TOKENS.has(value) && isTranslatable(value)) {
+            const edit = literalEdit(expression);
+            if (edit) {
+              hits.push({ file, kind: "return-literal", ...edit });
+            }
+          }
+        }
+      }
+    }
+
+    /*
+     * `label: "New chat"` in a module that describes navigation or a skin. Property names are a
+     * tighter signal than the file, and they survive a file being split.
+     */
+    if (ts.isPropertyAssignment(node) && ts.isStringLiteral(node.initializer)) {
+      const name = ts.isIdentifier(node.name)
+        ? node.name.text
+        : ts.isStringLiteral(node.name)
+          ? node.name.text
+          : "";
+      if (TEXT_PROPERTY_NAMES.has(name)) {
+        const edit = literalEdit(node.initializer);
+        if (edit) {
+          hits.push({ file, kind: "property", ...edit });
         }
       }
     }

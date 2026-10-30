@@ -46,6 +46,7 @@ import {
   MuseSheet,
   museText,
 } from "./ui";
+import { t } from "@/lib/i18n";
 
 /**
  * OpenMuse's menu: the main chat, a new chat, every conversation OpenBot keeps, and a way to every
@@ -76,23 +77,23 @@ export function MenuSheet({ onClose }: { onClose: () => void }) {
           detail={`Your ongoing conversation with ${botName}`}
           icon={IconMessageCircle}
           render={<MainChatLink agentId={bot?.id} onClick={onClose} />}
-          title="Main chat"
+          title={t("Main chat")}
         />
         <MuseLinkButton
           icon={IconPlus}
           primary
           render={<NewChatLink agentId={bot?.id} onClick={onClose} />}
         >
-          New chat
+          {t("New chat")}
         </MuseLinkButton>
         <div className="mt-3 flex items-center justify-between">
-          <h2 className={museText.heading}>Conversations</h2>
+          <h2 className={museText.heading}>{t("Conversations")}</h2>
           <MuseLinkButton
             icon={IconUsersGroup}
             render={<Link onClick={onClose} to="/channel/new" />}
             small
           >
-            New group
+            {t("New group")}
           </MuseLinkButton>
         </div>
         <label className="relative block">
@@ -101,10 +102,10 @@ export function MenuSheet({ onClose }: { onClose: () => void }) {
             className="-translate-y-1/2 pointer-events-none absolute top-1/2 left-4 size-4 text-muted-foreground"
           />
           <input
-            aria-label="Search conversations"
+            aria-label={t("Search conversations")}
             className="min-h-[45px] w-full rounded-[19px] border border-border bg-card py-3 pr-4 pl-10 text-[16px] text-foreground outline-none placeholder:text-muted-foreground focus-visible:border-[var(--openmuse-focus)]"
             onChange={(event) => setSearch(event.target.value)}
-            placeholder="Search conversations"
+            placeholder={t("Search conversations")}
             value={search}
           />
         </label>
@@ -133,15 +134,14 @@ export function MenuSheet({ onClose }: { onClose: () => void }) {
           searching={searching}
         />
         <p className={museText.small}>
-          A conversation stays with the Bots in it. Pin one to keep it at the
-          top.
+          {t("A conversation stays with the Bots in it. Pin one to keep it at the top.")}
         </p>
         <Divider className="my-1.5" />
         <div>
           <LinkRow
             icon={IconHome}
             render={<Link onClick={onClose} to="/" />}
-            title="Home"
+            title={t("Home")}
           />
           {/* OpenBot's own destinations, from the one list its sidebar draws. */}
           {navigation.map((item) => (
@@ -165,7 +165,7 @@ export function MenuSheet({ onClose }: { onClose: () => void }) {
           }}
           small
         >
-          Sign out
+          {t("Sign out")}
         </MuseButton>
         <ErrorNotice error={signOut.error?.message} />
       </div>
@@ -247,7 +247,7 @@ function ConversationRow({
             </span>
             {busy ? (
               <span className="shrink-0 text-[var(--openmuse-accent)]">
-                · working
+                {t("· working")}
               </span>
             ) : null}
           </span>
@@ -256,12 +256,12 @@ function ConversationRow({
           <span
             className="mt-2 size-2 shrink-0 rounded-full bg-[var(--openmuse-accent)]"
             role="img"
-            aria-label="Unread"
+            aria-label={t("Unread")}
           />
         ) : null}
         {channel.pinned ? (
           <IconPinFilled
-            aria-label="Pinned"
+            aria-label={t("Pinned")}
             className="mt-1 size-3.5 shrink-0 text-muted-foreground"
           />
         ) : null}
@@ -275,10 +275,10 @@ function ConversationRow({
           }
           small
         >
-          {channel.pinned ? "Unpin" : "Pin"}
+          {channel.pinned ? t("Unpin") : t("Pin")}
         </MuseButton>
         <MuseButton icon={IconTrash} onClick={() => setConfirming(true)} small>
-          Delete
+          {t("Delete")}
         </MuseButton>
       </div>
       <ErrorNotice error={setPinned.error?.message} />

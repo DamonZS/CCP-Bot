@@ -1,4 +1,5 @@
 import type { ActionPolicy, RuleLabel } from "@/lib/computers/queries";
+import { t } from "@/lib/i18n";
 
 /**
  * A rule an administrator can start from, in words first and CEL underneath.
@@ -12,7 +13,7 @@ export type RuleTemplate = RuleLabel & { rule: string; cost: string };
 export const RULE_TEMPLATES: RuleTemplate[] = [
   {
     name: "Never submit a form",
-    description: "Stops a Bot pressing a submit button, or Enter while typing.",
+    description: t("Stops a Bot pressing a submit button, or Enter while typing."),
     // `key` is guarded by tool name so the clause short-circuits before it on actions that have no
     // keypress in them. Both tools that can press Enter are named: `computer_type` takes a `submit`
     // flag that presses it once the text is in, and a rule naming only `computer_key` left that door
@@ -22,13 +23,13 @@ export const RULE_TEMPLATES: RuleTemplate[] = [
   },
   {
     name: "Never type into a password field",
-    description: "Stops a Bot typing into a field labelled as a password.",
+    description: t("Stops a Bot typing into a field labelled as a password."),
     rule: 'intent == "type" && contains(element.name, "password")',
     cost: "A password box with a different label isn't covered. The rule matches the label.",
   },
   {
     name: "Stay off social media",
-    description: "Stops a Bot opening Facebook or X.",
+    description: t("Stops a Bot opening Facebook or X."),
     rule: 'intent == "navigate" && (contains(page.host, "facebook.com") || contains(page.host, "x.com"))',
     cost: "Only these two sites. A link that redirects there from elsewhere is allowed.",
   },

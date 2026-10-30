@@ -23,6 +23,7 @@ import { BotBrowserBar, BotRecordPanel } from "./bot-browser";
 import { ComputerControlButton } from "./computer-controls";
 import { LiveScreen, type LiveScreenHandle } from "./live-screen";
 import { useElementVisible, usePageVisible } from "./preview-visibility";
+import { t } from "@/lib/i18n";
 
 /** Explicit blank-browser URLs use placeholder artwork; missing URL fields are treated as real pages. */
 function isBlankBrowser(shot: Screenshot): boolean {
@@ -178,7 +179,7 @@ function NothingToSee({
               <span className="font-medium">{page.title || "A page"}</span>
               <span className="break-all">{hostOf(page.url)}</span>
               <span>
-                Opened during this turn. The screen has moved on since.
+                {t("Opened during this turn. The screen has moved on since.")}
               </span>
             </>
           ) : (
@@ -186,31 +187,29 @@ function NothingToSee({
              * A turn that ended without getting anywhere: refused by a boundary, stopped, or failed.
              * Saying "opened during this turn" here would describe something that did not happen.
              */
-            <span>This turn did not open a page.</span>
+            <span>{t("This turn did not open a page.")}</span>
           )}
         </>
       ) : problem ? (
         <>
-          <span className="font-medium">Can't show the screen right now</span>
+          <span className="font-medium">{t("Can't show the screen right now")}</span>
           <span>{problem}</span>
           <span>
-            The Bot may still be working. If this keeps happening, ask an admin
-            to check its Computer.
+            {t("The Bot may still be working. If this keeps happening, ask an admin to check its Computer.")}
           </span>
         </>
       ) : waiting === "starting" ? (
         <span role="status">
-          Starting {owner} computer. The first start takes about a minute.
+          {t("Starting")} {owner} {t("computer. The first start takes about a minute.")}
         </span>
       ) : waiting === "asleep" ? (
         <span role="status">
-          {capitalise(owner)} computer is off. It starts when the Bot next uses
-          it.
+          {capitalise(owner)} {t("computer is off. It starts when the Bot next uses it.")}
         </span>
       ) : blankBrowser ? (
-        <span>The Bot hasn't opened a page yet.</span>
+        <span>{t("The Bot hasn't opened a page yet.")}</span>
       ) : (
-        <span>Waiting for the Bot's screen…</span>
+        <span>{t("Waiting for the Bot's screen…")}</span>
       )}
     </span>
   );
@@ -658,7 +657,7 @@ export function ComputerView({
   const polledScreen = showScreen ? (
     <img
       src={`data:image/png;base64,${drawn.base64}`}
-      alt="What the Bot is looking at"
+      alt={t("What the Bot is looking at")}
       // Keep unexpected screenshot dimensions inside the reserved frame.
       className="absolute inset-0 h-full w-full object-contain opacity-100 transition-opacity duration-300 starting:opacity-0"
     />
@@ -680,7 +679,7 @@ export function ComputerView({
            */
           className="relative block w-full cursor-pointer bg-muted"
           style={frameStyle}
-          aria-label="Open the Bot's screen full size"
+          aria-label={t("Open the Bot's screen full size")}
         >
           {polledScreen}
 
@@ -695,7 +694,7 @@ export function ComputerView({
               ) : null}
               {wheelHere ? (
                 <span className="rounded-full bg-white px-2.5 py-1 font-medium text-black text-xs shadow-sm">
-                  You have control
+                  {t("You have control")}
                 </span>
               ) : null}
             </span>
@@ -717,7 +716,7 @@ export function ComputerView({
         {!driving && !settled && control?.requested ? (
           <div className="flex items-start justify-between gap-3 border-t bg-amber-500/10 px-3 py-2 text-sm">
             <span>
-              <strong className="font-medium">The Bot needs you.</strong>{" "}
+              <strong className="font-medium">{t("The Bot needs you.")}</strong>{" "}
               {reason}
             </span>
           </div>
@@ -731,15 +730,15 @@ export function ComputerView({
               disabled={changingControl}
               onClick={() => void changeControl?.("cancel")}
             >
-              Cancel request
+              {t("Cancel request")}
             </button>
           </div>
         ) : null}
         {!settled && control?.transitioning ? (
           <p className="px-3 py-2 text-sm">
             {someoneElse
-              ? "Finishing the Bot's current action…"
-              : "Finishing the Bot's current action before giving you control…"}
+              ? t("Finishing the Bot's current action…")
+              : t("Finishing the Bot's current action before giving you control…")}
           </p>
         ) : null}
         {/*
@@ -748,13 +747,11 @@ export function ComputerView({
         */}
         {!settled && control?.recoveryRequired ? (
           <p className="px-3 py-2 text-sm">
-            The Computer stopped while you had control. Take control to check
-            the page, then hand it back to the Bot.
+            {t("The Computer stopped while you had control. Take control to check the page, then hand it back to the Bot.")}
           </p>
         ) : !settled && control?.request?.status === "interrupted" ? (
           <p className="px-3 py-2 text-sm text-muted-foreground">
-            The Computer stopped before anyone took control. The Bot will ask
-            again if it still needs you.
+            {t("The Computer stopped before anyone took control. The Bot will ask again if it still needs you.")}
           </p>
         ) : null}
         {/*
@@ -778,7 +775,7 @@ export function ComputerView({
             }}
           >
             <label className="block" htmlFor="openbot-secret">
-              <span className="font-medium">The Bot needs </span>
+              <span className="font-medium">{t("The Bot needs")} </span>
               <span>{control.secretWanted}</span>
             </label>
             <div className="mt-1.5 flex gap-2">
@@ -790,7 +787,7 @@ export function ComputerView({
                 autoComplete="off"
                 autoCorrect="off"
                 spellCheck={false}
-                placeholder="Never shown to the Bot"
+                placeholder={t("Never shown to the Bot")}
                 className="min-w-0 flex-1 rounded-md border bg-background px-2 py-1 text-sm"
               />
               <button
@@ -798,12 +795,11 @@ export function ComputerView({
                 disabled={!secret || sendingSecret}
                 className="shrink-0 rounded-md bg-primary px-3 py-1 text-xs font-medium text-primary-foreground disabled:opacity-50"
               >
-                {sendingSecret ? "Sending…" : "Send to the page"}
+                {sendingSecret ? t("Sending…") : t("Send to the page")}
               </button>
             </div>
             <p className="mt-1 text-xs text-muted-foreground">
-              This goes straight to the page. It isn't shown in the
-              conversation, and the Bot never sees it.
+              {t("This goes straight to the page. It isn't shown in the conversation, and the Bot never sees it.")}
             </p>
             {secretProblem ? (
               <p className="mt-1 text-xs text-destructive">{secretProblem}</p>
@@ -815,7 +811,7 @@ export function ComputerView({
           <div className="flex flex-wrap items-center justify-between gap-2 border-t px-3 py-2">
             <span className="text-xs text-muted-foreground">
               {!control
-                ? "Checking who has control…"
+                ? t("Checking who has control…")
                 : control.transitioning
                   ? "Finishing the current action…"
                   : driving
@@ -845,7 +841,7 @@ export function ComputerView({
             <div
               role="dialog"
               aria-modal="true"
-              aria-label="The Bot's screen"
+              aria-label={t("The Bot's screen")}
               className={`fixed inset-0 z-50 flex flex-col overflow-y-auto ${settled ? "p-4 sm:p-8" : "p-2 sm:p-4"}`}
             >
               {/*
@@ -855,7 +851,7 @@ export function ComputerView({
               <button
                 type="button"
                 onClick={() => !wheelHere && setExpanded(false)}
-                aria-label="Close the Bot's screen"
+                aria-label={t("Close the Bot's screen")}
                 aria-hidden={wheelHere}
                 tabIndex={wheelHere ? -1 : 0}
                 className={`fixed inset-0 bg-black/80 ${wheelHere ? "cursor-default" : "cursor-zoom-out"}`}
@@ -905,7 +901,7 @@ export function ComputerView({
                        */
                       <div className="relative w-full" style={{ aspectRatio }}>
                         <img
-                          alt="What this turn had open"
+                          alt={t("What this turn had open")}
                           className="absolute inset-0 h-full w-full object-contain"
                           src={`data:image/png;base64,${drawn.base64}`}
                         />
@@ -933,7 +929,7 @@ export function ComputerView({
                             role="status"
                             className="absolute top-2 left-2 rounded-full bg-black/60 px-2.5 py-1 font-medium text-white text-xs backdrop-blur-sm"
                           >
-                            Reconnecting…
+                            {t("Reconnecting…")}
                           </span>
                         ) : null}
                         {/*
@@ -953,7 +949,7 @@ export function ComputerView({
                                 setRetryKey((value) => value + 1);
                               }}
                             >
-                              Retry
+                              {t("Retry")}
                             </button>
                           </div>
                         ) : null}
@@ -986,8 +982,8 @@ export function ComputerView({
                       }
                     >
                       {someoneElse
-                        ? "Finishing the current action…"
-                        : "Finishing the current action before giving you control…"}
+                        ? t("Finishing the current action…")
+                        : t("Finishing the current action before giving you control…")}
                     </p>
                   ) : null}
                   {settled ? null : (
@@ -1004,17 +1000,17 @@ export function ComputerView({
                         ) : null}
                         {driving ? (
                           <span className="truncate text-muted-foreground lg:whitespace-normal">
-                            You have control. Click and type on the page.
+                            {t("You have control. Click and type on the page.")}
                             {reason ? ` ${reason}` : null}
                           </span>
                         ) : someoneElse ? (
                           <span className="truncate text-muted-foreground lg:whitespace-normal">
-                            Someone else has control.
+                            {t("Someone else has control.")}
                           </span>
                         ) : control?.requested ? (
                           <span className="truncate text-muted-foreground lg:whitespace-normal">
                             <strong className="font-medium text-foreground">
-                              The Bot needs you.
+                              {t("The Bot needs you.")}
                             </strong>{" "}
                             {reason}
                           </span>
@@ -1034,8 +1030,7 @@ export function ComputerView({
                     />
                   ) : botBrowser.error ? (
                     <p className="text-destructive text-sm" role="alert">
-                      Couldn't load the Bot's browser. Close this and open it
-                      again.
+                      {t("Couldn't load the Bot's browser. Close this and open it again.")}
                     </p>
                   ) : null}
                 </WheelColumn>

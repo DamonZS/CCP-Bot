@@ -21,6 +21,7 @@ import {
   groupGrants,
   RANK,
 } from "@/lib/plugins/grants";
+import { t } from "@/lib/i18n";
 
 /**
  * What one account holds at one app, action by action, grouped by the permission each action needs.
@@ -77,16 +78,16 @@ export function GrantList({
   if (grants.isPending) return null;
   if (grants.error) {
     return (
-      <PageSection title="Actions">
+      <PageSection title={t("Actions")}>
         <p className="text-destructive text-sm" role="alert">
-          Couldn't read what this account allows right now.{" "}
+          {t("Couldn't read what this account allows right now.")}{" "}
           <Button
             onClick={() => grants.refetch()}
             size="sm"
             type="button"
             variant="outline"
           >
-            Retry
+            {t("Retry")}
           </Button>
         </p>
       </PageSection>
@@ -97,11 +98,11 @@ export function GrantList({
   if (couldNotRead(all, appNames)) {
     const [only] = all;
     return (
-      <PageSection title="Actions">
+      <PageSection title={t("Actions")}>
         {/* Not an action: the entry's label is the toolkit's own name, which a person must not
             see in their grant list as if it were one. */}
         <p data-could-not-read="" role="status" className="text-sm">
-          Couldn't read what this account allows right now.
+          {t("Couldn't read what this account allows right now.")}
           {only?.state === "unknown" ? ` ${only.reason}` : null}{" "}
           <Button
             onClick={() => grants.refetch()}
@@ -109,7 +110,7 @@ export function GrantList({
             type="button"
             variant="outline"
           >
-            Retry
+            {t("Retry")}
           </Button>
         </p>
       </PageSection>
@@ -141,8 +142,8 @@ export function GrantList({
 
   return (
     <PageSection
-      description="Grouped by the permission each action asks for. This matches what the consent screen shows."
-      title="Actions"
+      description={t("Grouped by the permission each action asks for. This matches what the consent screen shows.")}
+      title={t("Actions")}
     >
       {notice ? (
         <p className="text-destructive text-sm" role="alert">
@@ -150,9 +151,9 @@ export function GrantList({
         </p>
       ) : null}
       <Input
-        aria-label="Search actions"
+        aria-label={t("Search actions")}
         onChange={(event) => setSearch(event.target.value)}
-        placeholder="Search actions"
+        placeholder={t("Search actions")}
         type="search"
         value={search}
       />
@@ -165,7 +166,7 @@ export function GrantList({
         >
           <p className="mb-1 text-muted-foreground text-xs">
             {group.kind === "whole-app"
-              ? "Everything in this app, approved together"
+              ? t("Everything in this app, approved together")
               : group.kind === "none"
                 ? "Asks for no permission of its own"
                 : `Needs ${group.scopes.join(", ")}`}
@@ -196,7 +197,7 @@ export function GrantList({
                       type="button"
                       variant="outline"
                     >
-                      Authorize
+                      {t("Authorize")}
                     </Button>
                   ) : null}
                   {grant.state === "unknown" ? (
@@ -206,7 +207,7 @@ export function GrantList({
                       type="button"
                       variant="outline"
                     >
-                      Retry
+                      {t("Retry")}
                     </Button>
                   ) : null}
                 </ItemActions>
@@ -217,13 +218,12 @@ export function GrantList({
       ))}
       {hidden > 0 ? (
         <p className="text-muted-foreground text-sm">
-          {hidden} more {hidden === 1 ? "action" : "actions"} not yet
-          authorized. Search to find {hidden === 1 ? "it" : "one"}.
+          {hidden} {t("more")} {hidden === 1 ? t("action") : t("actions")} {t("not yet authorized. Search to find")} {hidden === 1 ? t("it") : t("one")}.
         </p>
       ) : null}
       {term.length > 0 && groups.length === 0 ? (
         <p className="text-muted-foreground text-sm">
-          No action matches that search.
+          {t("No action matches that search.")}
         </p>
       ) : null}
       {choosing !== null ? (
@@ -271,10 +271,10 @@ function ConsentNotice({
           type="button"
           variant="outline"
         >
-          Continue to consent
+          {t("Continue to consent")}
         </Button>
         <Button onClick={onCancel} size="sm" type="button" variant="ghost">
-          Cancel
+          {t("Cancel")}
         </Button>
       </div>
     </fieldset>

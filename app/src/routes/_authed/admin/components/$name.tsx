@@ -61,6 +61,7 @@ import {
 } from "@/lib/components/queries";
 import { RENDERABLE_NAMES } from "@/lib/copilot/gallery-registry";
 import { queryClient } from "@/query-client";
+import { t } from "@/lib/i18n";
 
 /**
  * Governance for one compiled component: publication, per-Bot grants, the model-facing description,
@@ -68,7 +69,7 @@ import { queryClient } from "@/query-client";
  */
 /** The same way back from every state this route can be in. */
 const BACK = {
-  label: "UI components",
+  label: t("UI components"),
   linkProps: { to: "/admin/components" },
 } as const;
 
@@ -105,9 +106,9 @@ function RouteComponent() {
 
   if (components.error) {
     return (
-      <PageShell backButton={BACK} title="Components">
+      <PageShell backButton={BACK} title={t("Components")}>
         <p className="mt-8 text-destructive text-sm" role="alert">
-          Couldn't load components. Reload the page.
+          {t("Couldn't load components. Reload the page.")}
         </p>
       </PageShell>
     );
@@ -121,14 +122,14 @@ function RouteComponent() {
     return (
       <PageShell
         backButton={BACK}
-        description="There is no component with that name."
-        title="No such component"
+        description={t("There is no component with that name.")}
+        title={t("No such component")}
       >
         <Empty className="mt-12 min-h-[30dvh] border border-dashed">
           <EmptyHeader>
             <EmptyTitle>{name}</EmptyTitle>
             <EmptyDescription className="text-pretty">
-              It may have been renamed, or this deployment no longer ships it.
+              {t("It may have been renamed, or this deployment no longer ships it.")}
             </EmptyDescription>
           </EmptyHeader>
           <Button
@@ -136,7 +137,7 @@ function RouteComponent() {
             size="sm"
             variant="outline"
           >
-            Back to components
+            {t("Back to components")}
           </Button>
         </Empty>
       </PageShell>
@@ -309,8 +310,8 @@ function ComponentDetail({
       </div>
 
       <PageSection
-        description="Describe this component and choose which Bots can display it."
-        title="Configuration"
+        description={t("Describe this component and choose which Bots can display it.")}
+        title={t("Configuration")}
       >
         <PageRows>
           {/*
@@ -324,9 +325,9 @@ function ComponentDetail({
                   <IconAlertTriangle className="text-amber-600 dark:text-amber-400" />
                 </ItemMedia>
                 <ItemContent>
-                  <ItemTitle>Not in this build</ItemTitle>
+                  <ItemTitle>{t("Not in this build")}</ItemTitle>
                   <ItemDescription>
-                    OpenBot can't draw it. The settings below have no effect.
+                    {t("OpenBot can't draw it. The settings below have no effect.")}
                   </ItemDescription>
                 </ItemContent>
               </Item>
@@ -339,19 +340,19 @@ function ComponentDetail({
               <IconWorld />
             </ItemMedia>
             <ItemContent>
-              <ItemTitle>Published</ItemTitle>
+              <ItemTitle>{t("Published")}</ItemTitle>
               <ItemDescription>
                 {component.published
-                  ? "Bots can answer with it."
-                  : "No Bot can use it."}
+                  ? t("Bots can answer with it.")
+                  : t("No Bot can use it.")}
                 {component.hasUnpublishedChanges
-                  ? " The description has unpublished changes."
+                  ? t(" The description has unpublished changes.")
                   : null}
               </ItemDescription>
             </ItemContent>
             <ItemActions>
               <Switch
-                aria-label="Published"
+                aria-label={t("Published")}
                 checked={component.published}
                 data-testid={`publish-${component.name}`}
                 onCheckedChange={onPublish}
@@ -363,7 +364,7 @@ function ComponentDetail({
 
           <SheetRow
             icon={<IconFileText />}
-            label="Description"
+            label={t("Description")}
             onOpen={() => setSheet("description")}
             summary={component.draftDescription || "Nothing yet"}
             testId={`description-${component.name}`}
@@ -373,7 +374,7 @@ function ComponentDetail({
 
           <SheetRow
             icon={<IconUsers />}
-            label="Available to"
+            label={t("Available to")}
             onOpen={() => setSheet("grants")}
             summary={grantSummary}
             testId={`grants-${component.name}`}
@@ -383,7 +384,7 @@ function ComponentDetail({
 
           <SheetRow
             icon={<IconDatabase />}
-            label="Can read"
+            label={t("Can read")}
             onOpen={() => setSheet("functions")}
             summary={functionSummary}
             testId={`functions-${component.name}`}
@@ -391,19 +392,19 @@ function ComponentDetail({
         </PageRows>
       </PageSection>
 
-      <PageSection title="Details">
+      <PageSection title={t("Details")}>
         <PageRows>
-          <FactRow icon={<IconTag />} label="Kind">
+          <FactRow icon={<IconTag />} label={t("Kind")}>
             {component.kind}
           </FactRow>
           <Separator />
-          <FactRow icon={<IconCode />} label="Called as">
+          <FactRow icon={<IconCode />} label={t("Called as")}>
             <code className="rounded bg-foreground/5 px-1.5 py-0.5 text-xs">
               {component.name}
             </code>
           </FactRow>
           <Separator />
-          <FactRow icon={<IconClock />} label="Last changed">
+          <FactRow icon={<IconClock />} label={t("Last changed")}>
             {new Date(component.updatedAt).toLocaleString()}
             {component.updatedBy ? ` by ${component.updatedBy}` : null}
           </FactRow>
@@ -426,15 +427,14 @@ function ComponentDetail({
       >
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Description</DialogTitle>
+            <DialogTitle>{t("Description")}</DialogTitle>
             <DialogDescription>
-              What the model reads when it decides to use this. It has no effect
-              until the component is published.
+              {t("What the model reads when it decides to use this. It has no effect until the component is published.")}
             </DialogDescription>
           </DialogHeader>
           <DialogBody className="mt-4">
             <Textarea
-              aria-label="Description"
+              aria-label={t("Description")}
               onChange={(event) => setDraft(event.target.value)}
               rows={6}
               value={draft}
@@ -449,7 +449,7 @@ function ComponentDetail({
               size="sm"
               variant="ghost"
             >
-              Cancel
+              {t("Cancel")}
             </Button>
             <Button
               onClick={() => {
@@ -458,7 +458,7 @@ function ComponentDetail({
               }}
               size="sm"
             >
-              Save
+              {t("Save")}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -471,15 +471,14 @@ function ComponentDetail({
       >
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Available to</DialogTitle>
+            <DialogTitle>{t("Available to")}</DialogTitle>
             <DialogDescription>
-              Turn a Bot off and it never learns this component exists. Changes
-              apply right away.
+              {t("Turn a Bot off and it never learns this component exists. Changes apply right away.")}
             </DialogDescription>
           </DialogHeader>
           <DialogBody className="mt-4">
             {bots.length === 0 ? (
-              <p className="text-muted-foreground text-sm">No Bots yet.</p>
+              <p className="text-muted-foreground text-sm">{t("No Bots yet.")}</p>
             ) : (
               <div className="flex flex-col">
                 {bots.map((bot, index) => {
@@ -508,7 +507,7 @@ function ComponentDetail({
           </DialogBody>
           <DialogFooter className="mt-4">
             <Button onClick={() => setSheet(null)} size="sm">
-              Done
+              {t("Done")}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -520,18 +519,15 @@ function ComponentDetail({
       >
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Can read</DialogTitle>
+            <DialogTitle>{t("Can read")}</DialogTitle>
             <DialogDescription>
-              The data this component can fetch to draw itself. This is separate
-              from Available to. With all of these off, it shows only what the
-              Bot passes it. Every read shows in Audit. Changes apply right
-              away.
+              {t("The data this component can fetch to draw itself. This is separate from Available to. With all of these off, it shows only what the Bot passes it. Every read shows in Audit. Changes apply right away.")}
             </DialogDescription>
           </DialogHeader>
           <DialogBody className="mt-4">
             {dataFunctions.length === 0 ? (
               <p className="text-muted-foreground text-sm">
-                This deployment has no data functions.
+                {t("This deployment has no data functions.")}
               </p>
             ) : (
               <div className="flex flex-col">
@@ -564,7 +560,7 @@ function ComponentDetail({
           </DialogBody>
           <DialogFooter className="mt-4">
             <Button onClick={() => setSheet(null)} size="sm">
-              Done
+              {t("Done")}
             </Button>
           </DialogFooter>
         </DialogContent>

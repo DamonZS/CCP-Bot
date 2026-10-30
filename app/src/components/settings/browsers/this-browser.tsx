@@ -28,6 +28,7 @@ import {
   recorderKeys,
 } from "@/lib/recorder/queries";
 import { queryClient } from "@/query-client";
+import { t } from "@/lib/i18n";
 
 /** What the store's own button says, in the browser this page is open in. */
 const ADD_TO: Record<RecorderStore, string> = {
@@ -170,10 +171,10 @@ export function ThisBrowser({
   }
 
   return (
-    <PageSection title="This browser">
+    <PageSection title={t("This browser")}>
       {connections.error ? (
         <p className="text-destructive text-sm" role="alert">
-          Couldn't check whether this browser is connected. Reload the page.
+          {t("Couldn't check whether this browser is connected. Reload the page.")}
         </p>
       ) : detected === undefined ? null : (
         <PageRows>
@@ -182,7 +183,7 @@ export function ThisBrowser({
               <IconBrowser />
             </ItemMedia>
             <ItemContent>
-              <ItemTitle>OpenBot Recorder</ItemTitle>
+              <ItemTitle>{t("OpenBot Recorder")}</ItemTitle>
               <ItemDescription>
                 {describe(detected, connected, attempt)}
               </ItemDescription>
@@ -194,7 +195,7 @@ export function ThisBrowser({
                   disabled={attempt.state === "sending" || awaiting}
                   onClick={() => void connect()}
                 >
-                  Connect this browser
+                  {t("Connect this browser")}
                 </Button>
               </ItemActions>
             ) : detected === null ? (

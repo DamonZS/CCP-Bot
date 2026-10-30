@@ -25,6 +25,7 @@ import {
 import { auditEventsQueryOptions, auditExportUrl } from "@/lib/audit/queries";
 import { client } from "@/lib/client";
 import { cn } from "@/lib/utils";
+import { t } from "@/lib/i18n";
 
 /**
  * Read surface for policy, computer, component, MCP, and credential audit events.
@@ -42,24 +43,24 @@ export const Route = createFileRoute("/_authed/admin/audit")({
  * answered.
  */
 const FILTERS = [
-  { label: "Everything", icon: IconList, search: "" },
+  { label: t("Everything"), icon: IconList, search: "" },
   {
-    label: "Computer actions",
+    label: t("Computer actions"),
     icon: IconDeviceDesktop,
     search: "?eventType=computer.action_allowed",
   },
   {
-    label: "Blocked",
+    label: t("Blocked"),
     icon: IconBan,
     search: eventTypeFilter(REFUSED_EVENT_TYPES),
   },
   {
-    label: "Did not happen",
+    label: t("Did not happen"),
     icon: IconAlertTriangle,
     search: eventTypeFilter(DID_NOT_HAPPEN_EVENT_TYPES),
   },
   {
-    label: "Nobody watching",
+    label: t("Nobody watching"),
     icon: IconEyeOff,
     search: "?initiatorKind=routine,handoff,responsibility,memory",
   },
@@ -119,13 +120,13 @@ function AuditPage() {
      * because a log is scanned across and rows of prose would make every entry a paragraph.
      */
     <PageShell
-      description="Review Bot actions and actions blocked by this deployment’s policy."
-      title="Audit"
+      description={t("Review Bot actions and actions blocked by this deployment’s policy.")}
+      title={t("Audit")}
       width="full"
     >
       {events.isPending ? null : events.isError ? (
         <p className="px-4 text-destructive text-sm" role="alert">
-          Couldn't load the audit log. Reload the page.
+          {t("Couldn't load the audit log. Reload the page.")}
         </p>
       ) : (
         <AuditTable
@@ -139,9 +140,9 @@ function AuditPage() {
                * group: the pressed one is filled, the rest sit flat inside the same outline.
                */}
               <div className="flex items-center gap-2">
-                <span className="text-muted-foreground text-xs">View</span>
+                <span className="text-muted-foreground text-xs">{t("View")}</span>
                 <fieldset
-                  aria-label="View"
+                  aria-label={t("View")}
                   className="inline-flex items-center gap-0.5 rounded-lg border border-border p-0.5"
                 >
                   {FILTERS.map((filter) => {
@@ -172,10 +173,10 @@ function AuditPage() {
                 <div className="relative w-64">
                   <IconSearch className="pointer-events-none absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2 text-muted-foreground" />
                   <Input
-                    aria-label="Search events"
+                    aria-label={t("Search events")}
                     className="h-8 pl-8"
                     onChange={(event) => setQuery(event.target.value)}
-                    placeholder="Search events…"
+                    placeholder={t("Search events…")}
                     type="search"
                     value={query}
                   />
@@ -191,7 +192,7 @@ function AuditPage() {
                     variant="outline"
                   >
                     <IconRefresh />
-                    Refresh
+                    {t("Refresh")}
                   </Button>
                   <Button
                     disabled={exporting}
@@ -200,7 +201,7 @@ function AuditPage() {
                     variant="outline"
                   >
                     <IconDownload />
-                    {exporting ? "Exporting…" : "Export CSV"}
+                    {exporting ? t("Exporting…") : t("Export CSV")}
                   </Button>
                 </div>
               </div>
@@ -211,14 +212,13 @@ function AuditPage() {
               ) : null}
               {exportCapped ? (
                 <p className="text-muted-foreground text-sm" role="status">
-                  The file has the newest {exportCapped.toLocaleString()}{" "}
-                  events, not all of them. Narrow the filter or dates to export
-                  the rest.
+                  {t("The file has the newest")} {exportCapped.toLocaleString()}{" "}
+                  {t("events, not all of them. Narrow the filter or dates to export the rest.")}
                 </p>
               ) : null}
               {rows.length === 0 ? (
-                <PageEmpty icon={IconSearch} title="No matches">
-                  No events match this filter yet.
+                <PageEmpty icon={IconSearch} title={t("No matches")}>
+                  {t("No events match this filter yet.")}
                 </PageEmpty>
               ) : null}
             </div>

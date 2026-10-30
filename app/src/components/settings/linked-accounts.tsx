@@ -38,6 +38,7 @@ import {
   linkedAccountsQueryOptions,
 } from "@/lib/identity/queries";
 import { queryClient } from "@/query-client";
+import { t } from "@/lib/i18n";
 
 export function linkedAccountDescription(account: LinkedAccount): string {
   if (account.status === "needs_reconnect") {
@@ -63,8 +64,8 @@ export function providerIcon(provider: string) {
 
 /** The account types a person can link from here, in the order their cards are drawn. */
 const linkableProviders = [
-  { provider: "slack", title: "Slack" },
-  { provider: "github", title: "GitHub" },
+  { provider: "slack", title: t("Slack") },
+  { provider: "github", title: t("GitHub") },
 ] as const;
 
 export type LinkableProvider = (typeof linkableProviders)[number]["provider"];
@@ -201,10 +202,9 @@ export function LinkedAccountSection({
   });
   if (!state) {
     return (
-      <PageSection title="Your account">
-        <PageEmpty icon={IconLink} title="Not set up yet">
-          You can't link a {linkableProviderTitle(provider)} account yet. An
-          admin has to set it up first.
+      <PageSection title={t("Your account")}>
+        <PageEmpty icon={IconLink} title={t("Not set up yet")}>
+          {t("You can't link a")} {linkableProviderTitle(provider)} {t("account yet. An admin has to set it up first.")}
         </PageEmpty>
       </PageSection>
     );
@@ -224,7 +224,7 @@ export function LinkedAccountSection({
     },
   };
   return (
-    <PageSection title="Your account">
+    <PageSection title={t("Your account")}>
       {state.entries.length > 0 ? (
         <PageRows>
           {state.entries.map((entry, index) => (
@@ -248,23 +248,23 @@ export function LinkedAccountSection({
       ) : null}
       {state.error ? (
         <p className="mt-2 text-destructive text-sm" role="alert">
-          Couldn't load your account: {state.error}
+          {t("Couldn't load your account:")} {state.error}
         </p>
       ) : null}
       {state.providersError ? (
         <p className="mt-2 text-destructive text-sm" role="alert">
-          Couldn't check whether you can link this account:{" "}
+          {t("Couldn't check whether you can link this account:")}{" "}
           {state.providersError}
         </p>
       ) : null}
       {issueCode.error ? (
         <p className="mt-2 text-destructive text-sm" role="alert">
-          Couldn't create a Slack code: {issueCode.error.message}
+          {t("Couldn't create a Slack code:")} {issueCode.error.message}
         </p>
       ) : null}
       {connectGithub.error ? (
         <p className="mt-2 text-destructive text-sm" role="alert">
-          Couldn't connect GitHub: {connectGithub.error.message}
+          {t("Couldn't connect GitHub:")} {connectGithub.error.message}
         </p>
       ) : null}
       <Dialog
@@ -275,7 +275,7 @@ export function LinkedAccountSection({
       >
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Link your Slack account</DialogTitle>
+            <DialogTitle>{t("Link your Slack account")}</DialogTitle>
           </DialogHeader>
           <DialogBody className="mt-4">
             {issued ? (
@@ -283,7 +283,7 @@ export function LinkedAccountSection({
                 <p>{issued.instruction}</p>
                 <div className="flex items-center gap-2">
                   <code className="min-w-0 flex-1 break-all rounded bg-muted px-2 py-1">
-                    link {issued.code}
+                    {t("link")} {issued.code}
                   </code>
                   <Button
                     size="sm"
@@ -297,23 +297,23 @@ export function LinkedAccountSection({
                       setCopyFailed(!ok);
                     }}
                   >
-                    {copied ? "Copied" : "Copy"}
+                    {copied ? t("Copied") : t("Copy")}
                   </Button>
                 </div>
                 {copyFailed ? (
                   <p className="text-destructive" role="alert">
-                    Couldn't copy. Select the code and copy it yourself.
+                    {t("Couldn't copy. Select the code and copy it yourself.")}
                   </p>
                 ) : null}
                 <p className="text-muted-foreground">
-                  The code works once and expires in 10 minutes.
+                  {t("The code works once and expires in 10 minutes.")}
                 </p>
               </div>
             ) : null}
           </DialogBody>
           <DialogFooter className="mt-4">
             <Button size="sm" onClick={closeDialog}>
-              Done
+              {t("Done")}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -342,7 +342,7 @@ function AvailableAccountRow({
       </ItemMedia>
       <ItemContent>
         <ItemTitle>{title}</ItemTitle>
-        <ItemDescription>Not linked</ItemDescription>
+        <ItemDescription>{t("Not linked")}</ItemDescription>
       </ItemContent>
       <ItemActions>
         <Button
@@ -352,7 +352,7 @@ function AvailableAccountRow({
           disabled={pending}
           onClick={onConnect}
         >
-          Connect
+          {t("Connect")}
         </Button>
       </ItemActions>
     </Item>
@@ -384,13 +384,13 @@ function LinkedAccountRow({ account }: { account: LinkedAccount }) {
             disabled={unlink.isPending}
             onClick={() => unlink.mutate(account.id)}
           >
-            Disconnect
+            {t("Disconnect")}
           </Button>
         </ItemActions>
       </Item>
       {unlink.error ? (
         <p className="px-3 pb-2 text-destructive text-sm" role="alert">
-          Couldn't disconnect {account.title}: {unlink.error.message}
+          {t("Couldn't disconnect")} {account.title}: {unlink.error.message}
         </p>
       ) : null}
     </>

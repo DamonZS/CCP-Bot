@@ -47,6 +47,7 @@ import {
   stopBotBrowserRecordingMutationOptions,
 } from "@/lib/bot-browser/mutations";
 import { queryClient } from "@/query-client";
+import { t } from "@/lib/i18n";
 
 /*
  * A BOT'S BROWSER, WORKED BY A PERSON (`shared/bot-browser.ts`): the bar above the Bot's screen, and Record under it.
@@ -301,15 +302,15 @@ export function BotRecordPanel(props: {
   // Where the Bots share one computer, so another Bot could read the person's Recorder connection off the disk.
   if (props.state.recordRefused)
     return (
-      <section aria-label="Record a task">
-        <h2 className="font-semibold text-sm">Record a task</h2>
+      <section aria-label={t("Record a task")}>
+        <h2 className="font-semibold text-sm">{t("Record a task")}</h2>
         <PageRows className="mt-3">
           <Item size="sm" role="status">
             <ItemMedia variant="icon">
               <IconLock className="text-muted-foreground" />
             </ItemMedia>
             <ItemContent>
-              <ItemTitle>Recording isn't available here</ItemTitle>
+              <ItemTitle>{t("Recording isn't available here")}</ItemTitle>
               <ItemDescription className="line-clamp-none">
                 {props.state.recordRefused}
               </ItemDescription>
@@ -349,11 +350,10 @@ function RecordPanel({
   /** Why a recording of the person's ended that Stop did not end: the wheel going back, as a rule. */
   const ended = state.mine ? "The recording ended." : ENDED_WITH_THE_WHEEL;
   return (
-    <section aria-label="Record a task">
-      <h2 className="font-semibold text-sm">Record a task</h2>
+    <section aria-label={t("Record a task")}>
+      <h2 className="font-semibold text-sm">{t("Record a task")}</h2>
       <p className="mt-1 text-pretty text-muted-foreground text-sm">
-        Do the task in the Bot's browser while you have control. Only what you
-        do is recorded, and it goes to your own Learning space.{" "}
+        {t("Do the task in the Bot's browser while you have control. Only what you do is recorded, and it goes to your own Learning space.")}{" "}
         {RECORDER_COLLECTS_SHORT}
       </p>
       <PageRows className="mt-3">
@@ -363,14 +363,14 @@ function RecordPanel({
               <RecordingMark live={false} />
             </ItemMedia>
             <ItemContent>
-              <ItemTitle>Someone is recording</ItemTitle>
-              <ItemDescription>You can record once they stop.</ItemDescription>
+              <ItemTitle>{t("Someone is recording")}</ItemTitle>
+              <ItemDescription>{t("You can record once they stop.")}</ItemDescription>
             </ItemContent>
           </Item>
         ) : (
           <RecordingRow
             recording={recording}
-            placeholder="Name the task to record"
+            placeholder={t("Name the task to record")}
           />
         )}
         {/* Narration is for the person who can record: their own microphone, while they hold the wheel. */}

@@ -41,16 +41,17 @@ import {
 } from "./model";
 import { NotificationsSheet } from "./notifications-sheet";
 import { type MuseIcon, RoundButton } from "./ui";
+import { t } from "@/lib/i18n";
 
 /** The deployment's own name, from its brand.yaml: the name OpenBot's sidebar shows. */
 const PRODUCT = appConfig.brand.productName;
 
 const TABS: { id: MuseTab; label: string; icon: MuseIcon }[] = [
-  { id: "chat", label: "Chat", icon: IconMessageCircle },
-  { id: "activity", label: "Activity", icon: IconTable },
-  { id: "ideas", label: "Ideas", icon: IconBulb },
-  { id: "goals", label: "Goals", icon: IconSquareCheck },
-  { id: "apps", label: "Apps", icon: IconTriangleSquareCircle },
+  { id: "chat", label: t("Chat"), icon: IconMessageCircle },
+  { id: "activity", label: t("Activity"), icon: IconTable },
+  { id: "ideas", label: t("Ideas"), icon: IconBulb },
+  { id: "goals", label: t("Goals"), icon: IconSquareCheck },
+  { id: "apps", label: t("Apps"), icon: IconTriangleSquareCircle },
 ];
 
 /**
@@ -142,7 +143,7 @@ export function OpenMuseFrame({ children }: { children: ReactNode }) {
             <div className="absolute top-4 left-0">
               <RoundButton
                 icon={IconMenu2}
-                label="Open conversations and menu"
+                label={t("Open conversations and menu")}
                 onClick={() => setSheet("menu")}
               >
                 {/* OpenBot's own "a Bot needs you" mark, worn as OpenMuse's dot. */}
@@ -154,7 +155,7 @@ export function OpenMuseFrame({ children }: { children: ReactNode }) {
             <div className="pointer-events-none flex flex-col items-center">
               <button
                 aria-label={
-                  bot ? `${bot.name}, ${status}. Switch Bot` : "Choose a Bot"
+                  bot ? `${bot.name}, ${status}. Switch Bot` : t("Choose a Bot")
                 }
                 className="group pointer-events-auto flex max-w-[70%] flex-col items-center gap-px rounded-2xl outline-none transition-opacity active:opacity-65 focus-visible:ring-3 focus-visible:ring-ring/50 motion-reduce:transition-none"
                 onClick={() => setSheet("bots")}

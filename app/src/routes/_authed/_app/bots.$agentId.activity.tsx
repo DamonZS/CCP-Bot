@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { BotActivitySections } from "@/components/bot-profile/activity";
 import { BotSubpage } from "@/components/bot-profile/bot-subpage";
+import { t } from "@/lib/i18n";
 
 export const Route = createFileRoute("/_authed/_app/bots/$agentId/activity")({
   component: ActivityPage,
@@ -16,8 +17,8 @@ function ActivityPage() {
   return (
     <BotSubpage
       agentId={agentId}
-      description="Review this Bot’s current work, scheduled tasks, and completed tasks."
-      title="Activity"
+      description={t("Review this Bot’s current work, scheduled tasks, and completed tasks.")}
+      title={t("Activity")}
     >
       {(agent) => <BotActivitySections agentId={agent.id} />}
     </BotSubpage>

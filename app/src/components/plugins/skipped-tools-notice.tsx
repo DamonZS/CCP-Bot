@@ -1,3 +1,4 @@
+import { t } from "@/lib/i18n";
 /**
  * The actions an app's last refresh left out because no model could be offered their names.
  *
@@ -14,7 +15,7 @@ export function SkippedToolsNotice({ names }: { names: readonly string[] }) {
       role="status"
     >
       {names.length === 1
-        ? "One action this app lists was left out, because a tool name may only use letters, digits, underscores and hyphens: "
+        ? t("One action this app lists was left out, because a tool name may only use letters, digits, underscores and hyphens: ")
         : `${names.length} actions this app lists were left out, because a tool name may only use letters, digits, underscores and hyphens: `}
       {names.map((name, index) => (
         <span key={name}>

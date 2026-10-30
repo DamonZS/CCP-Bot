@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { authKeys, currentUserQueryOptions } from "@/lib/auth/queries";
 import { client } from "@/lib/client";
+import { t } from "@/lib/i18n";
 
 export function ProfileNameForm({
   initialName = "",
@@ -43,7 +44,7 @@ export function ProfileNameForm({
         if (name.trim() && !save.isPending) save.mutate(name.trim());
       }}
     >
-      <label htmlFor={id}>Name</label>
+      <label htmlFor={id}>{t("Name")}</label>
       <Input
         id={id}
         autoComplete="name"
@@ -63,7 +64,7 @@ export function ProfileNameForm({
       )}
       {save.isSuccess && !firstRun && (
         <p role="status" className="text-sm text-muted-foreground">
-          Your name has been saved.
+          {t("Your name has been saved.")}
         </p>
       )}
       <Button
@@ -72,7 +73,7 @@ export function ProfileNameForm({
         size={firstRun ? "lg" : "default"}
         disabled={!name.trim() || save.isPending}
       >
-        {save.isPending ? "Saving…" : firstRun ? "Get started" : "Save name"}
+        {save.isPending ? t("Saving…") : firstRun ? "Get started" : "Save name"}
       </Button>
     </form>
   );
@@ -82,8 +83,8 @@ export function ProfileSettings() {
   const { data: user } = useQuery(currentUserQueryOptions());
   return (
     <PageSection
-      title="Profile"
-      description="Choose the name OpenBot displays for you."
+      title={t("Profile")}
+      description={t("Choose the name OpenBot displays for you.")}
     >
       {user && (
         <ProfileNameForm
@@ -105,10 +106,10 @@ export function OnboardingNameStep({
     <div className="mx-auto flex w-full max-w-md flex-col items-center gap-6">
       <AgentOrb size="64px" state="listening" />
       <h1 className="text-center text-3xl font-semibold tracking-tight">
-        Let's get to it.
+        {t("Let's get to it.")}
       </h1>
       <p className="text-center text-muted-foreground">
-        What should we call you? You can change your name later in Settings.
+        {t("What should we call you? You can change your name later in Settings.")}
       </p>
       <ProfileNameForm
         initialName={user?.needsName ? "" : (user?.name ?? "")}

@@ -10,6 +10,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { deleteChannelMutationOptions } from "@/lib/channels/mutations";
+import { t } from "@/lib/i18n";
 
 /**
  * Confirms deleting a conversation, naming it, and deletes it.
@@ -59,9 +60,9 @@ export function DeleteConversationDialog({
     <Dialog onOpenChange={onOpenChange} open={open}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Delete {name}?</DialogTitle>
+          <DialogTitle>{t("Delete")} {name}?</DialogTitle>
           <DialogDescription>
-            It disappears for everyone in the conversation.
+            {t("It disappears for everyone in the conversation.")}
           </DialogDescription>
         </DialogHeader>
         {deleteChannel.error ? (
@@ -71,7 +72,7 @@ export function DeleteConversationDialog({
         ) : null}
         <DialogFooter>
           <Button onClick={() => onOpenChange(false)} size="sm" variant="ghost">
-            Cancel
+            {t("Cancel")}
           </Button>
           <Button
             disabled={deleteChannel.isPending}
@@ -81,7 +82,7 @@ export function DeleteConversationDialog({
             size="sm"
             variant="destructive"
           >
-            {deleteChannel.isPending ? "Deleting…" : "Delete"}
+            {deleteChannel.isPending ? t("Deleting…") : t("Delete")}
           </Button>
         </DialogFooter>
       </DialogContent>

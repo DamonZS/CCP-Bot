@@ -6,6 +6,7 @@ import {
   type SandboxedRecord,
   sandboxedListQueryOptions,
 } from "@/lib/sandboxed/queries";
+import { t } from "@/lib/i18n";
 
 /** Sample arguments belong to the administrator's working copy, so only Admin fetches them. */
 export function AdminComponentPreview({
@@ -21,7 +22,7 @@ export function AdminComponentPreview({
   });
   if (kind === "sandboxed" && sandboxed.isPending) return null;
   if (kind === "sandboxed" && sandboxed.error) {
-    return <PreviewNotice>Preview could not be loaded.</PreviewNotice>;
+    return <PreviewNotice>{t("Preview could not be loaded.")}</PreviewNotice>;
   }
   return (
     <ComponentPreview
@@ -65,7 +66,7 @@ export function ComponentPreview({
     if (!sandboxed.published || sandboxed.publishedHtml === null) {
       return (
         <PreviewNotice>
-          Publish in the playground to see a preview.
+          {t("Publish in the playground to see a preview.")}
         </PreviewNotice>
       );
     }
@@ -82,7 +83,7 @@ export function ComponentPreview({
       <FittedPreview fill={fill}>
         <div
           className="w-full"
-          title="Published component with saved sample arguments"
+          title={t("Published component with saved sample arguments")}
         >
           <OpenGenerativeUIActivityRenderer
             activityType="open-generative-ui"
@@ -99,7 +100,7 @@ export function ComponentPreview({
   return (
     <PreviewNotice>
       {entry
-        ? "This one is only drawn in a conversation."
+        ? t("This one is only drawn in a conversation.")
         : kind === "sandboxed"
           ? "Published in the playground."
           : "This build cannot draw this."}

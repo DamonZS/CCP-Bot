@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import type { GalleryComponent } from "@/lib/copilot/gallery-registry";
 import { Badge, GalleryFrame } from "./frame";
 import { byPosition } from "./positions";
+import { t } from "@/lib/i18n";
 
 /**
  * Human-in-the-loop gallery components. `respond` resolves the suspended Bot run, and completed
@@ -58,7 +59,7 @@ export function ApprovalCard(props: Waiting<ApprovalArgs> & { name?: string }) {
   if (status === "inProgress") {
     return (
       <GalleryFrame title={args.title ?? "Waiting for the Bot…"}>
-        <p className="text-sm text-muted-foreground">Preparing the request…</p>
+        <p className="text-sm text-muted-foreground">{t("Preparing the request…")}</p>
       </GalleryFrame>
     );
   }
@@ -71,10 +72,10 @@ export function ApprovalCard(props: Waiting<ApprovalArgs> & { name?: string }) {
       action={
         decided ? (
           <Badge tone={decided === "approved" ? "positive" : "negative"}>
-            {decided === "approved" ? "Approved" : "Declined"}
+            {decided === "approved" ? t("Approved") : t("Declined")}
           </Badge>
         ) : (
-          <Badge tone="caution">Waiting on you</Badge>
+          <Badge tone="caution">{t("Waiting on you")}</Badge>
         )
       }
       title={args.title}
@@ -95,11 +96,11 @@ export function ApprovalCard(props: Waiting<ApprovalArgs> & { name?: string }) {
       {decided ? null : (
         <div className="mt-4 space-y-2">
           <input
-            aria-label="A reason, if you want to give one"
+            aria-label={t("A reason, if you want to give one")}
             className="w-full rounded-md border border-border bg-transparent px-3 py-1.5 text-sm"
             disabled={Boolean(sending)}
             onChange={(event) => setNote(event.target.value)}
-            placeholder="A reason, if you want to give one"
+            placeholder={t("A reason, if you want to give one")}
             value={note}
           />
           <div className="flex gap-2">
@@ -109,7 +110,7 @@ export function ApprovalCard(props: Waiting<ApprovalArgs> & { name?: string }) {
               size="sm"
             >
               {sending === "approved"
-                ? "Sending…"
+                ? t("Sending…")
                 : (args.approveLabel ?? "Approve")}
             </Button>
             <Button
@@ -119,7 +120,7 @@ export function ApprovalCard(props: Waiting<ApprovalArgs> & { name?: string }) {
               variant="outline"
             >
               {sending === "declined"
-                ? "Sending…"
+                ? t("Sending…")
                 : (args.rejectLabel ?? "Decline")}
             </Button>
           </div>
@@ -157,7 +158,7 @@ export function ChoiceCard(props: Waiting<ChoiceArgs>) {
   if (status === "inProgress") {
     return (
       <GalleryFrame title={args.title ?? "Waiting for the Bot…"}>
-        <p className="text-sm text-muted-foreground">Preparing the question…</p>
+        <p className="text-sm text-muted-foreground">{t("Preparing the question…")}</p>
       </GalleryFrame>
     );
   }
@@ -168,9 +169,9 @@ export function ChoiceCard(props: Waiting<ChoiceArgs>) {
     <GalleryFrame
       action={
         chosen ? (
-          <Badge tone="positive">Answered</Badge>
+          <Badge tone="positive">{t("Answered")}</Badge>
         ) : (
-          <Badge tone="caution">Waiting on you</Badge>
+          <Badge tone="caution">{t("Waiting on you")}</Badge>
         )
       }
       caption={args.summary}
@@ -249,10 +250,10 @@ function readChoice(result: string | undefined): string | undefined {
 export const GALLERY: GalleryComponent[] = [
   {
     name: "askApproval",
-    title: "Approval",
+    title: t("Approval"),
     kind: "decision",
     description:
-      "Ask the person to approve or decline something, and WAIT for their answer. Use before doing anything you cannot undo, spending money, sending a message, changing a record. You are given their decision and any reason they typed.",
+      t("Ask the person to approve or decline something, and WAIT for their answer. Use before doing anything you cannot undo, spending money, sending a message, changing a record. You are given their decision and any reason they typed."),
     parameters: ApprovalCardProps,
     Component: ApprovalCard as GalleryComponent["Component"],
     preview: {
@@ -260,13 +261,13 @@ export const GALLERY: GalleryComponent[] = [
       // so its arguments arrive wrapped in the state of the decision it is waiting on.
       status: "executing",
       args: {
-        title: "Refund this order?",
+        title: t("Refund this order?"),
         summary:
           "The customer was charged twice for the same order and the second charge has not settled.",
         details: [
-          { label: "Amount", value: "$128.40" },
-          { label: "Customer", value: "Northwind Traders" },
-          { label: "Order", value: "2043" },
+          { label: t("Amount"), value: "$128.40" },
+          { label: t("Customer"), value: "Northwind Traders" },
+          { label: t("Order"), value: "2043" },
         ],
         approveLabel: "Refund",
       },
@@ -275,27 +276,27 @@ export const GALLERY: GalleryComponent[] = [
   },
   {
     name: "askChoice",
-    title: "Choice",
+    title: t("Choice"),
     kind: "decision",
     description:
-      "Ask the person to pick one of several options, and WAIT for their answer. Use when you cannot sensibly guess which one they meant. You are given the id of the option they chose.",
+      t("Ask the person to pick one of several options, and WAIT for their answer. Use when you cannot sensibly guess which one they meant. You are given the id of the option they chose."),
     parameters: ChoiceCardProps,
     Component: ChoiceCard as GalleryComponent["Component"],
     preview: {
       status: "executing",
       args: {
-        title: "Which environment should this go to?",
+        title: t("Which environment should this go to?"),
         summary: "The build is green and nothing else is queued.",
         options: [
           {
             id: "staging",
-            label: "Staging",
-            description: "Safe, and reversible",
+            label: t("Staging"),
+            description: t("Safe, and reversible"),
           },
           {
             id: "production",
-            label: "Production",
-            description: "Live customers",
+            label: t("Production"),
+            description: t("Live customers"),
           },
         ],
       },

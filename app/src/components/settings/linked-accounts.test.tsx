@@ -9,11 +9,12 @@ import {
   linkedAccountsSectionState,
   providerIcon,
 } from "./linked-accounts";
+import { t } from "@/lib/i18n";
 
 const base = {
   id: "1",
   provider: "github" as const,
-  title: "GitHub",
+  title: t("GitHub"),
   createdAt: "2026-10-08T00:00:00.000Z",
 };
 
@@ -118,7 +119,7 @@ const slackRow = {
   ...base,
   id: "2",
   provider: "slack" as const,
-  title: "Slack",
+  title: t("Slack"),
   handle: null,
   status: "active" as const,
 };
@@ -144,8 +145,8 @@ test("each account type that can be linked gets its own card to connect from", (
     }),
   ).toEqual({
     entries: [
-      { kind: "available", provider: "slack", title: "Slack" },
-      { kind: "available", provider: "github", title: "GitHub" },
+      { kind: "available", provider: "slack", title: t("Slack") },
+      { kind: "available", provider: "github", title: t("GitHub") },
     ],
     error: null,
     providersError: null,
@@ -157,7 +158,7 @@ test("each account type that can be linked gets its own card to connect from", (
       providers: { slack: false, github: true },
     }),
   ).toEqual({
-    entries: [{ kind: "available", provider: "github", title: "GitHub" }],
+    entries: [{ kind: "available", provider: "github", title: t("GitHub") }],
     error: null,
     providersError: null,
   });
@@ -172,7 +173,7 @@ test("a linked account takes the place of its connect card", () => {
     }),
   ).toEqual({
     entries: [
-      { kind: "available", provider: "slack", title: "Slack" },
+      { kind: "available", provider: "slack", title: t("Slack") },
       { kind: "linked", account: row },
     ],
     error: null,
@@ -364,7 +365,7 @@ test("one provider's page draws only that provider's link and offer", () => {
       only: "github",
       providers: { slack: true, github: true },
     })?.entries,
-  ).toEqual([{ kind: "available", provider: "github", title: "GitHub" }]);
+  ).toEqual([{ kind: "available", provider: "github", title: t("GitHub") }]);
   expect(
     linkedAccountsSectionState({
       data: [slackRow],

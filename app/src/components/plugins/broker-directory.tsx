@@ -37,6 +37,7 @@ import {
   composioAppsQueryOptions,
 } from "@/lib/plugins/queries";
 import { queryClient } from "@/query-client";
+import { t } from "@/lib/i18n";
 
 /**
  * The active broker's directory, searched rather than listed.
@@ -124,13 +125,13 @@ export function BrokerDirectory({ provider }: { provider: PluginsProvider }) {
 
   return (
     <PageShell
-      backButton={{ label: "Plugins", linkProps: { to: "/admin/plugins" } }}
+      backButton={{ label: t("Plugins"), linkProps: { to: "/admin/plugins" } }}
       description={`${name}'s app directory. Add an app to make its tools available to Bots. Each person still connects their own account before it reads anything.`}
       title={directoryLabel}
     >
       <PageSection
-        description="Search by name. Nobody here has reviewed these apps."
-        title="Apps"
+        description={t("Search by name. Nobody here has reviewed these apps.")}
+        title={t("Apps")}
       >
         {enableError ? (
           <p className="mt-4 text-destructive text-sm" role="alert">
@@ -142,7 +143,7 @@ export function BrokerDirectory({ provider }: { provider: PluginsProvider }) {
           aria-label={`Search ${name} apps`}
           className="mt-4"
           onChange={(event) => setSearch(event.target.value)}
-          placeholder="Search by app name"
+          placeholder={t("Search by app name")}
           value={search}
         />
 
@@ -160,7 +161,7 @@ export function BrokerDirectory({ provider }: { provider: PluginsProvider }) {
         ) : listed.length === 0 ? (
           <PageEmpty
             icon={query ? IconSearch : IconPlug}
-            title={query ? "No matches" : "No apps"}
+            title={query ? t("No matches") : t("No apps")}
           >
             {query
               ? `No ${name} app matches "${query}".`
@@ -197,7 +198,7 @@ export function BrokerDirectory({ provider }: { provider: PluginsProvider }) {
                       {/* The size of the decision, stated before it is made: an app is not one
                           tool, and "167 actions" is what says so. */}
                       <span className="text-muted-foreground text-xs">
-                        {entry.actionCount} actions
+                        {entry.actionCount} {t("actions")}
                       </span>
                       {/*
                        * An app this deployment already has says so rather than offering Add again.
@@ -206,7 +207,7 @@ export function BrokerDirectory({ provider }: { provider: PluginsProvider }) {
                        */}
                       {entry.enabled ? (
                         <span className="text-muted-foreground text-xs">
-                          Added
+                          {t("Added")}
                         </span>
                       ) : (
                         <Button
@@ -215,7 +216,7 @@ export function BrokerDirectory({ provider }: { provider: PluginsProvider }) {
                           size="sm"
                           variant="outline"
                         >
-                          {isAdding ? "Adding…" : "Add"}
+                          {isAdding ? t("Adding…") : t("Add")}
                         </Button>
                       )}
                     </ItemActions>

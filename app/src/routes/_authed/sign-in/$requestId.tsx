@@ -3,6 +3,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { PageShell } from "@/components/layout/page-shell";
 import { SignInForm } from "@/components/passwords/sign-in-form";
 import { signInRequestQueryOptions } from "@/lib/passwords/queries";
+import { t } from "@/lib/i18n";
 
 /**
  * The private sign-in form, on a page of its own.
@@ -20,7 +21,7 @@ function SignInPage() {
   const request = useQuery(signInRequestQueryOptions(requestId));
   return (
     <PageShell
-      title={request.data ? `Sign in to ${request.data.origin}` : "Sign in"}
+      title={request.data ? `Sign in to ${request.data.origin}` : t("Sign in")}
       description={
         request.data?.reason ??
         "Your Bot needs to sign in to continue. What you type here goes to its browser, not the conversation."

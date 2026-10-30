@@ -18,6 +18,7 @@ import { useActiveBot } from "@/lib/copilot/active-bot";
 import { useBotThread } from "@/lib/copilot/bot-thread";
 import { useStoppedTurn } from "@/lib/copilot/stopped-turn";
 import { searchTextEntry } from "@/lib/search-text";
+import { t } from "@/lib/i18n";
 
 export const Route = createFileRoute("/_authed/_app/bot")({
   component: RouteComponent,
@@ -106,7 +107,7 @@ function RouteComponent() {
     return (
       <div className="flex h-screen items-center justify-center p-6">
         <p className="text-destructive text-sm" role="alert">
-          Couldn't load your Bots. Reload the page.
+          {t("Couldn't load your Bots. Reload the page.")}
         </p>
       </div>
     );
@@ -115,7 +116,7 @@ function RouteComponent() {
     return (
       <div className="flex h-screen items-center justify-center p-6">
         <p className="text-destructive text-sm" role="alert">
-          Couldn't load this Bot. Reload the page.
+          {t("Couldn't load this Bot. Reload the page.")}
         </p>
       </div>
     );
@@ -126,7 +127,7 @@ function RouteComponent() {
         <p className="text-muted-foreground text-sm">
           {agent
             ? `There's no Bot called "${agent}".`
-            : "There are no Bots yet."}
+            : t("There are no Bots yet.")}
         </p>
       </div>
     );
@@ -167,7 +168,7 @@ function BotChat({ agentId, name }: { agentId: string; name: string }) {
 
   return (
     <DetailPanel
-      title="Computer"
+      title={t("Computer")}
       open={watch === true}
       onClose={() => showComputer(false)}
       detail={<ComputerViewPanel agentId={agentId} name={name} />}
@@ -197,12 +198,12 @@ function BotChat({ agentId, name }: { agentId: string; name: string }) {
               />
               <Button onClick={startNew} size="sm" variant="ghost">
                 <IconPlus />
-                New chat
+                {t("New chat")}
               </Button>
             </div>
           </div>
           <p className="text-sm text-muted-foreground">
-            Ask it to open a page and watch it work.
+            {t("Ask it to open a page and watch it work.")}
           </p>
         </header>
         {/*
@@ -216,7 +217,7 @@ function BotChat({ agentId, name }: { agentId: string; name: string }) {
             data-testid="bot-chat-history-unavailable"
             role="alert"
           >
-            Couldn't load earlier messages. The Bot is answering without them.
+            {t("Couldn't load earlier messages. The Bot is answering without them.")}
           </p>
         ) : null}
         {/*

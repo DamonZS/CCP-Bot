@@ -8,6 +8,7 @@ import {
   ItemTitle,
 } from "@/components/ui/item";
 import type { BrokerField } from "@/lib/plugins/mutations";
+import { t } from "@/lib/i18n";
 
 /**
  * What one app asks for, drawn from what that app published.
@@ -134,7 +135,7 @@ export function ConnectionFields({
         </Item>
       ))}
       <Button className="self-end" disabled={busy} size="sm" type="submit">
-        {busy ? "Connecting…" : "Connect"}
+        {busy ? t("Connecting…") : t("Connect")}
       </Button>
     </form>
   );

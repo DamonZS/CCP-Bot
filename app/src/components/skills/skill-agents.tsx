@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { agentListQueryOptions } from "@/lib/agents/queries";
 import { setPluginGrantMutationOptions } from "@/lib/plugins/mutations";
+import { t } from "@/lib/i18n";
 
 /**
  * Which of your Agents carry this skill.
@@ -36,10 +37,10 @@ export function SkillAgents({
 
   return (
     <div className="flex flex-col gap-2">
-      <h2 className="text-sm font-medium">Bots</h2>
+      <h2 className="text-sm font-medium">{t("Bots")}</h2>
       {mine.length === 0 ? (
         <p className="text-muted-foreground text-xs">
-          You don't have a Bot of your own yet.
+          {t("You don't have a Bot of your own yet.")}
         </p>
       ) : (
         <>
@@ -66,7 +67,7 @@ export function SkillAgents({
             })}
           </div>
           <p className="text-muted-foreground text-xs">
-            Bots you pick here offer <code>/{slug}</code> when you type{" "}
+            {t("Bots you pick here offer")} <code>/{slug}</code> {t("when you type")}{" "}
             <code>/</code>.
           </p>
         </>

@@ -14,6 +14,7 @@ import {
   setAccountModeMutationOptions,
 } from "@/lib/plugins/mutations";
 import { describeApproval } from "@/lib/plugins/shared-use";
+import { t } from "@/lib/i18n";
 
 /**
  * The one moment an administrator decides between people's own accounts and one shared account.
@@ -74,13 +75,13 @@ export function AccountModeDialog({
               : `Give everyone their own ${title} account?`}
           </DialogTitle>
           <DialogDescription>
-            {preview.data ? goes : "Checking what this would change…"}
+            {preview.data ? goes : t("Checking what this would change…")}
           </DialogDescription>
         </DialogHeader>
         {target === "shared" ? (
           <div className="mt-4 space-y-3 text-sm">
             <p>
-              Everyone using a Bot with this app will act as this one account.
+              {t("Everyone using a Bot with this app will act as this one account.")}
             </p>
             {preview.data?.bots.length ? (
               <ul className="space-y-1">
@@ -107,7 +108,7 @@ export function AccountModeDialog({
             size="sm"
             variant="outline"
           >
-            Cancel
+            {t("Cancel")}
           </Button>
           <Button
             disabled={!preview.data || change.isPending}

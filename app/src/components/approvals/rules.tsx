@@ -40,6 +40,7 @@ import {
   type HostCommandPolicy,
   type RuleBehaviour,
 } from "@/lib/approvals";
+import { t } from "@/lib/i18n";
 
 export const HOST_LABELS: Record<HostCommandPolicy, string> = {
   ask: "Ask every time",
@@ -139,7 +140,7 @@ export function RuleRow({
             {match}
           </ItemDescription>
         ) : null}
-        {locked ? <ItemDescription>Locked</ItemDescription> : null}
+        {locked ? <ItemDescription>{t("Locked")}</ItemDescription> : null}
       </ItemContent>
       <ItemActions>
         {locked ? (
@@ -161,7 +162,7 @@ export function RuleRow({
               size="sm"
               variant="outline"
             >
-              Remove
+              {t("Remove")}
             </Button>
           </>
         )}
@@ -234,7 +235,7 @@ export function RuleForm({
         <ItemContent>
           <ItemTitle>{label}</ItemTitle>
           <ItemDescription>
-            A tool or app, and what a Bot does before using it.
+            {t("A tool or app, and what a Bot does before using it.")}
           </ItemDescription>
         </ItemContent>
         <ItemActions>
@@ -246,8 +247,7 @@ export function RuleForm({
           <DialogHeader>
             <DialogTitle>{label}</DialogTitle>
             <DialogDescription>
-              Use * to match anything. mcp/gmail/* means every Gmail tool. A
-              target of *.example.com means every page on that site.
+              {t("Use * to match anything. mcp/gmail/* means every Gmail tool. A target of *.example.com means every page on that site.")}
             </DialogDescription>
           </DialogHeader>
           <DialogBody className="mt-4">
@@ -271,7 +271,7 @@ export function RuleForm({
                 {field("scope", "Target", "*, a site, a folder, a Bot name")}
                 {botField ? field("botId", "Bot", "* for every Bot") : null}
                 <Field>
-                  <FieldLabel htmlFor={`${id}-behaviour`}>Behaviour</FieldLabel>
+                  <FieldLabel htmlFor={`${id}-behaviour`}>{t("Behaviour")}</FieldLabel>
                   <LabelSelect
                     id={`${id}-behaviour`}
                     labels={BEHAVIOUR_LABELS}
@@ -291,7 +291,7 @@ export function RuleForm({
           </DialogBody>
           <DialogFooter className="mt-4">
             <Button onClick={close} size="sm" variant="outline">
-              Cancel
+              {t("Cancel")}
             </Button>
             <Button
               disabled={save.isPending || !rule.toolRef.trim()}
@@ -299,7 +299,7 @@ export function RuleForm({
               size="sm"
               type="submit"
             >
-              Save rule
+              {t("Save rule")}
             </Button>
           </DialogFooter>
         </DialogContent>

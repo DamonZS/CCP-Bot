@@ -4,6 +4,7 @@ import type { GalleryComponent } from "@/lib/copilot/gallery-registry";
 import { Badge, GalleryFrame } from "./frame";
 import { byPosition } from "./positions";
 import { GalleryStreamingContext } from "./streaming";
+import { t } from "@/lib/i18n";
 
 export const DataTableProps = z
   .object({
@@ -71,9 +72,9 @@ export function DataTable(props: Record<string, unknown>) {
   const parsed = DataTableProps.safeParse(table);
   if (!parsed.success) {
     return (
-      <GalleryFrame title="Table">
+      <GalleryFrame title={t("Table")}>
         <p className="text-sm text-muted-foreground">
-          Waiting for complete table data…
+          {t("Waiting for complete table data…")}
         </p>
       </GalleryFrame>
     );
@@ -99,7 +100,7 @@ export function DataTable(props: Record<string, unknown>) {
       caption={caption}
       action={
         <Badge>
-          {rows.length} {rows.length === 1 ? "row" : "rows"}
+          {rows.length} {rows.length === 1 ? t("row") : t("rows")}
         </Badge>
       }
     >
@@ -111,7 +112,7 @@ export function DataTable(props: Record<string, unknown>) {
       >
         <table className="w-full border-collapse text-left text-sm">
           <caption className="sr-only">
-            {title}. Select a column heading to sort.
+            {title}{t(". Select a column heading to sort.")}
           </caption>
           <thead className="bg-muted/50 text-xs text-muted-foreground">
             <tr>
@@ -174,7 +175,7 @@ export function DataTable(props: Record<string, unknown>) {
                         >
                           —
                         </span>
-                        <span className="sr-only">Empty</span>
+                        <span className="sr-only">{t("Empty")}</span>
                       </>
                     ) : (
                       row.cells[index]
@@ -200,7 +201,7 @@ export function DataTable(props: Record<string, unknown>) {
                   colSpan={columns.length}
                   className="px-3 py-8 text-center text-muted-foreground"
                 >
-                  No rows to show.
+                  {t("No rows to show.")}
                 </td>
               </tr>
             )}
@@ -211,7 +212,7 @@ export function DataTable(props: Record<string, unknown>) {
         <p className="mt-2 text-xs text-muted-foreground" aria-live="polite">
           {sort
             ? `Sorted by ${columns[sort.column]}, ${sort.ascending ? "ascending" : "descending"}.`
-            : "Select a column heading to sort."}
+            : t("Select a column heading to sort.")}
         </p>
       )}
     </GalleryFrame>
@@ -221,16 +222,16 @@ export function DataTable(props: Record<string, unknown>) {
 export const GALLERY: GalleryComponent[] = [
   {
     name: "showTable",
-    title: "Data table",
+    title: t("Data table"),
     kind: "card",
     description:
-      "Show a sortable table to compare records, plans, or other structured facts. Supply up to eight columns and 100 rows, with exactly one cell per column. Use numbers for quantities so sorting is numeric. Show only data you have; do not invent rows.",
+      t("Show a sortable table to compare records, plans, or other structured facts. Supply up to eight columns and 100 rows, with exactly one cell per column. Use numbers for quantities so sorting is numeric. Show only data you have; do not invent rows."),
     parameters: DataTableProps,
     Component: DataTable,
     confirmation: "The sortable table is now on screen for the person.",
     preview: {
-      title: "Team capacity",
-      caption: "Three teams, one shared launch. Hours available this week.",
+      title: t("Team capacity"),
+      caption: t("Three teams, one shared launch. Hours available this week."),
       columns: ["Team", "Available hours", "Focus"],
       rows: [
         { cells: ["Product", 24, "Customer onboarding"] },

@@ -34,6 +34,7 @@ import { useStartChannel } from "@/lib/channels/start";
 import { useSkillCommands } from "@/lib/plugins/skill-commands";
 import { searchTextEntry } from "@/lib/search-text";
 import { newId } from "../../../../lib/new-id";
+import { t } from "@/lib/i18n";
 
 /**
  * Creates the conversation on first send. One Bot in the To: field is an ordinary channel; two or
@@ -129,7 +130,7 @@ function RouteComponent() {
         data-slot="conversation-header"
       >
         <SidebarToggle className="mr-1" />
-        <span className="text-sm text-muted-foreground">To:</span>
+        <span className="text-sm text-muted-foreground">{t("To:")}</span>
         <Combobox
           // Do not auto-open when the recipient came from the URL; the field is already answered.
           open={pickerOpen ?? (!chosen && !loadError && !waitingForUrlAgent)}
@@ -175,8 +176,8 @@ function RouteComponent() {
               autoFocus={!chosen}
               placeholder={
                 selected.length
-                  ? "Add another Bot for a group…"
-                  : "Choose a Bot…"
+                  ? t("Add another Bot for a group…")
+                  : t("Choose a Bot…")
               }
             />
           </ComboboxChips>
@@ -196,11 +197,11 @@ function RouteComponent() {
                 }}
               >
                 <AgentOrb size="24px" state="idle" />
-                <span className="font-medium">New Bot</span>
-                <span className="text-muted-foreground">Create a new Bot</span>
+                <span className="font-medium">{t("New Bot")}</span>
+                <span className="text-muted-foreground">{t("Create a new Bot")}</span>
               </button>
             </div>
-            <ComboboxEmpty>No Bots found.</ComboboxEmpty>
+            <ComboboxEmpty>{t("No Bots found.")}</ComboboxEmpty>
             <ComboboxList className="min-h-0">
               {(item: AgentProfile) => (
                 <ComboboxItem key={item.id} value={item} className="h-10">

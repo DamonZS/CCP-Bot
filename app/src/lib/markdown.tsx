@@ -5,6 +5,7 @@ import {
   IconTable,
 } from "@tabler/icons-react";
 import type { ComponentProps } from "react";
+import { t } from "@/lib/i18n";
 
 /**
  * Shared markdown rendering for Bot prose and tool results.
@@ -27,9 +28,9 @@ import type { ComponentProps } from "react";
  * is not something to claim about a URL a model wrote.
  */
 const DRIVE_KINDS = [
-  { match: "/document/", icon: IconFileText, label: "Doc" },
-  { match: "/spreadsheets/", icon: IconTable, label: "Sheet" },
-  { match: "/presentation/", icon: IconPresentation, label: "Slides" },
+  { match: "/document/", icon: IconFileText, label: t("Doc") },
+  { match: "/spreadsheets/", icon: IconTable, label: t("Sheet") },
+  { match: "/presentation/", icon: IconPresentation, label: t("Slides") },
 ] as const;
 
 export function documentChipKind(href: string | undefined) {
@@ -54,17 +55,17 @@ export function documentChipKind(href: string | undefined) {
       url.pathname.includes(entry.match),
     );
     // A docs.google.com URL of some other shape is still a Drive document, just not one of the three.
-    return kind ?? { match: "", icon: IconFile, label: "Drive" };
+    return kind ?? { match: "", icon: IconFile, label: t("Drive") };
   }
   if (url.hostname === "drive.google.com") {
-    return { match: "", icon: IconFile, label: "Drive" };
+    return { match: "", icon: IconFile, label: t("Drive") };
   }
   /*
    * Same exact-host rule as Drive: a chip asserts "this is a document in a system you have
    * connected", and notion.so.evil.test is somebody else's domain wearing the name.
    */
   if (url.hostname === "notion.so" || url.hostname === "www.notion.so") {
-    return { match: "", icon: IconFileText, label: "Notion" };
+    return { match: "", icon: IconFileText, label: t("Notion") };
   }
   return null;
 }

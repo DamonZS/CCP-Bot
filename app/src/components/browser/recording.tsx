@@ -26,6 +26,7 @@ import {
 import { cn } from "@/lib/utils";
 import { queryClient } from "@/query-client";
 import type { NarrationChoice } from "./narration-choice";
+import { t } from "@/lib/i18n";
 
 /** The language narration is heard in: the person's own browser's. */
 export function narrationLanguage(): string {
@@ -375,7 +376,7 @@ export function RecordingRow({
             disabled={recording.stopping || recording.phase !== "recording"}
             onClick={() => void recording.stop()}
           >
-            Stop
+            {t("Stop")}
           </Button>
         </ItemActions>
       </Item>
@@ -386,7 +387,7 @@ export function RecordingRow({
       size="sm"
       render={
         <form
-          aria-label="Record a task"
+          aria-label={t("Record a task")}
           onSubmit={(event) => {
             event.preventDefault();
             void recording.record();
@@ -399,7 +400,7 @@ export function RecordingRow({
       </ItemMedia>
       <ItemContent>
         <Input
-          aria-label="Task name"
+          aria-label={t("Task name")}
           maxLength={200}
           onChange={(event) => recording.setTitle(event.target.value)}
           placeholder={placeholder}
@@ -412,7 +413,7 @@ export function RecordingRow({
       <ItemActions>
         {/* Base UI's Button defaults to type="button", which never submits the form. */}
         <Button disabled={!recording.canRecord} size="sm" type="submit">
-          {recording.starting ? "Starting…" : "Record"}
+          {recording.starting ? t("Starting…") : t("Record")}
         </Button>
       </ItemActions>
     </Item>
@@ -451,14 +452,14 @@ export function RecordingBar({
           disabled={recording.stopping || recording.phase !== "recording"}
           onClick={() => void recording.stop()}
         >
-          Stop
+          {t("Stop")}
         </Button>
       </div>
     );
   }
   return (
     <form
-      aria-label="Record a task"
+      aria-label={t("Record a task")}
       className="flex min-w-0 items-center gap-2"
       onSubmit={(event) => {
         event.preventDefault();
@@ -466,18 +467,18 @@ export function RecordingBar({
       }}
     >
       <Input
-        aria-label="Task name"
+        aria-label={t("Task name")}
         className="h-7 w-64 min-w-0"
         maxLength={200}
         onChange={(event) => recording.setTitle(event.target.value)}
-        placeholder="Name the task to record"
+        placeholder={t("Name the task to record")}
         title={recording.waiting ?? undefined}
         value={recording.title}
       />
       {children}
       <Button disabled={!recording.canRecord} size="sm" type="submit">
         <IconPlayerRecordFilled data-icon="inline-start" />
-        {recording.starting ? "Starting…" : "Record"}
+        {recording.starting ? t("Starting…") : t("Record")}
       </Button>
     </form>
   );

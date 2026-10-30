@@ -40,6 +40,7 @@ import {
 import { relativeTime } from "@/lib/relative-time";
 import { cn } from "@/lib/utils";
 import { queryClient } from "@/query-client";
+import { t } from "@/lib/i18n";
 
 const ICONS: Record<ActivityKind, typeof IconBell> = {
   routine: IconCalendarRepeat,
@@ -100,7 +101,7 @@ function ActivityRow({
       size="sm"
       variant="outline"
     >
-      {stop.isPending ? "Stopping…" : "Stop"}
+      {stop.isPending ? t("Stopping…") : t("Stop")}
     </Button>
   ) : item.cancellable ? (
     <Button
@@ -109,7 +110,7 @@ function ActivityRow({
       size="sm"
       variant="outline"
     >
-      {cancel.isPending ? "Cancelling…" : "Cancel"}
+      {cancel.isPending ? t("Cancelling…") : t("Cancel")}
     </Button>
   ) : null;
   const content = (
@@ -129,7 +130,7 @@ function ActivityRow({
       <ItemContent>
         <ItemTitle>{item.title}</ItemTitle>
         <ItemDescription>
-          {KIND_LABEL[item.kind]} · {item.needsYou ? "needs you" : item.status}
+          {KIND_LABEL[item.kind]} · {item.needsYou ? t("needs you") : item.status}
           {when ? ` · ${when}` : ""}
           {item.detail ? ` · ${item.detail}` : ""}
         </ItemDescription>
@@ -147,7 +148,7 @@ function ActivityRow({
         <ItemActions>
           {link ? (
             <Button render={link} size="sm" variant="ghost">
-              Open
+              {t("Open")}
             </Button>
           ) : null}
           {control}
@@ -214,7 +215,7 @@ export function BotActivityGlance({ agentId }: { agentId: string }) {
       ].slice(0, GLANCE)
     : [];
   return (
-    <PageSection title="Activity">
+    <PageSection title={t("Activity")}>
       <PageRows>
         {upcoming.map(({ item, live }) => (
           <Fragment key={item.id}>
@@ -232,11 +233,11 @@ export function BotActivityGlance({ agentId }: { agentId: string }) {
             </ItemMedia>
           )}
           <ItemContent>
-            <ItemTitle>All activity</ItemTitle>
+            <ItemTitle>{t("All activity")}</ItemTitle>
             <ItemDescription>
               {activity.data
                 ? activitySummary(activity.data)
-                : "Couldn't load this Bot's activity."}
+                : t("Couldn't load this Bot's activity.")}
             </ItemDescription>
           </ItemContent>
           <ItemActions>
@@ -271,9 +272,9 @@ export function BotActivitySections({ agentId }: { agentId: string }) {
   if (activity.isPending) return null;
   if (activity.error)
     return (
-      <PageSection title="Activity">
+      <PageSection title={t("Activity")}>
         <p className="mt-4 text-destructive text-sm" role="alert">
-          Couldn't load this Bot's activity. Reload the page.
+          {t("Couldn't load this Bot's activity. Reload the page.")}
         </p>
       </PageSection>
     );
@@ -284,19 +285,19 @@ export function BotActivitySections({ agentId }: { agentId: string }) {
         empty="Nothing is running or waiting on you."
         items={activity.data.inProgress}
         live
-        title="In progress"
+        title={t("In progress")}
       />
       <ActivitySection
         agentId={agentId}
         empty="Nothing is scheduled."
         items={activity.data.scheduled}
-        title="Scheduled"
+        title={t("Scheduled")}
       />
       <ActivitySection
         agentId={agentId}
         empty="Nothing has finished yet."
         items={activity.data.completed}
-        title="Completed"
+        title={t("Completed")}
       />
     </>
   );

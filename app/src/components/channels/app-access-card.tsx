@@ -11,6 +11,7 @@ import { type AppAccess, botAppQueryOptions } from "@/lib/app-access/queries";
 import { useDeclaredBotId } from "@/lib/copilot/active-bot";
 import { type CardPlace, useCarryOn } from "@/lib/copilot/carry-on";
 import { ConnectAppCard } from "./connect-app-card";
+import { t } from "@/lib/i18n";
 
 /**
  * A work app a Bot could not use, in front of the person, with the one thing that would let it.
@@ -123,7 +124,7 @@ function LiveAppAccessCard({
             </p>
           ) : (
             <p className="text-muted-foreground text-sm" role="alert">
-              {name}'s status couldn't be loaded. Try again in a moment.
+              {name}{t("'s status couldn't be loaded. Try again in a moment.")}
             </p>
           )}
         </div>
@@ -135,7 +136,7 @@ function LiveAppAccessCard({
       ) : offer ? (
         <div className="flex justify-end">
           <Button onClick={offer} size="sm">
-            Continue
+            {t("Continue")}
           </Button>
         </div>
       ) : null}

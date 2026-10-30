@@ -33,6 +33,7 @@ import {
   useRecording,
 } from "./recording";
 import { useNarration } from "./use-narration";
+import { t } from "@/lib/i18n";
 
 /** The shape of the computer's browser viewport, kept for the screen before its first frame says otherwise. */
 const SCREEN_ASPECT_RATIO = 1280 / 800;
@@ -97,7 +98,7 @@ export function ScreenBrowser({
             aria-hidden="true"
             className="size-4.5 shrink-0 text-muted-foreground"
           />
-          <h1 className="truncate text-sm tracking-tight">Browser</h1>
+          <h1 className="truncate text-sm tracking-tight">{t("Browser")}</h1>
         </div>
         <RecordingBar recording={recording}>
           <NarrationSwitch
@@ -226,7 +227,7 @@ function Screen({
             <LiveScreen
               computerId={computerId}
               driving
-              label="Your browser. Click it to type into it, and press Escape to leave it."
+              label={t("Your browser. Click it to type into it, and press Escape to leave it.")}
               onProblem={setProblem}
               ref={screen}
               retryKey={retryKey}
@@ -242,9 +243,9 @@ function Screen({
             </div>
           ) : !open ? (
             <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 p-4 text-center text-muted-foreground text-sm">
-              <span>Your browser is closed.</span>
+              <span>{t("Your browser is closed.")}</span>
               <Button disabled={reopening} onClick={reopen} size="sm">
-                {reopening ? "Opening…" : "Open it again"}
+                {reopening ? t("Opening…") : t("Open it again")}
               </Button>
             </div>
           ) : problem ? (
@@ -258,7 +259,7 @@ function Screen({
                 size="sm"
                 variant="outline"
               >
-                Try again
+                {t("Try again")}
               </Button>
             </div>
           ) : null}

@@ -24,6 +24,7 @@ import { appConfig } from "@/lib/generated/application-config";
 import { completeOnboardingMutationOptions } from "@/lib/onboarding/mutations";
 import { cn } from "@/lib/utils";
 import { queryClient } from "@/query-client";
+import { t } from "@/lib/i18n";
 
 export const Route = createFileRoute("/_authed/onboarding")({
   beforeLoad: async ({ context }) => {
@@ -42,12 +43,12 @@ function WelcomeStep() {
   return (
     <div className="w-full flex flex-col items-center justify-center">
       <h1 className="text-3xl font-semibold tracking-tight max-w-md text-center">
-        Welcome to {appConfig.brand.productName}
+        {t("Welcome to")} {appConfig.brand.productName}
       </h1>
       <div className="h-8" />
       <IllustrationFrame
         className="flex flex-col items-center px-8 pt-16 pb-10"
-        label="A message box where you hand off tasks to your Bots"
+        label={t("A message box where you hand off tasks to your Bots")}
       >
         <AgentOrb size="72px" />
         {/*
@@ -83,7 +84,7 @@ function ComputerUseStep() {
   return (
     <div className="w-full flex flex-col items-center justify-center">
       <h1 className="text-3xl font-semibold tracking-tight max-w-md text-center">
-        Each Bot has its own browser and files
+        {t("Each Bot has its own browser and files")}
       </h1>
       <div className="h-8" />
       <div className="relative aspect-5/3 w-full max-w-lg rounded-2xl overflow-hidden border border-border">
@@ -132,7 +133,7 @@ function RosterStep() {
   return (
     <div className="w-full flex flex-col items-center justify-center">
       <h1 className="text-3xl font-semibold tracking-tight max-w-md text-center">
-        Pick a Bot or make your own
+        {t("Pick a Bot or make your own")}
       </h1>
       <div className="h-8" />
       <IllustrationFrame
@@ -152,7 +153,7 @@ function RosterStep() {
                   {a.name}
                 </h3>
                 {a.example ? (
-                  <span className="text-xs text-muted-foreground">Example</span>
+                  <span className="text-xs text-muted-foreground">{t("Example")}</span>
                 ) : null}
               </div>
             </div>
@@ -161,7 +162,7 @@ function RosterStep() {
         <div className="bg-card p-4 rounded-lg flex flex-row gap-4 items-center">
           <div className="rounded-full size-[40px] border border-foreground/30 border-dashed" />
           <h3 className="line-clamp-1 text-base font-medium tracking-tight text-foreground/70">
-            Your own Bot
+            {t("Your own Bot")}
           </h3>
         </div>
       </IllustrationFrame>
@@ -180,7 +181,7 @@ function LocalStep() {
   return (
     <div className="w-full flex flex-col items-center justify-center">
       <h1 className="text-3xl font-semibold tracking-tight max-w-md text-center">
-        It runs on your machine
+        {t("It runs on your machine")}
       </h1>
       {/*
        * "Stored", and the model named, because "your data never leaves" would be untrue: every turn
@@ -188,8 +189,7 @@ function LocalStep() {
        * word about sign-in either: activating a local install signs you in to CopilotKit.
        */}
       <p className="mt-3 max-w-md text-center text-muted-foreground">
-        Your conversations, files and Bots are stored on this computer. Only
-        what you send to your model leaves it.
+        {t("Your conversations, files and Bots are stored on this computer. Only what you send to your model leaves it.")}
       </p>
       <div className="h-8" />
       <IllustrationFrame
@@ -209,10 +209,10 @@ function AgentsStep() {
   return (
     <div className="w-full flex flex-col items-center justify-center">
       <h1 className="text-3xl font-semibold tracking-tight max-w-md text-center">
-        Bring the agents you already have
+        {t("Bring the agents you already have")}
       </h1>
       <p className="mt-3 max-w-md text-center text-muted-foreground">
-        Any AG-UI agent can join as a Bot. Add one from Bots, then New Bot.
+        {t("Any AG-UI agent can join as a Bot. Add one from Bots, then New Bot.")}
       </p>
       <div className="h-8" />
       <IllustrationFrame
@@ -237,16 +237,15 @@ function OrganizationStep() {
   return (
     <div className="w-full flex flex-col items-center justify-center">
       <h1 className="text-3xl font-semibold tracking-tight max-w-md text-center">
-        Deploy it for your organization
+        {t("Deploy it for your organization")}
       </h1>
       <p className="mt-3 max-w-md text-center text-muted-foreground">
-        Run one container image, or a Helm chart for EKS, GKE or AKS. Your
-        people sign in with Google, Microsoft or Okta.
+        {t("Run one container image, or a Helm chart for EKS, GKE or AKS. Your people sign in with Google, Microsoft or Okta.")}
       </p>
       <div className="h-8" />
       <IllustrationFrame
         className="flex justify-center px-6 py-8"
-        label="Your people sign in with Google, Microsoft or Okta, and your organization gets its own rules, its own Bots and an audit trail"
+        label={t("Your people sign in with Google, Microsoft or Okta, and your organization gets its own rules, its own Bots and an audit trail")}
       >
         <OrganizationFlow />
       </IllustrationFrame>
@@ -260,7 +259,7 @@ function OrganizationStep() {
         rel="noopener noreferrer"
         target="_blank"
       >
-        Talk to an engineer
+        {t("Talk to an engineer")}
       </a>
     </div>
   );
@@ -270,27 +269,27 @@ function Introduction({ localEvaluation }: { localEvaluation: boolean }) {
   return (
     <IntroAnimation
       scenes={[
-        { id: "welcome", label: "Welcome", content: <WelcomeStep /> },
+        { id: "welcome", label: t("Welcome"), content: <WelcomeStep /> },
         {
           id: "computer",
-          label: "Each Bot has its own browser and files",
+          label: t("Each Bot has its own browser and files"),
           content: <ComputerUseStep />,
         },
         {
           id: "roster",
-          label: "Pick a Bot or make your own",
+          label: t("Pick a Bot or make your own"),
           content: <RosterStep />,
         },
         ...(localEvaluation
           ? [
               {
                 id: "local",
-                label: "It runs on your machine",
+                label: t("It runs on your machine"),
                 content: <LocalStep />,
               },
               {
                 id: "agents",
-                label: "Bring the agents you already have",
+                label: t("Bring the agents you already have"),
                 content: <AgentsStep />,
               },
             ]
@@ -399,14 +398,14 @@ function RouteComponent() {
               {capabilitiesError && !capabilities ? (
                 <div className="mt-4 text-center">
                   <p className="text-sm text-destructive" role="alert">
-                    We couldn't load your setup. Try again to continue.
+                    {t("We couldn't load your setup. Try again to continue.")}
                   </p>
                   <Button
                     variant="ghost"
                     disabled={loadingCapabilities}
                     onClick={() => retryCapabilities()}
                   >
-                    Try again
+                    {t("Try again")}
                   </Button>
                 </div>
               ) : null}
@@ -435,7 +434,7 @@ function RouteComponent() {
                     }
                     size="lg"
                   >
-                    Continue
+                    {t("Continue")}
                   </Button>
                 )}
                 {step !== "intro" && (
@@ -453,7 +452,7 @@ function RouteComponent() {
                     variant="secondary"
                     size="lg"
                   >
-                    Back
+                    {t("Back")}
                   </Button>
                 )}
               </motion.div>

@@ -40,6 +40,7 @@ import {
   pluginsPageQueryOptions,
   pluginsProvider,
 } from "@/lib/plugins/queries";
+import { t } from "@/lib/i18n";
 
 /**
  * What this deployment can reach, as one list per state.
@@ -95,8 +96,8 @@ function summaryFor(
   auth: CatalogueItem["auth"] | undefined,
   youConnected: boolean,
 ): string {
-  if (auth === "user-oauth" && !youConnected) return "Not connected";
-  if (server.tools.length === 0) return "No tools yet";
+  if (auth === "user-oauth" && !youConnected) return t("Not connected");
+  if (server.tools.length === 0) return t("No tools yet");
 
   const bots = new Set(server.tools.flatMap((tool) => tool.grantedTo)).size;
   const tools = `${server.tools.length} ${server.tools.length === 1 ? "tool" : "tools"}`;
@@ -140,13 +141,13 @@ function RouteComponent() {
 
   return (
     <PageShell
-      description="Connect services for your company, then choose which Bots can use each service’s tools."
-      title="Plugins"
+      description={t("Connect services for your company, then choose which Bots can use each service’s tools.")}
+      title={t("Plugins")}
     >
       {/* Pending, error, empty, rows — pending first, so no sentence asserts anything mid-fetch. */}
       {plugins.isPending ? null : plugins.error ? (
         <p className="mt-12 text-destructive text-sm" role="alert">
-          Couldn't load plugins. Reload the page.
+          {t("Couldn't load plugins. Reload the page.")}
         </p>
       ) : (
         <>
@@ -157,12 +158,12 @@ function RouteComponent() {
           <AccessRequestsSection />
 
           <PageSection
-            description="Added for everybody. Open one to set it up and choose which Bots get its tools."
-            title="Connected"
+            description={t("Added for everybody. Open one to set it up and choose which Bots get its tools.")}
+            title={t("Connected")}
           >
             {plugins.data?.servers.length === 0 ? (
-              <PageEmpty icon={IconPlug} title="Nothing connected yet">
-                Pick one from the list below.
+              <PageEmpty icon={IconPlug} title={t("Nothing connected yet")}>
+                {t("Pick one from the list below.")}
               </PageEmpty>
             ) : (
               <PageRows>
@@ -228,12 +229,12 @@ function RouteComponent() {
           </PageSection>
 
           <PageSection
-            description="Reviewed, first-party servers. Open one to add it."
-            title="Explore plugins"
+            description={t("Reviewed, first-party servers. Open one to add it.")}
+            title={t("Explore plugins")}
           >
             {explore.length === 0 ? (
-              <PageEmpty icon={IconCircleCheck} title="All connected">
-                Every plugin in the catalogue is connected.
+              <PageEmpty icon={IconCircleCheck} title={t("All connected")}>
+                {t("Every plugin in the catalogue is connected.")}
               </PageEmpty>
             ) : (
               <PageRows>
@@ -263,7 +264,7 @@ function RouteComponent() {
                             count={requestCounts?.byApp[entry.key] ?? 0}
                           />
                           <span className="text-muted-foreground text-xs">
-                            Not added
+                            {t("Not added")}
                           </span>
                           <IconChevronRight className="size-4 shrink-0 text-muted-foreground" />
                         </ItemActions>
@@ -278,7 +279,7 @@ function RouteComponent() {
 
           <PageSection
             description={moreAppsSectionDescription(provider)}
-            title="More apps"
+            title={t("More apps")}
           >
             <PageRows>
               {/*
@@ -341,7 +342,7 @@ function PendingRequests({ count }: { count: number }) {
   if (count === 0) return null;
   return (
     <span className="font-medium text-foreground text-xs tabular-nums">
-      {count} {count === 1 ? "request" : "requests"}
+      {count} {count === 1 ? t("request") : t("requests")}
     </span>
   );
 }

@@ -13,6 +13,7 @@ import {
 import { type AppAccess, appAccessKeys } from "@/lib/app-access/queries";
 import { currentUserQueryOptions } from "@/lib/auth/queries";
 import { queryClient } from "@/query-client";
+import { t } from "@/lib/i18n";
 
 /**
  * One work app's state for the person looking, and the one thing they can do about it.
@@ -294,7 +295,7 @@ function OwnerGiveAction({
         size="sm"
         variant="outline"
       >
-        Connect
+        {t("Connect")}
       </Button>
     );
 
@@ -308,20 +309,20 @@ function OwnerGiveAction({
       ) : null}
       {tab.blockedUrl ? (
         <p className="text-xs" role="status">
-          This browser blocked the tab.{" "}
+          {t("This browser blocked the tab.")}{" "}
           <a
             className="underline underline-offset-2"
             href={tab.blockedUrl}
             rel="noreferrer"
             target="_blank"
           >
-            Open {name}'s sign-in
+            {t("Open")} {name}{t("'s sign-in")}
           </a>
           .
         </p>
       ) : waiting ? (
         <p className="text-muted-foreground text-xs" role="status">
-          Finish in the tab that opened.
+          {t("Finish in the tab that opened.")}
         </p>
       ) : null}
       <Button
@@ -344,7 +345,7 @@ function OwnerGiveAction({
         size="sm"
       >
         {give.isPending
-          ? "Allowing…"
+          ? t("Allowing…")
           : waiting
             ? `Waiting for ${name}…`
             : access.needsConnect
@@ -415,20 +416,20 @@ function ConnectAction({ access }: { access: AppAccess }) {
       ) : null}
       {tab.blockedUrl ? (
         <p className="text-xs" role="status">
-          This browser blocked the tab.{" "}
+          {t("This browser blocked the tab.")}{" "}
           <a
             className="underline underline-offset-2"
             href={tab.blockedUrl}
             rel="noreferrer"
             target="_blank"
           >
-            Open {access.displayName}'s sign-in
+            {t("Open")} {access.displayName}{t("'s sign-in")}
           </a>
           .
         </p>
       ) : waiting ? (
         <p className="text-muted-foreground text-xs" role="status">
-          Finish in the tab that opened.
+          {t("Finish in the tab that opened.")}
         </p>
       ) : null}
       <Button
@@ -502,7 +503,7 @@ function RequestAction({
       {access.request ? (
         <>
           <span className="text-muted-foreground text-xs" role="status">
-            Requested
+            {t("Requested")}
           </span>
           <Button
             aria-label={
@@ -520,7 +521,7 @@ function RequestAction({
             size="sm"
             variant="ghost"
           >
-            {cancel.isPending ? "Withdrawing…" : "Withdraw"}
+            {cancel.isPending ? t("Withdrawing…") : t("Withdraw")}
           </Button>
         </>
       ) : (
@@ -540,7 +541,7 @@ function RequestAction({
           size="sm"
           variant="outline"
         >
-          {request.isPending ? "Requesting…" : "Request access"}
+          {request.isPending ? t("Requesting…") : t("Request access")}
         </Button>
       )}
     </div>

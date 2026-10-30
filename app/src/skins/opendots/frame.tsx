@@ -49,6 +49,7 @@ import { ComputerPane } from "./computer-pane";
 import { CoworkerPersona } from "./persona";
 import { botName, type Place, usePlace } from "./place";
 import { IconAction, initialsOf, OpenDotsSidebar } from "./sidebar";
+import { t } from "@/lib/i18n";
 
 /** The rail's square buttons: 36px, borderless, a grey glyph that darkens on hover. */
 const railButton =
@@ -80,7 +81,7 @@ function RailUserMenu() {
       <DropdownMenuTrigger
         render={
           <button
-            aria-label="Account"
+            aria-label={t("Account")}
             className="grid size-[29px] place-items-center rounded-full border border-(--opendots-avatar-line) bg-(--opendots-avatar) text-[10px] text-(--opendots-avatar-ink) outline-none focus-visible:ring-2 focus-visible:ring-ring"
             type="button"
           />
@@ -105,7 +106,7 @@ function RailUserMenu() {
           variant="destructive"
         >
           <IconLogout />
-          Sign out
+          {t("Sign out")}
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
@@ -157,7 +158,7 @@ function Rail({
   const navigation = useNavigationItems();
   return (
     <nav
-      aria-label="Workspace navigation"
+      aria-label={t("Workspace navigation")}
       data-opendots-chrome
       className="flex w-12 shrink-0 flex-col items-center gap-3 border-r border-(--opendots-line) bg-(--opendots-rail) px-[5px] py-4 max-md:hidden"
     >
@@ -169,11 +170,11 @@ function Rail({
       >
         <AgentOrb size="26px" />
       </Link>
-      <RailTip label={navCollapsed ? "Expand sidebar" : "Collapse sidebar"}>
+      <RailTip label={navCollapsed ? t("Expand sidebar") : t("Collapse sidebar")}>
         <button
           aria-controls="opendots-sidebar"
           aria-expanded={!navCollapsed}
-          aria-label={navCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+          aria-label={navCollapsed ? t("Expand sidebar") : t("Collapse sidebar")}
           className={railButton}
           onClick={onToggleNav}
           type="button"
@@ -181,14 +182,14 @@ function Rail({
           <IconLayoutSidebar />
         </button>
       </RailTip>
-      <RailTip label="New chat">
-        <Link {...newChat} aria-label="New chat" className={railButton}>
+      <RailTip label={t("New chat")}>
+        <Link {...newChat} aria-label={t("New chat")} className={railButton}>
           <IconPlus className="size-[19px]!" />
         </Link>
       </RailTip>
-      <RailTip label="Routines">
+      <RailTip label={t("Routines")}>
         <Link
-          aria-label="Routines"
+          aria-label={t("Routines")}
           className={railButton}
           params={{ screen: "routines" }}
           to="/s/$screen"
@@ -237,7 +238,7 @@ function PauseControl({ botId, name }: { botId: string; name: string }) {
       type="button"
     >
       {paused ? <IconPlayerPlay /> : <IconPlayerPause />}
-      <span className="max-md:hidden">{paused ? "Resume" : "Pause"}</span>
+      <span className="max-md:hidden">{paused ? t("Resume") : t("Pause")}</span>
     </button>
   );
 }
@@ -265,7 +266,7 @@ function Topbar({
       <button
         aria-controls="opendots-sidebar"
         aria-expanded={!navCollapsed}
-        aria-label={navCollapsed ? "Show navigation" : "Hide navigation"}
+        aria-label={navCollapsed ? t("Show navigation") : t("Hide navigation")}
         className="grid size-10 shrink-0 place-items-center rounded-lg text-(--opendots-toggle-ink) outline-none transition-colors hover:bg-(--opendots-hover) focus-visible:ring-2 focus-visible:ring-ring max-md:hidden [&_svg]:size-[18px]"
         onClick={onToggleNav}
         type="button"
@@ -273,10 +274,10 @@ function Topbar({
         <IconLayoutSidebar />
       </button>
       <nav
-        aria-label="Breadcrumb"
+        aria-label={t("Breadcrumb")}
         className="flex min-w-0 flex-1 items-center gap-[13px] text-[13px] text-(--opendots-crumb) max-md:gap-[7px]"
       >
-        <span className="shrink-0 max-md:hidden">Bots</span>
+        <span className="shrink-0 max-md:hidden">{t("Bots")}</span>
         <span aria-hidden className="shrink-0 max-md:hidden">
           /
         </span>
@@ -307,7 +308,7 @@ function Topbar({
             "size-8 [&_svg:not([class*='size-'])]:size-[18px]",
             computerOpen && "bg-(--opendots-tab) text-foreground",
           )}
-          label={computerOpen ? "Hide computer" : "Show computer"}
+          label={computerOpen ? t("Hide computer") : t("Show computer")}
           onClick={onToggleComputer}
         >
           <IconDeviceDesktop />
@@ -383,7 +384,7 @@ export function OpenDotsFrame({ children }: { children: ReactNode }) {
         <>
           <button
             aria-expanded={mobileOpen}
-            aria-label="Open navigation"
+            aria-label={t("Open navigation")}
             className="fixed top-3.5 left-2.5 z-20 grid size-9 place-items-center rounded-lg text-(--opendots-menu-ink) outline-none focus-visible:ring-2 focus-visible:ring-ring [&_svg]:size-[21px]"
             data-opendots-chrome
             onClick={() => setMobileOpen(true)}
@@ -403,7 +404,7 @@ export function OpenDotsFrame({ children }: { children: ReactNode }) {
               showCloseButton={false}
               side="left"
             >
-              <SheetTitle className="sr-only">Navigation</SheetTitle>
+              <SheetTitle className="sr-only">{t("Navigation")}</SheetTitle>
               <OpenDotsSidebar
                 newChat={newChat}
                 onNavigate={() => setMobileOpen(false)}
@@ -414,7 +415,7 @@ export function OpenDotsFrame({ children }: { children: ReactNode }) {
         </>
       ) : (
         <aside
-          aria-label="Sidebar"
+          aria-label={t("Sidebar")}
           className="w-[220px] shrink-0 border-r border-(--opendots-line) bg-(--opendots-sidebar)"
           data-opendots-chrome
           hidden={navCollapsed}

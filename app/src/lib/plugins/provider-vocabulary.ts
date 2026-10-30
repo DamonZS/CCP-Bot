@@ -1,4 +1,5 @@
 import { type PluginsPage, pluginsProvider } from "./queries";
+import { t } from "@/lib/i18n";
 
 /**
  * The words an admin Plugins screen uses for the ACTIVE broker, and nothing of the other's (spec D11).
@@ -48,7 +49,7 @@ export type ProviderVocabulary = {
 const VOCABULARY: Record<PluginsProvider, ProviderVocabulary> = {
   composio: {
     name: "Composio",
-    directoryLabel: "Browse Composio",
+    directoryLabel: t("Browse Composio"),
     envVar: "COMPOSIO_API_KEY",
     directoryPath: "/admin/plugins/composio",
     directoryDescription:
@@ -56,7 +57,7 @@ const VOCABULARY: Record<PluginsProvider, ProviderVocabulary> = {
   },
   arcade: {
     name: "Arcade",
-    directoryLabel: "Browse Arcade",
+    directoryLabel: t("Browse Arcade"),
     envVar: "ARCADE_API_KEY",
     directoryPath: "/admin/plugins/arcade",
     directoryDescription:

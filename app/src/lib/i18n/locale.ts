@@ -1,3 +1,4 @@
+import { t } from "@/lib/i18n";
 /**
  * The interface language, remembered across reloads.
  *
@@ -15,7 +16,7 @@ export const LOCALE_STORAGE_KEY = "ccpbot-locale";
 /** The languages this build ships. `en` is the source language and needs no dictionary. */
 export const LOCALES: { value: Locale; label: string }[] = [
   { value: "zh-CN", label: "简体中文" },
-  { value: "en", label: "English" },
+  { value: "en", label: t("English") },
 ];
 
 export const DEFAULT_LOCALE: Locale = "zh-CN";

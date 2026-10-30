@@ -5,6 +5,7 @@ import { WaitingForYou } from "@/components/approvals/waiting";
 import { approvalInboxOptions } from "@/lib/approvals";
 import { waitingOnYou } from "./model";
 import { LinkRow, MuseEmpty, MuseSheet } from "./ui";
+import { t } from "@/lib/i18n";
 
 /**
  * The bell: what every Bot is waiting on the person for. The list is OpenBot's own `WaitingForYou`,
@@ -18,14 +19,14 @@ export function NotificationsSheet({ onClose }: { onClose: () => void }) {
     <MuseSheet
       onClose={onClose}
       subtitle="Approvals and questions your Bots are waiting on."
-      title="Needs you"
+      title={t("Needs you")}
     >
       <div className="flex flex-col gap-3.5">
         {nothing ? (
           <MuseEmpty
             detail="When a Bot needs your OK or an answer, it shows up here."
             icon={IconBell}
-            title="You're all caught up"
+            title={t("You're all caught up")}
           />
         ) : (
           <WaitingForYou />
@@ -35,7 +36,7 @@ export function NotificationsSheet({ onClose }: { onClose: () => void }) {
           icon={IconHandStop}
           render={<Link onClick={onClose} to="/settings/approvals" />}
           tint="lavender"
-          title="Approval rules"
+          title={t("Approval rules")}
         />
       </div>
     </MuseSheet>

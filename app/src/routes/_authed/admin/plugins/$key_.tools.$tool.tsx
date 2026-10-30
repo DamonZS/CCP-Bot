@@ -21,6 +21,7 @@ import { grantRoster } from "@/lib/agents/grant-roster";
 import { agentListQueryOptions } from "@/lib/agents/queries";
 import { setPluginGrantMutationOptions } from "@/lib/plugins/mutations";
 import { pluginsPageQueryOptions } from "@/lib/plugins/queries";
+import { t } from "@/lib/i18n";
 
 /**
  * One tool, and which Bots hold it.
@@ -81,7 +82,7 @@ function RouteComponent() {
 
   /* Nothing rather than a placeholder, so no sentence asserts anything while the fetch is open. */
   if (plugins.isPending) {
-    return <PageShell title="Tool">{null}</PageShell>;
+    return <PageShell title={t("Tool")}>{null}</PageShell>;
   }
 
   /*
@@ -94,7 +95,7 @@ function RouteComponent() {
     return (
       <PageShell backButton={back} title={toolName}>
         <p className="mt-12 text-destructive text-sm" role="alert">
-          Couldn't load plugins. Reload the page.
+          {t("Couldn't load plugins. Reload the page.")}
         </p>
       </PageShell>
     );
@@ -104,7 +105,7 @@ function RouteComponent() {
     return (
       <PageShell
         backButton={back}
-        description="This connector has no tool with that name."
+        description={t("This connector has no tool with that name.")}
         title={toolName}
       >
         {/*
@@ -113,11 +114,11 @@ function RouteComponent() {
          */}
         <PageEmpty
           icon={server ? IconTool : IconPlugOff}
-          title={server ? "Tool not found" : "This connector is off"}
+          title={server ? t("Tool not found") : t("This connector is off")}
         >
           {server
-            ? "It may have been removed since the tool list was last refreshed."
-            : "Turn it on to see its tools."}
+            ? t("It may have been removed since the tool list was last refreshed.")
+            : t("Turn it on to see its tools.")}
         </PageEmpty>
       </PageShell>
     );
@@ -153,10 +154,10 @@ function RouteComponent() {
       <PageSection
         description={
           tool.effect === "write"
-            ? "This tool changes something at the vendor. Boundaries about writes apply to it."
-            : "This tool only reads. Boundaries about writes don't apply to it."
+            ? t("This tool changes something at the vendor. Boundaries about writes apply to it.")
+            : t("This tool only reads. Boundaries about writes don't apply to it.")
         }
-        title="What it does"
+        title={t("What it does")}
       >
         <PageRows>
           {/*
@@ -166,10 +167,9 @@ function RouteComponent() {
            */}
           <Item size="sm">
             <ItemContent>
-              <ItemTitle>Effect</ItemTitle>
+              <ItemTitle>{t("Effect")}</ItemTitle>
               <ItemDescription>
-                Set by the connector, not the tool's name. Anything unknown
-                counts as a write.
+                {t("Set by the connector, not the tool's name. Anything unknown counts as a write.")}
               </ItemDescription>
             </ItemContent>
             <ItemActions>
@@ -180,7 +180,7 @@ function RouteComponent() {
                     : "text-muted-foreground text-xs"
                 }
               >
-                {tool.effect === "write" ? "changes things" : "reads"}
+                {tool.effect === "write" ? t("changes things") : t("reads")}
               </span>
             </ItemActions>
           </Item>
@@ -188,12 +188,12 @@ function RouteComponent() {
       </PageSection>
 
       <PageSection
-        description="A Bot can call this tool only while its switch is on. Turning it off applies from the next call."
-        title="Bots"
+        description={t("A Bot can call this tool only while its switch is on. Turning it off applies from the next call.")}
+        title={t("Bots")}
       >
         {bots.length === 0 ? (
-          <PageEmpty icon={IconRobot} title="No Bots yet">
-            Create one to give it this tool.
+          <PageEmpty icon={IconRobot} title={t("No Bots yet")}>
+            {t("Create one to give it this tool.")}
           </PageEmpty>
         ) : (
           <PageRows>
@@ -205,12 +205,12 @@ function RouteComponent() {
                     <ItemContent>
                       <ItemTitle>{bot.name}</ItemTitle>
                       <ItemDescription>
-                        {bot.hidden ? "Hidden from your roster. " : ""}
+                        {bot.hidden ? t("Hidden from your roster. ") : ""}
                         {held
                           ? canCallBack(bot)
                             ? "Can call this tool. Every call is still checked against boundaries and logged in Audit."
                             : "Allowed, but this Bot has no callback token. Every call is refused. Issue one on its page, or set AGENT_TOOL_TOKEN."
-                          : "Can't call this tool. The Bot never sees it."}
+                          : t("Can't call this tool. The Bot never sees it.")}
                       </ItemDescription>
                     </ItemContent>
                     <ItemActions>

@@ -8,6 +8,7 @@ import {
 } from "@tabler/icons-react";
 import { useReducedMotion } from "motion/react";
 import AgentOrb from "@/components/agents/orb/agent-orb";
+import { t } from "@/lib/i18n";
 
 /*
  * Drawn on one fixed grid so the connectors and the pills always meet: the SVG and the pills share
@@ -30,17 +31,17 @@ type Node = {
 /** Who signs in: the identity providers the slide's sentence names. Okta has no glyph, so a key. */
 const SIGN_IN: Node[] = [
   {
-    label: "Google",
+    label: t("Google"),
     icon: IconBrandGoogle,
     tone: "bg-sky-500/15 text-sky-600 dark:text-sky-400",
   },
   {
-    label: "Microsoft",
+    label: t("Microsoft"),
     icon: IconBrandWindows,
     tone: "bg-blue-500/15 text-blue-600 dark:text-blue-400",
   },
   {
-    label: "Okta",
+    label: t("Okta"),
     icon: IconKey,
     tone: "bg-indigo-500/15 text-indigo-600 dark:text-indigo-400",
   },
@@ -49,17 +50,17 @@ const SIGN_IN: Node[] = [
 /** What an organization gets once its people are in. */
 const OUTCOMES: Node[] = [
   {
-    label: "Your rules",
+    label: t("Your rules"),
     icon: IconShieldCheck,
     tone: "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400",
   },
   {
-    label: "Team Bots",
+    label: t("Team Bots"),
     icon: IconRobot,
     tone: "bg-amber-500/15 text-amber-600 dark:text-amber-400",
   },
   {
-    label: "Audit trail",
+    label: t("Audit trail"),
     icon: IconListCheck,
     tone: "bg-violet-500/15 text-violet-600 dark:text-violet-400",
   },

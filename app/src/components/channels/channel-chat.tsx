@@ -58,6 +58,7 @@ import {
 import { useVoiceCall } from "@/lib/voice/use-voice-call";
 import { queryClient } from "@/query-client";
 import { newId } from "../../lib/new-id";
+import { t } from "@/lib/i18n";
 
 /**
  * How long a stalled thread join is worth waiting for before it is ended.
@@ -1080,7 +1081,7 @@ export function ChannelChat({
                 />
                 {voiceArchive.error && (
                   <p className="pb-2 text-sm text-destructive" role="alert">
-                    Couldn’t load voice chats. Reload the page.
+                    {t("Couldn’t load voice chats. Reload the page.")}
                   </p>
                 )}
                 {voiceContextNotice && (
@@ -1104,8 +1105,7 @@ export function ChannelChat({
                     className="pb-2 text-sm text-muted-foreground"
                     role="status"
                   >
-                    This Bot was deleted. You can still read this conversation,
-                    but the Bot can't reply.
+                    {t("This Bot was deleted. You can still read this conversation, but the Bot can't reply.")}
                   </p>
                 )}
               </>

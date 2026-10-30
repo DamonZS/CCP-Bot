@@ -13,6 +13,7 @@ import { setChannelPinnedMutationOptions } from "@/lib/channels/mutations";
 import type { MessageListEmphasis } from "@/lib/settings/message-list";
 import { useTypedReveal } from "@/lib/typed-reveal";
 import { ChannelItemContent } from "./channel-item-content";
+import { t } from "@/lib/i18n";
 
 /**
  * Memoized roster row. `use-channel-events` preserves unchanged row identity, and
@@ -113,14 +114,14 @@ export const Channel = memo(function Channel({
             }}
           >
             {pinned ? <IconPinnedOff /> : <IconPin />}
-            {pinned ? "Unpin conversation" : "Pin conversation"}
+            {pinned ? t("Unpin conversation") : t("Pin conversation")}
           </ContextMenuItem>
           <ContextMenuItem
             variant="destructive"
             onClick={() => setConfirming(true)}
           >
             <IconTrash />
-            Delete conversation…
+            {t("Delete conversation…")}
           </ContextMenuItem>
         </ContextMenuContent>
       </ContextMenu>

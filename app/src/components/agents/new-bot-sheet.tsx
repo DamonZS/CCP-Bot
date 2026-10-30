@@ -62,6 +62,7 @@ import { myCapabilitiesQueryOptions } from "@/lib/enterprise/queries";
 import { pluginKeys } from "@/lib/plugins/queries";
 import { cn } from "@/lib/utils";
 import { queryClient } from "@/query-client";
+import { t } from "@/lib/i18n";
 
 /**
  * Where a new Bot is made: a wide sheet floating in from the right, so the roster it is being added
@@ -314,7 +315,7 @@ function NewBotFlow({ onCreated }: { onCreated: (agentId: string) => void }) {
   if (createdId) {
     return (
       <MotionConfig reducedMotion="user">
-        <SheetTitle className="sr-only">New Bot</SheetTitle>
+        <SheetTitle className="sr-only">{t("New Bot")}</SheetTitle>
         <CreatedView name={name.trim()} />
       </MotionConfig>
     );
@@ -364,7 +365,7 @@ function NewBotFlow({ onCreated }: { onCreated: (agentId: string) => void }) {
               />
             </motion.div>
             <SheetTitle className="text-2xl font-semibold tracking-tight">
-              New Bot
+              {t("New Bot")}
             </SheetTitle>
           </div>
 
@@ -407,8 +408,7 @@ function NewBotFlow({ onCreated }: { onCreated: (agentId: string) => void }) {
                 />
                 {!builtInAvailable && (
                   <p className="mt-3 text-sm text-muted-foreground">
-                    An admin must enable built-in hosting before you can run a
-                    Bot here.
+                    {t("An admin must enable built-in hosting before you can run a Bot here.")}
                   </p>
                 )}
               </>
@@ -451,7 +451,7 @@ function NewBotFlow({ onCreated }: { onCreated: (agentId: string) => void }) {
           <SheetClose
             render={<Button className="px-4" size="lg" variant="ghost" />}
           >
-            Cancel
+            {t("Cancel")}
           </SheetClose>
         ) : (
           <Button
@@ -462,7 +462,7 @@ function NewBotFlow({ onCreated }: { onCreated: (agentId: string) => void }) {
             type="button"
             variant="ghost"
           >
-            Back
+            {t("Back")}
           </Button>
         )}
         <div className="ml-auto flex flex-wrap items-center justify-end gap-2">
@@ -484,7 +484,7 @@ function NewBotFlow({ onCreated }: { onCreated: (agentId: string) => void }) {
               }}
             >
               <IconPlugConnected className="size-4" />
-              Connect a custom agent
+              {t("Connect a custom agent")}
             </Button>
           )}
           {step !== "runtime" && (
@@ -495,7 +495,7 @@ function NewBotFlow({ onCreated }: { onCreated: (agentId: string) => void }) {
               type="submit"
             >
               {checking
-                ? "Checking…"
+                ? t("Checking…")
                 : createAgent.isPending
                   ? "Creating…"
                   : step === "endpoint" || (step === "about" && !custom)
@@ -560,9 +560,9 @@ function CreatedView({ name }: { name: string }) {
         transition={{ delay: 0.3, duration: 0.35, ease: "easeOut" }}
       >
         <h2 className="break-words font-semibold text-xl tracking-tight">
-          {name} is ready
+          {name} {t("is ready")}
         </h2>
-        <p className="mt-1 text-muted-foreground text-sm">Taking you to it…</p>
+        <p className="mt-1 text-muted-foreground text-sm">{t("Taking you to it…")}</p>
       </motion.div>
     </div>
   );
@@ -579,14 +579,14 @@ const VISIBILITY_OPTIONS: Array<{
 }> = [
   {
     value: "private",
-    title: "Private",
-    description: "Only you can see it and talk to it.",
+    title: t("Private"),
+    description: t("Only you can see it and talk to it."),
     icon: IconLock,
   },
   {
     value: "public",
-    title: "Public",
-    description: "Everyone in your company can find and use it.",
+    title: t("Public"),
+    description: t("Everyone in your company can find and use it."),
     icon: IconUsers,
   },
 ];
@@ -625,7 +625,7 @@ function AboutStep({
   return (
     <FieldGroup>
       <Field>
-        <FieldLabel htmlFor="new-bot-name">Name</FieldLabel>
+        <FieldLabel htmlFor="new-bot-name">{t("Name")}</FieldLabel>
         <Input
           autoComplete="off"
           autoFocus
@@ -634,7 +634,7 @@ function AboutStep({
           aria-describedby={nameError ? "new-bot-name-error" : undefined}
           maxLength={80}
           onChange={(event) => onName(event.target.value)}
-          placeholder="Expense Review"
+          placeholder={t("Expense Review")}
           value={name}
         />
         {nameError && (
@@ -649,21 +649,21 @@ function AboutStep({
       </Field>
       <Field>
         <FieldLabel htmlFor="new-bot-instructions">
-          Instructions
-          <span className="font-normal text-muted-foreground">Optional</span>
+          {t("Instructions")}
+          <span className="font-normal text-muted-foreground">{t("Optional")}</span>
         </FieldLabel>
         <Textarea
           autoComplete="off"
           id="new-bot-instructions"
           maxLength={1000}
           onChange={(event) => onInstructions(event.target.value)}
-          placeholder="Review receipts, categorize expenses, and prepare reimbursement reports."
+          placeholder={t("Review receipts, categorize expenses, and prepare reimbursement reports.")}
           rows={5}
           value={instructions}
         />
       </Field>
       <FieldSet>
-        <FieldLegend variant="label">Who can see it</FieldLegend>
+        <FieldLegend variant="label">{t("Who can see it")}</FieldLegend>
         <div className="grid gap-2 sm:grid-cols-2">
           {VISIBILITY_OPTIONS.map((option) => {
             const Icon = option.icon;
@@ -692,9 +692,9 @@ function AboutStep({
       <IsolatedOption isPublic={visibility === "public"} {...isolation} />
       {apps.length > 0 ? (
         <FieldSet>
-          <FieldLegend variant="label">Apps it can use</FieldLegend>
+          <FieldLegend variant="label">{t("Apps it can use")}</FieldLegend>
           <FieldDescription>
-            It always uses the account of whoever is asking.
+            {t("It always uses the account of whoever is asking.")}
           </FieldDescription>
           <div className="grid gap-2 sm:grid-cols-2">
             {apps.map((app) => (
@@ -761,7 +761,7 @@ function IsolatedOption({
       : null;
   return (
     <FieldSet>
-      <FieldLegend variant="label">Its computer</FieldLegend>
+      <FieldLegend variant="label">{t("Its computer")}</FieldLegend>
       <div className="flex items-start gap-3 rounded-lg bg-muted/50 p-3">
         <Checkbox
           aria-describedby="new-bot-isolated-summary"
@@ -780,13 +780,13 @@ function IsolatedOption({
               )}
               htmlFor="new-bot-isolated"
             >
-              Isolated
+              {t("Isolated")}
             </label>
             <Tooltip>
               <TooltipTrigger
                 render={
                   <Button
-                    aria-label="What Isolated means"
+                    aria-label={t("What Isolated means")}
                     className="text-muted-foreground"
                     size="icon-xs"
                     type="button"
@@ -837,7 +837,7 @@ function RuntimeStep({ onChoose }: { onChoose: (runtime: Runtime) => void }) {
         ref={heading}
         tabIndex={-1}
       >
-        Connect a custom agent
+        {t("Connect a custom agent")}
       </h2>
 
       {CONNECTION_OPTIONS.map((harness) => (
@@ -902,13 +902,13 @@ function EndpointStep({
           </span>
         ) : null}
         <h2 className="break-words font-semibold text-lg tracking-tight">
-          Where can it be reached?
+          {t("Where can it be reached?")}
         </h2>
       </div>
 
       <FieldGroup>
         <Field data-invalid={endpointError ? true : undefined}>
-          <FieldLabel htmlFor="new-bot-endpoint">Agent address</FieldLabel>
+          <FieldLabel htmlFor="new-bot-endpoint">{t("Agent address")}</FieldLabel>
           <Input
             aria-invalid={endpointError ? true : undefined}
             autoComplete="off"
@@ -916,7 +916,7 @@ function EndpointStep({
             id="new-bot-endpoint"
             inputMode="url"
             onChange={(event) => onEndpoint(event.target.value)}
-            placeholder="https://your-agent.example.com/ag-ui"
+            placeholder={t("https://your-agent.example.com/ag-ui")}
             value={endpoint}
           />
           {endpointError ? (
@@ -926,27 +926,25 @@ function EndpointStep({
             />
           ) : (
             <FieldDescription>
-              Any agent that speaks AG-UI works. OpenBot connects to it, so it
-              has to be reachable from OpenBot's server.
+              {t("Any agent that speaks AG-UI works. OpenBot connects to it, so it has to be reachable from OpenBot's server.")}
             </FieldDescription>
           )}
         </Field>
         <Field>
           <FieldLabel htmlFor="new-bot-key">
-            Key
-            <span className="font-normal text-muted-foreground">Optional</span>
+            {t("Key")}
+            <span className="font-normal text-muted-foreground">{t("Optional")}</span>
           </FieldLabel>
           <Input
             autoComplete="off"
             id="new-bot-key"
             onChange={(event) => onKey(event.target.value)}
-            placeholder="Bearer …"
+            placeholder={t("Bearer …")}
             type="password"
             value={secret}
           />
           <FieldDescription>
-            Sent as an <code>Authorization</code> header with every request, and
-            stored encrypted.
+            {t("Sent as an")} <code>{t("Authorization")}</code> {t("header with every request, and stored encrypted.")}
           </FieldDescription>
         </Field>
       </FieldGroup>

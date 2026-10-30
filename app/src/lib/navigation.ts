@@ -8,6 +8,7 @@ import {
 } from "@tabler/icons-react";
 import { useQuery } from "@tanstack/react-query";
 import { currentUserQueryOptions } from "@/lib/auth/queries";
+import { t } from "@/lib/i18n";
 
 /**
  * Where a person can go in OpenBot, in one list.
@@ -37,28 +38,28 @@ export type NavigationItem = {
 export const NAVIGATION: readonly NavigationItem[] = [
   {
     id: "bots",
-    label: "Bots",
+    label: t("Bots"),
     to: "/bots",
     icon: IconBolt,
     section: "primary",
   },
   {
     id: "capabilities",
-    label: "Capabilities",
+    label: t("Capabilities"),
     to: "/capabilities",
     icon: IconBox,
     section: "primary",
   },
   {
     id: "connections",
-    label: "Connections",
+    label: t("Connections"),
     to: "/connections",
     icon: IconPlug,
     section: "primary",
   },
   {
     id: "admin",
-    label: "Admin",
+    label: t("Admin"),
     to: "/admin",
     icon: IconShieldLock,
     section: "account",
@@ -66,7 +67,7 @@ export const NAVIGATION: readonly NavigationItem[] = [
   },
   {
     id: "settings",
-    label: "Settings",
+    label: t("Settings"),
     to: "/settings",
     icon: IconSettings,
     section: "account",

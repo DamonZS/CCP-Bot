@@ -50,6 +50,7 @@ import {
   pluginsProvider,
 } from "@/lib/plugins/queries";
 import { searchTextEntry } from "@/lib/search-text";
+import { t } from "@/lib/i18n";
 
 /**
  * Whether this server is reached through Composio AS THIS PERSON.
@@ -315,11 +316,11 @@ function AppConnectionPage() {
    * whole of its state defaulted to "you have never connected this".
    */
   if (plugins.isPending || connections.isPending) {
-    return <PageShell title="Account">{null}</PageShell>;
+    return <PageShell title={t("Account")}>{null}</PageShell>;
   }
 
   const back = {
-    label: "Connections",
+    label: t("Connections"),
     linkProps: { to: "/connections" as const },
   };
 
@@ -343,8 +344,7 @@ function AppConnectionPage() {
     return (
       <PageShell backButton={back} title={server?.title ?? key}>
         <p className="mt-12 text-destructive text-sm" role="alert">
-          Couldn't load this connection. Reload the page, or ask an admin if it
-          keeps happening.
+          {t("Couldn't load this connection. Reload the page, or ask an admin if it keeps happening.")}
         </p>
       </PageShell>
     );
@@ -359,8 +359,7 @@ function AppConnectionPage() {
     return (
       <PageShell backButton={back} title={key}>
         <p className="mt-12 text-destructive text-sm" role="alert">
-          Couldn't load this app. Reload the page, or ask an admin if it keeps
-          happening.
+          {t("Couldn't load this app. Reload the page, or ask an admin if it keeps happening.")}
         </p>
       </PageShell>
     );
@@ -376,8 +375,8 @@ function AppConnectionPage() {
   if (server?.provenance === "composio" && !plugins.data.composioConfigured) {
     return (
       <PageShell backButton={back} title={server.title}>
-        <PageEmpty icon={IconPlugOff} title="Not set up yet">
-          An admin has to turn on {server.title} before anyone can connect it.
+        <PageEmpty icon={IconPlugOff} title={t("Not set up yet")}>
+          {t("An admin has to turn on")} {server.title} {t("before anyone can connect it.")}
         </PageEmpty>
       </PageShell>
     );
@@ -417,9 +416,9 @@ function AppConnectionPage() {
           <PageRows className="mt-0">
             <Item size="sm">
               <ItemContent>
-                <ItemTitle>Team account</ItemTitle>
+                <ItemTitle>{t("Team account")}</ItemTitle>
                 <ItemDescription>
-                  Shared by your organisation. Bots act as the team account.
+                  {t("Shared by your organisation. Bots act as the team account.")}
                 </ItemDescription>
               </ItemContent>
             </Item>
@@ -461,7 +460,7 @@ function AppConnectionPage() {
     return (
       <PageShell
         backButton={back}
-        description="Bots use this as you, and see only what you can see."
+        description={t("Bots use this as you, and see only what you can see.")}
         title={server.title}
       >
         {notice ? (
@@ -523,16 +522,16 @@ function AppConnectionPage() {
     return (
       <PageShell
         backButton={back}
-        description="You don't connect this app yourself."
+        description={t("You don't connect this app yourself.")}
         title={entry?.title ?? key}
       >
         <PageEmpty
           icon={entry ? IconUsers : IconAppsOff}
-          title={entry ? "Shared account" : "App not found"}
+          title={entry ? t("Shared account") : t("App not found")}
         >
           {entry
-            ? "Bots use one shared account for this app, the same for everybody."
-            : "OpenBot has no app by that name."}
+            ? t("Bots use one shared account for this app, the same for everybody.")
+            : t("OpenBot has no app by that name.")}
         </PageEmpty>
       </PageShell>
     );
@@ -557,10 +556,10 @@ function AppConnectionPage() {
             <ItemContent>
               {/* Not "Connect your account": the row is also the connected state, and a title has to
                   read for both. */}
-              <ItemTitle>Your account</ItemTitle>
+              <ItemTitle>{t("Your account")}</ItemTitle>
               <ItemDescription>
                 {!enabled
-                  ? "Not available yet. An admin has to turn this on first."
+                  ? t("Not available yet. An admin has to turn this on first.")
                   : connection
                     ? "Bots you allow use this as you, and see only what you can see."
                     : `No Bot can use this as you. Connecting takes you to ${entry.vendor} to approve access.`}
@@ -582,7 +581,7 @@ function AppConnectionPage() {
                           aria-hidden="true"
                           className="size-1.5 rounded-full bg-emerald-500"
                         />
-                        Connected
+                        {t("Connected")}
                         <IconChevronDown />
                       </Button>
                     }
@@ -611,7 +610,7 @@ function AppConnectionPage() {
                       className="whitespace-nowrap"
                       variant="destructive"
                     >
-                      Disconnect your {entry.title} account
+                      {t("Disconnect your")} {entry.title} {t("account")}
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
@@ -630,7 +629,7 @@ function AppConnectionPage() {
                   type="button"
                   variant="outline"
                 >
-                  Connect
+                  {t("Connect")}
                   <IconArrowUpRight />
                 </Button>
               )}
@@ -642,12 +641,12 @@ function AppConnectionPage() {
       {connection ? (
         <PageSection
           description={`Review the permissions recorded by ${entry.vendor}. They may include fewer permissions than OpenBot requested.`}
-          title="Access"
+          title={t("Access")}
         >
           <PageRows>
             <Item size="sm">
               <ItemContent>
-                <ItemTitle>Allowed</ItemTitle>
+                <ItemTitle>{t("Allowed")}</ItemTitle>
                 <ItemDescription className="line-clamp-none">
                   {connection.scope || `${entry.vendor} didn't say.`}
                 </ItemDescription>
@@ -656,7 +655,7 @@ function AppConnectionPage() {
             <Separator />
             <Item size="sm">
               <ItemContent>
-                <ItemTitle>Connected</ItemTitle>
+                <ItemTitle>{t("Connected")}</ItemTitle>
               </ItemContent>
               <ItemActions>
                 <span className="text-muted-foreground text-xs">

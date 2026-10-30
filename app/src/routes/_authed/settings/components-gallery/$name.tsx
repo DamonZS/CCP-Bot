@@ -25,10 +25,11 @@ import {
 } from "@/components/ui/item";
 import { Separator } from "@/components/ui/separator";
 import { componentListQueryOptions } from "@/lib/components/queries";
+import { t } from "@/lib/i18n";
 
 /** The same way back from every state this route can be in. */
 const BACK = {
-  label: "Components gallery",
+  label: t("Components gallery"),
   linkProps: { to: "/settings/components-gallery" },
 } as const;
 
@@ -76,9 +77,9 @@ function RouteComponent() {
 
   if (components.error) {
     return (
-      <PageShell backButton={BACK} title="Components gallery">
+      <PageShell backButton={BACK} title={t("Components gallery")}>
         <p className="mt-8 text-destructive text-sm" role="alert">
-          Couldn't load components. Reload the page.
+          {t("Couldn't load components. Reload the page.")}
         </p>
       </PageShell>
     );
@@ -96,14 +97,14 @@ function RouteComponent() {
     return (
       <PageShell
         backButton={BACK}
-        description="There's no component with that name."
-        title="No such component"
+        description={t("There's no component with that name.")}
+        title={t("No such component")}
       >
         <Empty className="mt-12 min-h-[30dvh] border border-dashed">
           <EmptyHeader>
             <EmptyTitle>{name}</EmptyTitle>
             <EmptyDescription className="text-pretty">
-              It may have been removed or unpublished.
+              {t("It may have been removed or unpublished.")}
             </EmptyDescription>
           </EmptyHeader>
           <Button
@@ -111,7 +112,7 @@ function RouteComponent() {
             size="sm"
             variant="outline"
           >
-            Back to the gallery
+            {t("Back to the gallery")}
           </Button>
         </Empty>
       </PageShell>
@@ -133,13 +134,13 @@ function RouteComponent() {
         </div>
       </div>
 
-      <PageSection title="Details">
+      <PageSection title={t("Details")}>
         <PageRows>
-          <FactRow icon={<IconTag />} label="Kind">
+          <FactRow icon={<IconTag />} label={t("Kind")}>
             {component.kind}
           </FactRow>
           <Separator />
-          <FactRow icon={<IconCode />} label="Called as">
+          <FactRow icon={<IconCode />} label={t("Called as")}>
             <code className="rounded bg-foreground/5 px-1.5 py-0.5 text-xs">
               {component.name}
             </code>

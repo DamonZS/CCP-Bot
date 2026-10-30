@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { MemoryList, RememberFact } from "@/components/memory/memories";
 import { RoutinesList } from "@/components/routines/routines-list";
+import { t } from "@/lib/i18n";
 
 /**
  * OpenDots' workspace page: a small eyebrow, a large quiet title and one line under it, with the
@@ -47,8 +48,8 @@ function OpenDotsPage({
 export function RoutinesScreen() {
   return (
     <OpenDotsPage
-      description="What your Bots do on a schedule. Ask a Bot to set one up. Pause, run or delete one here."
-      title="Routines"
+      description={t("What your Bots do on a schedule. Ask a Bot to set one up. Pause, run or delete one here.")}
+      title={t("Routines")}
     >
       <RoutinesList embedded />
     </OpenDotsPage>
@@ -60,8 +61,8 @@ export function MemoriesScreen() {
   return (
     <OpenDotsPage
       action={<RememberFact />}
-      description="What your Bots know about you."
-      title="Memories"
+      description={t("What your Bots know about you.")}
+      title={t("Memories")}
     >
       <MemoryList />
     </OpenDotsPage>

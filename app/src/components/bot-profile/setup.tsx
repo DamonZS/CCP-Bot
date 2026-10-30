@@ -63,6 +63,7 @@ import {
 import { isComposing } from "@/lib/composing";
 import { myCapabilitiesQueryOptions } from "@/lib/enterprise/queries";
 import { queryClient } from "@/query-client";
+import { t } from "@/lib/i18n";
 
 type TextField = "name" | "title" | "roleDescription";
 
@@ -72,13 +73,13 @@ const TEXT_FIELDS: {
   icon: typeof IconId;
   multiline?: boolean;
 }[] = [
-  { field: "name", label: "Name", icon: IconId },
-  { field: "title", label: "Title", icon: IconTag },
+  { field: "name", label: t("Name"), icon: IconId },
+  { field: "title", label: t("Title"), icon: IconTag },
   {
     field: "roleDescription",
     // Not "Role": beside "Title" it read as a second job title, when it is the standing
     // instruction the Bot carries into every channel. The create dialog says the same.
-    label: "What it does",
+    label: t("What it does"),
     icon: IconTextCaption,
     multiline: true,
   },
@@ -97,7 +98,7 @@ export function SetupSections({ agent }: { agent: AgentProfile }) {
 
   return (
     <>
-      <PageSection title="Identity">
+      <PageSection title={t("Identity")}>
         <PageRows>
           {TEXT_FIELDS.map(({ field, label, icon: Icon }, index) => (
             <Fragment key={field}>
@@ -143,9 +144,9 @@ export function SetupSections({ agent }: { agent: AgentProfile }) {
                   <IconShieldCheck />
                 </ItemMedia>
                 <ItemContent>
-                  <ItemTitle>System owned</ItemTitle>
+                  <ItemTitle>{t("System owned")}</ItemTitle>
                   <ItemDescription>
-                    Comes with OpenBot. It doesn't belong to a person.
+                    {t("Comes with OpenBot. It doesn't belong to a person.")}
                   </ItemDescription>
                 </ItemContent>
               </Item>
@@ -184,7 +185,7 @@ function VisibilityRow({
         <IconEye />
       </ItemMedia>
       <ItemContent>
-        <ItemTitle>Visibility</ItemTitle>
+        <ItemTitle>{t("Visibility")}</ItemTitle>
         <ItemDescription>
           {error ??
             (agent.visibility === "private"
@@ -224,13 +225,13 @@ function VisibilityRow({
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="private">Private</SelectItem>
-              <SelectItem value="public">Public</SelectItem>
+              <SelectItem value="private">{t("Private")}</SelectItem>
+              <SelectItem value="public">{t("Public")}</SelectItem>
             </SelectContent>
           </Select>
         ) : (
           <span className="text-muted-foreground text-sm">
-            {agent.visibility === "private" ? "Private" : "Public"}
+            {agent.visibility === "private" ? t("Private") : t("Public")}
           </span>
         )}
       </ItemActions>
@@ -292,7 +293,7 @@ function IsolatedRow({
         <IconDeviceDesktop />
       </ItemMedia>
       <ItemContent>
-        <ItemTitle id={`isolated-${agent.id}`}>Isolated</ItemTitle>
+        <ItemTitle id={`isolated-${agent.id}`}>{t("Isolated")}</ItemTitle>
         <ItemDescription className="line-clamp-none">
           {error ?? summary}
         </ItemDescription>
@@ -321,7 +322,7 @@ function IsolatedRow({
           />
         ) : (
           <span className="text-muted-foreground text-sm">
-            {agent.isolated ? "On" : "Off"}
+            {agent.isolated ? t("On") : t("Off")}
           </span>
         )}
       </ItemActions>
@@ -423,10 +424,10 @@ function EditTextDialog({
             size="sm"
             variant="outline"
           >
-            Cancel
+            {t("Cancel")}
           </Button>
           <Button disabled={saving} onClick={() => void submit()} size="sm">
-            {saving ? "Saving…" : "Save"}
+            {saving ? t("Saving…") : t("Save")}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -441,21 +442,21 @@ function EditTextDialog({
 function ConnectionSection({ agent }: { agent: AgentProfile }) {
   const builtIn = !agent.endpoint || agent.builtIn;
   return (
-    <PageSection title="Connection">
+    <PageSection title={t("Connection")}>
       <PageRows>
         <Item size="sm">
           <ItemMedia variant="icon">
             <IconPlugConnected />
           </ItemMedia>
           <ItemContent>
-            <ItemTitle>{builtIn ? "Built in" : "Agent URL"}</ItemTitle>
+            <ItemTitle>{builtIn ? t("Built in") : t("Agent URL")}</ItemTitle>
             <ItemDescription
               className={
                 builtIn ? undefined : "line-clamp-none break-all font-mono"
               }
             >
               {builtIn
-                ? "Runs inside OpenBot. There's nothing to connect."
+                ? t("Runs inside OpenBot. There's nothing to connect.")
                 : agent.endpoint}
             </ItemDescription>
           </ItemContent>

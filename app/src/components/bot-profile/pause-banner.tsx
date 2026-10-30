@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { setBotPausedMutationOptions } from "@/lib/bot-lifecycle/mutations";
 import { botLifecycleQueryOptions } from "@/lib/bot-lifecycle/queries";
 import { queryClient } from "@/query-client";
+import { t } from "@/lib/i18n";
 
 /**
  * "Paused, tap to resume", wherever a paused Bot is shown.
@@ -23,7 +24,7 @@ export function BotPausedBanner({ agentId }: { agentId: string }) {
       variant="secondary"
     >
       <IconPlayerPause />
-      {resume.isPending ? "Resuming…" : "Paused. Resume"}
+      {resume.isPending ? t("Resuming…") : t("Paused. Resume")}
     </Button>
   );
 }

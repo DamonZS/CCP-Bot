@@ -17,6 +17,7 @@ import {
   stoppedSentence,
   useSecondsSince,
 } from "./recording";
+import { t } from "@/lib/i18n";
 
 type ConnectedState = Extract<RecorderPageState, { connected: true }>;
 
@@ -117,7 +118,7 @@ function RecordingHere({
         ref={stop}
         size="sm"
       >
-        Stop
+        {t("Stop")}
       </Button>
     </>
   );
@@ -137,11 +138,9 @@ function IdleHere({
   return (
     <>
       <PopoverHeader>
-        <PopoverTitle>Record a task</PopoverTitle>
+        <PopoverTitle>{t("Record a task")}</PopoverTitle>
         <PopoverDescription>
-          What you do in this browser goes into your own Learning space, in
-          every tab you use, until you stop: your steps, what each step saves,
-          AI assistant conversations, and your narration when it's on.
+          {t("What you do in this browser goes into your own Learning space, in every tab you use, until you stop: your steps, what each step saves, AI assistant conversations, and your narration when it's on.")}
         </PopoverDescription>
       </PopoverHeader>
       {stopped ? (
@@ -151,7 +150,7 @@ function IdleHere({
         </p>
       ) : null}
       <form
-        aria-label="Record a task"
+        aria-label={t("Record a task")}
         className="flex flex-col gap-2"
         onSubmit={(event) => {
           event.preventDefault();
@@ -161,10 +160,10 @@ function IdleHere({
         }}
       >
         <Input
-          aria-label="Task name"
+          aria-label={t("Task name")}
           maxLength={200}
           onChange={(event) => setTitle(event.target.value)}
-          placeholder="Name the task, like Submit an expense report"
+          placeholder={t("Name the task, like Submit an expense report")}
           ref={name}
           value={title}
         />
@@ -176,7 +175,7 @@ function IdleHere({
           type="submit"
         >
           <IconPlayerRecordFilled data-icon="inline-start" />
-          {controls.recordPending ? "Starting…" : "Record"}
+          {controls.recordPending ? t("Starting…") : t("Record")}
         </Button>
       </form>
     </>
@@ -239,7 +238,7 @@ export function ConnectHerePanel({
   return (
     <>
       <PopoverHeader>
-        <PopoverTitle>Connect the OpenBot Recorder</PopoverTitle>
+        <PopoverTitle>{t("Connect the OpenBot Recorder")}</PopoverTitle>
         <PopoverDescription
           className={failed ? "text-destructive" : undefined}
           role={failed ? "alert" : "status"}

@@ -7,6 +7,7 @@ import { IconTasksList } from "./icons";
 import { FOCUS } from "./kit";
 import { type OpenDuetTab, TASKS_LINK } from "./places";
 import { waitingCount } from "./tasks-model";
+import { t } from "@/lib/i18n";
 
 const TAB =
   "relative flex flex-1 flex-col items-center justify-center gap-px rounded-[27px] transition-colors motion-reduce:transition-none";
@@ -20,17 +21,17 @@ export function TabBar({ current }: { current: OpenDuetTab }) {
   const inbox = useQuery(approvalInboxOptions());
   const waiting = waitingCount(inbox.data);
   const tabs = [
-    { id: "chat" as const, label: "Chat", Glyph: IconMessageCircle, badge: 0 },
+    { id: "chat" as const, label: t("Chat"), Glyph: IconMessageCircle, badge: 0 },
     {
       id: "tasks" as const,
-      label: "Tasks",
+      label: t("Tasks"),
       Glyph: IconTasksList,
       badge: waiting,
     },
   ];
   return (
     <nav
-      aria-label="Main"
+      aria-label={t("Main")}
       className="openduet-glass absolute inset-x-0 bottom-[22px] z-20 mx-auto flex h-16 w-[236px] max-w-[calc(100%-32px)] gap-0.5 rounded-[32px] p-[5px] shadow-openduet-glass"
     >
       {tabs.map(({ id, label, Glyph, badge }) => {

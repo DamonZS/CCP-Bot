@@ -1,4 +1,5 @@
 import type { DryRunChange } from "@/lib/computers/queries";
+import { t } from "@/lib/i18n";
 
 /**
  * Actions already on the trail that a rule decides differently, one line each.
@@ -21,14 +22,14 @@ export function DryRunChanges({
           <li className="px-3 py-2" key={change.id}>
             <p className="text-xs">
               <code className="font-mono">{change.action}</code>
-              {change.element?.name ? <> on “{change.element.name}”</> : null}
+              {change.element?.name ? <> {t("on “")}{change.element.name}”</> : null}
               {change.command ? (
                 <>
                   {" "}
-                  running <code className="font-mono">{change.command}</code>
+                  {t("running")} <code className="font-mono">{change.command}</code>
                 </>
               ) : null}
-              {change.file ? <> touching {change.file}</> : null}
+              {change.file ? <> {t("touching")} {change.file}</> : null}
             </p>
             <p className="mt-0.5 text-muted-foreground text-xs">
               {change.bot}
@@ -40,7 +41,7 @@ export function DryRunChanges({
       </ul>
       {total > changes.length ? (
         <p className="mt-1 text-muted-foreground text-xs">
-          Showing the first {changes.length} of {total}.
+          {t("Showing the first")} {changes.length} {t("of")} {total}.
         </p>
       ) : null}
     </>

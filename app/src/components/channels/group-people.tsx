@@ -26,6 +26,7 @@ import {
   groupQueryOptions,
   removeGroupMemberMutationOptions,
 } from "@/lib/groups";
+import { t } from "@/lib/i18n";
 
 /**
  * Who is in a group, from its top bar: how many people, and a dialog listing them where the creator
@@ -65,10 +66,9 @@ export function GroupPeopleButton({ channelId }: { channelId: string }) {
       <Dialog onOpenChange={setOpen} open={open}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>People in this group</DialogTitle>
+            <DialogTitle>{t("People in this group")}</DialogTitle>
             <DialogDescription>
-              Everyone here sees the whole conversation. Every Bot in it answers
-              them.
+              {t("Everyone here sees the whole conversation. Every Bot in it answers them.")}
             </DialogDescription>
           </DialogHeader>
           <DialogBody className="mt-4 grid gap-4 overflow-y-auto">
@@ -85,10 +85,10 @@ export function GroupPeopleButton({ channelId }: { channelId: string }) {
                       </ItemMedia>
                       <ItemContent>
                         <ItemTitle>
-                          {self ? "You" : (person.name ?? person.email)}
+                          {self ? t("You") : (person.name ?? person.email)}
                         </ItemTitle>
                         <ItemDescription>
-                          {person.creator ? "Started this group" : person.email}
+                          {person.creator ? t("Started this group") : person.email}
                         </ItemDescription>
                       </ItemContent>
                       {removable ? (
@@ -96,7 +96,7 @@ export function GroupPeopleButton({ channelId }: { channelId: string }) {
                           <Button
                             aria-label={
                               self
-                                ? "Leave this group"
+                                ? t("Leave this group")
                                 : `Remove ${person.email}`
                             }
                             disabled={remove.isPending}
@@ -104,7 +104,7 @@ export function GroupPeopleButton({ channelId }: { channelId: string }) {
                             size="sm"
                             variant="outline"
                           >
-                            {self ? "Leave" : "Remove"}
+                            {self ? t("Leave") : t("Remove")}
                           </Button>
                         </ItemActions>
                       ) : null}
@@ -121,9 +121,9 @@ export function GroupPeopleButton({ channelId }: { channelId: string }) {
               }}
             >
               <Input
-                aria-label="Their email"
+                aria-label={t("Their email")}
                 onChange={(event) => setEmail(event.target.value)}
-                placeholder="Add someone by email"
+                placeholder={t("Add someone by email")}
                 type="email"
                 value={email}
               />
@@ -132,7 +132,7 @@ export function GroupPeopleButton({ channelId }: { channelId: string }) {
                 size="sm"
                 type="submit"
               >
-                Add
+                {t("Add")}
               </Button>
             </form>
             {add.error || remove.error ? (

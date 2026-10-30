@@ -7,6 +7,7 @@ import {
   useUserPreferences,
 } from "@/lib/settings/message-list";
 import { cn } from "@/lib/utils";
+import { t } from "@/lib/i18n";
 
 /** `ref` tells CopilotKit the visit came from inside a running OpenBot, not from the README. */
 export const SELF_HOST_URL =
@@ -32,7 +33,7 @@ export function SelfHostBanner() {
 
   return (
     <aside
-      aria-label="Self-host OpenBot"
+      aria-label={t("Self-host OpenBot")}
       className="flex shrink-0 flex-wrap items-center gap-x-2 border-b border-border bg-muted/60 px-4 py-1.5 text-sm"
     >
       {/*
@@ -44,7 +45,7 @@ export function SelfHostBanner() {
        * together and drop to the next line as one, which keeps Dismiss on the left there too.
        */}
       <p className="text-foreground">
-        Self-host OpenBot for your organization.
+        {t("Self-host OpenBot for your organization.")}
       </p>
       <span className="flex items-center gap-2">
         {/* An anchor, not Button: Base UI gives a rendered anchor role="button", and this is a link. */}
@@ -58,10 +59,10 @@ export function SelfHostBanner() {
           rel="noopener noreferrer"
           target="_blank"
         >
-          Talk to an engineer
+          {t("Talk to an engineer")}
         </a>
         <Button
-          aria-label="Dismiss"
+          aria-label={t("Dismiss")}
           onClick={() => dismiss.mutate()}
           size="icon-xs"
           variant="ghost"

@@ -1,5 +1,6 @@
 import { type AuditOutcome, outcomeOf } from "@/lib/audit/outcome";
 import { silenceOf } from "@/lib/audit/silence";
+import { t } from "@/lib/i18n";
 
 /** One row as the API returns it. */
 export type AuditEvent = {
@@ -97,19 +98,19 @@ export function botText(event: AuditEvent, nameFor: NameFor): string {
 export function startedByText(event: AuditEvent, nameFor: NameFor): string {
   switch (event.initiatorKind) {
     case "routine":
-      return "A routine";
+      return t("A routine");
     case "handoff":
       return event.initiatorId
         ? `Handed on by ${nameFor(event.initiatorId)}`
         : "Handed on";
     case "memory":
-      return "A memory source";
+      return t("A memory source");
     case "responsibility":
-      return "A responsibility";
+      return t("A responsibility");
     case "deployment":
-      return "This deployment";
+      return t("This deployment");
     default:
-      return "A person";
+      return t("A person");
   }
 }
 

@@ -32,6 +32,7 @@ import {
   personalConnections,
   pluginsPageQueryOptions,
 } from "@/lib/plugins/queries";
+import { t } from "@/lib/i18n";
 
 /**
  * GitHub's or Slack's page under Connections: the person's own account there, and for GitHub what
@@ -71,7 +72,7 @@ export function IdentityConnectionPage({
 
   return (
     <PageShell
-      backButton={{ label: "Connections", linkProps: { to: "/connections" } }}
+      backButton={{ label: t("Connections"), linkProps: { to: "/connections" } }}
       description={IDENTITY_SUMMARIES[provider]}
       title={title}
     >
@@ -117,8 +118,8 @@ function GithubTools() {
   ).some((row) => row.serverId === app.id);
   return (
     <PageSection
-      description="Lets your Bots read and change your repositories as you. You connect this separately from your account above."
-      title="Tools"
+      description={t("Lets your Bots read and change your repositories as you. You connect this separately from your account above.")}
+      title={t("Tools")}
     >
       <PageRows>
         <Item
@@ -129,9 +130,9 @@ function GithubTools() {
             <IconBrandGithub />
           </ItemMedia>
           <ItemContent>
-            <ItemTitle>GitHub tools</ItemTitle>
+            <ItemTitle>{t("GitHub tools")}</ItemTitle>
             <ItemDescription>
-              {connected ? "Connected" : "Not connected"}
+              {connected ? t("Connected") : t("Not connected")}
             </ItemDescription>
           </ItemContent>
           <ItemActions>

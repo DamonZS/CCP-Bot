@@ -3,6 +3,7 @@ import { useRouterState } from "@tanstack/react-router";
 import { type AgentProfile, agentListQueryOptions } from "@/lib/agents/queries";
 import { channelQueryOptions } from "@/lib/channels/queries";
 import { appConfig } from "@/lib/generated/application-config";
+import { t } from "@/lib/i18n";
 
 /** Which part of OpenDots' sidebar a page belongs to, so the right row is lit. */
 export type Section =
@@ -66,7 +67,7 @@ export function parsePlace(
   const agent = typeof search.agent === "string" ? search.agent : undefined;
   const path = pathname.replace(/\/+$/, "") || "/";
   if (path === "/") {
-    return { section: "chat", label: "New chat", ownsWatch: false };
+    return { section: "chat", label: t("New chat"), ownsWatch: false };
   }
   if (path === "/channel/new") {
     return {
@@ -104,19 +105,19 @@ export function parsePlace(
     };
   }
   if (path === "/bots" || path === "/agents") {
-    return { section: "bots", label: "All Bots", ownsWatch: false };
+    return { section: "bots", label: t("All Bots"), ownsWatch: false };
   }
   if (path === "/s/routines" || path === "/routines") {
-    return { section: "routines", label: "Routines", ownsWatch: false };
+    return { section: "routines", label: t("Routines"), ownsWatch: false };
   }
   if (path === "/s/memories" || path === "/capabilities/memory") {
-    return { section: "memories", label: "Memories", ownsWatch: false };
+    return { section: "memories", label: t("Memories"), ownsWatch: false };
   }
   if (path.startsWith("/capabilities")) {
-    return { section: "capabilities", label: "Capabilities", ownsWatch: false };
+    return { section: "capabilities", label: t("Capabilities"), ownsWatch: false };
   }
   if (path.startsWith("/connections")) {
-    return { section: "connections", label: "Connections", ownsWatch: false };
+    return { section: "connections", label: t("Connections"), ownsWatch: false };
   }
   return {
     section: "other",

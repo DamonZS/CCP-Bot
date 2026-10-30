@@ -20,6 +20,7 @@ import {
   decideApprovalMutationOptions,
 } from "@/lib/approvals";
 import { queryClient } from "@/query-client";
+import { t } from "@/lib/i18n";
 
 /**
  * Questions and actions waiting on the person, one row each, decided where it is shown: the answer
@@ -61,7 +62,7 @@ export function WaitingForYou({ agentId }: { agentId?: string }) {
                 </ItemMedia>
                 <ItemContent>
                   <ItemTitle className="line-clamp-none">
-                    {botName(question.botId)} asks: {question.question}
+                    {botName(question.botId)} {t("asks:")} {question.question}
                   </ItemTitle>
                   {question.why ? (
                     <ItemDescription className="line-clamp-none">
@@ -71,14 +72,14 @@ export function WaitingForYou({ agentId }: { agentId?: string }) {
                 </ItemContent>
                 <ItemFooter className="flex-col items-start">
                   <Textarea
-                    aria-label="Your answer"
+                    aria-label={t("Your answer")}
                     onChange={(event) =>
                       setAnswers((prior) => ({
                         ...prior,
                         [question.id]: event.target.value,
                       }))
                     }
-                    placeholder="Your answer"
+                    placeholder={t("Your answer")}
                     value={answers[question.id] ?? ""}
                   />
                   <Button
@@ -91,7 +92,7 @@ export function WaitingForYou({ agentId }: { agentId?: string }) {
                     }
                     size="sm"
                   >
-                    Send answer
+                    {t("Send answer")}
                   </Button>
                 </ItemFooter>
               </Item>
@@ -106,7 +107,7 @@ export function WaitingForYou({ agentId }: { agentId?: string }) {
                 </ItemMedia>
                 <ItemContent className="min-w-0">
                   <ItemTitle className="line-clamp-none">
-                    {botName(request.action.botId)} wants to{" "}
+                    {botName(request.action.botId)} {t("wants to")}{" "}
                     {request.action.toolRef
                       .replace(/^computer_|^host\//, "")
                       .replaceAll("_", " ")}
@@ -117,7 +118,7 @@ export function WaitingForYou({ agentId }: { agentId?: string }) {
                   {request.action.policy ? (
                     <p className="text-sm">
                       {request.action.policy.behaviour === "hand_off"
-                        ? "Handed to you: "
+                        ? t("Handed to you: ")
                         : ""}
                       {request.action.policy.reason}
                     </p>
@@ -135,7 +136,7 @@ export function WaitingForYou({ agentId }: { agentId?: string }) {
                       }
                       size="sm"
                     >
-                      I did it myself
+                      {t("I did it myself")}
                     </Button>
                     <Button
                       disabled={decision.isPending}
@@ -145,7 +146,7 @@ export function WaitingForYou({ agentId }: { agentId?: string }) {
                       size="sm"
                       variant="outline"
                     >
-                      Don't do it
+                      {t("Don't do it")}
                     </Button>
                   </ItemFooter>
                 ) : (
@@ -160,7 +161,7 @@ export function WaitingForYou({ agentId }: { agentId?: string }) {
                       }
                       size="sm"
                     >
-                      Allow once
+                      {t("Allow once")}
                     </Button>
                     <Button
                       disabled={decision.isPending}
@@ -173,7 +174,7 @@ export function WaitingForYou({ agentId }: { agentId?: string }) {
                       size="sm"
                       variant="outline"
                     >
-                      Always allow here
+                      {t("Always allow here")}
                     </Button>
                     <Button
                       disabled={decision.isPending}
@@ -183,7 +184,7 @@ export function WaitingForYou({ agentId }: { agentId?: string }) {
                       size="sm"
                       variant="outline"
                     >
-                      Deny
+                      {t("Deny")}
                     </Button>
                   </ItemFooter>
                 )}
@@ -212,7 +213,7 @@ export function BotNeedsYou({ agentId }: { agentId: string }) {
     );
   if (!waiting) return null;
   return (
-    <PageSection title="Needs you">
+    <PageSection title={t("Needs you")}>
       <WaitingForYou agentId={agentId} />
     </PageSection>
   );

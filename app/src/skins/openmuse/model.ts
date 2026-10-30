@@ -3,6 +3,7 @@ import type { AgentProfile } from "@/lib/agents/queries";
 import type { ApprovalInboxData } from "@/lib/approvals";
 import type { BotAttention } from "@/lib/bot-lifecycle/queries";
 import type { ChannelSummary } from "@/lib/channels/queries";
+import { t } from "@/lib/i18n";
 
 /*
  * The rules OpenMuse's frame runs on, kept apart from the components so each one is a plain function
@@ -105,7 +106,7 @@ export function statusLine(input: {
   if (attention?.questions) {
     return `Needs your input · ${plural(attention.questions, "question")}`;
   }
-  if (attention?.handoffs) return "Waiting on a hand-off";
+  if (attention?.handoffs) return t("Waiting on a hand-off");
   const working = agentId
     ? channels?.find(
         (channel) =>
@@ -115,11 +116,11 @@ export function statusLine(input: {
     : undefined;
   if (working) {
     const routine = working.work?.find((work) => work.kind === "routine");
-    if (routine && !working.busy) return "Running a routine…";
+    if (routine && !working.busy) return t("Running a routine…");
     return `Working on ${working.summary?.trim() || working.name}…`;
   }
-  if (attention?.paused) return "Paused";
-  return "Ready when you are";
+  if (attention?.paused) return t("Paused");
+  return t("Ready when you are");
 }
 
 /** Approvals and questions the person has not answered yet, across every Bot. */

@@ -23,13 +23,14 @@ import {
   actionPolicyQueryOptions,
   dryRunActionPolicy,
 } from "@/lib/computers/queries";
+import { t } from "@/lib/i18n";
 
 export const Route = createFileRoute("/_authed/admin/boundaries_/$index")({
   component: RulePage,
 });
 
 const BACK = {
-  label: "Boundaries",
+  label: t("Boundaries"),
   linkProps: { to: "/admin/boundaries" as const },
 };
 
@@ -47,7 +48,7 @@ function RulePage() {
 
   if (!policy) {
     return (
-      <PageShell backButton={BACK} title="Rule">
+      <PageShell backButton={BACK} title={t("Rule")}>
         {stored.error ? (
           <p className="text-destructive text-sm" role="alert">
             {stored.error.message}
@@ -58,9 +59,9 @@ function RulePage() {
   }
   if (rule === undefined) {
     return (
-      <PageShell backButton={BACK} title="Rule">
+      <PageShell backButton={BACK} title={t("Rule")}>
         <p className="text-muted-foreground text-sm">
-          This rule isn't in place anymore. It may have been removed.
+          {t("This rule isn't in place anymore. It may have been removed.")}
         </p>
       </PageShell>
     );
@@ -97,14 +98,13 @@ function RuleDetail({ policy, rule }: { policy: ActionPolicy; rule: string }) {
     >
       {policy.mode === "dry-run" ? (
         <p className="text-amber-600 text-sm dark:text-amber-500">
-          Trial mode is on, so this rule records matching actions without
-          stopping them.
+          {t("Trial mode is on, so this rule records matching actions without stopping them.")}
         </p>
       ) : null}
 
       <PageSection
-        description="Written in CEL. It is checked before every action a Bot takes."
-        title="Rule"
+        description={t("Written in CEL. It is checked before every action a Bot takes.")}
+        title={t("Rule")}
       >
         <PageCard className="mt-4">
           <code className="block whitespace-pre-wrap break-all font-mono text-xs">
@@ -113,15 +113,14 @@ function RuleDetail({ policy, rule }: { policy: ActionPolicy; rule: string }) {
         </PageCard>
       </PageSection>
 
-      <PageSection title="Recently stopped">
+      <PageSection title={t("Recently stopped")}>
         {reach.isPending ? null : reach.error ? (
           <p className="mt-4 text-muted-foreground text-sm">
             {reach.error.message}
           </p>
         ) : reach.data.scanned === 0 ? (
           <p className="mt-4 text-muted-foreground text-sm">
-            No recorded actions yet. What this rule stops will show here once
-            Bots have acted.
+            {t("No recorded actions yet. What this rule stops will show here once Bots have acted.")}
           </p>
         ) : (
           <>
@@ -141,24 +140,24 @@ function RuleDetail({ policy, rule }: { policy: ActionPolicy; rule: string }) {
       </PageSection>
 
       <PageSection
-        description="Bots can do this again from their next action."
-        title="Remove"
+        description={t("Bots can do this again from their next action.")}
+        title={t("Remove")}
       >
         <Button
           className="mt-4"
           onClick={() => setRemoving(true)}
           variant="destructive"
         >
-          Remove rule
+          {t("Remove rule")}
         </Button>
       </PageSection>
 
       <Dialog onOpenChange={setRemoving} open={removing}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Remove “{label.name}”?</DialogTitle>
+            <DialogTitle>{t("Remove “")}{label.name}”?</DialogTitle>
             <DialogDescription>
-              Every Bot can do this again from its next action.
+              {t("Every Bot can do this again from its next action.")}
             </DialogDescription>
           </DialogHeader>
           {savePolicy.error ? (
@@ -172,7 +171,7 @@ function RuleDetail({ policy, rule }: { policy: ActionPolicy; rule: string }) {
               size="sm"
               variant="ghost"
             >
-              Cancel
+              {t("Cancel")}
             </Button>
             <Button
               disabled={savePolicy.isPending}
@@ -180,7 +179,7 @@ function RuleDetail({ policy, rule }: { policy: ActionPolicy; rule: string }) {
               size="sm"
               variant="destructive"
             >
-              {savePolicy.isPending ? "Removing…" : "Remove"}
+              {savePolicy.isPending ? t("Removing…") : t("Remove")}
             </Button>
           </DialogFooter>
         </DialogContent>

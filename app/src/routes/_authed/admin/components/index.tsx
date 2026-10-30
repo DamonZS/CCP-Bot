@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/empty";
 import { componentListQueryOptions } from "@/lib/components/queries";
 import { cn } from "@/lib/utils";
+import { t } from "@/lib/i18n";
 
 /**
  * The gallery of compiled components. Governance for any one of them is its own page, because a
@@ -26,8 +27,8 @@ function RouteComponent() {
 
   return (
     <PageShell
-      description="Choose which components each Bot can display. Published components are available to all Bots by default. Changes and blocked requests appear in Audit."
-      title="UI components"
+      description={t("Choose which components each Bot can display. Published components are available to all Bots by default. Changes and blocked requests appear in Audit.")}
+      title={t("UI components")}
     >
       {/*
        * Pending, error, empty, rows — in that order. Pending draws nothing rather than a
@@ -36,14 +37,14 @@ function RouteComponent() {
        */}
       {components.isPending ? null : components.error ? (
         <p className="mt-12 text-destructive text-sm" role="alert">
-          Couldn't load components. Reload the page.
+          {t("Couldn't load components. Reload the page.")}
         </p>
       ) : components.data?.length === 0 ? (
         <Empty className="mt-12 min-h-[30dvh] border border-dashed">
           <EmptyHeader>
-            <EmptyTitle>No components yet</EmptyTitle>
+            <EmptyTitle>{t("No components yet")}</EmptyTitle>
             <EmptyDescription className="text-pretty">
-              Components your Bots can use will show here.
+              {t("Components your Bots can use will show here.")}
             </EmptyDescription>
           </EmptyHeader>
         </Empty>

@@ -39,13 +39,14 @@ import {
   type DryRunReport,
   dryRunActionPolicy,
 } from "@/lib/computers/queries";
+import { t } from "@/lib/i18n";
 
 export const Route = createFileRoute("/_authed/admin/boundaries_/new")({
   component: NewRulePage,
 });
 
 const BACK = {
-  label: "Boundaries",
+  label: t("Boundaries"),
   linkProps: { to: "/admin/boundaries" as const },
 };
 
@@ -140,10 +141,10 @@ function NewRulePage() {
   return (
     <PageShell
       backButton={BACK}
-      description="Define an action that no Bot may take. This boundary applies to every Bot’s next action."
-      title="Add rule"
+      description={t("Define an action that no Bot may take. This boundary applies to every Bot’s next action.")}
+      title={t("Add rule")}
     >
-      <PageSection title="Start from">
+      <PageSection title={t("Start from")}>
         <PageRows>
           {options.map((option, index) => {
             const custom = option.value === "custom";
@@ -165,14 +166,14 @@ function NewRulePage() {
                   </ItemMedia>
                   <ItemContent>
                     <ItemTitle>
-                      {template ? template.name : "Write your own"}
+                      {template ? template.name : t("Write your own")}
                     </ItemTitle>
                     <ItemDescription>
                       {template
                         ? taken
                           ? "Already one of your rules."
                           : template.description
-                        : "Describe the action yourself, in CEL."}
+                        : t("Describe the action yourself, in CEL.")}
                     </ItemDescription>
                   </ItemContent>
                   {selected ? (
@@ -189,7 +190,7 @@ function NewRulePage() {
       </PageSection>
 
       {chosen ? (
-        <PageSection title="The rule">
+        <PageSection title={t("The rule")}>
           <form
             className="mt-4"
             noValidate
@@ -213,34 +214,34 @@ function NewRulePage() {
                     )}
                     variant="outline"
                   >
-                    Cancel
+                    {t("Cancel")}
                   </Button>
                   <Button
                     disabled={!ready || savePolicy.isPending}
                     type="submit"
                   >
-                    {savePolicy.isPending ? "Adding…" : "Add rule"}
+                    {savePolicy.isPending ? t("Adding…") : t("Add rule")}
                   </Button>
                 </>
               }
             >
               <FieldGroup>
                 <Field>
-                  <FieldLabel htmlFor="rule-name">Name</FieldLabel>
+                  <FieldLabel htmlFor="rule-name">{t("Name")}</FieldLabel>
                   <Input
                     id="rule-name"
                     maxLength={80}
                     onChange={(event) => setName(event.target.value)}
-                    placeholder="Never delete files"
+                    placeholder={t("Never delete files")}
                     value={name}
                   />
                 </Field>
                 <Field>
                   <FieldLabel htmlFor="rule-description">
-                    What it stops
+                    {t("What it stops")}
                   </FieldLabel>
                   <FieldDescription>
-                    One sentence, shown under the name in the list.
+                    {t("One sentence, shown under the name in the list.")}
                   </FieldDescription>
                   <Input
                     id="rule-description"
@@ -250,11 +251,9 @@ function NewRulePage() {
                   />
                 </Field>
                 <Field>
-                  <FieldLabel htmlFor="rule-expression">Rule</FieldLabel>
+                  <FieldLabel htmlFor="rule-expression">{t("Rule")}</FieldLabel>
                   <FieldDescription>
-                    Written in CEL. A rule that can't be evaluated counts as a
-                    match, so a typo stops actions rather than letting them
-                    through.
+                    {t("Written in CEL. A rule that can't be evaluated counts as a match, so a typo stops actions rather than letting them through.")}
                   </FieldDescription>
                   <Textarea
                     autoCapitalize="off"
@@ -265,13 +264,13 @@ function NewRulePage() {
                       setRule(event.target.value);
                       setTested(null);
                     }}
-                    placeholder='tool.name == "computer_click" && contains(element.name, "delete")'
+                    placeholder={t("tool.name == \"computer_click\" && contains(element.name, \"delete\")")}
                     spellCheck={false}
                     value={rule}
                   />
                   {duplicate ? (
                     <p className="text-destructive text-sm">
-                      This rule is already in place.
+                      {t("This rule is already in place.")}
                     </p>
                   ) : null}
                   {chosen !== "custom" ? (
@@ -291,7 +290,7 @@ function NewRulePage() {
                   type="button"
                   variant="outline"
                 >
-                  {testing ? "Testing…" : "Test on recent activity"}
+                  {testing ? t("Testing…") : t("Test on recent activity")}
                 </Button>
                 {tested ? <TestResult report={tested} /> : null}
               </div>
@@ -317,7 +316,7 @@ function RuleReference() {
   return (
     <details className="text-sm">
       <summary className="cursor-pointer text-muted-foreground hover:text-foreground">
-        What a rule can check
+        {t("What a rule can check")}
       </summary>
       <dl className="mt-3 grid grid-cols-[auto_1fr] gap-x-4 gap-y-2">
         {RULE_ATTRIBUTES.map((attribute) => (
@@ -330,9 +329,8 @@ function RuleReference() {
         ))}
       </dl>
       <p className="mt-3 text-muted-foreground">
-        A rule that names something an action doesn't have, such as{" "}
-        <code className="font-mono text-xs">key</code> on a click, counts as a
-        match. Name the tool first so the rest is only checked where it applies:{" "}
+        {t("A rule that names something an action doesn't have, such as")}{" "}
+        <code className="font-mono text-xs">{t("key")}</code> {t("on a click, counts as a match. Name the tool first so the rest is only checked where it applies:")}{" "}
         <code className="font-mono text-xs">
           tool.name == "computer_key" && key == "Enter"
         </code>
@@ -346,8 +344,7 @@ function TestResult({ report }: { report: DryRunReport }) {
   if (report.scanned === 0) {
     return (
       <p className="mt-3 text-muted-foreground text-sm" role="status">
-        No recorded actions to test against yet. The rule is valid; you'll see
-        what it stops once Bots have acted.
+        {t("No recorded actions to test against yet. The rule is valid; you'll see what it stops once Bots have acted.")}
       </p>
     );
   }

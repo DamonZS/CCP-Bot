@@ -9,6 +9,7 @@ import { routinesQueryOptions } from "@/lib/routines/queries";
 import { cn } from "@/lib/utils";
 import { FOCUS } from "./kit";
 import { waitingCount } from "./tasks-model";
+import { t } from "@/lib/i18n";
 
 /** Which list Tasks shows: what waits on you and what your Bots carry, or what to start next. */
 export type TasksView = "active" | "up_next";
@@ -86,15 +87,15 @@ function TasksSwitch({
       )}
     >
       <div
-        aria-label="Tasks"
+        aria-label={t("Tasks")}
         className="flex min-h-11 min-w-0 flex-wrap items-center gap-x-4"
         role="tablist"
       >
         <SwitchTab id="active" onView={onView} view={view}>
-          Active
+          {t("Active")}
         </SwitchTab>
         <SwitchTab id="up_next" onView={onView} view={view}>
-          Up next
+          {t("Up next")}
         </SwitchTab>
       </div>
     </div>
@@ -146,12 +147,12 @@ function ActiveView() {
   return (
     <div className="flex flex-col gap-9">
       {waiting > 0 ? (
-        <Section count={waiting} label="Needs input">
+        <Section count={waiting} label={t("Needs input")}>
           <WaitingForYou />
         </Section>
       ) : null}
       <BotResponsibilities />
-      <Section count={routines.data?.routines.length} label="Routines">
+      <Section count={routines.data?.routines.length} label={t("Routines")}>
         <RoutinesList embedded />
       </Section>
     </div>

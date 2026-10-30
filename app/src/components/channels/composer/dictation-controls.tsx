@@ -12,6 +12,7 @@ import { LiveWaveform } from "@/components/ui/live-waveform";
 import { EASE_OUT, ENTRANCE_SECONDS } from "@/lib/motion";
 import { cn } from "@/lib/utils";
 import type { useDictation } from "./use-dictation";
+import { t } from "@/lib/i18n";
 
 type Dictation = ReturnType<typeof useDictation>;
 
@@ -25,12 +26,12 @@ export function DictationButton({
   if (!dictation.available) return null;
   return (
     <Button
-      aria-label="Dictate a message"
+      aria-label={t("Dictate a message")}
       data-slot="composer-dictate"
       title={
         dictation.supported
-          ? "Dictate a message"
-          : "Dictation needs a supported browser and a secure (HTTPS) connection"
+          ? t("Dictate a message")
+          : t("Dictation needs a supported browser and a secure (HTTPS) connection")
       }
       className="size-8 shrink-0 self-end rounded-full"
       disabled={disabled || !dictation.supported || dictation.busy}
@@ -119,9 +120,9 @@ function RecordingControls({
     >
       <Button
         ref={cancel}
-        aria-label="Cancel dictation"
+        aria-label={t("Cancel dictation")}
         data-slot="composer-dictate-cancel"
-        title="Cancel dictation"
+        title={t("Cancel dictation")}
         size="icon"
         type="button"
         variant="ghost"
@@ -147,12 +148,12 @@ function RecordingControls({
           </p>
         ) : state.phase === "requesting" ? (
           <p className="text-sm text-muted-foreground" role="status">
-            Waiting for microphone permission…
+            {t("Waiting for microphone permission…")}
           </p>
         ) : (
           <div className="flex min-w-0 items-center gap-3">
             <span className="sr-only" role="status">
-              {transcribing ? "Transcribing…" : "Listening"}
+              {transcribing ? t("Transcribing…") : t("Listening")}
             </span>
             <LiveWaveform
               stream={state.stream}
@@ -162,7 +163,7 @@ function RecordingControls({
             />
             <span
               role="timer"
-              aria-label="Recording duration"
+              aria-label={t("Recording duration")}
               className="shrink-0 text-xs text-muted-foreground tabular-nums"
             >
               {time}
@@ -186,14 +187,14 @@ function RecordingControls({
               void (state.canRetry ? session.retry() : session.start())
             }
           >
-            {state.canRetry ? "Retry" : "Record again"}
+            {state.canRetry ? t("Retry") : t("Record again")}
           </Button>
         ) : (
           <div className="flex shrink-0 items-center gap-2">
             <Button
-              aria-label="Stop and transcribe"
+              aria-label={t("Stop and transcribe")}
               data-slot="composer-dictate-stop"
-              title="Stop and add to draft"
+              title={t("Stop and add to draft")}
               disabled={!recording}
               size="icon"
               type="button"
@@ -204,8 +205,8 @@ function RecordingControls({
               <IconPlayerStopFilled className="size-3.5" />
             </Button>
             <Button
-              aria-label="Transcribe and send"
-              title="Transcribe and send"
+              aria-label={t("Transcribe and send")}
+              title={t("Transcribe and send")}
               disabled={!recording || !canSend}
               size="icon"
               type="button"

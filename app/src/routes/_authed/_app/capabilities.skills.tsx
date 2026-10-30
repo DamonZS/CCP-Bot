@@ -29,6 +29,7 @@ import { Separator } from "@/components/ui/separator";
 import { currentUserQueryOptions } from "@/lib/auth/queries";
 import { removeSkillMutationOptions } from "@/lib/plugins/mutations";
 import { pluginsPageQueryOptions } from "@/lib/plugins/queries";
+import { t } from "@/lib/i18n";
 
 /**
  * Personal `/` skills. They are instructions, not capabilities, and can only be granted to Bots the
@@ -124,16 +125,15 @@ function SkillsPage() {
               variant="ghost"
             >
               <IconPlus />
-              New skill
+              {t("New skill")}
             </Button>
           }
           description={
             <>
-              Type <code>/</code> and a skill's name to give a Bot that
-              instruction. Only you see yours, and they work on Bots you own.
+              {t("Type")} <code>/</code> {t("and a skill's name to give a Bot that instruction. Only you see yours, and they work on Bots you own.")}
             </>
           }
-          title="Your skills"
+          title={t("Your skills")}
         >
           {/*
            * Nothing while the two queries are still in flight. The alternative is the empty state
@@ -146,13 +146,13 @@ function SkillsPage() {
            */}
           {loading ? null : !data ? (
             <p className="mt-4 text-destructive text-sm" role="alert">
-              Couldn't load your skills. Reload the page.
+              {t("Couldn't load your skills. Reload the page.")}
             </p>
           ) : mine.length === 0 ? (
             <Empty className="mt-4 h-[180px] border border-dashed">
               <EmptyHeader>
                 <EmptyTitle className="text-muted-foreground">
-                  No skills yet. Write one with New skill.
+                  {t("No skills yet. Write one with New skill.")}
                 </EmptyTitle>
               </EmptyHeader>
             </Empty>
@@ -194,7 +194,7 @@ function SkillsPage() {
                                 navigate({ search: { edit: skill.slug } })
                               }
                             >
-                              Edit
+                              {t("Edit")}
                             </DropdownMenuItem>
                             {/*
                              * Deleting is immediate and there is no undo. It is behind a menu rather
@@ -209,7 +209,7 @@ function SkillsPage() {
                               }}
                               variant="destructive"
                             >
-                              Delete /{skill.slug}
+                              {t("Delete /")}{skill.slug}
                             </DropdownMenuItem>
                           </DropdownMenuGroup>
                         </DropdownMenuContent>
@@ -235,8 +235,8 @@ function SkillsPage() {
          */}
         {deployment.length > 0 ? (
           <PageSection
-            description="An admin writes these for everyone and picks which Bots use them."
-            title="Workspace skills"
+            description={t("An admin writes these for everyone and picks which Bots use them.")}
+            title={t("Workspace skills")}
           >
             <PageRows>
               {deployment.map((skill, index) => (

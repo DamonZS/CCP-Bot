@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Field, FieldLabel } from "@/components/ui/field";
 import { pluginsPageQueryOptions } from "@/lib/plugins/queries";
 import { undeclaredElsewhere } from "@/lib/skills/form";
+import { t } from "@/lib/i18n";
 
 /**
  * Which tools this skill says it needs.
@@ -78,16 +79,15 @@ export function SkillTools({
 
   return (
     <Field>
-      <FieldLabel>Tools it needs</FieldLabel>
+      <FieldLabel>{t("Tools it needs")}</FieldLabel>
 
       {plugins.isPending ? null : plugins.error ? (
         <p className="text-destructive text-xs" role="alert">
-          Couldn't load the tools. Reload the page.
+          {t("Couldn't load the tools. Reload the page.")}
         </p>
       ) : servers.length === 0 ? (
         <p className="text-muted-foreground text-xs">
-          No app offers tools yet. You can still write the skill. Most skills
-          are only instructions.
+          {t("No app offers tools yet. You can still write the skill. Most skills are only instructions.")}
         </p>
       ) : (
         <div className="flex flex-col gap-3">
@@ -118,7 +118,7 @@ export function SkillTools({
                        */}
                       {tool.effect === "write" ? (
                         <span
-                          aria-label="changes something"
+                          aria-label={t("changes something")}
                           className="ml-1 opacity-60"
                           role="img"
                         >
@@ -136,7 +136,7 @@ export function SkillTools({
 
       {plugins.data ? (
         <div className="flex flex-col gap-1.5">
-          <p className="text-muted-foreground text-xs">Public-web research</p>
+          <p className="text-muted-foreground text-xs">{t("Public-web research")}</p>
           <div className="flex flex-wrap gap-2">
             {RESEARCH_ROLES.map((role) => (
               <Button
@@ -156,7 +156,7 @@ export function SkillTools({
 
       {elsewhere.length > 0 ? (
         <div className="flex flex-col gap-1.5">
-          <p className="text-muted-foreground text-xs">Not available here</p>
+          <p className="text-muted-foreground text-xs">{t("Not available here")}</p>
           <div className="flex flex-wrap gap-2">
             {elsewhere.map((ref) => (
               <Button
@@ -176,15 +176,13 @@ export function SkillTools({
             ))}
           </div>
           <p className="text-muted-foreground text-xs">
-            This skill asks for these, but no app here offers them. They do
-            nothing until an admin adds the app. Click one to remove it.
+            {t("This skill asks for these, but no app here offers them. They do nothing until an admin adds the app. Click one to remove it.")}
           </p>
         </div>
       ) : null}
 
       <p className="text-muted-foreground text-xs">
-        Using this skill loads these tools for that reply. It doesn't give
-        access. A Bot can only use tools it already has.
+        {t("Using this skill loads these tools for that reply. It doesn't give access. A Bot can only use tools it already has.")}
       </p>
     </Field>
   );

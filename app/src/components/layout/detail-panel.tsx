@@ -4,6 +4,7 @@ import { type ReactNode, useLayoutEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { EASE_OUT } from "@/lib/motion";
+import { t } from "@/lib/i18n";
 
 /**
  * A main pane with details beside it when there is room, or in a sheet on narrow windows.
@@ -113,7 +114,7 @@ export function DetailPanel({
               </div>
               <div className="flex flex-row gap-1.5">
                 <Button
-                  aria-label="Close details"
+                  aria-label={t("Close details")}
                   onClick={onClose}
                   variant="ghost"
                   size="icon"

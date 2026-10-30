@@ -35,6 +35,7 @@ import {
 import { toast } from "@/components/ui/toast";
 import { addressFrom } from "@/lib/browser/address";
 import { cn } from "@/lib/utils";
+import { t } from "@/lib/i18n";
 
 /*
  * THE BAR ABOVE A BROWSER SHOWN IN THE PAGE: its tabs, then back, forward, reload, Clear browser data and the address.
@@ -166,7 +167,7 @@ export function TabStrip({
   return (
     <div className="flex min-w-0 items-center gap-1 border-b border-border px-2 py-1.5">
       <div
-        aria-label="Tabs"
+        aria-label={t("Tabs")}
         className="flex min-w-0 items-center gap-1 overflow-x-auto"
         role="tablist"
       >
@@ -219,7 +220,7 @@ export function TabStrip({
         })}
       </div>
       <Button
-        aria-label="New tab"
+        aria-label={t("New tab")}
         disabled={disabled}
         onClick={onNew}
         size="icon-sm"
@@ -252,7 +253,7 @@ export function TabPanel({
   if (!tabs) return <div className={className}>{children}</div>;
   return (
     <div
-      aria-label={active ? undefined : "Browser"}
+      aria-label={active ? undefined : t("Browser")}
       aria-labelledby={active ? tabId(ids, active.id) : undefined}
       className={className}
       id={panelId(ids)}
@@ -306,7 +307,7 @@ export function AddressBar({
   }, [focus, still, onFocused]);
   return (
     <form
-      aria-label="Address bar"
+      aria-label={t("Address bar")}
       className="flex items-center gap-1 border-b border-border px-2 py-1.5"
       onSubmit={(event) => {
         event.preventDefault();
@@ -320,7 +321,7 @@ export function AddressBar({
       }}
     >
       <Button
-        aria-label="Back"
+        aria-label={t("Back")}
         disabled={still}
         onClick={() => onMove("back")}
         size="icon-sm"
@@ -329,7 +330,7 @@ export function AddressBar({
         <IconArrowLeft />
       </Button>
       <Button
-        aria-label="Forward"
+        aria-label={t("Forward")}
         disabled={still}
         onClick={() => onMove("forward")}
         size="icon-sm"
@@ -338,7 +339,7 @@ export function AddressBar({
         <IconArrowRight />
       </Button>
       <Button
-        aria-label="Reload"
+        aria-label={t("Reload")}
         disabled={still}
         onClick={() => onMove("reload")}
         size="icon-sm"
@@ -348,11 +349,11 @@ export function AddressBar({
       </Button>
       {clear ? (
         <Button
-          aria-label="Clear browser data"
+          aria-label={t("Clear browser data")}
           disabled={clear.disabled}
           onClick={clear.ask}
           size="icon-sm"
-          title="Clear browser data"
+          title={t("Clear browser data")}
           variant="ghost"
         >
           <IconEraser />
@@ -360,7 +361,7 @@ export function AddressBar({
       ) : null}
       <InputGroup className="ml-1 h-8 flex-1 bg-background text-sm">
         <InputGroupInput
-          aria-label="Address"
+          aria-label={t("Address")}
           ref={input}
           disabled={disabled}
           readOnly={readOnly}
@@ -369,7 +370,7 @@ export function AddressBar({
           onKeyDown={(event) => {
             if (event.key === "Escape") setDraft(null);
           }}
-          placeholder="Search or type an address"
+          placeholder={t("Search or type an address")}
           spellCheck={false}
           value={draft ?? address}
         />
@@ -434,10 +435,9 @@ export function ClearBrowserDialog({
           : {})}
       >
         <DialogHeader>
-          <DialogTitle>Clear this browser?</DialogTitle>
+          <DialogTitle>{t("Clear this browser?")}</DialogTitle>
           <DialogDescription>
-            Cookies, saved passwords and history are wiped. You'll have to sign
-            in everywhere again.
+            {t("Cookies, saved passwords and history are wiped. You'll have to sign in everywhere again.")}
           </DialogDescription>
         </DialogHeader>
         {clear.error ? (
@@ -453,7 +453,7 @@ export function ClearBrowserDialog({
             size="sm"
             variant="outline"
           >
-            Cancel
+            {t("Cancel")}
           </Button>
           <Button
             disabled={clear.isPending}
@@ -461,14 +461,14 @@ export function ClearBrowserDialog({
               clear.mutate(undefined, {
                 onSuccess: () => {
                   onOpenChange(false);
-                  toast.add({ title: "Browser cleared", type: "success" });
+                  toast.add({ title: t("Browser cleared"), type: "success" });
                 },
               })
             }
             size="sm"
             variant="destructive"
           >
-            {clear.isPending ? "Clearing…" : "Clear"}
+            {clear.isPending ? t("Clearing…") : t("Clear")}
           </Button>
         </DialogFooter>
       </DialogContent>

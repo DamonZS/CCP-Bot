@@ -13,6 +13,7 @@ import {
   type HandoffAgent,
   resumeHandoffTask,
 } from "@/lib/copilot/handoff-resume";
+import { t } from "@/lib/i18n";
 
 /** SDK reconnect replays human-in-the-loop tools only; ordinary frontend handlers need this action. */
 export function HandoffResumeNotice({
@@ -119,7 +120,7 @@ export function HandoffResumeNotice({
           className="underline"
           onClick={() => controller.current?.abort()}
         >
-          Stop waiting
+          {t("Stop waiting")}
         </button>
       ) : (
         <button
@@ -128,7 +129,7 @@ export function HandoffResumeNotice({
           disabled={!pending || agent.isRunning}
           onClick={() => void resume()}
         >
-          Resume task
+          {t("Resume task")}
         </button>
       )}
     </div>

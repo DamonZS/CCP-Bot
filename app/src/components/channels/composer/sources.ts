@@ -1,4 +1,5 @@
 import type { CommandOption } from "./draft";
+import { t } from "@/lib/i18n";
 
 /**
  * Placeholder slash commands.
@@ -14,7 +15,7 @@ export const PLACEHOLDER_COMMANDS: CommandOption[] = [
   {
     id: "summarize",
     name: "summarize",
-    description: "Summarize this conversation",
+    description: t("Summarize this conversation"),
     kind: "prompt",
     prompt: "Summarize what we covered in this conversation so far.",
   },

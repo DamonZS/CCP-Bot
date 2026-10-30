@@ -19,6 +19,7 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { revokeCredentialMutationOptions } from "@/lib/credentials/mutations";
 import { credentialListQueryOptions } from "@/lib/credentials/queries";
+import { t } from "@/lib/i18n";
 
 export const Route = createFileRoute("/_authed/admin/credentials")({
   component: CredentialsPage,
@@ -41,16 +42,16 @@ function CredentialsPage() {
           variant="ghost"
         >
           <IconPlus />
-          Add credential
+          {t("Add credential")}
         </Button>
       }
-      description="Manage this deployment’s keys and tokens. Saved secrets cannot be viewed again."
-      title="Credentials"
+      description={t("Manage this deployment’s keys and tokens. Saved secrets cannot be viewed again.")}
+      title={t("Credentials")}
     >
-      <PageSection title="Saved credentials">
+      <PageSection title={t("Saved credentials")}>
         {credentials.isPending ? null : credentials.error ? (
           <p className="mt-4 text-destructive text-sm" role="alert">
-            Couldn't load credentials. Reload the page.
+            {t("Couldn't load credentials. Reload the page.")}
           </p>
         ) : credentials.data?.length === 0 ? (
           <PageEmpty
@@ -63,13 +64,13 @@ function CredentialsPage() {
                 variant="outline"
               >
                 <IconPlus />
-                Add credential
+                {t("Add credential")}
               </Button>
             }
             icon={IconKey}
-            title="No credentials yet"
+            title={t("No credentials yet")}
           >
-            Keys and tokens for models and connectors are kept here.
+            {t("Keys and tokens for models and connectors are kept here.")}
           </PageEmpty>
         ) : (
           <PageRows>
@@ -80,7 +81,7 @@ function CredentialsPage() {
                     <ItemTitle>{credential.provider}</ItemTitle>
                     <ItemDescription>
                       {credential.kind} · {credential.keyId} ·{" "}
-                      {credential.revokedAt ? "revoked" : "active"}
+                      {credential.revokedAt ? t("revoked") : t("active")}
                     </ItemDescription>
                   </ItemContent>
                   <ItemActions>
@@ -93,7 +94,7 @@ function CredentialsPage() {
                       size="sm"
                       variant="outline"
                     >
-                      Revoke
+                      {t("Revoke")}
                     </Button>
                   </ItemActions>
                 </Item>

@@ -21,6 +21,7 @@ import {
 import { SKINS } from "./registry";
 import { useSkinId } from "./store";
 import { SKIN_IDS } from "./types";
+import { t } from "@/lib/i18n";
 
 /**
  * Choose a skin. It is drawn at once and saved on the person's account, so it follows them to every
@@ -39,11 +40,10 @@ export function SkinPicker() {
     <>
       <Item size="sm">
         <ItemContent>
-          <ItemTitle>Skin</ItemTitle>
+          <ItemTitle>{t("Skin")}</ItemTitle>
           <ItemDescription>
-            Change how {appConfig.brand.productName} looks for you, on every
-            device. Every skin keeps everything {appConfig.brand.productName}{" "}
-            does.
+            {t("Change how")} {appConfig.brand.productName} {t("looks for you, on every device. Every skin keeps everything")} {appConfig.brand.productName}{" "}
+            {t("does.")}
           </ItemDescription>
         </ItemContent>
         <ItemActions>
@@ -55,7 +55,7 @@ export function SkinPicker() {
               if (id && id !== skin) save.mutate(id);
             }}
           >
-            <SelectTrigger aria-label="Skin">
+            <SelectTrigger aria-label={t("Skin")}>
               <SelectValue>{SKINS[skin].name}</SelectValue>
             </SelectTrigger>
             {/* Wider than the trigger, so each skin's description has room to wrap. */}
@@ -80,8 +80,7 @@ export function SkinPicker() {
       </Item>
       {save.isError ? (
         <p className="px-3 pb-3 text-sm text-destructive" role="alert">
-          Couldn't save that skin to your account, so {SKINS[skin].name} is
-          back. Try again.
+          {t("Couldn't save that skin to your account, so")} {SKINS[skin].name} {t("is back. Try again.")}
         </p>
       ) : null}
     </>

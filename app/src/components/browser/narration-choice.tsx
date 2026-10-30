@@ -18,6 +18,7 @@ import {
   useUserPreferences,
 } from "@/lib/settings/message-list";
 import { queryClient } from "@/query-client";
+import { t } from "@/lib/i18n";
 
 /**
  * Whether the person narrates their recordings: their own preference, kept on their account so every browser they
@@ -101,29 +102,26 @@ export function NarrationChoiceDialog({
     <Dialog onOpenChange={(next) => (next ? null : onClose())} open={open}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Narrate while you record?</DialogTitle>
+          <DialogTitle>{t("Narrate while you record?")}</DialogTitle>
           <DialogDescription>
-            Talk through the task as you do it, and the recording keeps what you
-            say as text, so your Bots learn why you did each step.
+            {t("Talk through the task as you do it, and the recording keeps what you say as text, so your Bots learn why you did each step.")}
           </DialogDescription>
         </DialogHeader>
         <DialogBody className="mt-4 text-muted-foreground text-sm">
           <p>
-            Your browser turns your speech into text on your own computer. Your
-            voice never leaves it, and no recording of it is kept.
+            {t("Your browser turns your speech into text on your own computer. Your voice never leaves it, and no recording of it is kept.")}
           </p>
           <p className="mt-2">
-            OpenBot keeps your answer for every recording. You can change it any
-            time with the Narration switch on this page.
+            {t("OpenBot keeps your answer for every recording. You can change it any time with the Narration switch on this page.")}
           </p>
         </DialogBody>
         <DialogFooter className="mt-4">
           <Button onClick={() => onAnswer(false)} size="sm" variant="outline">
-            Record without narration
+            {t("Record without narration")}
           </Button>
           <Button onClick={() => onAnswer(true)} size="sm">
             <IconMicrophone data-icon="inline-start" />
-            Record with narration
+            {t("Record with narration")}
           </Button>
         </DialogFooter>
       </DialogContent>

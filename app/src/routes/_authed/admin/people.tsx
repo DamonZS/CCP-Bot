@@ -35,6 +35,7 @@ import {
 } from "@/lib/people/mutations";
 import { type Person, peopleListQueryOptions } from "@/lib/people/queries";
 import { queryClient } from "@/query-client";
+import { t } from "@/lib/i18n";
 
 export const Route = createFileRoute("/_authed/admin/people")({
   component: PeoplePage,
@@ -95,12 +96,12 @@ function PeoplePage() {
 
   return (
     <PageShell
-      description="Manage access for people who have signed in. Only admins can access the Admin pages."
-      title="People"
+      description={t("Manage access for people who have signed in. Only admins can access the Admin pages.")}
+      title={t("People")}
     >
       <PageSection
-        description="Addresses in INITIAL_ADMIN_EMAILS are always admins. You can't change them here."
-        title="Who is here"
+        description={t("Addresses in INITIAL_ADMIN_EMAILS are always admins. You can't change them here.")}
+        title={t("Who is here")}
       >
         {failure ? (
           <p className="mt-4 text-destructive text-sm" role="alert">
@@ -109,12 +110,12 @@ function PeoplePage() {
         ) : null}
         {terminate.data ? (
           <p className="mt-4 text-muted-foreground text-sm" role="status">
-            Stopped {terminate.data.stopped.length}{" "}
-            {terminate.data.stopped.length === 1 ? "computer" : "computers"}
+            {t("Stopped")} {terminate.data.stopped.length}{" "}
+            {terminate.data.stopped.length === 1 ? t("computer") : t("computers")}
             {terminate.data.failed.length > 0
               ? `. ${terminate.data.failed.length} couldn't be stopped`
               : ""}
-            . Their disks are kept.
+            {t(". Their disks are kept.")}
           </p>
         ) : null}
         {/*
@@ -122,25 +123,25 @@ function PeoplePage() {
           is the opposite of what somebody looking for a colleague needs.
         */}
         <Input
-          aria-label="Search people"
+          aria-label={t("Search people")}
           className="mt-4"
           onChange={(event) => setSearch(event.target.value)}
-          placeholder="Search by name or address"
+          placeholder={t("Search by name or address")}
           value={search}
         />
 
         {people.isPending ? null : people.error ? (
           <p className="mt-4 text-destructive text-sm" role="alert">
-            Couldn't load people. Reload the page.
+            {t("Couldn't load people. Reload the page.")}
           </p>
         ) : rows.length === 0 ? (
           <PageEmpty
             icon={query ? IconSearch : IconUsers}
-            title={query ? "No matches" : "Nobody has signed in yet"}
+            title={query ? t("No matches") : t("Nobody has signed in yet")}
           >
             {query
               ? `Nobody matches "${query}".`
-              : "People show here once they do."}
+              : t("People show here once they do.")}
           </PageEmpty>
         ) : (
           <PageRows>
@@ -179,7 +180,7 @@ function PeoplePage() {
                         size="sm"
                         variant="outline"
                       >
-                        Stop computers
+                        {t("Stop computers")}
                       </Button>
                       <Button
                         disabled={busy || isSelf || person.configuredAdmin}
@@ -192,7 +193,7 @@ function PeoplePage() {
                         size="sm"
                         variant={person.revoked ? "outline" : "destructive"}
                       >
-                        {person.revoked ? "Restore" : "Remove"}
+                        {person.revoked ? t("Restore") : t("Remove")}
                       </Button>
                       <Switch
                         aria-label={`Admin: ${person.email}`}
@@ -226,7 +227,7 @@ function PeoplePage() {
             size="sm"
             variant="outline"
           >
-            {people.isFetchingNextPage ? "Loading…" : "Show more"}
+            {people.isFetchingNextPage ? t("Loading…") : t("Show more")}
           </Button>
         ) : null}
       </PageSection>

@@ -45,6 +45,7 @@ import { useMessageListEmphasis } from "@/lib/settings/message-list";
 import { cn } from "@/lib/utils";
 import { queryClient } from "@/query-client";
 import { FOCUS } from "./kit";
+import { t } from "@/lib/i18n";
 
 /** Whether Manage was left open, kept in this browser between visits. */
 export const MANAGE_STORAGE_KEY = "openduet.menu-manage";
@@ -127,7 +128,7 @@ export function MenuSheet({
           </SheetDescription>
         </SheetHeader>
         <nav
-          aria-label="Menu"
+          aria-label={t("Menu")}
           className="flex min-h-0 flex-1 flex-col px-3 pb-4"
         >
           <Link
@@ -155,7 +156,7 @@ export function MenuSheet({
                   className="openduet-type-sub px-3 py-2 text-openduet-problem"
                   role="alert"
                 >
-                  Couldn't load your conversations. Reload the page.
+                  {t("Couldn't load your conversations. Reload the page.")}
                 </p>
               ) : conversations.length > 0 ? (
                 /*
@@ -163,7 +164,7 @@ export function MenuSheet({
                  * these are the conversations Chat has held, not places beside it.
                  */
                 <ul
-                  aria-label="Conversations"
+                  aria-label={t("Conversations")}
                   className="ml-[21px] flex flex-col border-openduet-ink-3/40 border-l pl-1.5"
                 >
                   {conversations.map((channel) => (
@@ -186,7 +187,7 @@ export function MenuSheet({
               to="/channel/new"
             >
               <IconPlus size={22} stroke={1.8} />
-              New conversation
+              {t("New conversation")}
             </Link>
           </div>
           <div className="mt-2 flex shrink-0 flex-col border-openduet-hair border-t pt-2">
@@ -209,7 +210,7 @@ export function MenuSheet({
                   size={22}
                   stroke={1.8}
                 />
-                Manage
+                {t("Manage")}
                 {/* Closed, the group would hide what waits on the person, so Manage carries it. */}
                 {manageOpen ? null : <AccentBadge />}
               </button>
@@ -255,7 +256,7 @@ export function MenuSheet({
               type="button"
             >
               <IconLogout size={22} stroke={1.8} />
-              {signOut.isPending ? "Signing out…" : "Sign out"}
+              {signOut.isPending ? t("Signing out…") : t("Sign out")}
             </button>
           </div>
         </nav>
@@ -286,7 +287,7 @@ function AccentBadge() {
   if (bots.some((bot) => bot.unread > 0))
     return (
       <span
-        aria-label="Unread messages"
+        aria-label={t("Unread messages")}
         className="ml-auto size-2 rounded-full bg-openduet-accent"
         role="img"
       />
@@ -380,14 +381,14 @@ function ConversationRow({
             <RowText line={line} name={name} strong={unread} />
             {channel.pinned ? (
               <IconPinFilled
-                aria-label="Pinned"
+                aria-label={t("Pinned")}
                 className="shrink-0 text-openduet-ink-3"
                 size={14}
               />
             ) : null}
             {unread ? (
               <span
-                aria-label="Unread"
+                aria-label={t("Unread")}
                 className="size-2 shrink-0 rounded-full bg-openduet-accent"
                 role="img"
               />
@@ -405,14 +406,14 @@ function ConversationRow({
             }}
           >
             {channel.pinned ? <IconPinnedOff /> : <IconPin />}
-            {channel.pinned ? "Unpin conversation" : "Pin conversation"}
+            {channel.pinned ? t("Unpin conversation") : t("Pin conversation")}
           </ContextMenuItem>
           <ContextMenuItem
             onClick={() => setConfirming(true)}
             variant="destructive"
           >
             <IconTrash />
-            Delete conversation…
+            {t("Delete conversation…")}
           </ContextMenuItem>
         </ContextMenuContent>
       </ContextMenu>

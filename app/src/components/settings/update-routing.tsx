@@ -20,27 +20,28 @@ import {
 } from "@/lib/bot-lifecycle/queries";
 import { deliveryQueryOptions } from "@/lib/delivery";
 import { queryClient } from "@/query-client";
+import { t } from "@/lib/i18n";
 
 const KIND_LABEL: Record<UpdateKind, { title: string; description: string }> = {
   progress: {
-    title: "Progress",
-    description: "Replies and results from work you weren't watching.",
+    title: t("Progress"),
+    description: t("Replies and results from work you weren't watching."),
   },
   decision: {
-    title: "Decisions",
-    description: "Approvals a Bot needs before it acts.",
+    title: t("Decisions"),
+    description: t("Approvals a Bot needs before it acts."),
   },
   question: {
-    title: "Questions",
-    description: "Things a Bot asked you and is waiting on.",
+    title: t("Questions"),
+    description: t("Things a Bot asked you and is waiting on."),
   },
 };
 
 const TRANSPORTS: { id: UpdateTransport; label: string }[] = [
-  { id: "push", label: "Push" },
-  { id: "slack", label: "Slack" },
-  { id: "teams", label: "Microsoft Teams" },
-  { id: "sms", label: "SMS" },
+  { id: "push", label: t("Push") },
+  { id: "slack", label: t("Slack") },
+  { id: "teams", label: t("Microsoft Teams") },
+  { id: "sms", label: t("SMS") },
 ];
 
 /**
@@ -62,12 +63,12 @@ export function UpdateRoutingSection() {
     reach.data ? reach.data.available[transport] : true;
   return (
     <PageSection
-      description="Choose where to receive each type of update when you’re away. All updates remain available in the web app."
-      title="Where updates go"
+      description={t("Choose where to receive each type of update when you’re away. All updates remain available in the web app.")}
+      title={t("Where updates go")}
     >
       {routing.isPending || reach.isPending ? null : routing.error ? (
         <p className="mt-4 text-destructive text-sm" role="alert">
-          Couldn't load where your updates go. Reload the page.
+          {t("Couldn't load where your updates go. Reload the page.")}
         </p>
       ) : (
         <PageRows>
@@ -119,7 +120,7 @@ export function UpdateRoutingSection() {
                           {transport.label}
                           {configured(transport.id) ? null : (
                             <span className="text-muted-foreground text-xs">
-                              Not set up
+                              {t("Not set up")}
                             </span>
                           )}
                         </span>

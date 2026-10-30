@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { PageShell } from "@/components/layout/page-shell";
 import { RoutinesList } from "@/components/routines/routines-list";
+import { t } from "@/lib/i18n";
 
 /**
  * A person's own standing instructions: what runs on a schedule, and a switch to stop one.
@@ -21,8 +22,8 @@ export const Route = createFileRoute("/_authed/_app/routines")({
 function RoutinesPage() {
   return (
     <PageShell
-      description="Ask a Bot to create or change a scheduled routine. You can review and stop routines here."
-      title="Routines"
+      description={t("Ask a Bot to create or change a scheduled routine. You can review and stop routines here.")}
+      title={t("Routines")}
     >
       <RoutinesList />
     </PageShell>

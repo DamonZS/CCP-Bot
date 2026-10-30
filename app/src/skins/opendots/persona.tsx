@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { AbstractAvatar } from "@/components/agents/abstract-avatar";
 import { agentListQueryOptions } from "@/lib/agents/queries";
+import { t } from "@/lib/i18n";
 
 /**
  * OpenDots' coworker home: the Bot you are about to talk to, centred above an empty conversation.
@@ -38,7 +39,7 @@ export function CoworkerPersona({ botId }: { botId: string }) {
           params={{ agentId: bot.id }}
           to="/bots/$agentId"
         >
-          Edit Bot <IconDots className="size-3.5" />
+          {t("Edit Bot")} <IconDots className="size-3.5" />
         </Link>
       </div>
     </div>

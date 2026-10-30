@@ -8,6 +8,7 @@ import { proactiveSuggestionsQueryOptions } from "@/lib/proactive";
 import { useMuse } from "../context";
 import { MuseEmpty, MuseScreen } from "../ui";
 import { NoBot } from "./activity";
+import { t } from "@/lib/i18n";
 
 /**
  * Ideas: the next steps the centre Bot's background research suggested, and the research itself.
@@ -19,7 +20,7 @@ export function IdeasScreen() {
   const suggestions = useQuery(proactiveSuggestionsQueryOptions());
   if (!bot) {
     return (
-      <MuseScreen title="Ideas">
+      <MuseScreen title={t("Ideas")}>
         <NoBot />
       </MuseScreen>
     );
@@ -28,13 +29,13 @@ export function IdeasScreen() {
     suggestions.data !== undefined &&
     !suggestions.data.some((suggestion) => suggestion.agentId === bot.id);
   return (
-    <MuseScreen title="Ideas">
+    <MuseScreen title={t("Ideas")}>
       <div className="[&>section:first-child]:mt-0">
         {none ? (
           <MuseEmpty
             detail={`${bot.name} suggests next steps here once background research is on.`}
             icon={IconBulb}
-            title="No suggestions yet"
+            title={t("No suggestions yet")}
           />
         ) : (
           <SuggestionsInbox agentId={bot.id} />

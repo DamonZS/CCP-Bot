@@ -14,6 +14,7 @@ import {
   InputGroupInput,
 } from "@/components/ui/input-group";
 import { agentListQueryOptions } from "@/lib/agents/queries";
+import { t } from "@/lib/i18n";
 
 /**
  * Who a conversation that does not exist yet is with.
@@ -42,7 +43,7 @@ export function RecipientField({
   return (
     <div className="border-b border-border px-4 py-2">
       <div className="mx-auto flex w-full max-w-2xl flex-wrap items-center gap-1.5">
-        <span className="text-sm text-muted-foreground">To:</span>
+        <span className="text-sm text-muted-foreground">{t("To:")}</span>
 
         {recipients.map((recipient) => (
           <Button
@@ -54,16 +55,16 @@ export function RecipientField({
             <ChannelAvatar participantIds={[recipient.id]} size={16} />
             {recipient.name}
             <span aria-hidden>×</span>
-            <span className="sr-only">Remove {recipient.name}</span>
+            <span className="sr-only">{t("Remove")} {recipient.name}</span>
           </Button>
         ))}
 
         {isFull ? null : (
           <InputGroup className="h-8 w-56 border-none bg-transparent">
             <InputGroupInput
-              aria-label="Choose a Bot"
+              aria-label={t("Choose a Bot")}
               onChange={(event) => setSearch(event.target.value)}
-              placeholder="Choose a Bot…"
+              placeholder={t("Choose a Bot…")}
               value={search}
             />
             <InputGroupAddon />
@@ -96,7 +97,7 @@ export function RecipientField({
           ))}
           {matches.length === 0 ? (
             <li className="px-2 py-1.5 text-sm text-muted-foreground">
-              No Bot by that name.
+              {t("No Bot by that name.")}
             </li>
           ) : null}
         </ul>

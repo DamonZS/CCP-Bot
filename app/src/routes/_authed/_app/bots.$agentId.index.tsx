@@ -5,6 +5,7 @@ import { BotProfile } from "@/components/bot-profile/profile";
 import { BotSettingsRows } from "@/components/bot-profile/settings-rows";
 import { PageShell } from "@/components/layout/page-shell";
 import { agentQueryOptions } from "@/lib/agents/queries";
+import { t } from "@/lib/i18n";
 
 export const Route = createFileRoute("/_authed/_app/bots/$agentId/")({
   component: BotProfilePage,
@@ -17,13 +18,13 @@ function BotProfilePage() {
   const toRoster = () => void navigate({ to: "/bots" });
   return (
     <PageShell
-      backButton={{ label: "Bots", linkProps: { to: "/bots" } }}
-      description="Review this Bot’s activity and settings."
+      backButton={{ label: t("Bots"), linkProps: { to: "/bots" } }}
+      description={t("Review this Bot’s activity and settings.")}
       title={agent.data?.name ?? "Bot"}
     >
       {agent.isPending ? null : agent.error ? (
         <p className="mt-6 text-destructive text-sm" role="alert">
-          Couldn't open this Bot. It may not be shared with you.
+          {t("Couldn't open this Bot. It may not be shared with you.")}
         </p>
       ) : (
         <BotProfile

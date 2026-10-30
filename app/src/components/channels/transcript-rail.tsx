@@ -2,6 +2,7 @@ import { Tooltip as TooltipPrimitive } from "@base-ui/react/tooltip";
 import { memo, useEffect, useRef } from "react";
 import { cn } from "@/lib/utils";
 import type { Turn } from "./transcript-turns";
+import { t } from "@/lib/i18n";
 
 type RailProps = {
   turns: readonly Turn[];
@@ -63,7 +64,7 @@ export const TranscriptRail = memo(function TranscriptRail({
 
   return (
     <nav
-      aria-label="Turns"
+      aria-label={t("Turns")}
       className="pointer-events-none absolute inset-y-0 left-2 z-10 hidden items-center @3xl:flex"
     >
       <ol

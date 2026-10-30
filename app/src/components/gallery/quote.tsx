@@ -1,6 +1,7 @@
 import { z } from "zod";
 import type { GalleryComponent } from "@/lib/copilot/gallery-registry";
 import { GalleryFrame } from "./frame";
+import { t } from "@/lib/i18n";
 
 export const QuoteCardProps = z.object({
   quote: z
@@ -24,16 +25,16 @@ type QuoteArgs = z.infer<typeof QuoteCardProps>;
 export function QuoteCard({ quote, attribution, context }: Partial<QuoteArgs>) {
   if (!quote) {
     return (
-      <GalleryFrame title="Quotation">
+      <GalleryFrame title={t("Quotation")}>
         <p className="text-sm text-muted-foreground">
-          There is nothing to quote.
+          {t("There is nothing to quote.")}
         </p>
       </GalleryFrame>
     );
   }
 
   return (
-    <GalleryFrame caption={context} title="Quotation">
+    <GalleryFrame caption={context} title={t("Quotation")}>
       <blockquote className="border-l-2 border-border pl-4">
         <p className="text-sm leading-relaxed">{quote}</p>
         {attribution ? (
@@ -49,10 +50,10 @@ export function QuoteCard({ quote, attribution, context }: Partial<QuoteArgs>) {
 export const GALLERY: GalleryComponent[] = [
   {
     name: "showQuote",
-    title: "Quotation",
+    title: t("Quotation"),
     kind: "card",
     description:
-      "Show a quotation with its attribution. Use when the exact words matter, something a person said, or a line from a document you were given.",
+      t("Show a quotation with its attribution. Use when the exact words matter, something a person said, or a line from a document you were given."),
     parameters: QuoteCardProps,
     Component: QuoteCard as GalleryComponent["Component"],
     preview: {

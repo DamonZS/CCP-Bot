@@ -4,6 +4,7 @@ import { SkillAgents } from "@/components/skills/skill-agents";
 import { SkillFields } from "@/components/skills/skill-fields";
 import { saveSkillMutationOptions } from "@/lib/plugins/mutations";
 import { pluginsPageQueryOptions } from "@/lib/plugins/queries";
+import { t } from "@/lib/i18n";
 
 /**
  * Editing a skill, in the same panel that writes one.
@@ -38,7 +39,7 @@ export function EditSkill({ slug }: { slug: string }) {
     return (
       <div className="mx-auto flex w-full max-w-xl flex-col gap-6 p-8">
         <p className="text-destructive text-sm" role="alert">
-          Couldn't load this skill. Reload the page.
+          {t("Couldn't load this skill. Reload the page.")}
         </p>
       </div>
     );
@@ -54,7 +55,7 @@ export function EditSkill({ slug }: { slug: string }) {
          * not own.
          */}
         <p className="text-muted-foreground text-sm">
-          This skill was deleted, or it isn't yours to edit.
+          {t("This skill was deleted, or it isn't yours to edit.")}
         </p>
       </div>
     );
@@ -63,10 +64,9 @@ export function EditSkill({ slug }: { slug: string }) {
   return (
     <div className="mx-auto flex w-full max-w-xl flex-col gap-6 p-8">
       <header>
-        <h1 className="text-2xl font-semibold">Edit skill</h1>
+        <h1 className="text-2xl font-semibold">{t("Edit skill")}</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Changes apply the next time someone uses <code>/{skill.slug}</code>.
-          Bots that have it keep it.
+          {t("Changes apply the next time someone uses")} <code>/{skill.slug}</code>{t(". Bots that have it keep it.")}
         </p>
       </header>
 

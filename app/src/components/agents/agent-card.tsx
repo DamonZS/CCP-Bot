@@ -3,6 +3,7 @@ import { Link } from "@tanstack/react-router";
 import { AbstractAvatar } from "@/components/agents/abstract-avatar";
 import { Button } from "@/components/ui/button";
 import type { AgentProfile } from "@/lib/agents/queries";
+import { t } from "@/lib/i18n";
 
 export function AgentCard({
   agent,
@@ -58,7 +59,7 @@ export function AgentCard({
           className="-ml-2 text-muted-foreground after:absolute after:inset-0"
           render={<Link params={{ agentId: agent.id }} to="/bots/$agentId" />}
         >
-          Details
+          {t("Details")}
         </Button>
         <IconArrowRight
           aria-hidden="true"

@@ -1,3 +1,4 @@
+import { t } from "@/lib/i18n";
 "use client";
 
 import {
@@ -173,7 +174,7 @@ function ToastClose({
   return (
     <ToastPrimitive.Close
       data-slot="toast-close"
-      aria-label="Close"
+      aria-label={t("Close")}
       render={render}
       className={cn(
         "relative shrink-0 text-muted-foreground after:absolute after:-inset-2 after:content-[''] hover:text-foreground",

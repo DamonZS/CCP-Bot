@@ -1,3 +1,4 @@
+import { t } from "@/lib/i18n";
 /**
  * The current answer each "Settings for this Bot" row states, computed from its query on every
  * render so it updates itself when the page behind it changes something.
@@ -41,7 +42,7 @@ export function setupSummary(agent: {
   builtIn: boolean;
   endpoint: string | null;
 }): string {
-  if (agent.builtIn || !agent.endpoint) return "Built in";
+  if (agent.builtIn || !agent.endpoint) return t("Built in");
   try {
     return new URL(agent.endpoint).host;
   } catch {

@@ -27,6 +27,7 @@ import { Switch } from "@/components/ui/switch";
 import { ruleLabel } from "@/lib/boundaries/rules";
 import { saveActionPolicyMutationOptions } from "@/lib/computers/mutations";
 import { actionPolicyQueryOptions } from "@/lib/computers/queries";
+import { t } from "@/lib/i18n";
 
 export const Route = createFileRoute("/_authed/admin/boundaries")({
   component: BoundariesPage,
@@ -57,13 +58,13 @@ function BoundariesPage() {
       variant="ghost"
     >
       <IconPlus />
-      Add rule
+      {t("Add rule")}
     </Button>
   );
 
   if (!policy) {
     return (
-      <PageShell description={DESCRIPTION} title="Boundaries">
+      <PageShell description={DESCRIPTION} title={t("Boundaries")}>
         {/* Nothing until the policy is known: a rule list that guesses is worse than a blank. */}
         {stored.error ? (
           <p className="text-destructive text-sm" role="alert">
@@ -79,8 +80,8 @@ function BoundariesPage() {
     policy.allow.length === 1 && policy.allow[0] === "true";
 
   return (
-    <PageShell action={addRule} description={DESCRIPTION} title="Boundaries">
-      <PageSection title="Bots may never">
+    <PageShell action={addRule} description={DESCRIPTION} title={t("Boundaries")}>
+      <PageSection title={t("Bots may never")}>
         {policy.deny.length === 0 ? (
           <PageEmpty
             action={
@@ -92,13 +93,13 @@ function BoundariesPage() {
                 variant="outline"
               >
                 <IconPlus />
-                Add rule
+                {t("Add rule")}
               </Button>
             }
             icon={IconShieldX}
-            title="No rules yet"
+            title={t("No rules yet")}
           >
-            Bots can do anything their own permissions allow.
+            {t("Bots can do anything their own permissions allow.")}
           </PageEmpty>
         ) : (
           <PageRows>
@@ -140,20 +141,20 @@ function BoundariesPage() {
         )}
       </PageSection>
 
-      <PageSection title="How rules apply">
+      <PageSection title={t("How rules apply")}>
         <PageRows>
           <Item size="sm">
             <ItemContent>
-              <ItemTitle>Trial mode</ItemTitle>
+              <ItemTitle>{t("Trial mode")}</ItemTitle>
               <ItemDescription>
                 {trial
-                  ? "On. A matching action goes ahead and is recorded in Audit, so you can see what a rule catches before it stops anything."
-                  : "Off. A matching action is stopped, and the Bot is told which rule stopped it."}
+                  ? t("On. A matching action goes ahead and is recorded in Audit, so you can see what a rule catches before it stops anything.")
+                  : t("Off. A matching action is stopped, and the Bot is told which rule stopped it.")}
               </ItemDescription>
             </ItemContent>
             <ItemActions>
               <Switch
-                aria-label="Trial mode"
+                aria-label={t("Trial mode")}
                 checked={trial}
                 disabled={savePolicy.isPending}
                 onCheckedChange={(checked) =>
@@ -174,10 +175,9 @@ function BoundariesPage() {
               <IconListSearch />
             </ItemMedia>
             <ItemContent>
-              <ItemTitle>Stopped actions</ItemTitle>
+              <ItemTitle>{t("Stopped actions")}</ItemTitle>
               <ItemDescription>
-                In Audit, choose Blocked to see every action a rule stopped and
-                which rule it was.
+                {t("In Audit, choose Blocked to see every action a rule stopped and which rule it was.")}
               </ItemDescription>
             </ItemContent>
             <IconChevronRight className="size-4 shrink-0 text-muted-foreground" />
@@ -190,12 +190,12 @@ function BoundariesPage() {
            */}
           <Item size="sm">
             <ItemContent className="min-w-0">
-              <ItemTitle>Everything else</ItemTitle>
+              <ItemTitle>{t("Everything else")}</ItemTitle>
               <ItemDescription
                 className={allowsEverythingElse ? undefined : "font-mono"}
               >
                 {allowsEverythingElse
-                  ? "Allowed. A Bot can do anything no rule above stops, within its own permissions."
+                  ? t("Allowed. A Bot can do anything no rule above stops, within its own permissions.")
                   : policy.allow.length === 0
                     ? "Nothing else is allowed. Every action is refused."
                     : `Only what these allow: ${policy.allow.join(" · ")}`}

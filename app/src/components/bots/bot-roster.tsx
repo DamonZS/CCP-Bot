@@ -33,6 +33,7 @@ import {
   type BotAttention,
   botAttentionQueryOptions,
 } from "@/lib/bot-lifecycle/queries";
+import { t } from "@/lib/i18n";
 
 /**
  * Every Bot the person can reach, in the one place they are listed: pinned first, then their own,
@@ -51,7 +52,7 @@ export function BotRoster() {
   if (agents.data === undefined) {
     return (
       <p className="mt-6 text-destructive text-sm" role="alert">
-        Couldn't load your Bots. Reload the page.
+        {t("Couldn't load your Bots. Reload the page.")}
       </p>
     );
   }
@@ -68,16 +69,16 @@ export function BotRoster() {
   return (
     <>
       {needsYou.length ? (
-        <PageSection title="Needs you">
+        <PageSection title={t("Needs you")}>
           <RosterRows agents={needsYou} byId={byId} />
         </PageSection>
       ) : null}
       {pinned.length ? (
-        <PageSection title="Pinned">
+        <PageSection title={t("Pinned")}>
           <RosterRows agents={pinned} byId={byId} />
         </PageSection>
       ) : null}
-      <PageSection title="Yours">
+      <PageSection title={t("Yours")}>
         {yours.length ? (
           <RosterRows agents={yours} byId={byId} />
         ) : (
@@ -92,33 +93,33 @@ export function BotRoster() {
                   variant="outline"
                 >
                   <IconPlus />
-                  New Bot
+                  {t("New Bot")}
                 </Button>
               )
             }
             icon={IconRobot}
             title={
               yoursPinned
-                ? "All pinned"
+                ? t("All pinned")
                 : yoursWaiting
                   ? "All waiting on you"
                   : "No Bots yet"
             }
           >
             {yoursPinned
-              ? "Your Bots are all pinned above."
+              ? t("Your Bots are all pinned above.")
               : yoursWaiting
                 ? "Your Bots are all under Needs you."
                 : "Bots you create show up here."}
           </PageEmpty>
         )}
       </PageSection>
-      <PageSection title="Shared with you">
+      <PageSection title={t("Shared with you")}>
         {shared.length ? (
           <RosterRows agents={shared} byId={byId} />
         ) : (
-          <PageEmpty icon={IconShare} title="Nothing shared yet">
-            Bots somebody shares with you show up here.
+          <PageEmpty icon={IconShare} title={t("Nothing shared yet")}>
+            {t("Bots somebody shares with you show up here.")}
           </PageEmpty>
         )}
       </PageSection>
@@ -145,11 +146,11 @@ function HiddenSection({
     <PageSection
       action={
         <Button onClick={() => setOpen(!open)} size="sm" variant="ghost">
-          {open ? "Hide" : "Show"}
+          {open ? t("Hide") : t("Show")}
         </Button>
       }
       description={`${agents.length} ${agents.length === 1 ? "Bot" : "Bots"} you hid. Only your list changes.`}
-      title="Hidden"
+      title={t("Hidden")}
     >
       {open ? <RosterRows agents={agents} byId={byId} /> : null}
     </PageSection>

@@ -19,6 +19,7 @@ import { newId } from "@/lib/new-id";
 import { ChannelAvatar } from "./avatar";
 import { Composer, toAgentOptions } from "./composer";
 import { TeamBotConsentCard } from "./team-bot-consent";
+import { t } from "@/lib/i18n";
 
 /**
  * One conversation with several Bots, read from the server's shared transcript.
@@ -93,8 +94,7 @@ export function GroupChat({ channelId }: { channelId: string }) {
         <div className="mx-auto flex w-full max-w-2xl flex-col gap-5 py-6">
           {messages.length === 0 ? (
             <p className="text-sm text-muted-foreground">
-              Say something to {bots.map((bot) => bot.name).join(" and ")}.
-              Every Bot answers in turn; start with @Name to ask just one.
+              {t("Say something to")} {bots.map((bot) => bot.name).join(" and ")}{t(". Every Bot answers in turn; start with @Name to ask just one.")}
             </p>
           ) : null}
           {messages.map((message) => (
@@ -192,7 +192,7 @@ function GroupLine({
             className="tool-line-running text-sm text-muted-foreground"
             role="status"
           >
-            Thinking
+            {t("Thinking")}
           </p>
         ) : message.status === "waiting" ? (
           <p className="text-sm text-muted-foreground">
@@ -202,7 +202,7 @@ function GroupLine({
               params={{ agentId: message.agentId }}
               to="/bots/$agentId"
             >
-              Open {name}
+              {t("Open")} {name}
             </Link>
           </p>
         ) : message.consent ? (
@@ -215,8 +215,8 @@ function GroupLine({
             />
           ) : (
             <p className="text-sm text-muted-foreground">
-              Asked a teammate for permission to use their own{" "}
-              {message.consent.serverId} account.
+              {t("Asked a teammate for permission to use their own")}{" "}
+              {message.consent.serverId} {t("account.")}
             </p>
           )
         ) : message.status === "failed" ? (

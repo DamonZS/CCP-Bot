@@ -19,6 +19,7 @@ import {
   type SharedUseRequestReason,
   sharedUseRequestsQueryOptions,
 } from "@/lib/plugins/shared-use";
+import { t } from "@/lib/i18n";
 
 const WHY: Record<SharedUseRequestReason, string> = {
   refused_call:
@@ -42,7 +43,7 @@ export function SharedUseRequests() {
   if (!isAdmin || !requests.data?.length) return null;
 
   return (
-    <PageSection title="Shared account requests">
+    <PageSection title={t("Shared account requests")}>
       {decide.error ? (
         <p className="mt-4 text-destructive text-sm" role="alert">
           {decide.error.message}
@@ -58,20 +59,20 @@ export function SharedUseRequests() {
               </ItemMedia>
               <ItemContent>
                 <ItemTitle className="line-clamp-none">
-                  {request.botName} wants the shared {request.title} account
+                  {request.botName} {t("wants the shared")} {request.title} {t("account")}
                 </ItemTitle>
                 <ItemDescription className="line-clamp-none">
                   {WHY[request.reason as SharedUseRequestReason] ??
                     request.reason}
                 </ItemDescription>
                 <p className="text-sm">
-                  Now:{" "}
+                  {t("Now:")}{" "}
                   {request.current
                     ? describeApproval(request.current)
-                    : "Not approved"}
+                    : t("Not approved")}
                 </p>
                 <p className="text-sm">
-                  Asked: {describeApproval(request.proposed)}
+                  {t("Asked:")} {describeApproval(request.proposed)}
                 </p>
               </ItemContent>
               <ItemFooter className="justify-start">
@@ -82,7 +83,7 @@ export function SharedUseRequests() {
                   }
                   size="sm"
                 >
-                  Approve
+                  {t("Approve")}
                 </Button>
                 <Button
                   disabled={decide.isPending}
@@ -92,7 +93,7 @@ export function SharedUseRequests() {
                   size="sm"
                   variant="outline"
                 >
-                  Decline
+                  {t("Decline")}
                 </Button>
               </ItemFooter>
             </Item>

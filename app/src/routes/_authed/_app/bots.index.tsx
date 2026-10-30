@@ -5,6 +5,7 @@ import { NewBotSheet } from "@/components/agents/new-bot-sheet";
 import { BotRoster } from "@/components/bots/bot-roster";
 import { PageShell } from "@/components/layout/page-shell";
 import { Button } from "@/components/ui/button";
+import { t } from "@/lib/i18n";
 
 /** Just longer than the sheet's 200ms exit, so it has finished sliding away before the page changes. */
 const SHEET_CLOSE_MS = 240;
@@ -29,11 +30,11 @@ function BotsPage() {
           variant="ghost"
         >
           <IconPlus />
-          New Bot
+          {t("New Bot")}
         </Button>
       }
-      description="Manage your Bots and access those shared with you."
-      title="Bots"
+      description={t("Manage your Bots and access those shared with you.")}
+      title={t("Bots")}
     >
       <BotRoster />
       <NewBotSheet

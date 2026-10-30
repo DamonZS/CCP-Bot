@@ -4,6 +4,7 @@ import { cn } from "@/lib/utils";
 import { useMuse } from "../context";
 import { Divider, MuseScreen, museText, StatusDot } from "../ui";
 import { NoBot } from "./activity";
+import { t } from "@/lib/i18n";
 
 /**
  * Goals: what the centre Bot keeps doing for the person. OpenMuse's "Tracking" is OpenBot's routines,
@@ -14,13 +15,13 @@ export function GoalsScreen() {
   const { bot } = useMuse();
   if (!bot) {
     return (
-      <MuseScreen title="Goals">
+      <MuseScreen title={t("Goals")}>
         <NoBot />
       </MuseScreen>
     );
   }
   return (
-    <MuseScreen title="Goals">
+    <MuseScreen title={t("Goals")}>
       <section>
         <div className="flex items-center gap-2.5">
           <StatusDot tone="green" />
@@ -30,7 +31,7 @@ export function GoalsScreen() {
               "text-[var(--openmuse-green-text)]",
             )}
           >
-            Routines
+            {t("Routines")}
           </h2>
         </div>
         <RoutinesList agentId={bot.id} embedded />

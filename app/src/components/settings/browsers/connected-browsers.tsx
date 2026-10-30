@@ -29,6 +29,7 @@ import { revokeRecorderConnectionMutationOptions } from "@/lib/recorder/mutation
 import { recorderConnectionsQueryOptions } from "@/lib/recorder/queries";
 import { relativeTime } from "@/lib/relative-time";
 import { queryClient } from "@/query-client";
+import { t } from "@/lib/i18n";
 
 /** When a browser connected, to the minute: two copies with the same name (two Chrome profiles) stay told apart. */
 const connectedAt = new Intl.DateTimeFormat(undefined, {
@@ -47,13 +48,13 @@ export function ConnectedBrowsers({
     recorderConnectionsQueryOptions({ listed: true }),
   );
   return (
-    <PageSection title="Connected browsers">
+    <PageSection title={t("Connected browsers")}>
       {connections.isPending ? null : connections.error ? (
         <p className="text-destructive text-sm" role="alert">
-          Couldn't load your connected browsers. Reload the page.
+          {t("Couldn't load your connected browsers. Reload the page.")}
         </p>
       ) : connections.data.connections.length === 0 ? (
-        <PageEmpty>No browsers connected yet.</PageEmpty>
+        <PageEmpty>{t("No browsers connected yet.")}</PageEmpty>
       ) : (
         <PageRows>
           {connections.data.connections.map((connection, index) => (
@@ -109,18 +110,18 @@ function ConnectedBrowserRow({
           <ItemTitle>{name}</ItemTitle>
           <ItemDescription>
             {connection.via === "openbot-browser"
-              ? "Your OpenBot browser, connected "
-              : "Connected "}
+              ? t("Your OpenBot browser, connected ")
+              : t("Connected ")}
             {connectedAt.format(new Date(connection.createdAt))}
             {connection.via === "desktop"
-              ? " from OpenBot Desktop"
+              ? t(" from OpenBot Desktop")
               : connection.via === "web"
                 ? " from OpenBot"
                 : ""}
             ,{" "}
             {/* A recording streams to the gateway, not to OpenBot, so its last use lags: it says so instead. */}
             {connection.recording
-              ? "recording now"
+              ? t("recording now")
               : connection.lastUsedAt
                 ? `last used ${relativeTime(connection.lastUsedAt)}`
                 : "never used"}
@@ -137,20 +138,18 @@ function ConnectedBrowserRow({
               setAsking(true);
             }}
           >
-            {revoke.isPending ? "Disconnecting…" : "Disconnect"}
+            {revoke.isPending ? t("Disconnecting…") : t("Disconnect")}
           </Button>
         </ItemActions>
       </Item>
       <Dialog onOpenChange={setAsking} open={asking}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Disconnect {connection.label}?</DialogTitle>
+            <DialogTitle>{t("Disconnect")} {connection.label}?</DialogTitle>
           </DialogHeader>
           <DialogBody className="mt-4 text-sm">
             <p>
-              OpenBot signs the Recorder in {which} out. It records nothing for
-              you until you connect it again, and a recording running there
-              stops.
+              {t("OpenBot signs the Recorder in")} {which} {t("out. It records nothing for you until you connect it again, and a recording running there stops.")}
             </p>
             {revoke.error ? (
               <p className="mt-2 text-destructive" role="alert">
@@ -160,7 +159,7 @@ function ConnectedBrowserRow({
           </DialogBody>
           <DialogFooter className="mt-4">
             <Button size="sm" variant="ghost" onClick={() => setAsking(false)}>
-              Cancel
+              {t("Cancel")}
             </Button>
             <Button
               size="sm"
@@ -172,7 +171,7 @@ function ConnectedBrowserRow({
                 })
               }
             >
-              {revoke.isPending ? "Disconnecting…" : "Disconnect"}
+              {revoke.isPending ? t("Disconnecting…") : t("Disconnect")}
             </Button>
           </DialogFooter>
         </DialogContent>

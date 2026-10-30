@@ -25,6 +25,7 @@ import {
   type SandboxedRecord,
   sandboxedListQueryOptions,
 } from "@/lib/sandboxed/queries";
+import { t } from "@/lib/i18n";
 
 /**
  * Browser-authored components are edited as drafts, previewed in the production sandbox renderer,
@@ -205,10 +206,9 @@ function PlaygroundPage() {
         <div className="flex items-start gap-2">
           <SidebarToggle className="-ml-2 shrink-0" />
           <div>
-            <h1 className="font-bold text-2xl">Playground</h1>
+            <h1 className="font-bold text-2xl">{t("Playground")}</h1>
             <p className="mt-1 max-w-prose text-pretty text-muted-foreground text-sm leading-relaxed">
-              Write a component and publish it without redeploying. Your edits
-              are a draft. Conversations only show what is published.
+              {t("Write a component and publish it without redeploying. Your edits are a draft. Conversations only show what is published.")}
             </p>
           </div>
         </div>
@@ -220,7 +220,7 @@ function PlaygroundPage() {
             type="button"
             variant="outline"
           >
-            Save draft
+            {t("Save draft")}
           </Button>
           <Button
             /* `publish` saves first, since publishing acts on the stored draft, not the editors. */
@@ -229,7 +229,7 @@ function PlaygroundPage() {
             size="sm"
             type="button"
           >
-            Publish
+            {t("Publish")}
           </Button>
         </div>
       </header>
@@ -255,28 +255,28 @@ function PlaygroundPage() {
         <div className="space-y-3">
           <div className="grid gap-2 md:grid-cols-2">
             <TextField
-              label="Name"
+              label={t("Name")}
               onChange={set("slug")}
-              placeholder="refund_card"
+              placeholder={t("refund_card")}
               value={draft.slug}
             />
             <TextField
-              label="Title"
+              label={t("Title")}
               onChange={set("title")}
-              placeholder="Refund card"
+              placeholder={t("Refund card")}
               value={draft.title}
             />
           </div>
           <TextField
-            label="What the model is told about it"
+            label={t("What the model is told about it")}
             onChange={set("description")}
-            placeholder="Show a refund with its amount, reason and status."
+            placeholder={t("Show a refund with its amount, reason and status.")}
             value={draft.description}
           />
-          <CodeField label="HTML" onChange={set("html")} value={draft.html} />
-          <CodeField label="CSS" onChange={set("css")} value={draft.css} />
+          <CodeField label={t("HTML")} onChange={set("html")} value={draft.html} />
+          <CodeField label={t("CSS")} onChange={set("css")} value={draft.css} />
           <CodeField
-            label="JavaScript"
+            label={t("JavaScript")}
             onChange={set("jsFunctions")}
             value={draft.jsFunctions}
           />
@@ -284,7 +284,7 @@ function PlaygroundPage() {
             error={
               !validation.ok ? validation.fields.argumentSchema : undefined
             }
-            label="Arguments (JSON Schema)"
+            label={t("Arguments (JSON Schema)")}
             onChange={set("argumentSchema")}
             value={draft.argumentSchema}
           />
@@ -292,7 +292,7 @@ function PlaygroundPage() {
             error={
               !validation.ok ? validation.fields.sampleArguments : undefined
             }
-            label="Sample arguments"
+            label={t("Sample arguments")}
             onChange={set("sampleArguments")}
             value={draft.sampleArguments}
           />
@@ -300,11 +300,11 @@ function PlaygroundPage() {
 
         <div className="space-y-4">
           <div className="rounded-lg border p-4">
-            <div className="mb-2 text-sm font-medium">Preview</div>
+            <div className="mb-2 text-sm font-medium">{t("Preview")}</div>
             {sample === null ? (
               <p className="text-sm text-destructive">
                 {validation.ok
-                  ? "The sample arguments aren't available."
+                  ? t("The sample arguments aren't available.")
                   : (validation.fields.sampleArguments ??
                     "Fix the JSON fields before previewing.")}
               </p>
@@ -330,11 +330,11 @@ function PlaygroundPage() {
 
           <div className="rounded-lg border border-border bg-card">
             <div className="border-border border-b px-4 py-2 font-medium text-sm">
-              Saved here
+              {t("Saved here")}
             </div>
             {(components ?? []).length === 0 ? (
               <p className="px-4 py-3 text-muted-foreground text-sm">
-                Nothing saved yet. Save a draft to see it here.
+                {t("Nothing saved yet. Save a draft to see it here.")}
               </p>
             ) : (
               <ul className="divide-y divide-border">
@@ -348,9 +348,9 @@ function PlaygroundPage() {
                       <div className="text-xs text-muted-foreground">
                         {component.published
                           ? `published, revision ${component.revision}`
-                          : "draft only, no Bot can draw it"}
+                          : t("draft only, no Bot can draw it")}
                         {component.hasUnpublishedChanges
-                          ? " · edited since publishing"
+                          ? t(" · edited since publishing")
                           : ""}
                       </div>
                     </div>
@@ -361,7 +361,7 @@ function PlaygroundPage() {
                         type="button"
                         variant="outline"
                       >
-                        Open
+                        {t("Open")}
                       </Button>
                       <Button
                         onClick={() => setDeleting(component.name)}
@@ -369,7 +369,7 @@ function PlaygroundPage() {
                         type="button"
                         variant="ghost"
                       >
-                        Delete
+                        {t("Delete")}
                       </Button>
                     </div>
                   </li>
@@ -377,8 +377,7 @@ function PlaygroundPage() {
               </ul>
             )}
             <p className="border-border border-t px-4 py-2 text-muted-foreground text-xs">
-              Publishing makes it available to every Bot. Turn it off for one
-              Bot on the UI components page.
+              {t("Publishing makes it available to every Bot. Turn it off for one Bot on the UI components page.")}
             </p>
           </div>
         </div>
@@ -396,15 +395,14 @@ function PlaygroundPage() {
       >
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Delete {deleting}?</DialogTitle>
+            <DialogTitle>{t("Delete")} {deleting}?</DialogTitle>
             <DialogDescription>
-              It's removed from this deployment, and no Bot can draw it. You
-              can't undo this.
+              {t("It's removed from this deployment, and no Bot can draw it. You can't undo this.")}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
             <Button onClick={() => setDeleting(null)} size="sm" variant="ghost">
-              Cancel
+              {t("Cancel")}
             </Button>
             <Button
               onClick={() => {
@@ -418,7 +416,7 @@ function PlaygroundPage() {
               size="sm"
               variant="destructive"
             >
-              Delete it
+              {t("Delete it")}
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { agentQueryOptions } from "@/lib/agents/queries";
+import { t } from "@/lib/i18n";
 
 function Tag({ children }: { children: ReactNode }) {
   return (
@@ -65,7 +66,7 @@ export function AgentProfile({
   if (agent.error || !agent.data) {
     return (
       <p className="p-8 text-sm text-destructive" role="alert">
-        Couldn't load this Bot.
+        {t("Couldn't load this Bot.")}
       </p>
     );
   }
@@ -92,14 +93,14 @@ export function AgentProfile({
         </div>
 
         <div className="flex flex-wrap justify-center gap-1.5">
-          <Tag>{profile.visibility === "private" ? "Private" : "Public"}</Tag>
-          {profile.systemOwned ? <Tag>System owned</Tag> : null}
+          <Tag>{profile.visibility === "private" ? t("Private") : t("Public")}</Tag>
+          {profile.systemOwned ? <Tag>{t("System owned")}</Tag> : null}
         </div>
       </header>
 
       <section className="grid gap-2">
         <h2 className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-          What it does
+          {t("What it does")}
         </h2>
         <p className="text-sm whitespace-pre-wrap text-pretty">
           {profile.roleDescription}
@@ -113,7 +114,7 @@ export function AgentProfile({
             void navigate({ search: { agent: agentId }, to: "/channel/new" })
           }
         >
-          New conversation
+          {t("New conversation")}
         </Button>
         <Button
           className="w-full text-sm!"
@@ -122,7 +123,7 @@ export function AgentProfile({
           )}
           variant="outline"
         >
-          Open {profile.name}
+          {t("Open")} {profile.name}
         </Button>
       </div>
       {footer ? (
