@@ -170,3 +170,7 @@ jobs:
             gh release create "$TAG" container-images.json \
               --title "CCP-Bot $TAG" --notes-file notes.md
           fi
+          # Re-pushing a tag leaves GitHub holding the old release as a draft, which downloads 404
+          # for everyone without a token. Publishing explicitly makes the end state the same whether
+          # this ran against a fresh release or an existing one.
+          gh release edit "$TAG" --draft=false
