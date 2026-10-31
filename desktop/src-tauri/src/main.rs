@@ -524,9 +524,9 @@ fn windows_blocker_instruction(blocker: win::Blocker) -> String {
 /// What local mode looks like from the window.
 #[derive(Serialize)]
 struct LocalStatus {
-    /// Whether this build can run CCP-Bot this way at all. Only Windows is wired up, and the window
-    /// reads this before it offers the choice: an option that cannot be honoured is worse than no
-    /// option.
+    /// Whether this build can run CCP-Bot this way at all. Windows and macOS are wired up — each has
+    /// a portable database this mode can run — and the window reads this before it offers the
+    /// choice: an option that cannot be honoured is worse than no option.
     supported: bool,
     /// Whether this folder is run by local mode at all — what the Windows stage check reads too.
     wanted: bool,
@@ -590,7 +590,7 @@ fn local_status_of<R: tauri::Runtime>(app: &tauri::AppHandle<R>, root: &Path) ->
     let bot_port = local::remembered_bot_port(root);
     let computer_port = local::remembered_computer_port(root);
     LocalStatus {
-        supported: cfg!(windows),
+        supported: local::supported_here(),
         wanted: local::wanted(root),
         database_port: local::remembered_port(root),
         database_running: local::postgres_running(root),

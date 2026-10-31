@@ -40,15 +40,22 @@ CCP-Bot 桌面端一路走来都是「容器里的栈」：它自己挑一个容
 
 - **引擎选择**：`local` 为默认；已保存过别的引擎的老机器不自动改（避免把正在用 Docker 的人的栈换掉）。
 - **一次性准备**（首次运行）：
-  - 便携 PostgreSQL：EDB 的 Windows 二进制 zip（约 315 MB），解包到 `<root>/postgres/pgsql`，**按 SHA-256 钉住**再解包——版本号是期望，digest 才是实际跑过的东西。
-  - **pgvector**：迁移文件的第一句就是 `CREATE EXTENSION IF NOT EXISTS vector;`，而 EDB 的便携版**不带**这个扩展（容器路线是从 `pgvector/pgvector` 镜像里拿到的）。所以还要下载一次很小的扩展包（约 170 KB，同样按 SHA-256 钉住），把 `vector.dll` 放进 `pgsql/lib`、`vector.control` 与升级脚本放进 `pgsql/share/extension`；`vector.control` 在不在是「装没装」的判据。**少了它，第一次迁移就停在 `extension "vector" is not available`，后面全新的步骤一个都不会跑**——这是真机跑出来的，不是推测。
+  - 便携 PostgreSQL：EDB 的官方二进制 zip，解包到 `<root>/postgres/pgsql`，**按 SHA-256 钉住**再解包——版本号是期望，digest 才是实际跑过的东西。按平台是一张表（同一份代码在 Windows 上也能断言 macOS 那一行）：
+
+    | 平台 | 资产 | 大小 | SHA-256 | 解包后的目录形状 |
+    | --- | --- | --- | --- | --- |
+    | Windows x64 | `postgresql-17.6-1-windows-x64-binaries.zip` | 329,891,687 B | `d378882abd001a186735acd6f6ba716bca6ccd192e800412d4fd15ed25376b3e` | `pgsql/lib`、`pgsql/share/extension` |
+    | macOS arm64 | `postgresql-17.6-1-osx-binaries.zip` | 358,923,135 B | `5afb85f5d764176bb00a527cfc5dd9127b9f8efaa33f5a9afbedbf6ceb985fcc` | `pgsql/lib/postgresql`、`pgsql/share/postgresql/extension` |
+
+    macOS 那一包多一件事：里面有 119 个符号链接（`pgsql/lib` 下 35 个），按普通文件解出来是 19 字节的文本桩，而 `postgres` 要的是链接名——所以 unix 侧解包走 `zip` crate，逐条把链接重建出来（Windows 仍旧 `Expand-Archive`，那边没有链接）。macOS 包另有 741 MB 是 `pgAdmin 4.app`，本模式按路径段跳过、一个字节都不解。
+  - **pgvector**：迁移文件的第一句就是 `CREATE EXTENSION IF NOT EXISTS vector;`，而 EDB 的便携版**不带**这个扩展（容器路线是从 `pgvector/pgvector` 镜像里拿到的）。所以还要下载一次很小的扩展包（同样按 SHA-256 钉住）：Windows 是 `vector.v0.8.6-pg17.zip`（169,689 B，来自 `andreiramani/pgvector_pgsql_windows`），macOS 是本项目自己构建并作为 release `pgvector-0.8.6` 发布的 `pgvector-macos-arm64.zip`（75,225 B，`1486659e0fd58bb4a253a69bc5c8dc3a03f806649cd8172e7ec06b3855d8fa16`）。放法与平台有关：库文件进 `pgsql/lib`（macOS 是 `pgsql/lib/postgresql`，文件名 `vector.dylib`），`vector.control` 与升级脚本进扩展目录（macOS 是 `pgsql/share/postgresql/extension`）。**两个包形状不一样**（Windows 嵌套 `lib/` + `share/extension/`，macOS 那三个文件就在顶层），所以放置按**文件名**找、不按目录形状；`vector.control` 在不在仍是「装没装」的判据。**少了它，第一次迁移就停在 `extension "vector" is not available`，后面全新的步骤一个都不会跑**——这是真机跑出来的，不是推测。
   - 数据簇：`initdb -U ccpbot -A trust -E UTF8`，落在 `<root>/postgres/data`；只监听回环，所以用 trust（不走网络就无所谓密码，也就没有第二份要保管的凭据）。
   - 建库：`createdb ccpbot`；库已存在算成功。
   - `.env`：**合并**写法——只覆盖我们要管的键（`DATABASE_URL` / `PORT` / `SERVER_PORT` / `APP_DIST_DIR` / `SINGLE_USER` / `NODE_ENV`），保留文件里其它键与注释。
   - 依赖与界面：`bun install`；`bun run --filter app build` 产出 `app/dist`（界面由 server 的 `serveStatic` + SPA 兜底提供，见 `server/src/app.ts:2016-2035`）。
   - 迁移：`bun run db:migrate`（在 `server/` 下跑，读 `../.env`）。
   - **内建 Bot**：检出里有 `agent-bot/src/index.ts` 就从**检出根**起一个 `bun --env-file=.env agent-bot/src/index.ts` 子进程（入口 import 的是 `../../shared/…`，所以工作目录必须是检出根），从 `<root>/bot/port` 取（或选一次）端口，只往它的环境里放 `PORT` 与 `MANAGED_AGENT_TOKEN` 两项（模型凭据由 `--env-file=.env` 读，与 server 读同一个文件），然后轮询它的 `/health`。服务端靠 `MANAGED_AGENT_AG_UI_URL` 认它 —— 这一项在 `.env` 里**始终被写一次**：有 Bot 就写地址，没有就写成空串（空串在服务端等于「没有」，见 `server/src/config.ts` 的 `optional()`，所以上一轮留下的地址不会骗服务端去注册一个不响应的 agent）。没有 Bot 的检出会明确说一声然后继续跑（界面与路由照常可用，只是没有可对话的同事）。
-- **进程**：server、worker、内建 Bot 与 computer 各一个子进程，输出追加到 `<root>/logs/local-*.log`；Windows 上打 `CREATE_NO_WINDOW`，不弹控制台。
+- **进程**：server、worker、内建 Bot 与 computer 各一个子进程，输出追加到 `<root>/logs/local-*.log`；Windows 上打 `CREATE_NO_WINDOW`，不弹控制台。macOS 上每个服务各起一个进程组，停的时候整组一起收——不然 bun 自己起的子进程会留下来占着端口（Windows 侧对应的是 `taskkill /T`）。
   - 健康：轮询 `GET http://127.0.0.1:3010/health` 直到 200。
 - **让 Bot 真能干活（computer）**：会说话的 Bot 和会干活的 Bot 差一个 computer —— 文件与命令的工具都在它身上（`server/src/computer/*`）。所以本地模式也起它：`agent-computer/src/index.ts` 作为本机进程（工作目录是检出根），端口从 `<root>/computer/port` 取（或选一次），环境里给 `PORT`、`COMPUTER_TOKEN`（从 `vault` 铸出并记住）、`COMPUTER_BOT_ID=shared`、`PLAYWRIGHT_BROWSERS_PATH=<root>/computer/browsers`（**不占账号共享的 Playwright 缓存**：卸载 CCP-Bot 不该顺手带走别的东西的浏览器），以及 **`WORKSPACE_DIR` = 它被允许动的那个文件夹**。**刻意不给 `COMPUTER_PEOPLE_ONLY`**：那个标记属于「跑主人自己浏览器」的那条线（`local_browser.rs`），Bot 要的不是那一台。服务端靠 `.env` 里的 `AGENT_COMPUTER_URL`（有 computer 就写地址，没有写空串）与 `AGENT_COMPUTER_ALLOW_PRIVATE_HOSTS=true` 认它 —— 后者是必须的：本地模式的 computer 一定在私有地址（回环）上，compose 也是靠把 `NODE_ENV` 留空才让这条成立。
   - **工作文件夹**：默认 `<root>/workspace`；想指到自己的项目，就往 `<root>/workspace.txt` 写一行绝对路径（`set_workspace_folder` 写的也是它）。用文件而不是应用设置，是为了让「指哪儿」这件事可以靠改一行完成、撤销就是删掉那一行。安全性不在这一层而在计算机那一层：`agent-computer/src/workspace.ts` 把每条路径都限制在 `WORKSPACE_DIR` 里（绝对路径直接拒、解析后必须在根内、跟随符号链接后仍在根内），所以指到哪儿都关得住。
@@ -91,10 +98,10 @@ CCP-Bot 桌面端一路走来都是「容器里的栈」：它自己挑一个容
 - `desktop/src-tauri/src/install.rs`：把 `fetch_verified` / `digest_of` 放宽到 crate 内可见，供本地模式下载用。
 - `desktop/src/`：向导里的引擎选择与文案（本地为默认）。
 - 验证与证据：本机（Windows、标准账号、**Docker daemon 停着**）从冷启动到 `/health` 200 与页面可用的实测；`cargo test` 全量。
-- `desktop/src-tauri/src/local.rs` 里的扩展部分：`vector()` / `vector_installed()` / `ensure_vector()` / `place_vector()` / `copy_files()`，以及「已装就不再下载」「只放库与 control、不放头文件」两条单测。
-  - `desktop/src-tauri/src/local.rs` 里的扩展部分：`vector()` / `vector_installed()` / `ensure_vector()` / `place_vector()` / `copy_files()`，以及「已装就不再下载」「只放库与 control、不放头文件」两条单测。
+- `desktop/src-tauri/src/local.rs` 里的扩展部分：`vector()` / `vector_installed()` / `ensure_vector()` / `place_vector()`（配套 `find_file()` / `copy_into()`，按文件名放置），以及「已装就不再下载」「只放库与 control、不放头文件」两条单测。
+  - `desktop/src-tauri/src/local.rs` 里的扩展部分：`vector()` / `vector_installed()` / `ensure_vector()` / `place_vector()`（配套 `find_file()` / `copy_into()`，按文件名放置），以及「已装就不再下载」「只放库与 control、不放头文件」两条单测。
 - 密钥与 Intelligence：`deployment_secrets()`（复用 `vault` + `env::minted`，与容器路线同一条判据）、`write_intelligence()`、`SERVER_INTERNAL_URL` 写进 `.env`；单测「同一目录两次调用铸出同一套密钥」「`.env` 只覆盖自己的键、注释与别人的键原样保留」。
-- 无引擎的机器默认走本地：`LocalStatus.supported`（只有 Windows 为真），窗口在 `detect_engine` 与 `local_status` 都回来之后、且确认没有任何引擎时才默认选中本地（「改用 Docker」仍然可以赢回来）。
+- 无引擎的机器默认走本地：`LocalStatus.supported`（Windows 与 macOS 为真，由平台资产表决定：`local::supported_here()`），窗口在 `detect_engine` 与 `local_status` 都回来之后、且确认没有任何引擎时才默认选中本地（「改用 Docker」仍然可以赢回来）。
 - `desktop/src/LocalRun.tsx` + `desktop/src/LocalRun.test.tsx`（新）：本地模式那几行事实（含「内建 Bot」）、当前步骤、启动/停止按钮；五条界面测试。
 
 ## 实测证据（2026-10-30，本机 Windows 10.0.26100、标准账号 `damon\damon`、Docker daemon 停着、无 WSL 发行版可用）
@@ -118,7 +125,7 @@ CCP-Bot 桌面端一路走来都是「容器里的栈」：它自己挑一个容
 ## 真机跑出来的四个坑（都已修，写在代码注释里）
 
 1. **`pg_ctl start` 的管道会被 postmaster 继承** → 用 `.output()` 等它会在数据库已经起来之后仍然挂住（现场：测试进程 CPU 停住、日志显示 `database system is ready to accept connections`）。改成 `Stdio::null()` + `.status()`，失败原因改读 `<root>/logs/local-postgres.log` 的尾部。
-2. **EDB 便携版不带 pgvector** → 第一次迁移停在 `extension "vector" is not available`（`Could not open extension control file … vector.control`）。接入 `andreiramani/pgvector_pgsql_windows` 的 `vector.v0.8.6-pg17.zip`（169,689 字节，SHA-256 钉住），只把 `lib/` 与 `share/extension/` 拷进去。
+2. **EDB 便携版不带 pgvector** → 第一次迁移停在 `extension "vector" is not available`（`Could not open extension control file … vector.control`）。Windows 接入 `andreiramani/pgvector_pgsql_windows` 的 `vector.v0.8.6-pg17.zip`（169,689 字节，SHA-256 钉住），只把库与扩展文件拷进去；macOS 那一份是本项目在 arm64 上构建、作为 release `pgvector-0.8.6` 发布的 `pgvector-macos-arm64.zip`（75,225 字节，SHA-256 钉住）——**不内置、不重编**：zip 带 mtime，重建就会改变 digest，把钉住的哈希变成摆设。两个包形状不同（Windows 嵌套目录、macOS 三个文件在顶层），所以放置改成了按文件名找。
 3. **服务需要密钥才能启动（Intelligence 曾经也是前置）** → `KEY_ENCRYPTION_KEY must be configured`（`server/src/config.ts:507`）；密钥走 vault + `env::minted`（与容器路线同一条判据，重启复用不轮换）。Intelligence 三项**曾经**也是前置（旧文案 `CopilotKit Intelligence is required and is not configured. Missing: INTELLIGENCE_API_URL, INTELLIGENCE_GATEWAY_WS_URL`，`config.ts:1018`），服务端 `8611e30` 之后不再是：`server/src/config.ts:1025-1050` 把「三项全缺」当成本机自己站着的合法形状（`mode: "sse"` + 一行 `intelligence-absent`），本机路线因此一个占位键都不再伪造；只有人签到或粘贴过连接时才由向导写进 `.env`。
 4. **server 必须从 `server/` 目录运行** → 从仓库根启动时租户包默认路径 `../examples/fintech` 解析到仓库外，直接 `ENOENT` 打不开 `brand.yaml`；现在两个服务都以 `server/` 为工作目录，server 读 `--env-file=../.env`、worker 以 `../worker/src/index.ts` 启动（与 compose 一致），worker 只拿它自己的三个变量。
 5. **内建 Bot 要一个模型凭据** → 没有它，`agent-bot` 直接退出并说明 `OPENAI_API_KEY is not set, and no OPENAI_BASE_URL names an endpoint that needs no key`，从外面看只是「97 秒没有响应」。这正是向导里给模型密钥的那一步，本地模式不去猜、也不替人填：没有它就照实说 Bot 不响应。0.2.9 的真机复测还发现这一份答案**根本没到过 Bot**：`<root>/.env` 的 11 个键全是应用自己写的、`<root>/.secrets` 的六个 DPAPI 文件里也没有模型键（docs/install-verified.md §20.2），于是向导答完模型屏的人被告知「Bot 不能回答，因为没有模型」。现在答案从 `local_start` 的 `model` 字段一路传到 `local::remember_model`，按 `env::model_environment` 的同一份规则分流：凭据进这台机器自己的凭据库（`<root>/.secrets`），围绕它的设置进 `.env`，子进程从环境里拿到凭据（见坑 10）。

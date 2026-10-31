@@ -38,40 +38,109 @@ use crate::install::{self, Download};
 use crate::problem::Problem;
 use crate::quiet;
 
-/// The portable PostgreSQL this is built against: EDB's Windows binaries zip, which needs no
-/// installer and no administrator — unzip it anywhere and it runs.
-#[cfg(windows)]
-pub const POSTGRES_URL: &str =
-    "https://get.enterprisedb.com/postgresql/postgresql-17.6-1-windows-x64-binaries.zip";
-#[cfg(windows)]
-pub const POSTGRES_ARCHIVE: &str = "postgresql-17.6-1-windows-x64-binaries.zip";
-
-/// What that archive has to hash to before anything is unpacked or run.
+/// One platform's copy of something this mode fetches: where it comes from, what it is called, and
+/// what it has to hash to before anything is unpacked or run.
 ///
-/// Fetched and measured on a real machine: 329,891,687 bytes, and the first attempt at downloading
-/// it was cut short by the server, which is exactly the sort of thing a digest catches.
-pub const POSTGRES_SHA256: &str =
-    "d378882abd001a186735acd6f6ba716bca6ccd192e800412d4fd15ed25376b3e";
+/// Data rather than `#[cfg]`-selected constants, so that every row is compiled and can be asserted
+/// on every machine: the macOS row is checked by the tests on Windows, where the macOS branch itself
+/// cannot run. The digest is what was actually unpacked and run; a version is what somebody hoped
+/// would be served.
+pub struct Asset {
+    pub url: &'static str,
+    pub file: &'static str,
+    pub sha256: &'static str,
+}
+
+/// The portable PostgreSQL this mode is built against: EDB's binaries zip, which needs no installer
+/// and no administrator — unzip it anywhere and it runs.
+///
+/// Windows: measured 329,891,687 bytes on a real machine, and the first attempt at downloading it
+/// was cut short by the server, which is exactly the sort of thing a digest catches. macOS: the same
+/// publisher's universal build, 358,923,135 bytes, whose `bin/{postgres,initdb,pg_ctl,pg_config}`
+/// all carry the arm64 slice and whose libraries are found through `@loader_path`, so the tree can be
+/// moved anywhere. Both archives hold `pgsql/` at their top level, so unpacking leaves one shape.
+pub const WINDOWS_POSTGRES: Asset = Asset {
+    url: "https://get.enterprisedb.com/postgresql/postgresql-17.6-1-windows-x64-binaries.zip",
+    file: "postgresql-17.6-1-windows-x64-binaries.zip",
+    sha256: "d378882abd001a186735acd6f6ba716bca6ccd192e800412d4fd15ed25376b3e",
+};
+pub const MACOS_POSTGRES: Asset = Asset {
+    url: "https://get.enterprisedb.com/postgresql/postgresql-17.6-1-osx-binaries.zip",
+    file: "postgresql-17.6-1-osx-binaries.zip",
+    sha256: "5afb85f5d764176bb00a527cfc5dd9127b9f8efaa33f5a9afbedbf6ceb985fcc",
+};
+
+/// The archive that platform's portable server comes in, or nothing if this mode does not serve it.
+pub fn postgres_asset(os: &str) -> Option<Asset> {
+    match os {
+        "windows" => Some(WINDOWS_POSTGRES),
+        "macos" => Some(MACOS_POSTGRES),
+        _ => None,
+    }
+}
 
 pub const POSTGRES_FOLDER: &str = "postgres";
 /// What the EDB archive holds at its top level, so that is where unpacking leaves the binaries.
 pub const POSTGRES_UNPACKED: &str = "pgsql";
 
-/// The pgvector build for the portable server above, from the Windows binaries the extension's own
-/// documentation points at.
+/// The pgvector build for the portable server above: on Windows the binaries the extension's own
+/// documentation points at, on macOS this project's own build of it, published as a release asset.
 ///
 /// The first migration is `CREATE EXTENSION IF NOT EXISTS vector;`, and the EDB build does not
 /// bundle the extension — a container gets it from the `pgvector/pgvector` image, a machine running
 /// PostgreSQL itself has to be handed one. Without it the very first migration stops with
 /// `extension "vector" is not available`, and nothing after it runs.
-#[cfg(windows)]
-pub const VECTOR_URL: &str =
-    "https://github.com/andreiramani/pgvector_pgsql_windows/releases/download/0.8.6_17/vector.v0.8.6-pg17.zip";
-#[cfg(windows)]
-pub const VECTOR_ARCHIVE: &str = "vector.v0.8.6-pg17.zip";
+///
+/// The macOS build is pinned by digest (75,225 bytes) rather than compiled on the machine that wants
+/// it: a zip carries timestamps, so rebuilding it would change the digest and undo the pin. It was
+/// built for arm64 with a Ventura deployment target and links the system library alone, and it holds
+/// its three files at the top level — which is why placing them looks for file names rather than for
+/// the folder shape the Windows archive happens to have.
+pub struct VectorAsset {
+    pub download: Asset,
+    /// The library the server loads: the same extension, named the way each platform names one.
+    pub library: &'static str,
+}
+pub const WINDOWS_VECTOR: VectorAsset = VectorAsset {
+    download: Asset {
+        url: "https://github.com/andreiramani/pgvector_pgsql_windows/releases/download/0.8.6_17/vector.v0.8.6-pg17.zip",
+        file: "vector.v0.8.6-pg17.zip",
+        sha256: "420388e9e9f05d92f06d6967ce8772483629b27a66ca9255925fa0fdd445438e",
+    },
+    library: "vector.dll",
+};
+pub const MACOS_VECTOR: VectorAsset = VectorAsset {
+    download: Asset {
+        url: "https://github.com/DamonZS/CCP-Bot/releases/download/pgvector-0.8.6/pgvector-macos-arm64.zip",
+        file: "pgvector-macos-arm64.zip",
+        sha256: "1486659e0fd58bb4a253a69bc5c8dc3a03f806649cd8172e7ec06b3855d8fa16",
+    },
+    library: "vector.dylib",
+};
 
-/// What that archive has to hash to: 169,689 bytes, measured on the same machine.
-pub const VECTOR_SHA256: &str = "420388e9e9f05d92f06d6967ce8772483629b27a66ca9255925fa0fdd445438e";
+/// The extension archive that platform's server is given, or nothing if this mode does not serve it.
+pub fn vector_asset(os: &str) -> Option<VectorAsset> {
+    match os {
+        "windows" => Some(WINDOWS_VECTOR),
+        "macos" => Some(MACOS_VECTOR),
+        _ => None,
+    }
+}
+
+/// The library file name this platform's server loads.
+pub fn vector_library() -> &'static str {
+    vector_asset(std::env::consts::OS)
+        .unwrap_or(WINDOWS_VECTOR)
+        .library
+}
+
+/// Whether this machine can run CCP-Bot the local way at all.
+///
+/// True where this mode has a portable database of its own to unpack; anywhere else the container
+/// route is the answer, and the window is told so before it offers the choice.
+pub fn supported_here() -> bool {
+    postgres_asset(std::env::consts::OS).is_some()
+}
 
 /// Where the extension archive is unpacked before its files are placed into the server.
 pub const VECTOR_FOLDER: &str = "pgvector";
@@ -150,29 +219,25 @@ pub const MANAGED_KEYS: [&str; 10] = [
 
 /// The archive to unpack for this platform, or why there is not one.
 ///
-/// Only Windows is wired up. The packages exist elsewhere, but each platform's archive is a
-/// different shape and none of them has been run here, so the honest answer for now is that the
-/// container route is the one to use.
+/// Windows and macOS are both wired up: each has a portable build of the same database, so a machine
+/// that has never had PostgreSQL installed can run one out of a folder. Any other platform is still
+/// served by the container route, and says so here rather than starting something it cannot finish.
 pub fn postgres() -> Result<Download, Problem> {
-    #[cfg(windows)]
-    {
-        return Ok(Download {
-            url: POSTGRES_URL.to_string(),
-            sha256: POSTGRES_SHA256,
-            file: POSTGRES_ARCHIVE,
-        });
-    }
-    #[cfg(not(windows))]
-    {
-        Err(Problem::with(
-            "Local mode ships a portable database for Windows only.",
+    let asset = postgres_asset(std::env::consts::OS).ok_or_else(|| {
+        Problem::with(
+            "Local mode ships a portable database for Windows and macOS only.",
             format!(
                 "no portable PostgreSQL is wired up for {} on {}",
                 std::env::consts::OS,
                 std::env::consts::ARCH
             ),
-        ))
-    }
+        )
+    })?;
+    Ok(Download {
+        url: asset.url.to_string(),
+        sha256: asset.sha256,
+        file: asset.file,
+    })
 }
 
 pub fn postgres_folder(root: &Path) -> PathBuf {
@@ -656,34 +721,77 @@ fn ensure_postgres_with(
     Ok(bin_folder(root))
 }
 
-/// The pgvector archive, on the one platform this mode serves.
-#[cfg(windows)]
+/// The pgvector archive for this platform, or why there is not one.
 pub fn vector() -> Result<Download, Problem> {
+    let asset = vector_asset(std::env::consts::OS).ok_or_else(|| {
+        Problem::with(
+            "Running CCP-Bot on this computer is not implemented here yet.".to_string(),
+            format!(
+                "no portable database extension is wired up for {} on {}",
+                std::env::consts::OS,
+                std::env::consts::ARCH
+            ),
+        )
+    })?;
     Ok(Download {
-        url: VECTOR_URL.to_string(),
-        sha256: VECTOR_SHA256,
-        file: VECTOR_ARCHIVE,
+        url: asset.download.url.to_string(),
+        sha256: asset.download.sha256,
+        file: asset.download.file,
     })
 }
 
-/// Local mode is Windows-only for now: the portable database is a Windows build, and so is the
-/// extension placed beside it.
-#[cfg(not(windows))]
-pub fn vector() -> Result<Download, Problem> {
-    Err(Problem::with(
-        "Running CCP-Bot on this computer is not implemented here yet.".to_string(),
-        "the portable database and its extension are Windows builds for now".to_string(),
-    ))
+/// Where a platform's portable server keeps its own libraries and extension files, relative to the
+/// unpacked archive.
+///
+/// Windows follows the plain install layout, `lib/` and `share/extension/`. The macOS build puts both
+/// one level deeper, in `lib/postgresql/` and `share/postgresql/extension/`, because that build's
+/// `SHAREDIR` is `share/postgresql`. Same files, two shapes, and the server looks in only one of
+/// them — so this has to follow the platform rather than be assumed.
+pub struct Tree {
+    pub lib: &'static [&'static str],
+    pub extension: &'static [&'static str],
+}
+pub const WINDOWS_TREE: Tree = Tree {
+    lib: &["lib"],
+    extension: &["share", "extension"],
+};
+pub const MACOS_TREE: Tree = Tree {
+    lib: &["lib", "postgresql"],
+    extension: &["share", "postgresql", "extension"],
+};
+
+/// That platform's layout, or nothing if this mode does not serve it.
+pub fn tree(os: &str) -> Option<Tree> {
+    match os {
+        "windows" => Some(WINDOWS_TREE),
+        "macos" => Some(MACOS_TREE),
+        _ => None,
+    }
 }
 
-/// Where the server keeps the libraries it loads: `lib/` beside it, as in any PostgreSQL install.
+fn under(root: PathBuf, parts: &[&str]) -> PathBuf {
+    parts.iter().fold(root, |path, part| path.join(part))
+}
+
+/// Where one platform's server keeps the libraries it loads.
+pub fn lib_folder_on(root: &Path, os: &str) -> PathBuf {
+    under(unpacked_folder(root), tree(os).unwrap_or(WINDOWS_TREE).lib)
+}
+
+/// Where one platform's server looks for extensions: one control file and its scripts per extension.
+pub fn extension_folder_on(root: &Path, os: &str) -> PathBuf {
+    under(
+        unpacked_folder(root),
+        tree(os).unwrap_or(WINDOWS_TREE).extension,
+    )
+}
+
 pub fn lib_folder(root: &Path) -> PathBuf {
-    unpacked_folder(root).join("lib")
+    lib_folder_on(root, std::env::consts::OS)
 }
 
-/// Where the server looks for extensions: one control file and its scripts per extension.
 pub fn extension_folder(root: &Path) -> PathBuf {
-    unpacked_folder(root).join("share").join("extension")
+    extension_folder_on(root, std::env::consts::OS)
 }
 
 /// Whether the portable server already carries pgvector.
@@ -733,48 +841,97 @@ fn ensure_vector_with(
 /// and the upgrade scripts into the extension folder.
 ///
 /// The archive also carries headers and a readme; nothing needs them to run the extension, so they
-/// stay in the staging folder instead of being copied into the server.
+/// are simply never copied.
+///
+/// The three files are found by name rather than by folder shape: the Windows archive is a
+/// PostgreSQL layout with `lib/` and `share/extension/`, while this project's macOS build holds its
+/// files at the top level. The server needs the same three either way, so the names decide and the
+/// folders do not.
 pub fn place_vector(root: &Path, staging: &Path) -> Result<(), Problem> {
-    copy_files(&staging.join("lib"), &lib_folder(root))?;
-    copy_files(
-        &staging.join("share").join("extension"),
-        &extension_folder(root),
-    )
+    let library = find_file(staging, vector_library()).ok_or_else(|| {
+        Problem::with(
+            "The unpacked extension has no library in it.".to_string(),
+            format!("{} holds no {}", staging.display(), vector_library()),
+        )
+    })?;
+    let control = find_file(staging, VECTOR_CONTROL).ok_or_else(|| {
+        Problem::with(
+            "The unpacked extension has no control file in it.".to_string(),
+            format!("{} holds no {}", staging.display(), VECTOR_CONTROL),
+        )
+    })?;
+    let scripts: Vec<PathBuf> = files_under(staging)
+        .into_iter()
+        .filter(|path| is_vector_script(path))
+        .collect();
+    if scripts.is_empty() {
+        return Err(Problem::with(
+            "The unpacked extension is not laid out the way it is expected to be.".to_string(),
+            format!("{} holds no vector--*.sql script", staging.display()),
+        ));
+    }
+    copy_into(&library, &lib_folder(root))?;
+    copy_into(&control, &extension_folder(root))?;
+    for script in scripts {
+        copy_into(&script, &extension_folder(root))?;
+    }
+    Ok(())
 }
 
-/// Copies the files of one folder into another, creating the destination.
-fn copy_files(from: &Path, to: &Path) -> Result<(), Problem> {
+/// The scripts a control file names: `vector--0.8.6.sql` beside `vector.control`.
+fn is_vector_script(path: &Path) -> bool {
+    path.file_name()
+        .and_then(|name| name.to_str())
+        .is_some_and(|name| name.starts_with("vector--") && name.ends_with(".sql"))
+}
+
+/// Finds one file by name anywhere under a folder, or nothing if it is not there.
+fn find_file(root: &Path, name: &str) -> Option<PathBuf> {
+    files_under(root)
+        .into_iter()
+        .find(|path| path.file_name().is_some_and(|file| file == name))
+}
+
+/// Every file under a folder, in one stable order, without following symbolic links.
+///
+/// The extension archives are small — three files either way — so walking one is cheaper than
+/// knowing its shape, which is the thing that differs between the platforms.
+fn files_under(root: &Path) -> Vec<PathBuf> {
+    let mut found = Vec::new();
+    let mut folders = vec![root.to_path_buf()];
+    while let Some(folder) = folders.pop() {
+        let Ok(entries) = std::fs::read_dir(&folder) else {
+            continue;
+        };
+        for entry in entries.flatten() {
+            let path = entry.path();
+            match std::fs::symlink_metadata(&path) {
+                Ok(metadata) if metadata.is_dir() => folders.push(path),
+                Ok(_) => found.push(path),
+                Err(_) => continue,
+            }
+        }
+    }
+    found.sort();
+    found
+}
+
+/// Copies one file into a folder, creating the folder, and gives back where it landed.
+fn copy_into(from: &Path, to: &Path) -> Result<PathBuf, Problem> {
     std::fs::create_dir_all(to).map_err(|error| {
         Problem::with(
             "Local mode could not create its database library folder.".to_string(),
             format!("creating {} failed: {error}", to.display()),
         )
     })?;
-    let entries = std::fs::read_dir(from).map_err(|error| {
+    let target = to.join(from.file_name().unwrap_or_default());
+    std::fs::copy(from, &target).map_err(|error| {
         Problem::with(
-            "The unpacked extension is not laid out the way it is expected to be.".to_string(),
-            format!("reading {} failed: {error}", from.display()),
+            "The database extension could not be placed.".to_string(),
+            format!("copying {} failed: {error}", target.display()),
         )
     })?;
-    for entry in entries {
-        let entry = entry.map_err(|error| {
-            Problem::with(
-                "The unpacked extension could not be read.".to_string(),
-                format!("reading {} failed: {error}", from.display()),
-            )
-        })?;
-        if !entry.path().is_file() {
-            continue;
-        }
-        let target = to.join(entry.file_name());
-        std::fs::copy(entry.path(), &target).map_err(|error| {
-            Problem::with(
-                "The database extension could not be placed.".to_string(),
-                format!("copying {} failed: {error}", target.display()),
-            )
-        })?;
-    }
-    Ok(())
+    Ok(target)
 }
 
 /// Unpack a zip with the PowerShell that ships with Windows.
@@ -811,16 +968,114 @@ fn unpack(archive: &Path, destination: &Path) -> Result<(), Problem> {
     ))
 }
 
-#[cfg(not(windows))]
+/// Unpack a zip with the `zip` crate, which is also what rebuilds the links inside it.
+///
+/// Two things the Windows unzipper does not have to think about. The macOS database archive holds
+/// 119 symbolic links, and a link unpacked as a plain file is 19 bytes of text where the server
+/// expects a library — the build does not start without them, so each is re-created as a link. And
+/// `pgAdmin 4.app` is 741 MB of the 980 MB that archive expands to, none of which the server runs.
+#[cfg(unix)]
 fn unpack(archive: &Path, destination: &Path) -> Result<(), Problem> {
-    Err(Problem::with(
-        "Unpacking is not implemented for this machine.".to_string(),
-        format!(
-            "cannot unpack {} into {}",
-            archive.display(),
-            destination.display()
-        ),
-    ))
+    let file = std::fs::File::open(archive).map_err(|error| {
+        Problem::with(
+            "Unpacking the portable database failed.".to_string(),
+            format!("opening {} failed: {error}", archive.display()),
+        )
+    })?;
+    let mut zip = zip::ZipArchive::new(file).map_err(|error| {
+        Problem::with(
+            "Unpacking the portable database failed.".to_string(),
+            format!("reading {} as a zip failed: {error}", archive.display()),
+        )
+    })?;
+    std::fs::create_dir_all(destination).map_err(|error| {
+        Problem::with(
+            "Unpacking the portable database failed.".to_string(),
+            format!("creating {} failed: {error}", destination.display()),
+        )
+    })?;
+    for index in 0..zip.len() {
+        let mut entry = zip.by_index(index).map_err(|error| {
+            Problem::with(
+                "Unpacking the portable database failed.".to_string(),
+                format!(
+                    "reading entry {index} of {} failed: {error}",
+                    archive.display()
+                ),
+            )
+        })?;
+        let Some(name) = entry.enclosed_name() else {
+            continue;
+        };
+        if skipped_entry(&name.to_string_lossy()) {
+            continue;
+        }
+        let path = destination.join(&name);
+        if entry.is_dir() {
+            let _ = std::fs::create_dir_all(&path);
+            continue;
+        }
+        if let Some(parent) = path.parent() {
+            std::fs::create_dir_all(parent).map_err(|error| {
+                Problem::with(
+                    "Unpacking the portable database failed.".to_string(),
+                    format!("creating {} failed: {error}", parent.display()),
+                )
+            })?;
+        }
+        let mode = entry.unix_mode();
+        if mode.is_some_and(is_symlink) {
+            let mut target = String::new();
+            entry.read_to_string(&mut target).map_err(|error| {
+                Problem::with(
+                    "Unpacking the portable database failed.".to_string(),
+                    format!("reading the link {} failed: {error}", path.display()),
+                )
+            })?;
+            let _ = std::fs::remove_file(&path);
+            std::os::unix::fs::symlink(target.trim_end_matches('\n'), &path).map_err(|error| {
+                Problem::with(
+                    "Unpacking the portable database failed.".to_string(),
+                    format!("linking {} failed: {error}", path.display()),
+                )
+            })?;
+            continue;
+        }
+        let mut written = std::fs::File::create(&path).map_err(|error| {
+            Problem::with(
+                "Unpacking the portable database failed.".to_string(),
+                format!("creating {} failed: {error}", path.display()),
+            )
+        })?;
+        std::io::copy(&mut entry, &mut written).map_err(|error| {
+            Problem::with(
+                "Unpacking the portable database failed.".to_string(),
+                format!("writing {} failed: {error}", path.display()),
+            )
+        })?;
+        drop(written);
+        if let Some(mode) = mode {
+            // The programs have to come out runnable: `bin/postgres` is useless without it.
+            use std::os::unix::fs::PermissionsExt;
+            let _ = std::fs::set_permissions(&path, std::fs::Permissions::from_mode(mode & 0o7777));
+        }
+    }
+    Ok(())
+}
+
+/// Whether an entry is one this mode deliberately leaves in the archive.
+///
+/// Compared path segment by path segment: the application is a folder at an archive's top level,
+/// and anything inside it is skipped with it.
+#[cfg(any(unix, test))]
+fn skipped_entry(name: &str) -> bool {
+    name.split('/').any(|part| part == "pgAdmin 4.app")
+}
+
+/// Whether a zip entry is a symbolic link, which is what its mode says it is.
+#[cfg(any(unix, test))]
+fn is_symlink(mode: u32) -> bool {
+    mode & 0o170000 == 0o120000
 }
 
 /// Creates the cluster, once.
@@ -1104,20 +1359,38 @@ pub fn start_service(
             format!("duplicating the log handle failed: {error}"),
         )
     })?;
-    quiet::command(bun)
+    let mut command = quiet::command(bun);
+    command
         .args(arguments)
         .envs(environment.iter())
         .current_dir(working)
         .stdin(std::process::Stdio::null())
         .stdout(stdout)
-        .stderr(stderr)
-        .spawn()
-        .map_err(|error| {
-            Problem::with(
-                format!("Starting {} failed.", arguments.join(" ")),
-                format!("spawning bun in {} failed: {error}", working.display()),
-            )
-        })
+        .stderr(stderr);
+    in_its_own_group(&mut command);
+    command.spawn().map_err(|error| {
+        Problem::with(
+            format!("Starting {} failed.", arguments.join(" ")),
+            format!("spawning bun in {} failed: {error}", working.display()),
+        )
+    })
+}
+
+/// Puts a service in a process group of its own, so that stopping it stops everything it started.
+///
+/// On Unix a signal to a parent does not reach its children, and the services here do spawn their
+/// own: `bun` runs the server in the same process, but a worker starts children of its own. Without
+/// a group, ending the parent would leave them behind holding their ports. On Windows the tree is
+/// stopped by `taskkill /T` instead, so there is nothing to set up here.
+fn in_its_own_group(command: &mut std::process::Command) {
+    #[cfg(unix)]
+    {
+        use std::os::unix::process::CommandExt;
+        // A group of its own, the one `end` signals by the child's process id.
+        command.process_group(0);
+    }
+    #[cfg(not(unix))]
+    let _ = command;
 }
 
 /// The status code `/health` answers with, or why it could not be asked.
@@ -1754,8 +2027,9 @@ pub fn start(
 /// Ends one service and everything it started.
 ///
 /// The tree matters: `bun` starts the server in the same process, but a worker may spawn children,
-/// and on Windows a killed parent leaves its children running — which is how a port stays taken
-/// after the window is gone.
+/// and neither platform takes the children down with the parent by itself — which is how a port
+/// stays taken after the window is gone. On Windows `taskkill /T` walks the tree; on Unix the child
+/// leads the group `in_its_own_group` gave it, and the signal goes to the whole group at once.
 pub fn end(child: &mut Child) {
     #[cfg(windows)]
     {
@@ -1763,6 +2037,15 @@ pub fn end(child: &mut Child) {
         let _ = quiet::command("taskkill")
             .args(["/PID", pid.as_str(), "/T", "/F"])
             .output();
+    }
+    #[cfg(unix)]
+    {
+        let group = child.id() as i32;
+        // Naming the group is the only way to reach grandchildren; the direct kill below reaches
+        // the leader itself either way.
+        unsafe {
+            libc::killpg(group, libc::SIGKILL);
+        }
     }
     let _ = child.kill();
     let _ = child.wait();
@@ -2062,7 +2345,7 @@ mod tests {
             .expect("the staging scripts");
         std::fs::create_dir_all(staging.join("include").join("server"))
             .expect("the staging headers");
-        std::fs::write(staging.join("lib").join("vector.dll"), "dll").expect("a library");
+        std::fs::write(staging.join("lib").join(vector_library()), "dll").expect("a library");
         std::fs::write(
             staging.join("share").join("extension").join(VECTOR_CONTROL),
             "comment = 'x'",
@@ -2080,12 +2363,197 @@ mod tests {
             .expect("a header");
 
         place_vector(&root, &staging).expect("placing the extension");
-        assert!(lib_folder(&root).join("vector.dll").is_file());
+        assert!(lib_folder(&root).join(vector_library()).is_file());
         assert!(vector_installed(&root));
         let scripts = extension_folder(&root);
         assert!(scripts.join("vector--0.8.6.sql").is_file());
         assert!(!unpacked_folder(&root).join("include").exists());
         let _ = std::fs::remove_dir_all(&root);
+    }
+
+    /// Both platforms' asset rows are compiled in, so a Windows machine can assert what the macOS
+    /// one will fetch and unpack — the digest is the one that was actually measured, not a version
+    /// somebody hoped for.
+    #[test]
+    fn every_platforms_assets_are_pinned_by_digest() {
+        let windows = postgres_asset("windows").expect("the Windows database");
+        let macos = postgres_asset("macos").expect("the macOS database");
+        assert!(windows.file.ends_with("windows-x64-binaries.zip"));
+        assert_eq!(macos.file, "postgresql-17.6-1-osx-binaries.zip");
+        assert_eq!(
+            macos.sha256,
+            "5afb85f5d764176bb00a527cfc5dd9127b9f8efaa33f5a9afbedbf6ceb985fcc"
+        );
+        let windows_extension = vector_asset("windows").expect("the Windows extension");
+        let macos_extension = vector_asset("macos").expect("the macOS extension");
+        assert_eq!(windows_extension.library, "vector.dll");
+        assert_eq!(macos_extension.download.file, "pgvector-macos-arm64.zip");
+        assert_eq!(
+            macos_extension.download.sha256,
+            "1486659e0fd58bb4a253a69bc5c8dc3a03f806649cd8172e7ec06b3855d8fa16"
+        );
+        assert_eq!(macos_extension.library, "vector.dylib");
+        // A digest is compared against lower-case hex, so a pin written in any other case would
+        // never match what was downloaded.
+        for asset in [
+            windows,
+            macos,
+            windows_extension.download,
+            macos_extension.download,
+        ] {
+            assert_eq!(asset.sha256.len(), 64, "{}", asset.file);
+            assert!(asset
+                .sha256
+                .chars()
+                .all(|digit| digit.is_ascii_digit() || ('a'..='f').contains(&digit)));
+        }
+        // A platform this mode does not serve says so, rather than falling back to somebody else's
+        // binary: the container route is the one to use there.
+        assert!(postgres_asset("linux").is_none());
+        assert!(vector_asset("linux").is_none());
+        assert!(tree("linux").is_none());
+        assert_eq!(supported_here(), cfg!(any(windows, target_os = "macos")));
+    }
+
+    /// macOS keeps both folders one level deeper than Windows does, and these functions are what
+    /// every other path in this mode is built from — so both rows are asserted on either machine.
+    #[test]
+    fn both_platforms_have_their_own_folder_shape() {
+        let root = Path::new("ccpbot");
+        let unpacked = unpacked_folder(root);
+        assert_eq!(lib_folder_on(root, "windows"), unpacked.join("lib"));
+        assert_eq!(
+            extension_folder_on(root, "windows"),
+            unpacked.join("share").join("extension")
+        );
+        assert_eq!(
+            lib_folder_on(root, "macos"),
+            unpacked.join("lib").join("postgresql")
+        );
+        assert_eq!(
+            extension_folder_on(root, "macos"),
+            unpacked.join("share").join("postgresql").join("extension")
+        );
+        // The machine running this is one of those rows, never a third shape.
+        assert_eq!(lib_folder(root), lib_folder_on(root, std::env::consts::OS));
+    }
+
+    /// This project's macOS build holds its three files at the top level, not in `lib/` and
+    /// `share/extension/`, so placing them cannot assume the Windows shape.
+    #[test]
+    fn an_extension_that_lies_flat_is_placed_too() {
+        let root = scratch("placing-flat");
+        let staging = postgres_folder(&root).join(VECTOR_FOLDER);
+        std::fs::create_dir_all(&staging).expect("the staging folder");
+        std::fs::write(staging.join(vector_library()), "dylib").expect("a library");
+        std::fs::write(staging.join(VECTOR_CONTROL), "comment = 'x'").expect("a control file");
+        std::fs::write(staging.join("vector--0.8.6.sql"), "-- vector").expect("a script");
+        std::fs::write(staging.join("README.md"), "read me").expect("a readme");
+        place_vector(&root, &staging).expect("placing the extension");
+        assert!(lib_folder(&root).join(vector_library()).is_file());
+        assert!(vector_installed(&root));
+        assert!(extension_folder(&root).join("vector--0.8.6.sql").is_file());
+        assert!(!lib_folder(&root).join("README.md").exists());
+        let _ = std::fs::remove_dir_all(&root);
+    }
+
+    /// The three files are named one at a time, so somebody reading the window learns which part of
+    /// the archive went missing rather than that "it failed".
+    #[test]
+    fn an_extension_without_its_library_says_which_part_is_missing() {
+        let root = scratch("placing-incomplete");
+        let staging = postgres_folder(&root).join(VECTOR_FOLDER);
+        std::fs::create_dir_all(&staging).expect("the staging folder");
+        std::fs::write(staging.join(VECTOR_CONTROL), "comment = 'x'").expect("a control file");
+        let error = place_vector(&root, &staging).expect_err("no library");
+        assert_eq!(error.said, "The unpacked extension has no library in it.");
+        std::fs::write(staging.join(vector_library()), "dylib").expect("a library");
+        let error = place_vector(&root, &staging).expect_err("no script");
+        assert_eq!(
+            error.said,
+            "The unpacked extension is not laid out the way it is expected to be."
+        );
+        let _ = std::fs::remove_dir_all(&root);
+    }
+
+    /// `pgAdmin 4.app` is most of the macOS archive's expanded size and none of what runs here; the
+    /// comparison is per path segment, so everything under it goes with it.
+    #[test]
+    fn the_application_that_never_runs_is_skipped() {
+        assert!(skipped_entry("pgsql/pgAdmin 4.app"));
+        assert!(skipped_entry("pgsql/pgAdmin 4.app/Contents/Info.plist"));
+        assert!(!skipped_entry("pgsql/bin/postgres"));
+        assert!(!skipped_entry(
+            "pgsql/share/postgresql/extension/vector.control"
+        ));
+        assert!(!skipped_entry("pgsql/lib/libicuuc.68.2.dylib"));
+    }
+
+    /// Modes measured on the archive itself: the links carry 0o120777, the files 0o100644 and
+    /// 0o100755, and a folder 0o040755. Unpacking a link as a file is what stops the server.
+    #[test]
+    fn a_links_mode_is_what_makes_it_a_link() {
+        assert!(is_symlink(0o120777));
+        assert!(!is_symlink(0o100644));
+        assert!(!is_symlink(0o100755));
+        assert!(!is_symlink(0o040755));
+    }
+
+    /// A service that started children does not leave them behind: on Unix the signal goes to the
+    /// group the service leads, on Windows `taskkill /T` walks the tree. The stand-in here starts a
+    /// child of its own that would otherwise live for half a minute.
+    #[test]
+    fn ending_a_service_ends_what_it_started() {
+        #[cfg(unix)]
+        let mut command = {
+            let mut command = quiet::command("sh");
+            command.args(["-c", "sleep 30 & sleep 30"]);
+            command
+        };
+        #[cfg(windows)]
+        let mut command = {
+            let mut command = quiet::command("cmd");
+            command.args(["/c", "ping", "-n", "30", "127.0.0.1"]);
+            command
+        };
+        command
+            .stdin(std::process::Stdio::null())
+            .stdout(std::process::Stdio::null())
+            .stderr(std::process::Stdio::null());
+        // Started the way `start_service` starts one, group included.
+        in_its_own_group(&mut command);
+        let mut child = command.spawn().expect("a process that waits");
+        let pid = child.id();
+        end(&mut child);
+        assert!(child.try_wait().expect("asking about the child").is_some());
+        #[cfg(unix)]
+        {
+            let group = pid as i32;
+            let mut gone = false;
+            for _ in 0..40 {
+                if unsafe { libc::killpg(group, 0) } == -1 {
+                    gone = true;
+                    break;
+                }
+                std::thread::sleep(std::time::Duration::from_millis(25));
+            }
+            assert!(
+                gone,
+                "the process group outlived the service it belonged to"
+            );
+        }
+        #[cfg(windows)]
+        {
+            let listing = quiet::command("tasklist")
+                .args(["/FI", &format!("PID eq {pid}"), "/NH"])
+                .output()
+                .expect("asking about the process");
+            let said = String::from_utf8_lossy(&listing.stdout);
+            assert!(
+                !said.contains(&pid.to_string()),
+                "the process is still listed: {said}"
+            );
+        }
     }
 
     /// The whole point of unpacking once: a machine that already has the database never touches the
