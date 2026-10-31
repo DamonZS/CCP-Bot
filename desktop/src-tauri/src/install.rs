@@ -440,6 +440,36 @@ impl Found {
     }
 }
 
+/// Whether the stack here would run on Docker, which takes the Windows setup stage off the path.
+///
+/// The stage exists because Podman on Windows is a machine inside WSL: `podman machine init` calls
+/// `wsl.exe`, and the features that make WSL2 work can only be switched on with administrator
+/// rights. A machine whose Docker Desktop is installed and has answered before runs the stack
+/// without any of that, and being sent to find an administrator for it is being sent to fix a
+/// machine that is not broken — measured on a standard Windows account with a per-user Docker
+/// Desktop that built images every day, Virtual Machine Platform `InstallState=2`, and no
+/// administrator rights.
+///
+/// `used_before` is part of the test for the reason the ladder uses it: a Docker Desktop that has
+/// never been opened shows Docker's terms, and CCP-Bot never puts a person in front of them. An
+/// installation saved on Podman keeps its stage: its images and its database are in the Podman
+/// machine, which is WSL.
+pub fn docker_routes_here(saved: Option<Engine>, installed: bool, used_before: bool) -> bool {
+    saved != Some(Engine::Podman) && installed && used_before
+}
+
+/// Whether this machine would run the stack on Docker, asked with metadata only.
+///
+/// It deliberately does not ask whether Docker answers now: a stopped Docker Desktop that has run
+/// before is opened by the ladder, so silence here is not a machine without Docker.
+pub fn docker_is_the_engine(root: &Path) -> bool {
+    docker_routes_here(
+        crate::preparation::saved_engine(root),
+        crate::docker_desktop::installed_app().is_some(),
+        crate::docker_desktop::used_before(),
+    )
+}
+
 /// What the install step does to have an engine answering.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum Choice {
@@ -1718,5 +1748,22 @@ esac
         assert!(quoted.starts_with('\''), "{quoted}");
         assert!(quoted.contains("Application Support"), "{quoted}");
         assert!(!quoted.contains("\\\""), "{quoted}");
+    }
+
+    /// The Windows stage is only on the path when Podman is: Docker Desktop carries its own VM, and
+    /// a person whose Docker already runs has nothing for an administrator to do.
+    #[test]
+    fn docker_takes_the_windows_stage_off_the_path() {
+        assert!(docker_routes_here(None, true, true));
+        assert!(docker_routes_here(Some(Engine::Docker), true, true));
+    }
+
+    /// The two cases that keep it: nothing installed, and a desktop that has never been opened —
+    /// opening one puts Docker's terms in front of the person, so the ladder does not use it either.
+    #[test]
+    fn a_machine_without_a_docker_that_has_run_keeps_the_windows_stage() {
+        assert!(!docker_routes_here(None, false, true));
+        assert!(!docker_routes_here(None, true, false));
+        assert!(!docker_routes_here(Some(Engine::Podman), true, true));
     }
 }

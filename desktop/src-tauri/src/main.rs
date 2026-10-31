@@ -461,7 +461,18 @@ fn detect_engine<R: tauri::Runtime>(app: tauri::AppHandle<R>) -> engine::EngineS
 fn windows_blocker<R: tauri::Runtime>(
     app: tauri::AppHandle<R>,
 ) -> Result<Option<win::Blocker>, Problem> {
-    let result = win::blocker();
+    let root = app
+        .try_state::<Shell>()
+        .and_then(|shell| shell.selected_root.lock().unwrap().clone())
+        .unwrap_or_else(stack::default_root);
+    // A machine that would run the stack on Docker has no Windows stage: the stage is there for the
+    // Podman fallback, and WSL is needed for nothing else. Reporting a blocker here would send a
+    // person to an administrator for a machine that already runs their containers.
+    let result = if install::docker_is_the_engine(&root) {
+        Ok(None)
+    } else {
+        win::blocker()
+    };
     if cfg!(target_os = "windows") {
         use telemetry::WindowsStageOutcome as Outcome;
         let outcome = match &result {
@@ -1556,20 +1567,21 @@ async fn start_stack_inner<R: tauri::Runtime>(
      * the window says which Bot it will be while there is still a screen to say it on.
      */
     let requested_harness = harness.clone();
-    let harness =
-        match &credential {
-            ccpbot_env::ModelCredential::ClaudePlan { .. } => harness::speaking_for("anthropic")
-                .map(|id| harness::HarnessChoice {
-                    id: id.into(),
-                    agent_url: None,
-                }),
-            ccpbot_env::ModelCredential::ChatGptPlan { .. } => harness::speaking_for("openai")
-                .map(|id| harness::HarnessChoice {
-                    id: id.into(),
-                    agent_url: None,
-                }),
-            _ => harness,
-        };
+    let harness = match &credential {
+        ccpbot_env::ModelCredential::ClaudePlan { .. } => {
+            harness::speaking_for("anthropic").map(|id| harness::HarnessChoice {
+                id: id.into(),
+                agent_url: None,
+            })
+        }
+        ccpbot_env::ModelCredential::ChatGptPlan { .. } => {
+            harness::speaking_for("openai").map(|id| harness::HarnessChoice {
+                id: id.into(),
+                agent_url: None,
+            })
+        }
+        _ => harness,
+    };
     let picked = harness::picked(harness.as_ref(), &root).map_err(|error| {
         // Two registers, because one of these refusals is about a release and the other is
         // about a pick. "CCP-Bot v0.0.8 does not include agent-langgraph-agui" is the
@@ -2745,10 +2757,9 @@ fn show_ccpbot_on<R: tauri::Runtime>(
     let url = owned_app_url(&root, ports).ok_or_else(|| {
         format!("CCP-Bot could not verify its app on port {port} belongs to this installation. Try starting CCP-Bot again.")
     })?;
-    let authority =
-        ccpbot_env::already_set(&root.join(".env"), &["CCPBOT_ORGANIZATION_AUTH_URL"])
-            .remove("CCPBOT_ORGANIZATION_AUTH_URL")
-            .unwrap_or_default();
+    let authority = ccpbot_env::already_set(&root.join(".env"), &["CCPBOT_ORGANIZATION_AUTH_URL"])
+        .remove("CCPBOT_ORGANIZATION_AUTH_URL")
+        .unwrap_or_default();
     let destination = if authority.is_empty() {
         if organization_recovery {
             return Err(Problem::plain(
@@ -3597,8 +3608,7 @@ async fn begin_intelligence_sign_in(app: tauri::AppHandle) -> Result<String, Str
 #[tauri::command]
 async fn finish_intelligence_sign_in(
     app: tauri::AppHandle,
-) -> Result<Vec<ccpbot_desktop_lib::intelligence::Project>, ccpbot_desktop_lib::problem::Problem>
-{
+) -> Result<Vec<ccpbot_desktop_lib::intelligence::Project>, ccpbot_desktop_lib::problem::Problem> {
     let signing = app
         .state::<Shell>()
         .signing_in_to_intelligence
@@ -3879,10 +3889,9 @@ fn supervise_host_processes<R: tauri::Runtime>(
                 connection_notice_sent = false;
             }
             if !connection_notice_sent {
-                if let (Some(client), Some(token)) = (
-                    &connection_client,
-                    secrets.get("CCPBOT_DESKTOP_HOST_TOKEN"),
-                ) {
+                if let (Some(client), Some(token)) =
+                    (&connection_client, secrets.get("CCPBOT_DESKTOP_HOST_TOKEN"))
+                {
                     match desktop_connection::poll(client, ports.server, token) {
                         Ok(Some(connection)) => {
                             match publish_connection_failure(&app, &root, generation, connection) {
@@ -5563,12 +5572,8 @@ mod tests {
                 format!("MANAGED_AGENT_AG_UI_URL=https://agent-{label}.example\n"),
             )
             .unwrap();
-            ccpbot_desktop_lib::vault::remember(
-                root,
-                "OPENAI_API_KEY",
-                &format!("openai-{label}"),
-            )
-            .unwrap();
+            ccpbot_desktop_lib::vault::remember(root, "OPENAI_API_KEY", &format!("openai-{label}"))
+                .unwrap();
             ccpbot_desktop_lib::vault::remember(
                 root,
                 "MANAGED_AGENT_TOKEN",
@@ -6675,10 +6680,7 @@ mod tests {
         let error = choice
             .into_credential_with(&root, |_, key| {
                 reads += 1;
-                assert_eq!(
-                    key,
-                    ccpbot_desktop_lib::saved_intent::COMPATIBLE_CREDENTIAL
-                );
+                assert_eq!(key, ccpbot_desktop_lib::saved_intent::COMPATIBLE_CREDENTIAL);
                 Ok(
                     r#"{"base_url":"https://other.example/v1","api_key":"synthetic-other-key"}"#
                         .into(),

@@ -103,7 +103,9 @@ impl Blocker {
                  `dism.exe /online /enable-feature \
                  /featurename:Microsoft-Windows-Subsystem-Linux /all /norestart`, \
                  `dism.exe /online /enable-feature /featurename:VirtualMachinePlatform /all /norestart`, \
-                 and `wsl --install`. Restart Windows, then start CCP-Bot again in your own account."
+                 and `wsl --install`. Restart Windows, then start CCP-Bot again in your own account. \
+                 Docker Desktop is the other way in: with one installed and opened once, CCP-Bot \
+                 runs the stack there and none of this is needed."
             }
         }
     }
@@ -1501,6 +1503,8 @@ mod tests {
         assert!(instruction.contains("Windows Terminal or PowerShell as an administrator and run"));
         assert!(instruction.to_ascii_lowercase().contains("restart"));
         assert!(instruction.contains("your own account"));
+        // An account that cannot elevate is not out of options: Docker Desktop needs none of this.
+        assert!(instruction.contains("Docker Desktop is the other way in"));
         assert!(!instruction.contains("run CCP-Bot once"));
         assert!(!instruction.contains("account does not have"));
     }

@@ -43,15 +43,42 @@ pub(crate) fn app_places() -> Vec<PathBuf> {
     }
     #[cfg(target_os = "windows")]
     {
-        std::env::var_os("ProgramFiles")
-            .map(|files| PathBuf::from(files).join("Docker\\Docker\\Docker Desktop.exe"))
-            .into_iter()
-            .collect()
+        windows_places(
+            std::env::var_os("ProgramFiles").as_deref(),
+            std::env::var_os("LOCALAPPDATA").as_deref(),
+        )
     }
     #[cfg(target_os = "linux")]
     {
         Vec::new()
     }
+}
+
+/// Where Windows puts Docker Desktop, given the two roots it can be installed under.
+///
+/// Docker's installer offers "for all users" (Program Files) and "for just me" (`%LOCALAPPDATA%`),
+/// and both are the same product installed. Reading only Program Files made the app miss a per-user
+/// installation and fall through to Podman, which is the route that needs WSL and an administrator:
+/// measured on a standard Windows account whose Docker Desktop had been building images all day,
+/// while CCP-Bot reported no Docker at all and asked for a `dism` an administrator had to run. The
+/// second per-user path is the layout the machine-wide installer uses, under the per-user root.
+#[cfg(target_os = "windows")]
+fn windows_places(
+    program_files: Option<&std::ffi::OsStr>,
+    local_app_data: Option<&std::ffi::OsStr>,
+) -> Vec<PathBuf> {
+    let mut places: Vec<PathBuf> = [
+        program_files.map(|root| PathBuf::from(root).join("Docker\\Docker\\Docker Desktop.exe")),
+        local_app_data
+            .map(|root| PathBuf::from(root).join("Programs\\DockerDesktop\\Docker Desktop.exe")),
+        local_app_data
+            .map(|root| PathBuf::from(root).join("Programs\\Docker\\Docker\\Docker Desktop.exe")),
+    ]
+    .into_iter()
+    .flatten()
+    .collect();
+    places.dedup();
+    places
 }
 
 /// Whether this machine's Docker Desktop has run before: its terms were accepted and its first-run
@@ -314,5 +341,23 @@ mod tests {
         assert_eq!(installed_app_in(&[first.clone(), second.clone()]), None);
         std::fs::create_dir_all(&second).unwrap();
         assert_eq!(installed_app_in(&[first, second.clone()]), Some(second));
+    }
+
+    /// Docker's installer can put its app under either root, and both are installations.
+    #[test]
+    #[cfg(target_os = "windows")]
+    fn both_windows_roots_are_places_docker_desktop_can_be() {
+        let all_users = PathBuf::from(r"C:\Program Files");
+        let per_user = PathBuf::from(r"C:\Users\damon\AppData\Local");
+        assert_eq!(
+            windows_places(Some(all_users.as_os_str()), Some(per_user.as_os_str())),
+            [
+                all_users.join("Docker\\Docker\\Docker Desktop.exe"),
+                per_user.join("Programs\\DockerDesktop\\Docker Desktop.exe"),
+                per_user.join("Programs\\Docker\\Docker\\Docker Desktop.exe"),
+            ]
+        );
+        // An environment that names neither root is not an installation.
+        assert!(windows_places(None, None).is_empty());
     }
 }
