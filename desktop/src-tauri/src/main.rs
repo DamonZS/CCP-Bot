@@ -542,6 +542,13 @@ struct LocalStatus {
     /// Whether that Bot answers right now. The window says so rather than assuming: a Bot that is
     /// silent is the difference between an install that shows a Bot and one that can run it.
     bot_health: Option<u16>,
+    /// The folder a Bot works in. Shown, because "it works on your computer" is only true of one
+    /// folder, and the person has to know which one.
+    workspace: String,
+    /// The computer's port, once one has been chosen for this folder.
+    computer_port: Option<u16>,
+    /// Whether that computer answers right now — the thing that can actually touch files.
+    computer_health: Option<u16>,
     address: String,
     /// The step being worked on, and what it is doing.
     step: String,
@@ -563,6 +570,7 @@ fn local_status_of<R: tauri::Runtime>(app: &tauri::AppHandle<R>, root: &Path) ->
     // The Bot's port is remembered rather than asked for here: this reads the state of a folder, and
     // asking would choose a port for a folder that has never run.
     let bot_port = local::remembered_bot_port(root);
+    let computer_port = local::remembered_computer_port(root);
     LocalStatus {
         supported: cfg!(windows),
         wanted: local::wanted(root),
@@ -572,6 +580,10 @@ fn local_status_of<R: tauri::Runtime>(app: &tauri::AppHandle<R>, root: &Path) ->
         health: local::health_status(local::SERVER_ADDRESS).ok(),
         bot_port,
         bot_health: bot_port.and_then(|port| local::health_status(&local::bot_address(port)).ok()),
+        workspace: local::workspace_folder(root).display().to_string(),
+        computer_port,
+        computer_health: computer_port
+            .and_then(|port| local::health_status(&local::computer_address(port)).ok()),
         address: local::SERVER_ADDRESS.to_string(),
         step: step.0,
         step_detail: step.1,
@@ -641,6 +653,41 @@ async fn local_start(
         if let Some(bot) = started.bot {
             children.push(bot);
         }
+        // The computer is what lets a Bot touch files at all, so it is worth the same care.
+        if let Some(computer) = started.computer {
+            children.push(computer);
+        }
+    }
+    Ok(local_status_of(&app, &root))
+}
+
+/// Ask the person which folder a Bot should work in, and remember it.
+///
+/// A native folder dialog rather than a text field: people point at a project by looking at their
+/// folders, and a typed path is how a typo becomes a Bot working somewhere nobody meant. It takes
+/// effect on the next start — the computer was told its folder when it started, and a folder that
+/// moves underneath a running Bot is worse than a restart.
+#[tauri::command]
+async fn local_choose_workspace(app: tauri::AppHandle) -> Result<LocalStatus, Problem> {
+    use tauri_plugin_dialog::DialogExt as _;
+
+    let root = local_root(&app);
+    let window = app
+        .get_webview_window("main")
+        .ok_or_else(|| Problem::plain("The CCP-Bot window is closed."))?;
+    // The dialog is the one thing that has to be blocked on: the person's answer is the whole point
+    // of asking, and this command has nothing else to do until it arrives.
+    let picked = app
+        .dialog()
+        .file()
+        .set_title("Choose the folder a Bot works in")
+        .set_parent(&window)
+        .blocking_pick_folder();
+    if let Some(picked) = picked {
+        let folder = picked
+            .into_path()
+            .map_err(|error| Problem::with("That folder could not be used.", error.to_string()))?;
+        local::set_workspace_folder(&root, &folder)?;
     }
     Ok(local_status_of(&app, &root))
 }
@@ -4592,6 +4639,7 @@ fn main() {
             prepare_installation,
             local_status,
             local_start,
+            local_choose_workspace,
             local_stop,
             start_stack,
             reset_leftover_database,

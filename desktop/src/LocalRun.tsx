@@ -27,6 +27,12 @@ export type LocalStatus = {
   bot_port: number | null;
   /** Whether that Bot answers right now. */
   bot_health: number | null;
+  /** The folder a Bot works in on this computer. */
+  workspace: string;
+  /** The computer's port, once one has been chosen for this folder. */
+  computer_port: number | null;
+  /** Whether that computer answers right now — the part that can touch files. */
+  computer_health: number | null;
   address: string;
   /** The step being worked on, and what it is doing. */
   step: string;
@@ -41,6 +47,7 @@ const STEP_LABELS: Record<string, string> = {
   interface: "Interface",
   schema: "Database schema",
   bot: "Built-in Bot",
+  computer: "Hands",
   server: "Services",
   ready: "Answering",
 };
@@ -54,11 +61,13 @@ export function LocalRun({
   busy,
   onStart,
   onStop,
+  onChooseWorkspace,
 }: {
   status: LocalStatus | null;
   busy: boolean;
   onStart: () => void;
   onStop: () => void;
+  onChooseWorkspace: () => void;
 }) {
   const running = status?.health != null;
   const rows = [
@@ -105,6 +114,19 @@ export function LocalRun({
             ? `Prepared (port ${status.bot_port}). It answers once the services are up.`
             : "Started with the rest, when this checkout holds the built-in Bot.",
     },
+    // Talking is not working. This is the line that says the Bot can actually read the files it is
+    // asked about and run something — the difference between a chat window and a coworker.
+    {
+      label: "Hands on your files",
+      done: status?.computer_health != null,
+      idle: true,
+      detail:
+        status?.computer_health != null
+          ? `Working in ${status.workspace}. It reads, writes and runs commands there.`
+          : status?.computer_port
+            ? `Prepared (port ${status.computer_port}). It starts with the services.`
+            : `Working in ${status?.workspace ?? "a folder of its own"} once the services are up.`,
+    },
   ];
   return (
     <div className="sheet">
@@ -150,6 +172,11 @@ export function LocalRun({
             {busy ? "Starting…" : "Start on this computer"}
           </button>
         )}
+        {/* The last mile of "install and use it": telling it which folder to work in should be a
+            click on the folder, not a line in a file. */}
+        <button type="button" className="quiet" disabled={busy} onClick={onChooseWorkspace}>
+          Choose the folder a Bot works in
+        </button>
       </div>
       <p className="footnote">
         Everything it needs is unpacked into this folder the first time, so a second run works with

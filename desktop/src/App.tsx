@@ -627,6 +627,24 @@ export function App() {
     }
   }
 
+  /*
+   * Which folder a Bot works in. The command opens the folder dialog itself, so the window does not
+   * have to know how folders are chosen here, and it answers with the same status the rest of this
+   * screen reads: one shape of truth, one place it comes from.
+   */
+  async function chooseWorkspace() {
+    if (localBusy) return;
+    setLocalBusy(true);
+    setFailure(null);
+    try {
+      setLocal(await invoke<LocalStatus>("local_choose_workspace"));
+    } catch (error) {
+      setFailure(asProblem(error));
+    } finally {
+      setLocalBusy(false);
+    }
+  }
+
   async function install() {
     if (busy || !root.trim()) return;
     setBusy(true);
@@ -1091,6 +1109,7 @@ export function App() {
             busy={localBusy}
             onStart={runLocally}
             onStop={stopLocally}
+            onChooseWorkspace={chooseWorkspace}
           />
           <SetupProgress steps={steps} />
           {displayedFailure && <Failure problem={displayedFailure} />}

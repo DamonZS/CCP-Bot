@@ -6,11 +6,13 @@ import { LocalRun, type LocalStatus } from "./LocalRun";
 
 const onStart = mock(() => undefined);
 const onStop = mock(() => undefined);
+const onChooseWorkspace = mock(() => undefined);
 
 beforeAll(() => GlobalRegistrator.register());
 afterEach(() => {
   onStart.mockClear();
   onStop.mockClear();
+  onChooseWorkspace.mockClear();
   cleanup();
 });
 afterAll(() => GlobalRegistrator.unregister());
@@ -25,6 +27,9 @@ function status(overrides: Partial<LocalStatus> = {}): LocalStatus {
     health: null,
     bot_port: null,
     bot_health: null,
+    workspace: "C:\\CCP-Bot\\workspace",
+    computer_port: null,
+    computer_health: null,
     address: "http://127.0.0.1:3010",
     step: "",
     step_detail: "",
@@ -34,24 +39,33 @@ function status(overrides: Partial<LocalStatus> = {}): LocalStatus {
 
 test("local_run_promises_what_a_first_run_will_do", () => {
   const view = render(
-    <LocalRun status={null} busy={false} onStart={onStart} onStop={onStop} />,
+    <LocalRun status={null} busy={false} onStart={onStart} onStop={onStop}
+      onChooseWorkspace={onChooseWorkspace} />,
   );
 
-  // The four things it will bring, and the three things it will not need.
+  // The five things it will bring, and the three things it will not need.
   expect(view.getByText("Portable database")).toBeTruthy();
   expect(view.getByText("Interface")).toBeTruthy();
   expect(view.getByText("Services")).toBeTruthy();
   expect(view.getByText("A Bot of your own")).toBeTruthy();
+  expect(view.getByText("Hands on your files")).toBeTruthy();
   expect(
     view.getByText("No Docker, no virtual machine, no administrator"),
   ).toBeTruthy();
   expect(view.queryByText("Ready")).toBeNull();
-  expect(view.getAllByText("Not yet")).toHaveLength(4);
+  expect(view.getAllByText("Not yet")).toHaveLength(5);
 
   fireEvent.click(view.getByRole("button", { name: "Start on this computer" }));
   expect(onStart).toHaveBeenCalledTimes(1);
   expect(onStop).not.toHaveBeenCalled();
   expect(view.queryByRole("button", { name: "Stop CCP-Bot" })).toBeNull();
+
+  // Which folder a Bot works in is the one setting a person has to make, so it is a button next to
+  // Start rather than a line to edit in a file.
+  fireEvent.click(
+    view.getByRole("button", { name: "Choose the folder a Bot works in" }),
+  );
+  expect(onChooseWorkspace).toHaveBeenCalledTimes(1);
 });
 
 test("local_run_distinguishes_prepared_from_running", () => {
@@ -66,6 +80,7 @@ test("local_run_distinguishes_prepared_from_running", () => {
       busy={false}
       onStart={onStart}
       onStop={onStop}
+      onChooseWorkspace={onChooseWorkspace}
     />,
   );
 
@@ -96,6 +111,7 @@ test("local_run_shows_the_step_it_is_working_on_and_waits_while_busy", () => {
       busy={true}
       onStart={onStart}
       onStop={onStop}
+      onChooseWorkspace={onChooseWorkspace}
     />,
   );
 
@@ -122,6 +138,7 @@ test("local_run_offers_stop_once_it_answers", () => {
       busy={false}
       onStart={onStart}
       onStop={onStop}
+      onChooseWorkspace={onChooseWorkspace}
     />,
   );
 
@@ -140,6 +157,7 @@ test("local_run_names_the_bot_it_brought_along", () => {
       busy={false}
       onStart={onStart}
       onStop={onStop}
+      onChooseWorkspace={onChooseWorkspace}
     />,
   );
 
@@ -161,10 +179,57 @@ test("local_run_names_the_bot_it_brought_along", () => {
       busy={false}
       onStart={onStart}
       onStop={onStop}
+      onChooseWorkspace={onChooseWorkspace}
     />,
   );
 
   expect(
     answering.getByText("Answering on http://127.0.0.1:63659/ag-ui."),
+  ).toBeTruthy();
+});
+
+test("local_run_says_where_a_bot_can_actually_work", () => {
+  const prepared = render(
+    <LocalRun
+      status={status({
+        wanted: true,
+        database_port: 63133,
+        workspace: "D:\\my-project",
+        computer_port: 6210,
+      })}
+      busy={false}
+      onStart={onStart}
+      onStop={onStop}
+      onChooseWorkspace={onChooseWorkspace}
+    />,
+  );
+
+  // Knowing the port is not the same as knowing it can touch anything: the folder is what a person
+  // needs to see, and it is the folder local mode was pointed at.
+  expect(
+    prepared.getByText("Prepared (port 6210). It starts with the services."),
+  ).toBeTruthy();
+  cleanup();
+
+  const working = render(
+    <LocalRun
+      status={status({
+        wanted: true,
+        health: 200,
+        workspace: "D:\\my-project",
+        computer_port: 6210,
+        computer_health: 200,
+      })}
+      busy={false}
+      onStart={onStart}
+      onStop={onStop}
+      onChooseWorkspace={onChooseWorkspace}
+    />,
+  );
+
+  expect(
+    working.getByText(
+      "Working in D:\\my-project. It reads, writes and runs commands there.",
+    ),
   ).toBeTruthy();
 });

@@ -95,6 +95,25 @@ pub const BOT_ENTRY: &str = "agent-bot/src/index.ts";
 pub const BOT_FOLDER: &str = "bot";
 pub const BOT_PORT_FILE: &str = "port";
 
+/// The computer: the process that does a Bot's file writes and runs its commands.
+///
+/// A Bot with no computer can talk and cannot touch anything — it cannot open the project this
+/// person is looking at, which is the whole difference between a chat window and a colleague. The
+/// container route gives every Bot one made by the supervisor; local mode runs one itself, as a
+/// program on this machine, with its workspace pointed at a folder here.
+pub const COMPUTER_ENTRY: &str = "agent-computer/src/index.ts";
+pub const COMPUTER_FOLDER: &str = "computer";
+pub const COMPUTER_PORT_FILE: &str = "port";
+/// The folder a Bot works in when nobody has pointed local mode at one of their own.
+pub const WORKSPACE_FOLDER: &str = "workspace";
+/// The one-line file holding the folder this person chose instead.
+///
+/// A file rather than a setting buried in the app's data: it sits beside the workspace it names, it
+/// can be read and changed with a text editor, and deleting it puts the default back.
+pub const WORKSPACE_FILE: &str = "workspace.txt";
+/// Where Playwright keeps the browser the computer launches for a Bot that needs a page.
+pub const BROWSERS_FOLDER: &str = "browsers";
+
 /// The health check gets a long time on a first run: the interface may still be building and the
 /// worker is starting up beside it.
 pub const HEALTH_TIMEOUT: Duration = Duration::from_secs(120);
@@ -103,11 +122,14 @@ pub const POSTGRES_TIMEOUT: Duration = Duration::from_secs(90);
 /// The Bot answers quickly — it has nothing to build — but it installs its own dependencies on the
 /// very first run of a fresh checkout, so it is not given the same hurry as a health probe.
 pub const BOT_TIMEOUT: Duration = Duration::from_secs(90);
+/// The computer has a little more to do on a first run than the Bot does: it installs its own
+/// dependencies and, the first time, fetches the browser it launches for a Bot that needs a page.
+pub const COMPUTER_TIMEOUT: Duration = Duration::from_secs(120);
 const HEALTH_INTERVAL: Duration = Duration::from_millis(500);
 
 /// The keys in `.env` this mode owns. Everything else in the file is left exactly as it was, which
 /// matters: the same file carries the person's own provider and intelligence settings.
-pub const MANAGED_KEYS: [&str; 8] = [
+pub const MANAGED_KEYS: [&str; 10] = [
     "DATABASE_URL",
     "PORT",
     "SERVER_PORT",
@@ -115,6 +137,14 @@ pub const MANAGED_KEYS: [&str; 8] = [
     "CCPBOT_SINGLE_USER",
     "SERVER_INTERNAL_URL",
     "MANAGED_AGENT_AG_UI_URL",
+    // Where the server finds the computer that does a Bot's work. The container route names a
+    // service; here it is a process on the loopback address, written before the server starts
+    // because the server reads it once and has no second chance at it.
+    "AGENT_COMPUTER_URL",
+    // `server/src/config.ts` refuses private addresses unless this is true, and everything in a
+    // local deployment is at a private address on purpose. Compose gets the same effect by leaving
+    // `NODE_ENV` empty.
+    "AGENT_COMPUTER_ALLOW_PRIVATE_HOSTS",
     "NODE_ENV",
 ];
 
@@ -336,6 +366,138 @@ pub fn bot_environment(port: u16, secrets: &BTreeMap<String, String>) -> BTreeMa
                 .get("MANAGED_AGENT_TOKEN")
                 .cloned()
                 .unwrap_or_default(),
+        ),
+    ]
+    .into_iter()
+    .map(|(name, value)| (name.to_string(), value))
+    .collect()
+}
+
+/// The folder a Bot does its work in.
+///
+/// The person's own answer first — `workspace.txt` beside the checkout, holding one absolute path —
+/// and a folder of our own otherwise. A file rather than a setting in the app's data so that pointing
+/// a Bot at a project is something a person can do by editing one line, and undoing it is deleting
+/// the same line.
+pub fn workspace_folder(root: &Path) -> PathBuf {
+    let pointer = root.join(WORKSPACE_FILE);
+    let chosen = std::fs::read_to_string(&pointer)
+        .ok()
+        .map(|text| text.trim().to_string())
+        .filter(|text| !text.is_empty())
+        .map(PathBuf::from);
+    match chosen {
+        Some(folder) => folder,
+        None => root.join(WORKSPACE_FOLDER),
+    }
+}
+
+/// Points local mode at a folder of the person's own, and says which one it now uses.
+pub fn set_workspace_folder(root: &Path, folder: &Path) -> Result<PathBuf, Problem> {
+    let pointer = root.join(WORKSPACE_FILE);
+    std::fs::write(&pointer, format!("{}\n", folder.display())).map_err(|error| {
+        Problem::with(
+            "Local mode could not remember the working folder.",
+            format!("writing {} failed: {error}", pointer.display()),
+        )
+    })?;
+    Ok(folder.to_path_buf())
+}
+
+/// The port the computer was given, once one has been chosen. Read, never chosen: `AGENT_COMPUTER_URL`
+/// in `.env` names it, and an address that changed under the server would point at nothing.
+pub fn remembered_computer_port(root: &Path) -> Option<u16> {
+    std::fs::read_to_string(computer_port_file(root))
+        .ok()
+        .and_then(|text| text.trim().parse::<u16>().ok())
+        .filter(|port| *port > 0)
+}
+
+pub fn computer_port(root: &Path) -> Result<u16, Problem> {
+    if let Some(port) = remembered_computer_port(root) {
+        return Ok(port);
+    }
+    let port = free_port()?;
+    let file = computer_port_file(root);
+    if let Some(parent) = file.parent() {
+        std::fs::create_dir_all(parent).map_err(|error| {
+            Problem::with(
+                "Local mode could not store the computer's port.",
+                format!("creating {} failed: {error}", parent.display()),
+            )
+        })?;
+    }
+    std::fs::write(&file, format!("{port}\n")).map_err(|error| {
+        Problem::with(
+            "Local mode could not store the computer's port.",
+            format!("writing {} failed: {error}", file.display()),
+        )
+    })?;
+    Ok(port)
+}
+
+pub fn computer_folder(root: &Path) -> PathBuf {
+    root.join(COMPUTER_FOLDER)
+}
+
+pub fn computer_port_file(root: &Path) -> PathBuf {
+    computer_folder(root).join(COMPUTER_PORT_FILE)
+}
+
+/// Where the computer's own files live: its browsers, kept out of the workspace a Bot may delete.
+pub fn browsers_folder(root: &Path) -> PathBuf {
+    computer_folder(root).join(BROWSERS_FOLDER)
+}
+
+/// The computer's entry file, when this checkout has one.
+pub fn computer_entry(root: &Path) -> Option<PathBuf> {
+    let entry = root.join(COMPUTER_ENTRY);
+    entry.is_file().then_some(entry)
+}
+
+/// Whether the computer's own dependencies are installed.
+///
+/// `agent-computer` is deliberately not a workspace member — its image installs it on its own — so
+/// its install is its own step, in its own folder.
+pub fn computer_dependencies_installed(root: &Path) -> bool {
+    root.join("agent-computer").join("node_modules").is_dir()
+}
+
+/// The address the server reaches the computer on.
+pub fn computer_address(port: u16) -> String {
+    format!("http://127.0.0.1:{port}")
+}
+
+/// What the computer needs in its environment.
+///
+/// The token the server calls it with, its port, the folder a Bot works in, where its profiles and
+/// browsers go, and no `COMPUTER_PEOPLE_ONLY`: that flag marks a computer that runs the person's own
+/// browser instead of a Bot's work (`local_browser.rs` uses it for exactly that), and a computer
+/// marked that way is not the one a Bot is given.
+///
+/// `WORKSPACE_DIR` is the whole point of this process in local mode: it is the folder on this machine
+/// the Bot may read, write and run commands in, and `agent-computer/src/workspace.ts` confines every
+/// path to it.
+pub fn computer_environment(
+    root: &Path,
+    port: u16,
+    secrets: &BTreeMap<String, String>,
+    workspace: &Path,
+) -> BTreeMap<String, String> {
+    [
+        ("PORT", port.to_string()),
+        (
+            "COMPUTER_TOKEN",
+            secrets.get("COMPUTER_TOKEN").cloned().unwrap_or_default(),
+        ),
+        ("WORKSPACE_DIR", workspace.display().to_string()),
+        ("COMPUTER_BOT_ID", "shared".to_string()),
+        // The browser the computer launches for a Bot that needs a page, kept under this
+        // deployment's own folder rather than in the account's shared Playwright cache: uninstalling
+        // CCP-Bot should not silently take a browser away from something else that uses it.
+        (
+            "PLAYWRIGHT_BROWSERS_PATH",
+            browsers_folder(root).display().to_string(),
         ),
     ]
     .into_iter()
@@ -1008,16 +1170,42 @@ pub struct Started {
     pub database_port: u16,
     /// Which port the built-in Bot listens on, when this checkout has one.
     pub bot_port: Option<u16>,
+    /// Which port the computer listens on, when this checkout has one.
+    pub computer_port: Option<u16>,
     pub bun: PathBuf,
     pub server: Child,
     pub worker: Child,
     /// The built-in Bot's own process, so the caller stops it with the rest.
     pub bot: Option<Child>,
+    /// The computer's process, for the same reason.
+    pub computer: Option<Child>,
 }
 
 /// Whether the dependencies are already installed in this checkout.
 pub fn dependencies_installed(root: &Path) -> bool {
     root.join("node_modules").is_dir()
+}
+
+/// Whether the workspace links bun made still point into this folder.
+///
+/// Bun links the workspace packages (`@ccpbot/shared`, `@ccpbot/toolkit`, `@ccpbot/recorder-extension`)
+/// into `node_modules` as absolute symlinks, so renaming or moving the checkout leaves them pointing
+/// at a path that no longer exists. The first symptom is a server that dies with `Cannot find module
+/// '@ccpbot/shared/…'` while the window only sees a health check that keeps refusing — measured here
+/// after this checkout was renamed, and the repair is the same `bun install` that made the links.
+pub fn workspace_links_land_here(root: &Path) -> bool {
+    // Both sides are canonicalised: on Windows `canonicalize` answers with a `\\?\`-prefixed path,
+    // so comparing it against the plain root would call every healthy link a stale one.
+    let root = std::fs::canonicalize(root).unwrap_or_else(|_| root.to_path_buf());
+    ["shared", "toolkit", "recorder-extension"]
+        .iter()
+        .all(|name| {
+            let link = root.join("node_modules").join("@ccpbot").join(name);
+            match std::fs::canonicalize(&link) {
+                Ok(target) => target.starts_with(&root),
+                Err(_) => false,
+            }
+        })
 }
 
 /// Whether the interface has been built already — the file the server serves.
@@ -1026,7 +1214,12 @@ pub fn interface_built(root: &Path) -> bool {
 }
 
 /// Writes the values this mode owns into `.env`, leaving the rest of the file alone.
-pub fn write_env(root: &Path, port: u16, bot_port: Option<u16>) -> Result<PathBuf, Problem> {
+pub fn write_env(
+    root: &Path,
+    port: u16,
+    bot_port: Option<u16>,
+    computer_port: Option<u16>,
+) -> Result<PathBuf, Problem> {
     let file = root.join(".env");
     let existing = std::fs::read_to_string(&file).unwrap_or_default();
     let mut values: Vec<(&str, String)> = vec![
@@ -1053,6 +1246,21 @@ pub fn write_env(root: &Path, port: u16, bot_port: Option<u16>) -> Result<PathBu
     values.push((
         "MANAGED_AGENT_AG_UI_URL",
         bot_port.map(bot_address).unwrap_or_default(),
+    ));
+    // Where the server finds the computer a Bot's work happens on, and permission to talk to a
+    // private address. Same reasoning as the Bot's address: read once at startup, so a checkout
+    // without a computer writes the key empty rather than leaving the last run's address behind.
+    values.push((
+        "AGENT_COMPUTER_URL",
+        computer_port.map(computer_address).unwrap_or_default(),
+    ));
+    values.push((
+        "AGENT_COMPUTER_ALLOW_PRIVATE_HOSTS",
+        if computer_port.is_some() {
+            "true".to_string()
+        } else {
+            String::new()
+        },
     ));
     let text = merged_env(&existing, &values);
     std::fs::write(&file, text).map_err(|error| {
@@ -1210,17 +1418,33 @@ pub fn start(
     // The Bot's port is asked for before `.env` is written, and `.env` is written before the server
     // starts: the server reads the Bot's address once, at startup, and has no second chance at it.
     let bot = bot_entry(root).map(|_| bot_port(root)).transpose()?;
+    // The computer's port is asked for at the same moment and for the same reason: the server reads
+    // its address once, at startup. The folder a Bot works in is found here too, because it is what
+    // the computer is told before it starts.
+    let computer = computer_entry(root)
+        .map(|_| computer_port(root))
+        .transpose()?;
+    let workspace = workspace_folder(root);
     report("database", "Starting the database…");
     start_postgres(root, port)?;
     create_database(root, port)?;
-    write_env(root, port, bot)?;
-    if !dependencies_installed(root) {
+    write_env(root, port, bot, computer)?;
+    if !dependencies_installed(root) || !workspace_links_land_here(root) {
+        // The second half is not paranoia: those links are absolute, so a checkout that was renamed
+        // or moved keeps a `node_modules` that looks installed and resolves nothing.
         report("dependencies", "Installing dependencies…");
         run_bun(&bun, root, &["install"])?;
     }
     if !interface_built(root) {
         report("interface", "Building the interface…");
         run_bun(&bun, root, &["run", "--filter", "app", "build"])?;
+    }
+    // The computer's dependencies are installed apart from the rest: it is deliberately not a
+    // workspace member, so `bun install` at the root never touches it, and a checkout that has
+    // never run a computer has no `node_modules` there yet.
+    if computer.is_some() && !computer_dependencies_installed(root) {
+        report("dependencies", "Installing the computer's dependencies…");
+        run_bun(&bun, &root.join("agent-computer"), &["install"])?;
     }
     report("schema", "Updating the database schema…");
     run_bun(&bun, &root.join("server"), &["run", "db:migrate"])?;
@@ -1257,6 +1481,52 @@ pub fn start(
             report(
                 "bot",
                 "This checkout has no built-in Bot (agent-bot/src/index.ts is missing).",
+            );
+            None
+        }
+    };
+    // The computer is what lets a Bot touch files rather than only talk: the server's file and
+    // command tools all go through it. It starts before the server, for the same reason the Bot
+    // does — the server reads its address at startup — and it is told which folder of this
+    // computer a Bot may work in. That folder is the whole point of this mode, so it is created
+    // here if it does not exist yet, and everything a Bot does inside it is confined to it by
+    // `agent-computer/src/workspace.ts`.
+    let computer = match computer {
+        Some(computer_port) => {
+            std::fs::create_dir_all(&workspace).map_err(|error| {
+                Problem::with(
+                    "Local mode could not open the folder a Bot works in.".to_string(),
+                    format!("creating {} failed: {error}", workspace.display()),
+                )
+            })?;
+            report("computer", "Starting the computer your Bot works in…");
+            let child = start_service(
+                &bun,
+                root,
+                &[COMPUTER_ENTRY.to_string()],
+                &log_file(root, "computer"),
+                &computer_environment(root, computer_port, &secrets, &workspace),
+            )?;
+            let address = computer_address(computer_port);
+            let status = wait_for_health(COMPUTER_TIMEOUT, || health_status(&address)).map_err(
+                |problem| {
+                    let last = problem.detail.unwrap_or_default();
+                    Problem::with(
+                        "The computer did not answer.".to_string(),
+                        format!("{address} never answered /health. Last time: {last}"),
+                    )
+                },
+            )?;
+            report(
+                "computer",
+                &format!("Bots work in {} (/health {status}).", workspace.display()),
+            );
+            Some((computer_port, child))
+        }
+        None => {
+            report(
+                "computer",
+                "This checkout has no computer (agent-computer/src/index.ts is missing).",
             );
             None
         }
@@ -1308,14 +1578,20 @@ pub fn start(
         Some((port, child)) => (Some(port), Some(child)),
         None => (None, None),
     };
+    let (computer_port, computer) = match computer {
+        Some((port, child)) => (Some(port), Some(child)),
+        None => (None, None),
+    };
     Ok(Started {
         address,
         database_port: port,
         bot_port,
+        computer_port,
         bun,
         server,
         worker,
         bot,
+        computer,
     })
 }
 
@@ -1354,6 +1630,42 @@ mod tests {
         let _ = std::fs::remove_dir_all(&path);
         std::fs::create_dir_all(&path).expect("a scratch folder");
         path
+    }
+
+    /// One POST with the token the service was started with, for the endpoints the server calls.
+    ///
+    /// The client above only speaks GET, which is all the health checks need; the endpoints that ask
+    /// the computer to do something are all POSTs, so this is what asks them.
+    fn post(address: &str, path: &str, token: &str, body: &str) -> Result<(u16, String), Problem> {
+        use std::io::{Read as _, Write as _};
+
+        let host = address.trim_start_matches("http://");
+        let mut stream = std::net::TcpStream::connect(host).map_err(|error| {
+            Problem::with("The computer could not be reached.", error.to_string())
+        })?;
+        stream.set_read_timeout(Some(Duration::from_secs(20))).ok();
+        let request = format!(
+            "POST {path} HTTP/1.1\r\nHost: {host}\r\nx-ccpbot-computer-token: {token}\r\n\
+             content-type: application/json\r\ncontent-length: {}\r\nconnection: close\r\n\r\n{body}",
+            body.len()
+        );
+        stream
+            .write_all(request.as_bytes())
+            .map_err(|error| Problem::with("The request could not be sent.", error.to_string()))?;
+        let mut answer = String::new();
+        stream
+            .read_to_string(&mut answer)
+            .map_err(|error| Problem::with("No answer came back.", error.to_string()))?;
+        let status = answer
+            .split_whitespace()
+            .nth(1)
+            .and_then(|code| code.parse().ok())
+            .unwrap_or(0);
+        let body = answer
+            .split_once("\r\n\r\n")
+            .map(|(_, body)| body.to_string())
+            .unwrap_or_default();
+        Ok((status, body))
     }
 
     /// Everything this mode creates belongs under the root the person chose, so that deleting that
@@ -1749,22 +2061,38 @@ mod tests {
         );
     }
 
-    /// The server is pointed at the Bot through `.env`, or it has no Bot at all.
+    /// The server is pointed at the Bot and the computer through `.env`, or it has neither.
     #[test]
     fn the_server_is_told_where_the_bot_is() {
         let root = scratch("bot-env");
         std::fs::create_dir_all(&root).expect("scratch root");
-        let file = write_env(&root, 63133, Some(4211)).expect("writing .env");
+        let file = write_env(&root, 63133, Some(4211), Some(6210)).expect("writing .env");
         let text = std::fs::read_to_string(&file).expect("reading .env");
         assert!(
             text.contains("MANAGED_AGENT_AG_UI_URL=http://127.0.0.1:4211"),
             "{text}"
         );
-        // A checkout with no Bot must not leave a stale address behind: the server would register an
-        // agent that answers nothing. The key stays, empty, which the server reads as absent.
-        let file = write_env(&root, 63133, None).expect("writing .env again");
+        assert!(
+            text.contains("AGENT_COMPUTER_URL=http://127.0.0.1:6210"),
+            "{text}"
+        );
+        // The server refuses a private computer address unless this says otherwise, and a Bot's
+        // computer is always on the loopback address.
+        assert!(
+            text.contains("AGENT_COMPUTER_ALLOW_PRIVATE_HOSTS=true"),
+            "{text}"
+        );
+        // A checkout with no Bot or no computer must not leave a stale address behind: the server
+        // would register an agent, or reach for a computer, that answers nothing. Both keys stay,
+        // empty, which the server reads as absent.
+        let file = write_env(&root, 63133, None, None).expect("writing .env again");
         let text = std::fs::read_to_string(&file).expect("reading .env");
         assert!(!text.contains("MANAGED_AGENT_AG_UI_URL=http://"), "{text}");
+        assert!(!text.contains("AGENT_COMPUTER_URL=http://"), "{text}");
+        assert!(
+            !text.contains("AGENT_COMPUTER_ALLOW_PRIVATE_HOSTS=true"),
+            "{text}"
+        );
         let _ = std::fs::remove_dir_all(&root);
     }
 
@@ -1893,9 +2221,65 @@ mod tests {
             started.address, started.database_port
         );
 
+        // Talking is not working. The computer is what turns "write me a script" into a file on this
+        // disk, so the test asks it to write one and then to run something in the same folder — with
+        // the token this deployment minted, exactly as the server does it for a Bot.
+        let computer_port = started
+            .computer_port
+            .expect("this checkout ships a computer");
+        let computer = computer_address(computer_port);
+        let computer_status = health_status(&computer).expect("the computer answers");
+        assert_eq!(computer_status, 200, "the computer is at {computer}");
+        let secrets =
+            crate::vault::already_given_no_ui(&root, &root.join(".env"), &crate::env::MINTED)
+                .expect("the secrets this deployment minted");
+        let token = secrets
+            .get("COMPUTER_TOKEN")
+            .expect("a token for the computer")
+            .clone();
+        let workspace = workspace_folder(&root);
+        let (written, answer) = post(
+            &computer,
+            "/files/write",
+            &token,
+            r#"{"path":"ccpbot-hands-check.txt","contents":"written by the computer"}"#,
+        )
+        .expect("the computer is asked to write a file");
+        assert_eq!(written, 200, "writing said: {answer}");
+        let marker = workspace.join("ccpbot-hands-check.txt");
+        assert!(
+            marker.is_file(),
+            "the file did not land in {}: {answer}",
+            workspace.display()
+        );
+        assert_eq!(
+            std::fs::read_to_string(&marker).expect("the file it wrote"),
+            "written by the computer"
+        );
+        let (ran, output) = post(
+            &computer,
+            "/exec",
+            &token,
+            r#"{"command":"echo ccpbot-hands"}"#,
+        )
+        .expect("the computer is asked to run a command");
+        assert_eq!(ran, 200, "running said: {output}");
+        assert!(
+            output.contains("ccpbot-hands"),
+            "the command answered: {output}"
+        );
+        println!(
+            "the computer wrote {} and ran a command in it",
+            marker.display()
+        );
+        let _ = std::fs::remove_file(&marker);
+
         let mut children = vec![started.server, started.worker];
         if let Some(bot) = started.bot {
             children.push(bot);
+        }
+        if let Some(computer) = started.computer {
+            children.push(computer);
         }
         stop(&root, &mut children).expect("stopping the local stack");
     }
@@ -1931,6 +2315,114 @@ mod tests {
                 .trim(),
             root.display()
         );
+        let _ = std::fs::remove_dir_all(&root);
+    }
+
+    /// The links bun makes are absolute, so a checkout that moved has to be linked again.
+    #[test]
+    fn a_checkout_that_moved_is_linked_again() {
+        let root = scratch("links");
+        assert!(
+            !workspace_links_land_here(&root),
+            "nothing is linked before anything is installed"
+        );
+
+        // Real folders rather than symlinks: creating a link needs privileges a test should not
+        // demand, and the question here is whether the link resolves inside this root, not how it
+        // came to be one.
+        for name in ["shared", "toolkit", "recorder-extension"] {
+            std::fs::create_dir_all(root.join("node_modules").join("@ccpbot").join(name))
+                .expect("a workspace folder");
+        }
+        assert!(workspace_links_land_here(&root), "links that land here are fine");
+
+        // A checkout that was moved keeps folders that point outside itself, which is the state that
+        // makes the server die with `Cannot find module '@ccpbot/shared/…'`.
+        let elsewhere = std::env::temp_dir().join("ccpbot-local-somewhere-else");
+        std::fs::create_dir_all(&elsewhere).expect("a folder outside the checkout");
+        std::fs::remove_dir_all(root.join("node_modules").join("@ccpbot").join("shared"))
+            .expect("the stale link");
+        #[cfg(windows)]
+        std::os::windows::fs::symlink_dir(&elsewhere, root.join("node_modules").join("@ccpbot").join("shared"))
+            .expect("a link to somewhere else");
+        assert!(
+            !workspace_links_land_here(&root),
+            "a link out of this checkout is what has to be repaired"
+        );
+
+        let _ = std::fs::remove_dir_all(&elsewhere);
+        let _ = std::fs::remove_dir_all(&root);
+    }
+
+    #[test]
+    fn a_folder_of_its_own_is_used_until_a_person_points_elsewhere() {
+        let root = scratch("workspace-choice");
+        assert_eq!(
+            workspace_folder(&root),
+            root.join(WORKSPACE_FOLDER),
+            "a checkout nobody has pointed anywhere works in a folder of its own"
+        );
+
+        // A blank line is not a choice: the pointer exists but names nowhere.
+        std::fs::write(root.join(WORKSPACE_FILE), "   \n").expect("the pointer");
+        assert_eq!(workspace_folder(&root), root.join(WORKSPACE_FOLDER));
+
+        let chosen = root.join("my-own-project");
+        let remembered = set_workspace_folder(&root, &chosen).expect("the choice");
+        assert_eq!(remembered, chosen);
+        assert_eq!(
+            workspace_folder(&root),
+            chosen,
+            "the person's folder is the one the computer is told about"
+        );
+        assert_eq!(
+            std::fs::read_to_string(root.join(WORKSPACE_FILE))
+                .expect("the pointer")
+                .trim(),
+            chosen.display().to_string()
+        );
+
+        let _ = std::fs::remove_dir_all(&root);
+    }
+
+    #[test]
+    fn the_computer_is_told_which_folder_to_work_in() {
+        let root = scratch("computer-env");
+        let secrets: BTreeMap<String, String> = [("COMPUTER_TOKEN", "token-1234")]
+            .into_iter()
+            .map(|(name, value)| (name.to_string(), value.to_string()))
+            .collect();
+        let workspace = root.join("my-own-project");
+        std::fs::create_dir_all(&workspace).expect("a folder to work in");
+
+        let environment = computer_environment(&root, 6210, &secrets, &workspace);
+
+        assert_eq!(environment.get("PORT"), Some(&"6210".to_string()));
+        assert_eq!(
+            environment.get("COMPUTER_TOKEN"),
+            Some(&"token-1234".to_string())
+        );
+        assert_eq!(
+            environment.get("WORKSPACE_DIR"),
+            Some(&workspace.display().to_string()),
+            "the folder a Bot works in is the person's, not one of ours"
+        );
+        assert_eq!(
+            environment.get("COMPUTER_BOT_ID"),
+            Some(&"shared".to_string())
+        );
+        let browsers = environment
+            .get("PLAYWRIGHT_BROWSERS_PATH")
+            .expect("the browser folder");
+        assert!(
+            browsers.starts_with(&root.join(COMPUTER_FOLDER).display().to_string()),
+            "the browser stays under this deployment, away from the shared cache: {browsers}"
+        );
+        assert!(
+            !environment.contains_key("COMPUTER_PEOPLE_ONLY"),
+            "that mark belongs to the browser a person watches, not to a Bot's computer"
+        );
+
         let _ = std::fs::remove_dir_all(&root);
     }
 }

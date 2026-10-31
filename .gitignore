@@ -78,3 +78,12 @@ extension/**/*.pem
 # and they must never travel — a clone that carried them would be handing out another deployment's
 # key material. The next start mints its own.
 /.secrets/
+
+# The computer's own scratch: its port, and the browser it drives (`computer/browsers`, kept here
+# rather than in the account-wide Playwright cache so that deleting this folder does not take
+# somebody else's browsers with it) — plus the folder a Bot works in, which starts as `workspace/`
+# here and is wherever `workspace.txt` points once a person has chosen one. Machine state, not
+# source: the next start rebuilds the first, and the last is one line a person can edit or delete.
+/computer/
+/workspace/
+/workspace.txt

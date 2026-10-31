@@ -15,7 +15,8 @@
       "!server/tests/fixtures/arcade-catalogue.json",
       "!postgres",
       "!logs",
-      "!.secrets"
+      "!.secrets",
+      "!.dsh-ops"
     ]
   },
   "formatter": {

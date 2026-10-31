@@ -29,9 +29,10 @@ CCP-Bot 桌面端一路走来都是「容器里的栈」：它自己挑一个容
 ## 用户视角
 
 1. 装好 CCP-Bot，双击。
-2. 窗口里不再问 WSL 或 Docker，而是显示正在准备：CCP-Bot 源码（首次会下载一次） → 本机运行时 → 本地数据库（首次会下载一次） → 数据库扩展 → 数据库结构 → 内建 Bot → 启动服务。
+2. 窗口里不再问 WSL 或 Docker，而是显示正在准备：CCP-Bot 源码（首次会下载一次） → 本机运行时 → 本地数据库（首次会下载一次） → 数据库扩展 → 数据库结构 → 内建 Bot → **它的「手」（computer：真正读写文件、跑命令的那个进程）** → 启动服务。
 3. 十几秒到一两分钟后，窗口里就是 CCP-Bot 的界面，地址 `http://127.0.0.1:3010`。
-4. 关掉再打开：跳过下载与初始化，只起进程。
+4. 想让 Bot 在自己的项目里干活：把 `<检出>/workspace.txt` 写一行你的项目目录（或者直接删掉这一行，回到它自己的 `workspace/`）。界面上的「Hands on your files」那一行会写出它现在在哪个文件夹里干活。
+5. 关掉再打开：跳过下载与初始化，只起进程。
 
 ## 功能要求
 
@@ -47,8 +48,11 @@ CCP-Bot 桌面端一路走来都是「容器里的栈」：它自己挑一个容
   - 依赖与界面：`bun install`；`bun run --filter app build` 产出 `app/dist`（界面由 server 的 `serveStatic` + SPA 兜底提供，见 `server/src/app.ts:2016-2035`）。
   - 迁移：`bun run db:migrate`（在 `server/` 下跑，读 `../.env`）。
   - **内建 Bot**：检出里有 `agent-bot/src/index.ts` 就从**检出根**起一个 `bun --env-file=.env agent-bot/src/index.ts` 子进程（入口 import 的是 `../../shared/…`，所以工作目录必须是检出根），从 `<root>/bot/port` 取（或选一次）端口，只往它的环境里放 `PORT` 与 `MANAGED_AGENT_TOKEN` 两项（模型凭据由 `--env-file=.env` 读，与 server 读同一个文件），然后轮询它的 `/health`。服务端靠 `MANAGED_AGENT_AG_UI_URL` 认它 —— 这一项在 `.env` 里**始终被写一次**：有 Bot 就写地址，没有就写成空串（空串在服务端等于「没有」，见 `server/src/config.ts` 的 `optional()`，所以上一轮留下的地址不会骗服务端去注册一个不响应的 agent）。没有 Bot 的检出会明确说一声然后继续跑（界面与路由照常可用，只是没有可对话的同事）。
-- **进程**：server、worker 与内建 Bot 各一个子进程，输出追加到 `<root>/logs/local-*.log`；Windows 上打 `CREATE_NO_WINDOW`，不弹控制台。
+- **进程**：server、worker、内建 Bot 与 computer 各一个子进程，输出追加到 `<root>/logs/local-*.log`；Windows 上打 `CREATE_NO_WINDOW`，不弹控制台。
   - 健康：轮询 `GET http://127.0.0.1:3010/health` 直到 200。
+- **让 Bot 真能干活（computer）**：会说话的 Bot 和会干活的 Bot 差一个 computer —— 文件与命令的工具都在它身上（`server/src/computer/*`）。所以本地模式也起它：`agent-computer/src/index.ts` 作为本机进程（工作目录是检出根），端口从 `<root>/computer/port` 取（或选一次），环境里给 `PORT`、`COMPUTER_TOKEN`（从 `vault` 铸出并记住）、`COMPUTER_BOT_ID=shared`、`PLAYWRIGHT_BROWSERS_PATH=<root>/computer/browsers`（**不占账号共享的 Playwright 缓存**：卸载 CCP-Bot 不该顺手带走别的东西的浏览器），以及 **`WORKSPACE_DIR` = 它被允许动的那个文件夹**。**刻意不给 `COMPUTER_PEOPLE_ONLY`**：那个标记属于「跑主人自己浏览器」的那条线（`local_browser.rs`），Bot 要的不是那一台。服务端靠 `.env` 里的 `AGENT_COMPUTER_URL`（有 computer 就写地址，没有写空串）与 `AGENT_COMPUTER_ALLOW_PRIVATE_HOSTS=true` 认它 —— 后者是必须的：本地模式的 computer 一定在私有地址（回环）上，compose 也是靠把 `NODE_ENV` 留空才让这条成立。
+  - **工作文件夹**：默认 `<root>/workspace`；想指到自己的项目，就往 `<root>/workspace.txt` 写一行绝对路径（`set_workspace_folder` 写的也是它）。用文件而不是应用设置，是为了让「指哪儿」这件事可以靠改一行完成、撤销就是删掉那一行。安全性不在这一层而在计算机那一层：`agent-computer/src/workspace.ts` 把每条路径都限制在 `WORKSPACE_DIR` 里（绝对路径直接拒、解析后必须在根内、跟随符号链接后仍在根内），所以指到哪儿都关得住。
+  - computer 的依赖**单独装**（`agent-computer/node_modules`）：它刻意不是 workspace 成员，根上的 `bun install` 从不碰它。
 - **复用**（第二次起）：数据簇已初始化就不再 `initdb`；`app/dist/index.html` 已在、依赖已在就不再装（有明确的「缺失才做」判据）。
 - **停止**：先停 server/worker（进程树），再 `pg_ctl -m fast stop`；数据目录原地保留。
 - **端口**：数据库端口选一次后写在 `<root>/postgres/port`，之后沿用（否则每次启动都会让 `.env` 里的连接串变化）；占用时换一个空闲端口。
@@ -85,6 +89,12 @@ CCP-Bot 桌面端一路走来都是「容器里的栈」：它自己挑一个容
 - 内建 Bot 的模型凭据是真机跑出来的第二个要求：第一次跑时它 97 秒不响应，`logs/local-bot.log` 原文 `OPENAI_API_KEY is not set, and no OPENAI_BASE_URL names an endpoint that needs no key. This Bot cannot answer without a model.`。这和向导里给模型密钥的是同一步（同一个 writer：`main.rs:4905` / `saved_intent.rs:238` / `stack.rs:4527` 都用 `env::write`），所以 live 用例照向导的做法先写一行占位密钥。
 - 空文件夹取源码：`cargo test -p ccpbot-desktop --manifest-path desktop/src-tauri/Cargo.toml --lib -- local::tests::live_an_empty_folder --include-ignored --nocapture` → `[checkout] Downloading CCP-Bot itself (once, then reused)…`、`downloaded "version": "0.2.6"`、`1 passed … finished in 6.13s`（断言清单、`server/`、`agent-bot/src/index.ts` 都到位）。
 - 单元与集成：`-- local:: env::tests::minting` → 26 passed / 0 failed / 2 ignored（含上述两条 live 为 ignored）；桌面端 `bun run --cwd desktop typecheck` 无输出；`bun test desktop/src` → **155 pass / 0 fail**（其中 `LocalRun.test.tsx` 5 pass）；`bunx biome lint --error-on-warnings .` exit 0（12186 files）。
+- **Bot 真能在本机干活（computer 的实测）**：同一条 live 用例现在把整条链走通并留证 ——
+  `[dependencies] Installing the computer's dependencies…` → `[bot] The built-in Bot is answering (/health 200).` → `[computer] Starting the computer your Bot works in…` → `[computer] Bots work in D:\Project\CCP-Bot\workspace (/health 200).` → `[server] Starting the services…` → `[ready] CCP-Bot is running on this computer (/health 200).`，随后用**这套部署自己铸出的 `COMPUTER_TOKEN`**（从 `vault::already_given_no_ui` 取回，与 server 调用它的方式一致）POST 它的两个真端点：
+  - `POST /files/write` `{"path":"ccpbot-hands-check.txt","contents":"written by the computer"}` → 200，并且**在磁盘上**断言该文件就在 `workspace/` 里、内容逐字相符；
+  - `POST /exec` `{"command":"echo ccpbot-hands"}` → 200，输出里含 `ccpbot-hands`。
+  打印 `the computer wrote D:\Project\CCP-Bot\workspace\ccpbot-hands-check.txt and ran a command in it`，`test result: ok. 1 passed … finished in 27.86s`。这就是「装上就能在自己项目里干活」与「只能聊天」的分界线。
+- 界面与单测（这次一并补的）：`LocalRun.tsx` 第五行 `Hands on your files`（写出它到底在哪个文件夹里干活）、`Choose the folder a Bot works in` 按钮（原生目录对话框，走 `local_choose_workspace`，下一次启动生效）、`LocalStatus` 增 `workspace`/`computer_port`/`computer_health`；`-- local::tests` → **28 passed / 0 failed / 2 ignored**（含 `a_folder_of_its_own_is_used_until_a_person_points_elsewhere`、`the_computer_is_told_which_folder_to_work_in`），`LocalRun.test.tsx` → **6 pass**，`bun run --cwd desktop typecheck` 无输出，`cargo check -p ccpbot-desktop --bin ccpbot-desktop` Finished，`rustfmt --edition 2021 --check` exit 0，`biome lint --error-on-warnings .` exit 0。
 
 ## 真机跑出来的四个坑（都已修，写在代码注释里）
 
@@ -94,3 +104,4 @@ CCP-Bot 桌面端一路走来都是「容器里的栈」：它自己挑一个容
 4. **server 必须从 `server/` 目录运行** → 从仓库根启动时租户包默认路径 `../examples/fintech` 解析到仓库外，直接 `ENOENT` 打不开 `brand.yaml`；现在两个服务都以 `server/` 为工作目录，server 读 `--env-file=../.env`、worker 以 `../worker/src/index.ts` 启动（与 compose 一致），worker 只拿它自己的三个变量。
 5. **内建 Bot 要一个模型凭据** → 没有它，`agent-bot` 直接退出并说明 `OPENAI_API_KEY is not set, and no OPENAI_BASE_URL names an endpoint that needs no key`，从外面看只是「97 秒没有响应」。这正是向导里给模型密钥的那一步，本地模式不去猜、也不替人填：没有它就照实说 Bot 不响应。
 6. **部署要复制的目录里原本没有 `agent-bot`** → 空文件夹从发布版取源码时，Bot 会缺席（第一次跑这条 live 用例就断言失败在这里：清单在、`server/` 在、`agent-bot/src/index.ts` 不在）。它被补进 `deployment::ALSO_COPIED`，理由写在常量旁边：容器路线从镜像拿 Bot，本地路线从这棵树里起它。
+7. **把检出改名（或搬走）会打断 workspace 软链** → `node_modules/@ccpbot/{shared,toolkit,recorder-extension}` 是 bun 建的工作区软链，指向创建时的绝对路径；目录改名后它们成了死链，症状是 server 起不来、日志最后一行 `error: Cannot find module '@ccpbot/shared/bot-prompt' from '<root>\server\src\index.ts'`（而界面那侧看起来只是「健康检查一直拒连」）。修法就是在新的路径下再 `bun install --frozen-lockfile --offline`（bun 重新建链，10 秒）。本条不是产品缺陷，但它把「搬动安装目录」变成一次需要重装依赖的操作，值得写下来。
