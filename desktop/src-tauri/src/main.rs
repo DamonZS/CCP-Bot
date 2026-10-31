@@ -537,6 +537,11 @@ struct LocalStatus {
     interface_built: bool,
     /// What `/health` answered, when it answered at all.
     health: Option<u16>,
+    /// The built-in Bot's port, once one has been chosen for this folder.
+    bot_port: Option<u16>,
+    /// Whether that Bot answers right now. The window says so rather than assuming: a Bot that is
+    /// silent is the difference between an install that shows a Bot and one that can run it.
+    bot_health: Option<u16>,
     address: String,
     /// The step being worked on, and what it is doing.
     step: String,
@@ -555,6 +560,9 @@ fn local_status_of<R: tauri::Runtime>(app: &tauri::AppHandle<R>, root: &Path) ->
         .try_state::<Shell>()
         .map(|shell| shell.local_step.lock().unwrap().clone())
         .unwrap_or_default();
+    // The Bot's port is remembered rather than asked for here: this reads the state of a folder, and
+    // asking would choose a port for a folder that has never run.
+    let bot_port = local::remembered_bot_port(root);
     LocalStatus {
         supported: cfg!(windows),
         wanted: local::wanted(root),
@@ -562,6 +570,8 @@ fn local_status_of<R: tauri::Runtime>(app: &tauri::AppHandle<R>, root: &Path) ->
         database_running: local::postgres_running(root),
         interface_built: local::interface_built(root),
         health: local::health_status(local::SERVER_ADDRESS).ok(),
+        bot_port,
+        bot_health: bot_port.and_then(|port| local::health_status(&local::bot_address(port)).ok()),
         address: local::SERVER_ADDRESS.to_string(),
         step: step.0,
         step_detail: step.1,
@@ -626,6 +636,11 @@ async fn local_start(
         let mut children = shell.local_children.lock().unwrap();
         children.push(started.server);
         children.push(started.worker);
+        // The built-in Bot is a process like the others: left out of this list it would outlive the
+        // window and hold its port, which is exactly what the stop path exists to prevent.
+        if let Some(bot) = started.bot {
+            children.push(bot);
+        }
     }
     Ok(local_status_of(&app, &root))
 }

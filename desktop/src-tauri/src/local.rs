@@ -86,22 +86,35 @@ pub const SERVER_PORT: u16 = 3010;
 pub const DATABASE_USER: &str = "ccpbot";
 pub const DATABASE_NAME: &str = "ccpbot";
 
+/// The built-in Bot, the one agent every install has whether or not somebody installs another.
+///
+/// Started from the checkout root and pointed at by the server through `MANAGED_AGENT_AG_UI_URL`.
+/// Without it a deployment has no Bot at all, and the window would offer one it cannot run — the one
+/// thing an install that promises to work on this computer must not do.
+pub const BOT_ENTRY: &str = "agent-bot/src/index.ts";
+pub const BOT_FOLDER: &str = "bot";
+pub const BOT_PORT_FILE: &str = "port";
+
 /// The health check gets a long time on a first run: the interface may still be building and the
 /// worker is starting up beside it.
 pub const HEALTH_TIMEOUT: Duration = Duration::from_secs(120);
 /// `pg_ctl -w` waits this long for the cluster, which is longer than a first start needs.
 pub const POSTGRES_TIMEOUT: Duration = Duration::from_secs(90);
+/// The Bot answers quickly — it has nothing to build — but it installs its own dependencies on the
+/// very first run of a fresh checkout, so it is not given the same hurry as a health probe.
+pub const BOT_TIMEOUT: Duration = Duration::from_secs(90);
 const HEALTH_INTERVAL: Duration = Duration::from_millis(500);
 
 /// The keys in `.env` this mode owns. Everything else in the file is left exactly as it was, which
 /// matters: the same file carries the person's own provider and intelligence settings.
-pub const MANAGED_KEYS: [&str; 7] = [
+pub const MANAGED_KEYS: [&str; 8] = [
     "DATABASE_URL",
     "PORT",
     "SERVER_PORT",
     "APP_DIST_DIR",
     "CCPBOT_SINGLE_USER",
     "SERVER_INTERNAL_URL",
+    "MANAGED_AGENT_AG_UI_URL",
     "NODE_ENV",
 ];
 
@@ -155,6 +168,18 @@ pub fn port_file(root: &Path) -> PathBuf {
 
 pub fn logs_folder(root: &Path) -> PathBuf {
     root.join(LOGS_FOLDER)
+}
+
+/// Where the bundled Bot's chosen port is kept.
+///
+/// Its own folder rather than the database's: the two numbers are unrelated, and a folder per
+/// process is also where a second Bot would go if this mode ever runs one.
+pub fn bot_folder(root: &Path) -> PathBuf {
+    root.join(BOT_FOLDER)
+}
+
+pub fn bot_port_file(root: &Path) -> PathBuf {
+    bot_folder(root).join(BOT_PORT_FILE)
 }
 
 pub fn log_file(root: &Path, name: &str) -> PathBuf {
@@ -235,6 +260,87 @@ pub fn database_port(root: &Path) -> Result<u16, Problem> {
         )
     })?;
     Ok(port)
+}
+
+/// The port the bundled Bot was given, once one has been chosen.
+///
+/// Read rather than chosen, for the same reason the database's is: `MANAGED_AGENT_AG_UI_URL` in
+/// `.env` names this port, and an address that changed on every start would leave the server
+/// pointing at a Bot that is not there.
+pub fn remembered_bot_port(root: &Path) -> Option<u16> {
+    std::fs::read_to_string(bot_port_file(root))
+        .ok()
+        .and_then(|text| text.trim().parse::<u16>().ok())
+        .filter(|port| *port > 0)
+}
+
+pub fn bot_port(root: &Path) -> Result<u16, Problem> {
+    if let Some(port) = remembered_bot_port(root) {
+        return Ok(port);
+    }
+    let port = free_port()?;
+    let file = bot_port_file(root);
+    if let Some(parent) = file.parent() {
+        std::fs::create_dir_all(parent).map_err(|error| {
+            Problem::with(
+                "Local mode could not store the Bot port.",
+                format!("creating {} failed: {error}", parent.display()),
+            )
+        })?;
+    }
+    std::fs::write(&file, format!("{port}\n")).map_err(|error| {
+        Problem::with(
+            "Local mode could not store the Bot port.",
+            format!("writing {} failed: {error}", file.display()),
+        )
+    })?;
+    Ok(port)
+}
+
+/// Where the bundled Bot lives in this checkout, when this checkout has one.
+///
+/// The entry file, not the folder: `agent-bot/` without `src/index.ts` holds nothing runnable, and
+/// the two questions are the same question to everyone who asks it.
+pub fn bot_entry(root: &Path) -> Option<PathBuf> {
+    let entry = root.join(BOT_ENTRY);
+    entry.is_file().then_some(entry)
+}
+
+/// The arguments that start the bundled Bot from the checkout root.
+///
+/// From the root, not from `agent-bot/`: the entry file imports `../../shared/agent-authorisation`
+/// and `../../shared/model-providers`, which resolve only when the process is started where the
+/// repository is — the image preserves the layout for exactly this reason. `.env` is read through
+/// `--env-file`, so the model key the wizard collected reaches the Bot the same way it reaches the
+/// server, instead of being copied here.
+pub fn bot_arguments() -> Vec<String> {
+    vec!["--env-file=.env".to_string(), BOT_ENTRY.to_string()]
+}
+
+/// The address the server reaches the bundled Bot on.
+pub fn bot_address(port: u16) -> String {
+    format!("http://127.0.0.1:{port}")
+}
+
+/// What the bundled Bot needs in its environment, and nothing else.
+///
+/// Its token first: the process holds a model credential and refuses to start without one
+/// (`agent-bot/src/index.ts` exits when the variable is absent). Its port second. The model key and
+/// any relay address come from `.env`, which is where the wizard already put them.
+pub fn bot_environment(port: u16, secrets: &BTreeMap<String, String>) -> BTreeMap<String, String> {
+    [
+        ("PORT", port.to_string()),
+        (
+            "MANAGED_AGENT_TOKEN",
+            secrets
+                .get("MANAGED_AGENT_TOKEN")
+                .cloned()
+                .unwrap_or_default(),
+        ),
+    ]
+    .into_iter()
+    .map(|(name, value)| (name.to_string(), value))
+    .collect()
 }
 
 /// Whether the cluster has been created already — the file `initdb` always leaves behind.
@@ -900,9 +1006,13 @@ pub fn wait_for_health(
 pub struct Started {
     pub address: String,
     pub database_port: u16,
+    /// Which port the built-in Bot listens on, when this checkout has one.
+    pub bot_port: Option<u16>,
     pub bun: PathBuf,
     pub server: Child,
     pub worker: Child,
+    /// The built-in Bot's own process, so the caller stops it with the rest.
+    pub bot: Option<Child>,
 }
 
 /// Whether the dependencies are already installed in this checkout.
@@ -916,10 +1026,10 @@ pub fn interface_built(root: &Path) -> bool {
 }
 
 /// Writes the values this mode owns into `.env`, leaving the rest of the file alone.
-pub fn write_env(root: &Path, port: u16) -> Result<PathBuf, Problem> {
+pub fn write_env(root: &Path, port: u16, bot_port: Option<u16>) -> Result<PathBuf, Problem> {
     let file = root.join(".env");
     let existing = std::fs::read_to_string(&file).unwrap_or_default();
-    let values: Vec<(&str, String)> = vec![
+    let mut values: Vec<(&str, String)> = vec![
         ("DATABASE_URL", database_url(port)),
         ("PORT", SERVER_PORT.to_string()),
         ("SERVER_PORT", SERVER_PORT.to_string()),
@@ -934,6 +1044,16 @@ pub fn write_env(root: &Path, port: u16) -> Result<PathBuf, Problem> {
         ("SERVER_INTERNAL_URL", SERVER_ADDRESS.to_string()),
         ("NODE_ENV", String::new()),
     ];
+    // Which Bot this deployment has. Written before the server starts, because the server reads it
+    // once at startup and decides from it whether a Bot exists at all: unset means the window offers
+    // none, and a Bot the server cannot reach is worse than one it never had. A checkout without a
+    // Bot writes the key empty rather than leaving the last run's address behind — the server's
+    // `optionalHttpUrl` reads an empty value as absent, and a stale address would register an agent
+    // that answers nothing.
+    values.push((
+        "MANAGED_AGENT_AG_UI_URL",
+        bot_port.map(bot_address).unwrap_or_default(),
+    ));
     let text = merged_env(&existing, &values);
     std::fs::write(&file, text).map_err(|error| {
         Problem::with(
@@ -1039,10 +1159,13 @@ pub fn start(
         init_cluster(root)?;
     }
     let port = database_port(root)?;
+    // The Bot's port is asked for before `.env` is written, and `.env` is written before the server
+    // starts: the server reads the Bot's address once, at startup, and has no second chance at it.
+    let bot = bot_entry(root).map(|_| bot_port(root)).transpose()?;
     report("database", "Starting the database…");
     start_postgres(root, port)?;
     create_database(root, port)?;
-    write_env(root, port)?;
+    write_env(root, port, bot)?;
     if !dependencies_installed(root) {
         report("dependencies", "Installing dependencies…");
         run_bun(&bun, root, &["install"])?;
@@ -1053,8 +1176,44 @@ pub fn start(
     }
     report("schema", "Updating the database schema…");
     run_bun(&bun, &root.join("server"), &["run", "db:migrate"])?;
-    report("server", "Starting the services…");
     let secrets = deployment_secrets(root)?;
+    // The built-in Bot comes up before the server, because a Bot the server cannot reach is a Bot
+    // the window offers and then fails to use: the address is read at startup, and there is nobody
+    // to wait for it afterwards. A checkout without `agent-bot/` skips this and says so.
+    let bot = match bot {
+        Some(bot_port) => {
+            report("bot", "Starting the built-in Bot…");
+            let child = start_service(
+                &bun,
+                root,
+                &bot_arguments(),
+                &log_file(root, "bot"),
+                &bot_environment(bot_port, &secrets),
+            )?;
+            let address = bot_address(bot_port);
+            let status =
+                wait_for_health(BOT_TIMEOUT, || health_status(&address)).map_err(|problem| {
+                    let last = problem.detail.unwrap_or_default();
+                    Problem::with(
+                        "The built-in Bot did not answer.".to_string(),
+                        format!("{address} never answered /health. Last time: {last}"),
+                    )
+                })?;
+            report(
+                "bot",
+                &format!("The built-in Bot is answering (/health {status})."),
+            );
+            Some((bot_port, child))
+        }
+        None => {
+            report(
+                "bot",
+                "This checkout has no built-in Bot (agent-bot/src/index.ts is missing).",
+            );
+            None
+        }
+    };
+    report("server", "Starting the services…");
     // Both services run from `server/`, the way the container runs them. The server's default tenant
     // package is `../examples/fintech`, which only resolves from there — started from the root it
     // dies on `ENOENT` opening `..\examples\fintech\brand.yaml` — and the worker is started as
@@ -1097,12 +1256,18 @@ pub fn start(
         "ready",
         &format!("CCP-Bot is running on this computer (/health {status})."),
     );
+    let (bot_port, bot) = match bot {
+        Some((port, child)) => (Some(port), Some(child)),
+        None => (None, None),
+    };
     Ok(Started {
         address,
         database_port: port,
+        bot_port,
         bun,
         server,
         worker,
+        bot,
     })
 }
 
@@ -1474,6 +1639,82 @@ mod tests {
         assert!(!url.contains("0.0.0.0"));
     }
 
+    /// The Bot is started from the root, and told which port to listen on.
+    ///
+    /// From the root because its entry file imports `../../shared/...`, which only resolves when the
+    /// process starts where the repository is; and with `.env` because that is where the wizard's
+    /// model key landed, for the server and the Bot alike.
+    #[test]
+    fn the_bot_runs_from_the_checkout_root_with_the_settings_file() {
+        assert_eq!(
+            bot_arguments(),
+            vec!["--env-file=.env".to_string(), BOT_ENTRY.to_string()]
+        );
+        let secrets: BTreeMap<String, String> = [(
+            "MANAGED_AGENT_TOKEN".to_string(),
+            "synthetic-token".to_string(),
+        )]
+        .into_iter()
+        .collect();
+        let environment = bot_environment(4211, &secrets);
+        assert_eq!(environment.get("PORT").map(String::as_str), Some("4211"));
+        assert_eq!(
+            environment.get("MANAGED_AGENT_TOKEN").map(String::as_str),
+            Some("synthetic-token")
+        );
+        assert_eq!(
+            environment.len(),
+            2,
+            "the Bot is handed its port and its token, and reads the rest from .env"
+        );
+    }
+
+    /// The server is pointed at the Bot through `.env`, or it has no Bot at all.
+    #[test]
+    fn the_server_is_told_where_the_bot_is() {
+        let root = scratch("bot-env");
+        std::fs::create_dir_all(&root).expect("scratch root");
+        let file = write_env(&root, 63133, Some(4211)).expect("writing .env");
+        let text = std::fs::read_to_string(&file).expect("reading .env");
+        assert!(
+            text.contains("MANAGED_AGENT_AG_UI_URL=http://127.0.0.1:4211"),
+            "{text}"
+        );
+        // A checkout with no Bot must not leave a stale address behind: the server would register an
+        // agent that answers nothing. The key stays, empty, which the server reads as absent.
+        let file = write_env(&root, 63133, None).expect("writing .env again");
+        let text = std::fs::read_to_string(&file).expect("reading .env");
+        assert!(!text.contains("MANAGED_AGENT_AG_UI_URL=http://"), "{text}");
+        let _ = std::fs::remove_dir_all(&root);
+    }
+
+    /// The Bot's port is asked for once, so a restart finds the Bot where `.env` says it is.
+    #[test]
+    fn the_bot_port_is_asked_for_once_and_remembered() {
+        let root = scratch("bot-port");
+        assert_eq!(remembered_bot_port(&root), None);
+        let chosen = bot_port(&root).expect("a free port");
+        assert!(chosen > 0);
+        assert_eq!(remembered_bot_port(&root), Some(chosen));
+        assert_eq!(bot_port(&root).ok(), Some(chosen));
+        let _ = std::fs::remove_dir_all(&root);
+    }
+
+    /// A checkout without the Bot says so instead of failing the whole start.
+    #[test]
+    fn a_checkout_without_a_bot_has_none_to_start() {
+        let root = scratch("no-bot");
+        std::fs::create_dir_all(root.join("agent-bot").join("src")).expect("agent-bot folder");
+        assert_eq!(
+            bot_entry(&root),
+            None,
+            "a folder without an entry is not a Bot"
+        );
+        std::fs::write(root.join(BOT_ENTRY), "// the Bot\n").expect("the entry file");
+        assert_eq!(bot_entry(&root), Some(root.join(BOT_ENTRY)));
+        let _ = std::fs::remove_dir_all(&root);
+    }
+
     /// The choice survives a restart without any settings file, which is what makes the Windows stage
     /// skip itself on the second start of the same folder.
     #[test]
@@ -1527,6 +1768,19 @@ mod tests {
             "sk-local-placeholder-for-a-desktop-run",
         )
         .expect("the intelligence connection is written");
+        // And the model key, which an earlier step of the wizard puts in the same file through this
+        // same writer. The built-in Bot holds a model credential and exits with
+        // `OPENAI_API_KEY is not set, and no OPENAI_BASE_URL names an endpoint that needs no key`
+        // without one — measured on this machine, not assumed — so the test supplies the placeholder
+        // that a person's own key replaces.
+        let model: BTreeMap<String, String> = [(
+            "OPENAI_API_KEY".to_string(),
+            "sk-local-placeholder-for-a-desktop-run".to_string(),
+        )]
+        .into_iter()
+        .collect();
+        crate::env::write(&root.join(".env"), &model, &BTreeMap::new())
+            .expect("the model key is written");
         let started = start(&root, &cache, None, |step, detail| {
             println!("[{step}] {detail}");
             steps.push(step.to_string());
@@ -1546,12 +1800,23 @@ mod tests {
             steps.iter().any(|step| step == "ready"),
             "the run reported {steps:?}"
         );
+        // The built-in Bot is the difference between an install that shows a Bot and one that can
+        // run it, so the test asks it directly rather than trusting the server to have found it.
+        let bot_port = started
+            .bot_port
+            .expect("this checkout ships a built-in Bot");
+        let bot = bot_address(bot_port);
+        let bot_status = health_status(&bot).expect("the Bot answers");
+        assert_eq!(bot_status, 200, "the Bot is at {bot}");
         println!(
-            "local stack up on {} with database port {}",
+            "local stack up on {} with database port {} and the Bot on {bot}",
             started.address, started.database_port
         );
 
         let mut children = vec![started.server, started.worker];
+        if let Some(bot) = started.bot {
+            children.push(bot);
+        }
         stop(&root, &mut children).expect("stopping the local stack");
     }
 }

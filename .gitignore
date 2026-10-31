@@ -70,6 +70,7 @@ extension/**/*.pem
 # and all three are safe to delete: the next start rebuilds them, and the download stays cached.
 /postgres/
 /logs/
+/bot/
 /.ccpbot-local
 
 # The vault's copy in this folder: the six secrets a local deployment mints, each sealed to the

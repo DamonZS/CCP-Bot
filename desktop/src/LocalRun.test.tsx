@@ -23,6 +23,8 @@ function status(overrides: Partial<LocalStatus> = {}): LocalStatus {
     database_running: false,
     interface_built: false,
     health: null,
+    bot_port: null,
+    bot_health: null,
     address: "http://127.0.0.1:3010",
     step: "",
     step_detail: "",
@@ -35,15 +37,16 @@ test("local_run_promises_what_a_first_run_will_do", () => {
     <LocalRun status={null} busy={false} onStart={onStart} onStop={onStop} />,
   );
 
-  // The three things it will bring, and the three things it will not need.
+  // The four things it will bring, and the three things it will not need.
   expect(view.getByText("Portable database")).toBeTruthy();
   expect(view.getByText("Interface")).toBeTruthy();
   expect(view.getByText("Services")).toBeTruthy();
+  expect(view.getByText("A Bot of your own")).toBeTruthy();
   expect(
     view.getByText("No Docker, no virtual machine, no administrator"),
   ).toBeTruthy();
   expect(view.queryByText("Ready")).toBeNull();
-  expect(view.getAllByText("Not yet")).toHaveLength(3);
+  expect(view.getAllByText("Not yet")).toHaveLength(4);
 
   fireEvent.click(view.getByRole("button", { name: "Start on this computer" }));
   expect(onStart).toHaveBeenCalledTimes(1);
@@ -128,4 +131,40 @@ test("local_run_offers_stop_once_it_answers", () => {
   ).toBeTruthy();
   fireEvent.click(view.getByRole("button", { name: "Stop CCP-Bot" }));
   expect(onStop).toHaveBeenCalledTimes(1);
+});
+
+test("local_run_names_the_bot_it_brought_along", () => {
+  const prepared = render(
+    <LocalRun
+      status={status({ wanted: true, database_port: 63133, bot_port: 63659 })}
+      busy={false}
+      onStart={onStart}
+      onStop={onStop}
+    />,
+  );
+
+  // Prepared is not running: the port is known and remembered, and the Bot answers only once the
+  // services are up.
+  expect(
+    prepared.getByText("Prepared (port 63659). It answers once the services are up."),
+  ).toBeTruthy();
+  cleanup();
+
+  const answering = render(
+    <LocalRun
+      status={status({
+        wanted: true,
+        health: 200,
+        bot_port: 63659,
+        bot_health: 200,
+      })}
+      busy={false}
+      onStart={onStart}
+      onStop={onStop}
+    />,
+  );
+
+  expect(
+    answering.getByText("Answering on http://127.0.0.1:63659/ag-ui."),
+  ).toBeTruthy();
 });

@@ -23,6 +23,10 @@ export type LocalStatus = {
   interface_built: boolean;
   /** What `/health` answered, when it answered at all. */
   health: number | null;
+  /** The built-in Bot's port, once one has been chosen for this folder. */
+  bot_port: number | null;
+  /** Whether that Bot answers right now. */
+  bot_health: number | null;
   address: string;
   /** The step being worked on, and what it is doing. */
   step: string;
@@ -36,6 +40,7 @@ const STEP_LABELS: Record<string, string> = {
   dependencies: "Dependencies",
   interface: "Interface",
   schema: "Database schema",
+  bot: "Built-in Bot",
   server: "Services",
   ready: "Answering",
 };
@@ -85,6 +90,20 @@ export function LocalRun({
       detail: running
         ? `Answering on ${status?.address}.`
         : "The server and the connected agents, as programs on this computer.",
+    },
+    // The Bot is its own line because it is the one thing a checkout can be missing: a folder
+    // without `agent-bot/` runs the interface and the routing perfectly well and has no coworker to
+    // talk to, and this is where a person finds that out.
+    {
+      label: "A Bot of your own",
+      done: status?.bot_health != null,
+      idle: true,
+      detail:
+        status?.bot_health != null && status.bot_port
+          ? `Answering on http://127.0.0.1:${status.bot_port}/ag-ui.`
+          : status?.bot_port
+            ? `Prepared (port ${status.bot_port}). It answers once the services are up.`
+            : "Started with the rest, when this checkout holds the built-in Bot.",
     },
   ];
   return (

@@ -22,14 +22,14 @@ CCP-Bot 桌面端一路走来都是「容器里的栈」：它自己挑一个容
 ## 非目标
 
 - 不改动容器路线：Docker / Podman 仍然可选，行为不变。
-- 不在这一轮把**智能体进程**（agent-computer 的浏览器、agent-bot、agent-langgraph、supervisor、SPIRE）本机化——它们仍由容器路线提供；本地模式这一轮的交付是「数据库 + API + worker + 界面」这条主干可用，也就是「页面上能用起来」。
+- 不在这一轮把**其余智能体进程**（agent-computer 的浏览器、agent-langgraph、supervisor、SPIRE）本机化——它们仍由容器路线提供。**内建 Bot（agent-bot）已经本机化**：它是纯 AG-UI 服务（只依赖 `bun` 与一个模型凭据），源码就在检出里，所以本地模式一并把它作为子进程起起来，服务端用 `MANAGED_AGENT_AG_UI_URL` 找到它。容器里的那批（浏览器、LangGraph、supervisor、SPIRE）仍需要引擎。
 - 不做安装包签名。
 - 不把 PostgreSQL 二进制塞进安装包（安装包体积会翻几倍）：首次运行下载一次，之后复用。
 
 ## 用户视角
 
 1. 装好 CCP-Bot，双击。
-2. 窗口里不再问 WSL 或 Docker，而是显示正在准备：本机运行时 → 本地数据库（首次会下载一次） → 依赖 → 界面 → 数据库结构 → 启动。
+2. 窗口里不再问 WSL 或 Docker，而是显示正在准备：本机运行时 → 本地数据库（首次会下载一次） → 数据库扩展 → 数据库结构 → 内建 Bot → 启动服务。
 3. 十几秒到一两分钟后，窗口里就是 CCP-Bot 的界面，地址 `http://127.0.0.1:3010`。
 4. 关掉再打开：跳过下载与初始化，只起进程。
 
@@ -44,7 +44,8 @@ CCP-Bot 桌面端一路走来都是「容器里的栈」：它自己挑一个容
   - `.env`：**合并**写法——只覆盖我们要管的键（`DATABASE_URL` / `PORT` / `SERVER_PORT` / `APP_DIST_DIR` / `SINGLE_USER` / `NODE_ENV`），保留文件里其它键与注释。
   - 依赖与界面：`bun install`；`bun run --filter app build` 产出 `app/dist`（界面由 server 的 `serveStatic` + SPA 兜底提供，见 `server/src/app.ts:2016-2035`）。
   - 迁移：`bun run db:migrate`（在 `server/` 下跑，读 `../.env`）。
-  - 进程：server 与 worker 各一个子进程，输出追加到 `<root>/logs/local-*.log`；Windows 上打 `CREATE_NO_WINDOW`，不弹控制台。
+  - **内建 Bot**：检出里有 `agent-bot/src/index.ts` 就从**检出根**起一个 `bun --env-file=.env agent-bot/src/index.ts` 子进程（入口 import 的是 `../../shared/…`，所以工作目录必须是检出根），从 `<root>/bot/port` 取（或选一次）端口，只往它的环境里放 `PORT` 与 `MANAGED_AGENT_TOKEN` 两项（模型凭据由 `--env-file=.env` 读，与 server 读同一个文件），然后轮询它的 `/health`。服务端靠 `MANAGED_AGENT_AG_UI_URL` 认它 —— 这一项在 `.env` 里**始终被写一次**：有 Bot 就写地址，没有就写成空串（空串在服务端等于「没有」，见 `server/src/config.ts` 的 `optional()`，所以上一轮留下的地址不会骗服务端去注册一个不响应的 agent）。没有 Bot 的检出会明确说一声然后继续跑（界面与路由照常可用，只是没有可对话的同事）。
+- **进程**：server、worker 与内建 Bot 各一个子进程，输出追加到 `<root>/logs/local-*.log`；Windows 上打 `CREATE_NO_WINDOW`，不弹控制台。
   - 健康：轮询 `GET http://127.0.0.1:3010/health` 直到 200。
 - **复用**（第二次起）：数据簇已初始化就不再 `initdb`；`app/dist/index.html` 已在、依赖已在就不再装（有明确的「缺失才做」判据）。
 - **停止**：先停 server/worker（进程树），再 `pg_ctl -m fast stop`；数据目录原地保留。
@@ -70,17 +71,17 @@ CCP-Bot 桌面端一路走来都是「容器里的栈」：它自己挑一个容
   - `desktop/src-tauri/src/local.rs` 里的扩展部分：`vector()` / `vector_installed()` / `ensure_vector()` / `place_vector()` / `copy_files()`，以及「已装就不再下载」「只放库与 control、不放头文件」两条单测。
 - 密钥与 Intelligence：`deployment_secrets()`（复用 `vault` + `env::minted`，与容器路线同一条判据）、`write_intelligence()`、`SERVER_INTERNAL_URL` 写进 `.env`；单测「同一目录两次调用铸出同一套密钥」「`.env` 只覆盖自己的键、注释与别人的键原样保留」。
 - 无引擎的机器默认走本地：`LocalStatus.supported`（只有 Windows 为真），窗口在 `detect_engine` 与 `local_status` 都回来之后、且确认没有任何引擎时才默认选中本地（「改用 Docker」仍然可以赢回来）。
-- `desktop/src/LocalRun.tsx` + `desktop/src/LocalRun.test.tsx`（新）：本地模式那三行事实、当前步骤、启动/停止按钮；四条界面测试。
+- `desktop/src/LocalRun.tsx` + `desktop/src/LocalRun.test.tsx`（新）：本地模式那几行事实（含「内建 Bot」）、当前步骤、启动/停止按钮；五条界面测试。
 
 ## 实测证据（2026-10-30，本机 Windows 10.0.26100、标准账号 `damon\damon`、Docker daemon 停着、无 WSL 发行版可用）
 
 - 端到端 live 用例：`cargo test -p ccpbot-desktop --manifest-path desktop/src-tauri/Cargo.toml --lib -- local::tests::live_start --include-ignored --nocapture`
-  → `test result: ok. 1 passed; 0 failed; … finished in 12.54s`，步骤依次为
-  `[runtime] Preparing the local runtime…` → `[database] Preparing the local database (downloaded once, then reused)…` → `[database] Preparing the database extension (downloaded once, then reused)…` → `[database] Starting the database…` → `[schema] Updating the database schema…` → `[server] Starting the services…` → `[ready] CCP-Bot is running on this computer (/health 200).`
-  同一次运行打印 `local stack up on http://127.0.0.1:3010 with database port 63133`，用例自身断言 `/health` 为 200、`/` 返回的就是界面、步骤里出现过 `ready`。
-- `logs/local-server.log` 里的服务器侧证据：迁移跑过之后 `CCP-Bot server listening on http://127.0.0.1:3010`，以及 `No identity provider is configured, so every request is treated as dev@ccpbot.local (administrator).`（即 `CCPBOT_SINGLE_USER=true` 生效）；`logs/local-worker.log` 里是例程巡检在跑（`{"type":"routine-sweep","offered":[],"considered":0,"fired":[],"skipped":[]}`）。
-- `logs/local-postgres.log`：`LOG: starting PostgreSQL 17.6 on x86_64-windows` 与 `LOG: listening on IPv4 address "127.0.0.1", port 63133`，停止时走 `pg_ctl -m fast -w stop`，无残留进程。
-- 单元与集成：`-- local::` → 22 passed / 0 failed / 1 ignored（含上述 live 为 ignored）；桌面端 `bun run --cwd desktop typecheck` 无输出；`bun test desktop/src/LocalRun.test.tsx` → 4 pass / 0 fail。
+  → `test result: ok. 1 passed; 0 failed; … finished in 14.37s`，步骤依次为
+  `[runtime] Preparing the local runtime…` → `[database] Preparing the local database (downloaded once, then reused)…` → `[database] Preparing the database extension (downloaded once, then reused)…` → `[database] Starting the database…` → `[schema] Updating the database schema…` → `[bot] Starting the built-in Bot…` → `[bot] The built-in Bot is answering (/health 200).` → `[server] Starting the services…` → `[ready] CCP-Bot is running on this computer (/health 200).`
+  同一次运行打印 `local stack up on http://127.0.0.1:3010 with database port 63133 and the Bot on http://127.0.0.1:63659`，用例自身断言 `/health` 为 200、`/` 返回的就是界面、步骤里出现过 `ready`。
+- `logs/local-server.log` 里的服务器侧证据：迁移跑过之后 `CCP-Bot server listening on http://127.0.0.1:3010`，以及 `No identity provider is configured, so every request is treated as dev@ccpbot.local (administrator).`（即 `CCPBOT_SINGLE_USER=true` 生效）；`logs/local-worker.log` 里是例程巡检在跑（`{"type":"routine-sweep","offered":[],"considered":0,"fired":[],"skipped":[]}`）；`logs/local-bot.log` 里是 `agent-bot listening on http://127.0.0.1:63659/ag-ui`。
+- 内建 Bot 的模型凭据是真机跑出来的第二个要求：第一次跑时它 97 秒不响应，`logs/local-bot.log` 原文 `OPENAI_API_KEY is not set, and no OPENAI_BASE_URL names an endpoint that needs no key. This Bot cannot answer without a model.`。这和向导里给模型密钥的是同一步（同一个 writer：`main.rs:4905` / `saved_intent.rs:238` / `stack.rs:4527` 都用 `env::write`），所以 live 用例照向导的做法先写一行占位密钥。
+- 单元与集成：`-- local:: env::tests::minting` → 26 passed / 0 failed / 1 ignored（含上述 live 为 ignored）；桌面端 `bun run --cwd desktop typecheck` 无输出；`bun test desktop/src` → **155 pass / 0 fail**（其中 `LocalRun.test.tsx` 5 pass）；`bunx biome lint --error-on-warnings .` exit 0（12186 files）。
 
 ## 真机跑出来的四个坑（都已修，写在代码注释里）
 
@@ -88,3 +89,4 @@ CCP-Bot 桌面端一路走来都是「容器里的栈」：它自己挑一个容
 2. **EDB 便携版不带 pgvector** → 第一次迁移停在 `extension "vector" is not available`（`Could not open extension control file … vector.control`）。接入 `andreiramani/pgvector_pgsql_windows` 的 `vector.v0.8.6-pg17.zip`（169,689 字节，SHA-256 钉住），只把 `lib/` 与 `share/extension/` 拷进去。
 3. **服务需要密钥与 Intelligence 才能启动** → 分别是 `KEY_ENCRYPTION_KEY must be configured`（`server/src/config.ts:507`）与 `CopilotKit Intelligence is required and is not configured. Missing: INTELLIGENCE_API_URL, INTELLIGENCE_GATEWAY_WS_URL`（`config.ts:1018`）；密钥走 vault + `env::minted`（与容器路线同一条判据，重启复用不轮换），Intelligence 由向导写入 `.env`。
 4. **server 必须从 `server/` 目录运行** → 从仓库根启动时租户包默认路径 `../examples/fintech` 解析到仓库外，直接 `ENOENT` 打不开 `brand.yaml`；现在两个服务都以 `server/` 为工作目录，server 读 `--env-file=../.env`、worker 以 `../worker/src/index.ts` 启动（与 compose 一致），worker 只拿它自己的三个变量。
+5. **内建 Bot 要一个模型凭据** → 没有它，`agent-bot` 直接退出并说明 `OPENAI_API_KEY is not set, and no OPENAI_BASE_URL names an endpoint that needs no key`，从外面看只是「97 秒没有响应」。这正是向导里给模型密钥的那一步，本地模式不去猜、也不替人填：没有它就照实说 Bot 不响应。

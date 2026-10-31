@@ -2012,10 +2012,7 @@ HTTPS_PROXY=http://proxy:8080
             "a blank secret was carried instead of minted"
         );
         for key in MINTED {
-            assert!(
-                minted_once.contains_key(key),
-                "{key} was not minted at all"
-            );
+            assert!(minted_once.contains_key(key), "{key} was not minted at all");
         }
 
         let elsewhere = minted(&BTreeMap::new());
