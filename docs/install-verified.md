@@ -1,12 +1,13 @@
 # CCP-Bot 安装包实机验证报告
 
-同一台机器上按同一套判据跑了三轮，三轮的结论都保留：
+同一台机器上按同一套判据跑了四轮，四轮的结论都保留：
 
 | 部分 | 安装包 | 时间 | 一句话 |
 | --- | --- | --- | --- |
 | **Part 1 · v0.2.7** | `CCP-Bot_0.2.7_x64-setup.exe` | 2026-10-31 20:12–20:55 | 出厂状态起不来：内建 Bot 缺依赖模块，`/health` 从未返回 200 |
 | **Part 2 · v0.2.9** | `CCP-Bot_0.2.9_x64-setup.exe` | 2026-10-31 21:30–22:25 | Bot 与「手」都修好了、真的能到 `/health` 200，但出厂状态仍被两个 blocker 挡住，要在向导外补两步 |
 | **Part 3 · v0.3.2** | `CCP-Bot_0.3.2_x64-setup.exe` | 2026-10-31 23:36–2026-11-01 00:45 | **空机器一次成功**：8 分 21 秒到 `/health` 200，窗口自己就能显示应用；装完只需要一个模型 key |
+| **Part 4 · v0.4.0** | `CCP-Bot_0.4.0_x64-setup.exe` | 2026-11-01 04:50–05:31 | **空机器一次成功**：6 分 16 秒到 `/health` 200，零 CopilotKit 配置可启动；模型 key 进凭据库；X 只隐藏、Quit 干净停、kill 后重启认得出来 |
 
 验证机器：本机 Windows x64，用户 `Damon`，已装 Docker 29.8.2，`gh` CLI 已登录
 验证方式：下载官方 Release 资产 → 静默安装 → 双击启动 → 走完向导 → 观察进程、端口、`<root>\logs\local-*.log` 与界面文字
@@ -1726,6 +1727,534 @@ ccpbot-desktop / bun / 我这轮的 postgres:    0 / 0 / 0
 ---
 
 *Part 3 结束。所有界面文字、日志、命令输出均为本次验证的原样记录；引用源码的地方均标注了文件与行号。*
+
+---
+
+# Part 4 · v0.4.0（2026-11-01 04:50 – 05:31）
+
+验证对象：Windows 安装包 `CCP-Bot_0.4.0_x64-setup.exe`（GitHub Release `v0.4.0`，tag = commit `d515aacd73eb8a2f6200547b7d9dea9011467e4d`）
+
+这一轮的判据与 Part 3 相同（`/health` 200、`[bot]` 步骤成功、`local-computer.log` 与 `workspace\` 有证据、窗口自己显示应用、除模型 key 外不要求人配别的），另加 **0.4.0 的四项新行为** 与 **三条退出场景**（X / Quit / 强制 kill）。macOS 不在本机验证，见 §52。
+
+---
+
+## 41. 一句话结论
+
+**空机器装完，一个人只需要填「一样」：第 3 步的模型 key。** CopilotKit / Intelligence 的字段一个都不用碰（最后一屏把它写成「在本机为可选操作」），点 `启动 CCP-Bot` 之后 **6 分 16 秒** 走到 `http://127.0.0.1:3010/health` = `200 {"status":"ok"}`。
+
+0.4.0 把上一轮列出的问题都在真机器上做实了（本轮实测，不是读代码推断）：
+
+| 上一轮的问题 | 0.4.0 实测 |
+| --- | --- |
+| 空文件夹起不来（`Could not remember the local choice.`，0.2.9） | **修好**：`<root>` 由应用自己建，`.ccpbot-local` 是应用写的；本轮没有任何手工 `mkdir` |
+| 第 3 步的模型 key 到不了内建 Bot（0.2.9） | **修好**：key 不再进 `.env`，落到凭据库 `<root>\.secrets\OPENAI_API_KEY.dpapi`（352 B），Bot 起得来（`agent-bot listening on …`） |
+| 进度行说的是裸英文 id（0.3.2 拍到 `database`） | **修好**：进度行显示 `Database` + `进行中 · 7s 已用时`（细节行仍是英文，见 §50(vi)） |
+| 窗口认不出自己跑的本机栈，显示不了应用（0.3.2） | **修好**：栈起来后（以及强杀重启后）窗口自己显示应用页（`带上你已有的代理`） |
+| 服务器没有 Intelligence 就不启动（0.2.x 起） | **修好**：`local-server.log` 里是 `{"type":"intelligence-absent","mode":"sse",…}`，`.env` 里 **0 行** Intelligence 键，服务照常监听 3010 |
+
+退出行为按 0.4.0 的契约实测（读数见 §46）：`X` = **只隐藏**（栈照跑）；菜单 `Quit` = **4 秒内干净停**（3010 / bun / postgres / 应用进程全 0）；**强制 kill = 子进程留着，但下次启动认得出并接管**（端口不变，窗口直接显示应用）。
+
+两个要记的问题（详见 §50）：① 本轮首次运行中窗口的 WebView2 **崩了一次**（`05:04:49` 两个崩溃转储），窗口变全黑，此后到强杀重启前都拍不到应用页；② 启动过程中 Windows 弹了 **2 个 `pg_ctl.exe - 应用程序错误` 硬错误对话框**，并且停机后留下 **4 个 `pg_ctl.exe` 残留进程**（栈本身是好的）。
+
+---
+
+## 42. 安装包身份与安装结果
+
+```
+gh release view v0.4.0 --repo DamonZS/CCP-Bot --json tagName,publishedAt,assets
+```
+```
+v0.4.0  draft=false   三个资产：
+  CCP-Bot_0.4.0_aarch64.dmg     9,656,603   sha256:f089ded176c5c5bac407ec7af13bbb8da305661d7cffef9e61cd63c346681e2a
+  CCP-Bot_0.4.0_x64-setup.exe   4,792,927   sha256:265bd953aa4f19910d03f6984b73b6d2851f98f2005376d5549d083740068a8a
+  CCP-Bot_0.4.0_x64_en-US.msi   7,008,256   sha256:a34120b524411f519492417099ce2ce9838bf1f4cdeff9cc094c86abc8de573a
+注：v0.4.0 没有 container-images.json（和 v0.2.9 一样；v0.2.7 / v0.2.8 / v0.3.2 都有）
+```
+
+```
+gh release download v0.4.0 --repo DamonZS/CCP-Bot --pattern "CCP-Bot_0.4.0_x64-setup.exe" `
+  --dir C:\Users\Damon\AppData\Local\Temp\ccpbot-verify --clobber
+```
+```
+bytes:  4,792,927
+sha256: 265BD953AA4F19910D03F6984B73B6D2851F98F2005376D5549D083740068A8A   ← 与 release 资产 digest 一致（字节数也一致）
+VersionInfo: FileVersion 0.4.0 / ProductVersion 0.4.0
+```
+
+```
+$p = Start-Process -FilePath <exe> -ArgumentList '/S' -Wait -PassThru
+```
+```
+installer ExitCode: 0     elapsed: 0.6 s     elevated shell: False（无管理员、无 UAC 提示）
+安装位置：H:\CCP-Bot      （安装器自己挑的位置，我没传 /D=）
+```
+
+| 检查项 | 结果 |
+| --- | --- |
+| `HKCU:\…\Uninstall\CCP-Bot` DisplayName / DisplayVersion | `CCP-Bot` / **`0.4.0`** |
+| InstallLocation / UninstallString / Publisher / EstimatedSize | `"H:\CCP-Bot"` / `"H:\CCP-Bot\uninstall.exe"` / `ccpbot` / `19129` |
+| `HKLM:\…\Uninstall\CCP-Bot`、WOW6432Node | 都没有 → **按用户安装** |
+| 桌面 lnk / 开始菜单 lnk / 公共桌面 lnk | True / True / False |
+| `H:\CCP-Bot\ccpbot-desktop.exe` | **19,509,760 B**，FileVersion/ProductVersion `0.4.0`，`sha256 0B68CA0DEF8FF5E0F47ECCBDECFA7AA7980AEC30975392EFE6A69ABF40495C47` |
+| `H:\CCP-Bot\uninstall.exe` | 79,319 B |
+| 装完后默认运行目录 `C:\Users\Damon\CCP-Bot` | **不存在**（应用还没跑过） |
+
+> 安装目录里那 21 个条目是**别人**（前几轮的 0.2.9 运行）留下的部署布局，不是这次安装器放的，我没动它 —— 详见 Part 3 §30 与本文 §51。
+
+---
+
+## 43. 时间线：一次 Start，6 分 16 秒
+
+采样脚本 `C:\Users\Damon\AppData\Local\Temp\ccpbot-verify\mon40.ps1`（每 ~13 秒采一次：`/health`、3010 监听数、bun/postgres 计数、`.env` 大小、`.env` 里 `INTELLIGENCE` / `OPENAI_API_KEY` 行数、`<root>\.secrets\OPENAI_API_KEY.dpapi` 是否存在、ports 文件、关键目录是否存在、`<root>\logs` 列表、窗口截图 `prog40-NN.png`）：
+
+```
+[04:59:17.213] CLICK 启动 CCP-Bot
+[04:59:00] i=1  t=+3s    health=err l3010=0 bun=3 pg=0 env=-1B  intelLines=-1 oaiLines=-1 dpapiKey=False secrets=[] dirs=[]                           logs=[]
+[04:59:40] i=4  t=+44s   health=err l3010=0 bun=3 pg=0 env=-1B  …                dirs=[ccpbot-engine]                                       logs=[]
+[05:03:42] i=22 t=+286s  health=err l3010=0 bun=4 pg=6 env=540B intelLines=0 oaiLines=0 dpapiKey=True  secrets=[OPENAI_API_KEY.dpapi]
+                         ports=[bot=50266 computer=50267 postgres=50265] dirs=[.secrets bot computer postgres\data ccpbot-engine] logs=[local-postgres.log=0]
+[05:05:22] i=29 t=+385s  health=err l3010=0 bun=0 pg=6 env=540B intelLines=0 oaiLines=0 dpapiKey=True
+                         dirs=[agent-bot\node_modules agent-computer\node_modules app\dist .secrets bot computer postgres\data ccpbot-engine]
+[05:05:33] i=30 t=+396s  health=200 {"status":"ok"} l3010=1 bun=4 pg=29 env=540B intelLines=0 oaiLines=0 dpapiKey=True
+                         secrets=[AGENT_TOOL_TOKEN.dpapi,COMPUTER_TOKEN.dpapi,KEY_ENCRYPTION_KEY.dpapi,MANAGED_AGENT_TOKEN.dpapi,OPENAI_API_KEY.dpapi,SUPERVISOR_TOKEN.dpapi,WORKER_SHARED_SECRET.dpapi]
+                         ports=[bot=50266 computer=50267 postgres=50265]
+                         dirs=[agent-bot\node_modules agent-computer\node_modules app\dist workspace .secrets .logs bot computer postgres\data ccpbot-engine]
+                         logs=[local-bot.log=0,local-computer.log=0,local-postgres.log=0,local-server.log=0,local-worker.log=0]
+[05:05:33] READY health=200 computer-log-present
+[05:05:33] MON END ready=True
+```
+
+| 时刻 | 发生了什么 |
+| --- | --- |
+| 04:59:17.213 | 在最后一屏点 `启动 CCP-Bot`（界面文字见 §44） |
+| +44 s | 运行时目录 `ccpbot-engine` 出现（在下载便携运行时 / 数据库） |
+| +286 s | `.env`（540 B）、`.secrets\OPENAI_API_KEY.dpapi`、三个 ports 文件、`postgres\data` 就绪 |
+| +385 s | `agent-bot\node_modules`、`agent-computer\node_modules`、`app\dist` 就绪 |
+| **+376 s → 05:05:33** | **`/health` = 200 `{"status":"ok"}`**，bun×4、postgres×29、3010 开始监听 |
+
+这 **6 分 16 秒** 里跑完了：拉源码 tarball → 下便携 bun → 下 ~330 MB 便携 PostgreSQL + vector 扩展 → `initdb` → 写 `.env` → 根 `bun install` → 建界面 → 装 Bot 依赖 → 装 computer 依赖 → 迁移数据库 → 起 Bot / computer / server / worker。
+
+> 对比：Part 3 的 0.3.2 同为空机器冷启动用了 501 秒（8 分 21 秒）。两轮都是「第一次要等」，差别来自下载速度，不是步骤变多变少。**对用户的说法**：第一次启动要等几分钟，窗口上是有进度行的（§45 ③）。
+
+---
+
+## 44. 向导逐屏原样文字（0.4.0 界面是中文）
+
+为了拿到「全新机器」的首启画面，先把上一次留下的 WebView2 profile 挪走（0.3.2 的教训，见 Part 3 §33）：
+
+```
+Move-Item "$env:LOCALAPPDATA\app.ccpbot.desktop" "$env:LOCALAPPDATA\app.ccpbot.desktop.bak-0453"
+Start-Process 'H:\CCP-Bot\ccpbot-desktop.exe'
+```
+```
+window: hwnd=1837466 pid=8496 title='CCP-Bot' rect=(312,312)-(1228,991) size=916x679
+```
+
+**Welcome**（`v40-01-welcome.png`，26,249 B）—— 与 0.3.2 相同：
+
+```
+你自己的 AI 同事，就在这台电脑上。
+它们回答问题，使用你连接的各类工具，还能替你在浏览器里工作。
+[ 设置 CCP-Bot ]
+需要几分钟。CCP-Bot 会先安装所需内容，然后请你登录你已有的 AI 方案。
+[ 改为在本机运行 ]            ← 本机路线入口（偏移 455,552）
+```
+
+**第 1 步，共 4 步**（`v40-02-step1.png`，25,468 B）
+
+```
+你的第一个 Bot
+CCP-Bot 会帮你完成设置。如果你写代码，可以在下面选择 Agent 框架。
+▸ 选择 Agent 框架
+[ 返回 ]  [ 继续 ]            ← 偏移 346,452
+```
+
+**第 2 步，共 4 步**（`v40-03-step2.png`，24,848 B）—— 选了「在本机运行」之后，这一步**不提 Docker、不下载任何东西**：
+
+```
+本机无需安装任何内容
+这一步不下载任何内容。首次启动时它会自行准备运行时、便携数据库、界面及其数据结构，然后从该文件夹提供服务。
+CCP-Bot 的位置
+[ C:\Users\Damon\CCP-Bot ]
+[ 返回 ]  [ 继续 ]            ← 偏移 347,473
+```
+
+**第 3 步，共 4 步**（`v40-04-step3.png`，31,380 B）
+
+```
+连接你的 AI
+使用受支持的订阅方案或 API key 连接你的服务商。
+[ OpenAI      Sign in with ChatGPT Plus, Pro, Team or Enterprise. ]
+[ Anthropic   Sign in with a Claude Pro, Max, Team or Enterprise plan. ]
+[ Google Gemini  Use a Google AI Studio key or sign in for Gemini API access. ]
+[ xAI         Use an xAI API key or sign in to your xAI account. ]
+[ 返回 ]  [ 继续 ]（灰）
+```
+
+点 OpenAI 行（偏移 455,293）→（`v40-05-openai-row.png`，42,067 B）
+
+```
+[ 使用我的方案登录 ]  [ Use an API key ]
+将打开 OpenAI 在浏览器中。此处不输入任何内容，也不保存任何密钥。
+[ Sign in with OpenAI ]
+[ 使用已保存的 ChatGPT sign-in ]
+```
+
+点 `Use an API key`（偏移 421,484）→（`v40-06-apikey-tab.png`，36,783 B）
+
+```
+控件：使用已保存的 OpenAI API 密钥
+字段：OpenAI API 密钥   [ 空，掩码输入框 ]
+```
+
+输入占位 key（**只为把向导走完**：`sk-verify-0.4.0-openai-placeholder`）→ `继续` 立刻变实（`v40-07-step3-keyed.png`，40,247 B）—— **界面没有任何凭据校验**。
+
+**最后一屏**（`v40-08-final.png`，28,160 B）—— 注意它**不再自称「第 4 步，共 4 步」**，标题也不再是「连接 CopilotKit」：
+
+```
+Run CCP-Bot on this computer
+Installation is complete. This stack runs on this computer, and the model you chose is enough to start it — a CopilotKit connection is optional here.
+在本机为可选操作：连接 CopilotKit，把对话保存在那里。不连接也能启动 CCP-Bot。
+[ 登录 CopilotKit ]  [ 使用已保存的连接 ]
+▸ 指向你自己的 Intelligence 服务器
+▸ 通过你的组织登录
+▸ 安装选项
+[ 返回 ]  [ 启动 CCP-Bot ]      ← 偏移 375,529，Intelligence 一个字段都没填，按钮就是实的
+```
+
+**核心问题的答案**：能。**不填任何 CopilotKit / Intelligence 相关的东西，就能点 `启动 CCP-Bot`。**
+
+---
+
+## 45. 0.4.0 的四项新行为，逐条实测
+
+### ① 完全没有 Intelligence 也能起（`intelligence-absent`）
+
+`<root>\.env`（540 B）里 **0 行** `INTELLIGENCE`、**0 行** `CPK_INTELLIGENCE`：
+
+```
+INTELLIGENCE lines: 0   CPK_INTELLIGENCE lines: 0   OPENAI_API_KEY lines: 0
+```
+
+`C:\Users\Damon\CCP-Bot\logs\local-server.log` 原文：
+
+```
+$ bun --env-file=../.env src/index.ts
+{"type":"intelligence-absent","mode":"sse","reason":"No CopilotKit Intelligence is configured, so this deployment runs on its own database: threads and memory do not reach the platform. Set INTELLIGENCE_API_URL, INTELLIGENCE_GATEWAY_WS_URL and CPK_INTELLIGENCE_API_KEY (or INTELLIGENCE_API_KEY) together to connect it."}
+AGENT_COMPUTER_ALLOW_PRIVATE_HOSTS=true lets a Bot reach this machine's own services. Fine locally, and for local development only. Remove it before deploying.
+{"type":"computer-isolation","provider":"shared","isolation":"one shared computer","warning":"Every person's Bots run on one computer. Set COMPUTER_SUPERVISOR_URL for a computer per person."}
+[CopilotKit Runtime] telemetry enabled — see https://docs.copilotkit.ai/telemetry to opt out (set COPILOTKIT_TELEMETRY_DISABLED=true).
+{"type":"handoff-absent","reason":"Handing work between Bots needs the platform's threads and locks, so with no CopilotKit Intelligence connection this deployment cannot deliver a hop."}
+No identity provider is configured, so every request is treated as dev@ccpbot.local (administrator). Configure GOOGLE_OAUTH_*, MICROSOFT_OAUTH_* or OKTA_OAUTH_* before anybody else can reach this.
+CCP-Bot server listening on http://127.0.0.1:3010
+{"type":"model-check-unreadable","provider":"openai","model":"gpt-5.6-terra","reason":"The operation timed out.","fix":"Could not ask openai whether gpt-5.6-terra is available. This is often temporary."}
+{"type":"self-host-banner-entitlement-unavailable","reason":"This deployment is not connected to CopilotKit Intelligence (INTELLIGENCE_API_URL, INTELLIGENCE_GATEWAY_WS_URL, CPK_INTELLIGENCE_API_KEY), so the platform cannot be asked. (asked for getRuntimeEntitlements)"}
+{"type":"intelligence-memory-unavailable","reason":"PlatformRequestError","timestamp":"2026-11-01T…Z"}
+```
+
+`/api/capabilities` 也跟着变了（0.3.2 是 `"mode":"intelligence"`、`durableHistory:true`）：
+
+```
+{"mode":"sse","durableHistory":false,"generativeUi":true,"selfHostBanner":true,"localEvaluation":true,"transcription":false,"voice":false,"authProviders":[],"ssoConfigured":false,"ssoRequired":false}
+```
+
+> 人不需要配 Intelligence。代价写在日志里：没有平台就**没有跨 Bot 交接**（`handoff-absent`）、线程与记忆只留在本机库（`durableHistory:false`）。
+
+### ② 模型 key 进凭据库，不进 `.env`
+
+```
+C:\Users\Damon\CCP-Bot\.secrets
+AGENT_TOOL_TOKEN.dpapi      352
+COMPUTER_TOKEN.dpapi        352
+KEY_ENCRYPTION_KEY.dpapi    352
+MANAGED_AGENT_TOKEN.dpapi   352
+OPENAI_API_KEY.dpapi        352     ← 第 3 步填的模型 key 落在这里
+SUPERVISOR_TOKEN.dpapi      352
+WORKER_SHARED_SECRET.dpapi  352
+```
+
+`.env` 里没有 `OPENAI_API_KEY=`（0 行）。**旁证**：退出后重新启动，向导停在上次那一步的「刷新 AI 连接」屏，点 `使用已保存的 OpenAI API 密钥` 之后界面变成：
+
+```
+已保存的 OpenAI API key 将被使用。
+```
+
+并且 `继续` 立刻变实 —— 说明 key 确实被应用从凭据库读了回来（不需要人再粘一次）。
+
+### ③ 进度行说人话
+
+启动后 +20 秒的窗口截图（`v40-09-after-start.png`，30,941 B）在最后一屏上多了一行进度：
+
+```
+⟳  Database                                     进行中 · 7s 已用时
+   Preparing the local database (downloaded once, then reused)…
+```
+
+对照 Part 3 §31：0.3.2 同一位置显示的是裸 id **`database`**；0.4.0 显示的是 **`Database`**（`LocalRun` 里那张 `STEP_LABELS` 表终于被界面用上了 —— 0.4.0 的 `LocalRun.tsx` 与 0.3.2 逐字节相同，改的是 `App.tsx` 改用 `localStepLabel`）。
+
+### ④ 窗口自己就能显示应用
+
+栈起来之后（以及强杀重启之后），窗口内容换成了应用页（`v40-14-relaunch.png`，34,016 B）：
+
+```
+带上你已有的代理
+任何 AG-UI 代理都可以作为 Bot 加入。在 Bot 页面点击「新建 Bot」添加。
+[ Claude Agent SDK ] [ Google ADK ] [ Google Antigravity ] [ LangGraph ] [ CrewAI ]
+[ LlamaIndex ] [ Agno ] [ Pydantic AI ] [ Microsoft Agent Framework ] [ AWS Strands ] [ AG2 ] [ Langroid ]
+[ 继续 ]
+```
+
+同一时刻用无头 Edge 打开 `http://127.0.0.1:3010/`（`ui-3010-040.png`，28,260 B）是应用的另一个首启页：
+
+```
+欢迎来到 CCP-Bot
+[ 球体 ]  Hand off tasks to your team of Bots  [ ↑ ]
+[ 继续 ]
+```
+
+0.3.2 上那句 `CCP-Bot could not verify its app on port 3010 belongs to this installation.` 本轮**没有再出现**。
+
+> ⚠️ 但本轮**首次运行**时窗口黑过一次（WebView2 崩溃），见 §50(i)；上面这张「窗口显示应用」是强杀重启后的新进程拍到的。
+
+---
+
+## 46. 三条退出场景（按 0.4.0 的契约实测）
+
+| 场景 | 操作 | 4–20 秒后的读数 | 结论 |
+| --- | --- | --- | --- |
+| **X（只隐藏）** | 点标题栏 `X`（偏移 896,21） | 窗口离开可见窗口列表；`health=200`、3010 监听 1、bun=4、postgres=29、应用进程仍在 | **只隐藏，栈继续跑** ✔ |
+| **菜单 Quit** | 菜单 `CCP-Bot → Quit` | `health=err`、3010 监听 **0**、bun **0**、postgres **0**、应用进程 **0** | **干净停** ✔（05:21:17、05:27:42 两次复现） |
+| **强制 kill** | `Get-Process ccpbot-desktop \| Stop-Process -Force` | +4s / +10s / +20s 都是 `health=200`、3010 监听 1、bun=4、postgres=29 | **子进程留着**（符合契约）✔ |
+| **kill 之后重启** | 再双击 `ccpbot-desktop.exe` | 新进程窗口**直接显示应用页**；ports 不变（bot=50266 / computer=50267 / postgres=50265）→ 认出了正在跑的本机栈并接管，没有重开一份 | **认得出来** ✔（这正是 0.4.0 要修的） |
+| **键盘 Ctrl+Q** | 窗口聚焦后发 `^q` | +4s / +12s / +22s 都没反应（应用仍在、栈仍在） | ✗ 无效（菜单里的 `Quit` 才行）—— 见 §50(iv) |
+| **Stop（按钮 / 菜单项）** | —— | **本轮没有复测** | 见下方说明 |
+
+**为什么 Stop 本轮没测**：跑完第一轮后我用菜单干净退出了栈；之后应用重启停在「刷新 AI 连接」屏，在那个屏上用占位 key 时 `继续` 点了不动（§50(iii)），因此没能再走到带 `Stop CCP-Bot` 的运行屏。0.2.9 / 0.3.2 的 Stop 证据不变（Part 3 §38：**文案报错、进程真停**）。0.4.0 新增的东西是**所有权记录真的写下来了**（本轮实测存在）：
+
+```
+C:\Users\Damon\CCP-Bot\.logs\host-pids.json   (1080 B)
+{"processes":[
+ {"command_line":"\"C:\\Users\\Damon\\CCP-Bot\\ccpbot-engine\\bun-1.4.3\\bun.exe\" --env-file=../.env src/index.ts","creation_date":"/Date(1793480726756)/","executable_path":"…\\bun.exe","name":"server","pid":17788},
+ {"command_line":"…bun.exe\" ../worker/src/index.ts","name":"worker","pid":21684},
+ {"command_line":"…bun.exe\" --env-file=.env agent-bot/src/index.ts","name":"bot","pid":31324},
+ {"command_line":"…bun.exe\" agent-computer/src/index.ts","name":"computer","pid":32312}],"version":1}
+```
+
+---
+
+## 47. `.env` 与 `.secrets` 逐键表；装完到底要配几样
+
+`<root>\.env` 原文（540 B，两段，全部由应用写）：
+
+```
+# Written by CCP-Bot Desktop. Anything else in this file is left alone.
+BOT_PROVIDER=
+CCPBOT_MODEL_OAUTH_FILE=
+CHATGPT_AUTH_FILE=
+OPENAI_BASE_URL=
+OPENAI_CONTAINER_BASE_URL=
+
+# Written by CCP-Bot local mode.
+DATABASE_URL=postgres://ccpbot@127.0.0.1:50265/ccpbot
+PORT=3010
+SERVER_PORT=3010
+APP_DIST_DIR=C:\Users\Damon\CCP-Bot\app\dist
+CCPBOT_SINGLE_USER=true
+SERVER_INTERNAL_URL=http://127.0.0.1:3010
+NODE_ENV=
+MANAGED_AGENT_AG_UI_URL=http://127.0.0.1:50266
+AGENT_COMPUTER_URL=http://127.0.0.1:50267
+AGENT_COMPUTER_ALLOW_PRIVATE_HOSTS=true
+```
+
+| 键 | 谁写的 | 人要不要管 |
+| --- | --- | --- |
+| `BOT_PROVIDER` / `CCPBOT_MODEL_OAUTH_FILE` / `CHATGPT_AUTH_FILE` / `OPENAI_BASE_URL` / `OPENAI_CONTAINER_BASE_URL` | 应用（Desktop 段；本轮全为空值，因为选的是 API key 而不是 OAuth / 自定义端点） | 不用（选 OAuth 或端点时才有值） |
+| `DATABASE_URL`（端口 50265 随机）/ `PORT` / `SERVER_PORT` / `APP_DIST_DIR` / `SERVER_INTERNAL_URL` / `NODE_ENV` | 应用 | 不用 |
+| `CCPBOT_SINGLE_USER=true` | **应用** | 不用 —— 这就是「身份提供方」的答案：没有 OAuth 也能以 `dev@ccpbot.local`（管理员）单用户运行 |
+| `MANAGED_AGENT_AG_UI_URL` / `AGENT_COMPUTER_URL` / `AGENT_COMPUTER_ALLOW_PRIVATE_HOSTS` | 应用（随机端口） | 不用 |
+| `INTELLIGENCE_API_URL` / `INTELLIGENCE_GATEWAY_WS_URL` / `INTELLIGENCE_API_KEY` / `CPK_INTELLIGENCE_API_KEY` | **0.4.0 里根本不写**（不再编造占位值） | 不用（想连平台才填，日志会告诉你缺什么） |
+| `OPENAI_API_KEY` | **不在这里**（在凭据库） | —— |
+
+`<root>\.secrets`（Windows 上是 DPAPI 加密文件，每个 352 B）：六项内部令牌（`AGENT_TOOL_TOKEN` / `COMPUTER_TOKEN` / `KEY_ENCRYPTION_KEY` / `MANAGED_AGENT_TOKEN` / `SUPERVISOR_TOKEN` / `WORKER_SHARED_SECRET`）是**应用自己铸的**；`OPENAI_API_KEY` 是**人填的那一个**（第 3 步）。
+
+**结论（本轮要给用户的答案）**：装完之后，人只需要做 **1 件事** —— 在第 3 步选一个模型并给它凭据（key / 登录 / 或一个不需要 key 的 OpenAI 兼容端点）。其余全部由应用自己完成：建运行目录、下运行时与便携数据库、写 `.env`、铸内部令牌、单用户身份、随机端口、把模型 key 存进凭据库。**不需要 Docker、不需要管理员、不需要 CopilotKit / Intelligence 的任何字段。**
+
+---
+
+## 48. Bot 的「手」：`computer` 与它的工作文件夹
+
+`<root>\logs\local-computer.log` 原文：
+
+```
+$ bun agent-computer/src/index.ts
+{"type":"computer-sandbox","sandbox":"off","note":"Chromium runs without its own sandbox, which is the only thing that works under a default container seccomp profile. Set COMPUTER_SANDBOX=on where the host allows it."}
+{"type":"computer-browser-mode","mode":"headless","display":null}
+agent-computer listening on http://127.0.0.1:50267
+```
+
+- 端口文件：`bot\port=50266`、`computer\port=50267`、`postgres\port=50265`（都是随机选的空闲端口，因此不会和别的栈抢 5432 / 3010）。
+- 内建 Bot：`<root>\logs\local-bot.log` = `$ bun --env-file=.env agent-bot/src/index.ts` / `agent-bot listening on http://127.0.0.1:50266/ag-ui`。
+- 工作文件夹：`C:\Users\Damon\CCP-Bot\workspace` **存在但是空的**（0 项），`workspace.txt` **不存在** → 没人改过，用的是默认 `<root>\workspace`。界面上的对应文案是 `Hands on your files` / `Working in <workspace>. It reads, writes and runs commands there.`
+- 布局隔离仍然成立：`agent-bot\node_modules` 有 **41** 个条目，根 `node_modules` 只有 **9** 个，且 `node_modules\@ag-ui`、`node_modules\@ag-ui\encoder` 都不在根里。
+
+---
+
+## 49. 界面可用性（HTTP 侧）
+
+```
+GET http://127.0.0.1:3010/health              → 200 application/json   {"status":"ok"}
+GET http://127.0.0.1:3010/api/capabilities    → 200 {"mode":"sse","durableHistory":false,…}
+GET http://127.0.0.1:3010/                    → 200  1043 B（<title>CCP-Bot</title>，<html lang="zh-CN">）
+```
+
+进程与监听：`bun: 4`、`postgres: 29`；`::50267→computer`、`::50266→bot`、`::3010→server`、`127.0.0.1:50265→postgres`。
+
+---
+
+## 50. 本轮的问题与异常（都不是「起不来」，但都该记）
+
+**(i) 首次运行中窗口的 WebView2 崩了一次 → 窗口全黑。**
+`+342 s` 截图还是亮的，`+355 s` 采样报 `capture: screen (printwindow blank)`，之后 `lit=45`（只剩标题栏）。崩溃转储：
+
+```
+%LOCALAPPDATA%\app.ccpbot.desktop\EBWebView\Crashpad\reports\
+  bd0dc61a-a81d-49af-a68d-ee84a128a37a.dmp     809,776 B   2026/11/1 5:04:49
+  edab32bc-09c5-4b8f-b2bc-b522d4def7c5.dmp   9,904,145 B   2026/11/1 5:04:49
+%LOCALAPPDATA%\app.ccpbot.desktop\EBWebView\Crashpad\temp\edge_shutdown_crash.txt
+```
+
+此时**服务栈完全正常**（`/health` 200、3010 在听、bun×4、postgres×29），只是**外壳窗口画不出东西**：点击、最小化/还原、Alt+← 都救不回来（`v40-10-ready.png` 8,747 B / `v40-10b-screen.png` 24,492 B 都是黑内容区）。强杀重启后的新进程立刻正常（§45 ④）。→ **这是 WebView2 崩溃，不是「显示不了应用」**；但用户会看到一块黑窗口，且没有任何提示或自恢复。
+
+**(ii) Windows 硬错误对话框 `pg_ctl.exe - 应用程序错误` ×2，外加 4 个 `pg_ctl.exe` 残留。**
+启动过程中出现两个系统对话框（`class=#32770`、owner 是 `csrss`，说明是**启动即失败**的硬错误，不是应用弹的）：`hwnd=176556806`（我关了）与 `hwnd=176622342`（重启又出现，最后关掉）。同时 `C:\Users\Damon\CCP-Bot\postgres\pgsql\bin\pg_ctl.exe` 有 4 个进程从 `05:04:33–05:04:44` 一直活到停机之后（最后我手动清掉）。数据库本身是好的（`postgres=29`、停机后 `postmaster.pid` 消失、`/health` 200）。
+
+**(iii) 「刷新 AI 连接」屏上，用占位 key 时 `继续` 点不动。**
+退出后重启，向导停在上次那一步的刷新屏（标题 `刷新 AI 连接`，`v40-15-restart.png` 30,038 B）。选 OpenAI 行 → 选 `Use an API key` → 点 `使用已保存的 OpenAI API 密钥`（界面回「已保存的 OpenAI API key 将被使用。」、`继续` 变实）→ 点 `继续`（偏移 341,618）/ 再点 / 发 `{ENTER}`，**界面都不前进**，`telemetry-state.json` 的 `last_step` 一直是 `model`。对照：同一个占位 key 在**首次**走向导时能一路走到 `启动 CCP-Bot`（§44）。→ 现象记录在案；机制未证实（怀疑刷新路径会去校验已保存的 key，而占位 key 过不了）。
+
+**(iv) 键盘 `Ctrl+Q` 不生效。** 菜单里 `Quit  Ctrl+Q` 明写了这个快捷键，但窗口聚焦时发 `^q` 三次采样都没反应（§46）；用**菜单项**点 `Quit` 才停。
+
+**(v) 重启会「接着上次那一步」，不回 Welcome。** 因为 WebView2 profile 留在 `%LOCALAPPDATA%\app.ccpbot.desktop`（Part 3 §33 已经证明：把它挪走就回到 Welcome）。本轮首次启动前我挪走了它 → 拿到干净的 Welcome；后面几次重启就落在「刷新 AI 连接」。
+
+**(vi) 语言仍混排。** 最后一屏的标题与首段是英文（`Run CCP-Bot on this computer` / `Installation is complete…`），其余中文；第 3 步的服务商副标题、`Sign in with OpenAI`、`Use an API key`、进度行的细节句也都是英文。（Part 3 §32 已记过一次。）
+
+**(vii) 日志文件时间戳的坑（工具层面）。** 有写入者持有 `logs\local-*.log` 时 `Get-ChildItem` 会报 0 字节/旧时间，`Get-Content -Raw` 才是可信的 —— 本报告所有日志原文都取自 `-Raw`。
+
+---
+
+## 51. 卸载与机器还原
+
+```
+Get-Process ccpbot-desktop | Stop-Process -Force
+Get-Process pg_ctl,postgres | Where-Object { $_.Path -like 'C:\Users\Damon\CCP-Bot*' } | Stop-Process -Force
+(Start-Process 'H:\CCP-Bot\uninstall.exe' -ArgumentList '/S' -Wait -PassThru).ExitCode
+Remove-Item 'C:\Users\Damon\CCP-Bot' -Recurse -Force
+```
+```
+uninstall ExitCode: 0
+HKLM key:      False
+HKCU key:      False
+desktop lnk:   False
+startmenu lnk: False
+public lnk:    False
+%LOCALAPPDATA%\CCP-Bot: False
+chrome native host:    False
+H:\CCP-Bot:    True   （21 个条目 = 别人留下的部署布局；这次装的 exe / uninstall.exe 已经不在了）
+install exe gone: True   uninstaller gone: True
+
+root size before delete: 2620.6 MB   entries: 29
+root exists after delete: False
+
+=== 最终状态 ===
+ccpbot-desktop: 0  bun: 0  postgres: 0  pg_ctl: 0
+3010 listeners: 0
+HKCU key: False   root: False   %APPDATA%\app.ccpbot.desktop: 0 个文件
+```
+
+遗留（**故意保留**，都是证据）：`%LOCALAPPDATA%\app.ccpbot.desktop\EBWebView\Crashpad\reports\*.dmp`（§50(i) 的两个崩溃转储）、`%LOCALAPPDATA%\app.ccpbot.desktop.bak-0453` 与 `.bak-235036`（两轮挪走的 profile）、`C:\Users\Damon\AppData\Local\Temp\ccpbot-verify`（脚本与截图）、`H:\CCP-Bot` 的 21 项别人留下的文件。
+
+---
+
+## 52. macOS：由 CI 覆盖（本机没有 Mac，本轮不在本机验证）
+
+macOS 的本机进程路线由仓库 CI 覆盖：workflow `local-mode-macos.yml` 在 `macos-26-arm64` 上跑通，最近一次成功运行是 **run 41240143297**（master，success，created 2026-10-31T20:42:19Z），其中包含 `[bot] … (/health 200)`、`[ready] … (/health 200)`、两个 ownership/exit 用例各 `1 passed`，并且复制出来的负载 `lipo -archs` = `x86_64 arm64`、`vector.dylib` = `arm64`。
+对应地，v0.4.0 Release 只挂了 `CCP-Bot_0.4.0_aarch64.dmg`（**没有 Intel dmg**）—— 这点与 Part 1/2/3 一致。
+
+---
+
+## 53. 判据核对（Part 3 的六条，在 0.4.0 上逐条重跑）
+
+| # | 判据 | 结果 | 证据 |
+| --- | --- | --- | --- |
+| 1 | `http://127.0.0.1:3010/health` = 200 | ✅ | §43 采样第 30 行 + §49 原文 `200 {"status":"ok"}` |
+| 2 | 步骤链到 `[ready]` | ✅ | `[05:05:33] READY health=200 computer-log-present`；窗口进度行见 §45 ③ |
+| 3 | `[bot]` 步骤成功 + `<root>\agent-bot\node_modules` 存在 | ✅ | `agent-bot listening on http://127.0.0.1:50266/ag-ui`；`agent-bot\node_modules` 41 项、根 `node_modules` 9 项且无 `@ag-ui` |
+| 4 | `local-computer.log` 与 `workspace\` 有证据 | ✅ | §48 原文；`workspace` 存在（空，默认位置） |
+| 5 | 窗口自己显示应用 | ✅（首次运行期间有一次 WebView2 崩溃，见 §50(i)） | §45 ④ `v40-14-relaunch.png` |
+| 6 | 除模型 key 外不要求人配任何东西 | ✅ | §44 最后一屏零 CopilotKit 可点启动；§47 逐键表；`intelligence-absent` 起得来 |
+| +a | 新行为① 无 Intelligence 也能起 | ✅ | §45 ① |
+| +b | 新行为② 模型 key 进凭据库而非 `.env` | ✅ | §45 ② |
+| +c | 新行为③ 进度行说人话 | ✅ | §45 ③（`Database`） |
+| +d | 新行为④ 窗口显示应用 | ✅ | §45 ④ |
+| +e | 退出场景：X 只隐藏 / Quit 干净停 / kill 后下次认得出 | ✅ | §46 |
+
+---
+
+## 54. 复现命令（这一轮用的完整序列，PowerShell）
+
+```powershell
+$t='C:\Users\Damon\AppData\Local\Temp\ccpbot-verify'
+# 0) 基线：确认机器干净
+Test-Path 'C:\Users\Damon\CCP-Bot'
+(Get-NetTCPConnection -LocalPort 3010 -State Listen -EA SilentlyContinue | Measure-Object).Count
+Get-Process ccpbot-desktop,bun,postgres,pg_ctl -EA SilentlyContinue
+
+# 1) 下载并核对安装包（SHA-256 必须与 release 资产 digest 一致）
+gh release download v0.4.0 --repo DamonZS/CCP-Bot --pattern "CCP-Bot_0.4.0_x64-setup.exe" --dir $t --clobber
+(Get-Item "$t\CCP-Bot_0.4.0_x64-setup.exe").Length
+(Get-FileHash "$t\CCP-Bot_0.4.0_x64-setup.exe" -Algorithm SHA256).Hash
+
+# 2) 静默安装（不需要管理员）
+(Start-Process "$t\CCP-Bot_0.4.0_x64-setup.exe" -ArgumentList '/S' -Wait -PassThru).ExitCode
+
+# 3) 拿一次「全新机器」的首启画面：把 WebView2 profile 挪走
+Move-Item "$env:LOCALAPPDATA\app.ccpbot.desktop" "$env:LOCALAPPDATA\app.ccpbot.desktop.bak"
+Start-Process 'H:\CCP-Bot\ccpbot-desktop.exe'
+
+# 4) 走向导：改为在本机运行 → 继续 → 继续 → 选服务商 → Use an API key → 填 key → 继续 → 启动 CCP-Bot
+#    （截图与偏移见 §44；界面文字就是判据）
+
+# 5) 一边等一边采（窗口截图 + 进程/端口/文件读数据）
+& "$t\mon40.ps1" -MaxMinutes 20 -IntervalSeconds 10      # 日志 mon40.log，截图 prog40-NN.png
+
+# 6) 起来之后收证据
+Invoke-WebRequest 'http://127.0.0.1:3010/health' -UseBasicParsing | % { $_.StatusCode; $_.Content }
+(Invoke-WebRequest 'http://127.0.0.1:3010/api/capabilities' -UseBasicParsing).Content
+Get-Content 'C:\Users\Damon\CCP-Bot\.env'
+Get-ChildItem 'C:\Users\Damon\CCP-Bot\.secrets' | Select-Object Name,Length
+Get-Content 'C:\Users\Damon\CCP-Bot\.logs\host-pids.json' -Raw
+Get-Content 'C:\Users\Damon\CCP-Bot\logs\local-server.log' -Raw
+Get-Content 'C:\Users\Damon\CCP-Bot\logs\local-bot.log' -Raw
+Get-Content 'C:\Users\Damon\CCP-Bot\logs\local-computer.log' -Raw
+
+# 7) 关窗口（X）→ 栈应照跑
+& "$t\clickwin.ps1" -Dx 896 -Dy 21
+
+# 8) 菜单 Quit → 4 秒内应该全 0
+& "$t\menu40.ps1" -ClickRow 'Quit' -AfterClickWait 4
+
+# 9) 强制 kill → 子进程留着；再启动一次 → 应能认出并接管（端口不变）
+Get-Process ccpbot-desktop | Stop-Process -Force
+Start-Process 'H:\CCP-Bot\ccpbot-desktop.exe'
+
+# 10) 卸载并删掉运行目录
+(Start-Process 'H:\CCP-Bot\uninstall.exe' -ArgumentList '/S' -Wait -PassThru).ExitCode
+Remove-Item 'C:\Users\Damon\CCP-Bot' -Recurse -Force
+```
+
+---
+
+*Part 4 结束。所有界面文字、日志、命令输出均为本次验证的原样记录；引用源码的地方均标注了文件与行号。*
 
 ---
 
