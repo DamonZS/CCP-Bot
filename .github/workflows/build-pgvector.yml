@@ -55,6 +55,11 @@ jobs:
             | shasum -a 256 -c -
           tar xzf pgvector.tar.gz
           cd pgvector-0.8.6
+          # The floor matters more than the architecture. Left alone, clang stamps this with the
+          # SDK on the runner — macOS 26 today — and dyld then refuses to load it on an older Mac:
+          # `minos` is a promise that the binary needs an OS at least that new. The person's machine
+          # is not the runner, so the floor is set to 13.0 Ventura and checked in the log below.
+          export MACOSX_DEPLOYMENT_TARGET=13.0
           make PG_CONFIG="$(brew --prefix postgresql@17)/bin/pg_config"
           mkdir -p ../out
           cp vector.dylib vector.control ../out/
@@ -75,7 +80,18 @@ jobs:
           # needed a library only this runner has would fail at `CREATE EXTENSION` on somebody's Mac,
           # where the only libraries are the ones the portable database unpacks beside it.
           otool -L out/vector.dylib
+          # What it links decides whether the portable PostgreSQL can load it: an extension that
+          # needed a library only this runner has would fail at `CREATE EXTENSION` on somebody's Mac,
+          # where the only libraries are the ones the portable database unpacks beside it. The code
+          # signature entitlement that lets it load an unsigned `vector.dylib` beside it is a
+          # property of that PostgreSQL, not of this file, so nothing here has to be signed.
           otool -l out/vector.dylib | grep -A4 LC_BUILD_VERSION | head -12
+          floor="$(otool -l out/vector.dylib | awk '/LC_BUILD_VERSION/{seen=1} seen && /minos/{print $2; exit}')"
+          echo "minos: $floor"
+          case "$floor" in
+            1[0-3].*) ;;
+            *) echo "the extension was built for macOS $floor, which an older Mac will refuse to load"; exit 1 ;;
+          esac
 
       - name: Pack the three files a CREATE EXTENSION needs
         shell: bash
