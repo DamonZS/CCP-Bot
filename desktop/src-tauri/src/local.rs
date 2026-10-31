@@ -148,25 +148,6 @@ pub const MANAGED_KEYS: [&str; 10] = [
     "NODE_ENV",
 ];
 
-/// The CopilotKit Intelligence connection a local run answers for itself.
-///
-/// `server/src/config.ts` refuses to start without a URL, a gateway address and a key, and it has no
-/// way of knowing that a desktop install has no CopilotKit account behind it: the agent a local run
-/// actually talks to is the built-in Bot on the loopback address. These three values are what
-/// satisfies that check — the ones the ignored live test has always used — and nothing here needs
-/// them to answer. That the stack comes up with `http://127.0.0.1:9/api` as its Intelligence URL is
-/// measured, not assumed: the live test below starts the whole thing with exactly these values.
-///
-/// Somebody's own connection is never replaced. See `server_environment`.
-pub const LOCAL_INTELLIGENCE: [(&str, &str); 3] = [
-    ("INTELLIGENCE_API_URL", "http://127.0.0.1:9/api"),
-    ("INTELLIGENCE_GATEWAY_WS_URL", "ws://127.0.0.1:9/gateway"),
-    (
-        "INTELLIGENCE_API_KEY",
-        "sk-local-placeholder-for-a-desktop-run",
-    ),
-];
-
 /// The archive to unpack for this platform, or why there is not one.
 ///
 /// Only Windows is wired up. The packages exist elsewhere, but each platform's archive is a
@@ -1453,32 +1434,6 @@ pub fn write_intelligence(
     Ok(file)
 }
 
-/// What the server is started with: the secrets this deployment minted, plus the Intelligence
-/// connection a local run answers for itself when there is nothing else.
-///
-/// In the child's environment rather than in `.env`, deliberately. That file is where the wizard
-/// reads a connection back out of (`already_configured_for_root` in `main.rs`), so a placeholder key
-/// written there would say this deployment is connected — to the wizard, and to the container route,
-/// which starts against what the file says. An environment variable leaves the file alone, and it
-/// also wins over `--env-file`: measured with bun 1.2.21, which is the runtime this starts.
-fn server_environment(root: &Path, secrets: &BTreeMap<String, String>) -> BTreeMap<String, String> {
-    let mut environment = secrets.clone();
-    // Read with the desktop's own reader, so a blank value or a commented-out line is not a
-    // connection here either: the wizard asks the same question of the same file.
-    let configured = crate::env::already_set(
-        &root.join(".env"),
-        &["INTELLIGENCE_API_KEY", "CPK_INTELLIGENCE_API_KEY"],
-    );
-    if configured.is_empty() {
-        environment.extend(
-            LOCAL_INTELLIGENCE
-                .iter()
-                .map(|(name, value)| (name.to_string(), value.to_string())),
-        );
-    }
-    environment
-}
-
 /// Whether this folder already holds the sources local mode runs.
 ///
 /// `package.json` is the whole test: it is what every step afterwards reads, and a folder that has
@@ -1738,7 +1693,11 @@ pub fn start(
         &services,
         &service_arguments("../.env", "src/index.ts"),
         &log_file(root, "server"),
-        &server_environment(root, &secrets),
+        // The secrets this deployment minted, and nothing else: a local run has no CopilotKit account
+        // behind it, and a connection somebody configured is in the file `../.env` names, which the
+        // server reads for itself. What used to stand in for one here is gone with the check that
+        // demanded it — the server now says `intelligence-absent` and runs on this machine's tables.
+        &secrets,
     )?;
     // The worker is handed its three settings and the model's keys, the way compose hands its one
     // environment to every service: it does not read the deployment's configuration, and the less
@@ -2003,37 +1962,33 @@ mod tests {
         let _ = std::fs::remove_dir_all(&root);
     }
 
-    /// Somebody who answers nothing but the model screen still gets a stack that starts: with no
-    /// connection anywhere, the server is handed the three values it insists on.
+    /// A local run invents no connection of its own, and one somebody configured is theirs to keep.
+    ///
+    /// `server/src/config.ts` used to refuse to start without the three values, and this route
+    /// answered for itself with `http://127.0.0.1:9/api`. All three absent is now a deployment that
+    /// means to stand on its own, so the wizard's answer is the only source: written by
+    /// `write_intelligence`, and left alone by every later `write_env`.
     #[test]
-    fn a_run_with_no_connection_of_its_own_answers_for_one() {
-        let root = scratch("intelligence-stand-in");
+    fn a_run_on_this_computer_writes_no_connection_of_its_own() {
+        let root = scratch("intelligence-none");
         write_env(&root, 63133, Some(4211), Some(6210)).expect("writing .env");
-        let environment = server_environment(&root, &BTreeMap::new());
-        assert_eq!(environment.len(), LOCAL_INTELLIGENCE.len());
-        for (name, value) in LOCAL_INTELLIGENCE {
-            assert_eq!(environment.get(name).map(String::as_str), Some(value));
-        }
-        let _ = std::fs::remove_dir_all(&root);
-    }
+        let written = std::fs::read_to_string(root.join(".env")).expect("the .env");
+        assert!(!written.contains("INTELLIGENCE"), "{written}");
 
-    /// A connection that is already there is never replaced by the stand-in, under either of the two
-    /// names the server reads a key from — and a commented-out line is not a connection.
-    #[test]
-    fn a_connection_in_the_file_is_left_alone() {
-        let root = scratch("intelligence-kept");
-        std::fs::write(
-            root.join(".env"),
-            "CPK_INTELLIGENCE_API_KEY=sk-mine\n# INTELLIGENCE_API_KEY=sk-commented-out\n",
+        write_intelligence(
+            &root,
+            "https://api.example",
+            "wss://api.example/gateway",
+            "sk-service",
         )
-        .expect("a .env");
-        let secrets = BTreeMap::from([("WORKER_SHARED_SECRET".to_string(), "worker".to_string())]);
-        let environment = server_environment(&root, &secrets);
-        assert_eq!(environment.len(), 1);
-        assert_eq!(
-            environment.get("WORKER_SHARED_SECRET").map(String::as_str),
-            Some("worker")
+        .expect("writing the connection");
+        write_env(&root, 63133, Some(4211), Some(6210)).expect("writing .env again");
+        let kept = std::fs::read_to_string(root.join(".env")).expect("the .env");
+        assert!(
+            kept.contains("INTELLIGENCE_API_URL=https://api.example"),
+            "{kept}"
         );
+        assert!(kept.contains("INTELLIGENCE_API_KEY=sk-service"), "{kept}");
         let _ = std::fs::remove_dir_all(&root);
     }
 
@@ -2517,13 +2472,13 @@ mod tests {
             .to_path_buf();
         let cache = std::env::temp_dir().join("ccpbot-local-cache");
         let mut steps: Vec<String> = Vec::new();
-        // No intelligence connection is written, and that is the point of this test: somebody who
-        // installs this and answers nothing but the model screen gets a stack that starts. What
-        // stands in for the connection is `LOCAL_INTELLIGENCE`, handed to the server by
-        // `server_environment`, and writing it here would hide whether that works. The assertion
-        // below is what keeps the claim honest on a machine that has a connection of its own.
+        // No intelligence connection is written and none is handed in, and that is the point of this
+        // test: somebody who installs this and answers nothing but the model screen gets a stack that
+        // starts. The assertion below is what keeps the claim honest on a machine whose own `.env`
+        // holds a connection — this run would then prove nothing about one that has none.
+        let checkout = std::fs::read_to_string(root.join(".env")).unwrap_or_default();
         assert!(
-            server_environment(&root, &BTreeMap::new()).contains_key("INTELLIGENCE_API_KEY"),
+            !checkout.contains("INTELLIGENCE_"),
             "{} already holds an Intelligence connection, so a start on this machine does not show \
              that one is not needed",
             root.join(".env").display()
@@ -2558,6 +2513,16 @@ mod tests {
         assert_eq!(
             crate::vault::recall(&root, "OPENAI_API_KEY").expect("the store is readable"),
             Some("sk-local-placeholder-for-a-desktop-run".to_string())
+        );
+        // Nothing was invented for it either. A deployment with no CopilotKit account behind it says
+        // so on the way up, which it can only do if the server was handed none of the three values.
+        assert!(!file.contains("INTELLIGENCE_"), "{file}");
+        let server_log =
+            std::fs::read_to_string(log_file(&root, "server")).expect("the server log is written");
+        assert!(
+            server_log.contains("\"intelligence-absent\""),
+            "the server log does not say it ran without Intelligence: {}",
+            server_log.chars().take(400).collect::<String>()
         );
         let status = health_status(&started.address).expect("the interface answers");
         assert_eq!(status, 200, "the address is {}", started.address);

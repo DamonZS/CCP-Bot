@@ -615,18 +615,23 @@ pub fn compose(
     // string, so a key copied from a provider's dashboard with the trailing space the selection
     // picked up arrives here intact. Compose keeps it, the provider rejects the key, and the Bot
     // reports that it cannot answer without ever naming the space.
-    env.insert(
-        "INTELLIGENCE_API_URL".into(),
-        intelligence.api_url.trim().to_string(),
+    //
+    // Blank is not a value here either, and one screen gives all four. A wizard that named no
+    // connection leaves none of them in this map: the server then reads all three as absent and
+    // starts on its own database (`intelligence-absent`, `mode: "sse"`) instead of being told it is
+    // connected to an empty address. The same rule keeps those empty lines out of the deployment's
+    // `.env`, which is the file a person reads to see what this folder is connected to.
+    insert_if_given(&mut env, "INTELLIGENCE_API_URL", &intelligence.api_url);
+    insert_if_given(
+        &mut env,
+        "INTELLIGENCE_GATEWAY_WS_URL",
+        &intelligence.gateway_ws_url,
     );
-    env.insert(
-        "INTELLIGENCE_GATEWAY_WS_URL".into(),
-        intelligence.gateway_ws_url.trim().to_string(),
-    );
-    // Explicit desktop selection must override a CLI key left in the checkout's .env.
-    // Supply both names for consumers that still read the legacy variable directly.
+    // A name the screen did answer overrides a CLI key left in the checkout's `.env`; a blank one
+    // changes nothing there. Supply both names for consumers that still read the legacy variable
+    // directly.
     for key in ["CPK_INTELLIGENCE_API_KEY", "INTELLIGENCE_API_KEY"] {
-        env.insert(key.into(), intelligence.api_key.trim().to_string());
+        insert_if_given(&mut env, key, &intelligence.api_key);
     }
 
     /*
@@ -1481,6 +1486,38 @@ HTTPS_PROXY=http://proxy:8080
         assert_eq!(env["INTELLIGENCE_API_KEY"], "key-with-a-trailing-space");
         // Unchanged, and the reason the other three now match it.
         assert_eq!(env["OPENAI_API_KEY"], "sk-model");
+    }
+
+    #[test]
+    fn a_connection_nobody_configured_is_not_written_at_all() {
+        // The setup screen is the only source of these four, and it sends what a person typed. An
+        // answer with nothing in it must leave nothing behind: the server reads all three as absent
+        // and stands on its own, and the file the wizard reads back out of gets no empty keys that
+        // look like a connection somebody half-configured.
+        let env = compose(
+            &Intelligence {
+                api_url: "   ".into(),
+                gateway_ws_url: String::new(),
+                api_key: "".into(),
+            },
+            &Model {
+                credential: ModelCredential::None,
+            },
+            &engine_status(None),
+            &Ports::default(),
+            &pinned(),
+            None,
+            &BTreeMap::new(),
+        );
+
+        for key in [
+            "INTELLIGENCE_API_URL",
+            "INTELLIGENCE_GATEWAY_WS_URL",
+            "CPK_INTELLIGENCE_API_KEY",
+            "INTELLIGENCE_API_KEY",
+        ] {
+            assert!(!env.contains_key(key), "{key} was written anyway: {env:?}");
+        }
     }
 
     #[test]
