@@ -110,6 +110,58 @@ jobs:
       # after that one resolved `@/lib/auth/client`).
       - name: Interface tests
         run: bun test app/tests --timeout 20000
+
+  # THE REPOSITORY'S OWN PATHS, READ ON WINDOWS. This job exists because a class of regression had
+  # nowhere to show itself: `server/tests` spells a path as `new URL(..., import.meta.url).pathname`,
+  # which on Windows is `/D:/...`, so the `join`/`readFileSync` that follows looks for `\D:\...` and
+  # dies with ENOENT — on Windows only, while every job here stayed green. The whole server suite
+  # cannot ride here: it needs PostgreSQL and real websockets (see the note on `tests` above). What
+  # rides here is the part of it that reads this repository's files and needs no database, and only
+  # files that are green on Windows today — 476 tests across 20 files.
+  #
+  # Four near-misses are left out on purpose, each for a reason that would make this gate red on
+  # arrival: `tenant-package.test.ts` wants `TEST_DATABASE_URL`; `recorder-config.test.ts` asserts
+  # that the CHANGELOG's `## Unreleased` section carries the recorder words, which that change still
+  # owes; `assertion-shape.test.ts` is mid-fix-cycle and red on ten of its own guards; and
+  # `responsibility-triggers.test.ts` generates a key with `openssl`, which windows-latest lacks.
+  # `--timeout 20000` matches the interface job: a few files here start real processes, and a
+  # windows-latest runner is slower than a developer's machine.
+  server-paths:
+    name: server paths
+    runs-on: windows-latest
+    needs: static
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: ${{ env.BUN_VERSION }}
+      - name: Install
+        run: bun install --frozen-lockfile
+      - name: Server tests that read files and need no database
+        run: >-
+          bun test --timeout 20000
+          server/tests/brokered-provenance.test.ts
+          server/tests/bunfig-preload.test.ts
+          server/tests/comments-say-the-reason.test.ts
+          server/tests/computer-gateway.test.ts
+          server/tests/config.test.ts
+          server/tests/copilot.test.ts
+          server/tests/handoff-caps-defaults.test.ts
+          server/tests/headless-components.test.ts
+          server/tests/health.test.ts
+          server/tests/migration-journal.test.ts
+          server/tests/migration-reach.test.ts
+          server/tests/openai-compatible-endpoint.test.ts
+          server/tests/production-loader-boundary.test.ts
+          server/tests/provider-oauth.test.ts
+          server/tests/schema.test.ts
+          server/tests/standalone.test.ts
+          server/tests/tenant-package-agent-files.test.ts
+          server/tests/tool-selection-environment-restoration-driver.test.ts
+          server/tests/tool-selection-environment-restoration.test.ts
+          server/tests/web-research.test.ts
+
   chart:
     name: chart (${{ matrix.target }})
     runs-on: ubuntu-latest
@@ -241,7 +293,7 @@ jobs:
   verify:
     name: verify
     if: always()
-    needs: [static, build, tests, chart, desktop]
+    needs: [static, build, tests, chart, desktop, server-paths]
     runs-on: ubuntu-latest
     steps:
       # One required check for branch protection, and a red run that says so rather than a red run
