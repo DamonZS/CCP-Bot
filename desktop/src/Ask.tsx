@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { asProblem, Failure, type Problem } from "./Problem";
+import { t } from "./lib/i18n";
 
 /**
  * The last screen: a question, an answer, and only then the handover.
@@ -54,14 +55,14 @@ export function Ask({
 
   return (
     <div className="sheet">
-      <p className="steps-of">Last step</p>
-      <h1>Ask it something.</h1>
+      <p className="steps-of">{t("Last step")}</p>
+      <h1>{t("Ask it something.")}</h1>
       <p className="lede">
-        Your Bot is set up. This proves it can answer before you start using it.
+        {t("Your Bot is set up. This proves it can answer before you start using it.")}
       </p>
 
       <div className="field">
-        <label htmlFor="question">Your question</label>
+        <label htmlFor="question">{t("Your question")}</label>
         <input
           id="question"
           value={question}
@@ -90,7 +91,7 @@ export function Ask({
 
       {answer !== null && (
         <div className="answer">
-          <p className="answer-from">Your Bot said</p>
+          <p className="answer-from">{t("Your Bot said")}</p>
           <p className="answer-text">{answer}</p>
         </div>
       )}
@@ -98,11 +99,11 @@ export function Ask({
       <div className="row">
         {answer === null ? (
           <button type="button" onClick={ask} disabled={asking}>
-            {asking ? "Asking…" : "Ask"}
+            {asking ? t("Asking…") : t("Ask")}
           </button>
         ) : (
           <button type="button" onClick={onOpen}>
-            Start using CCP-Bot
+            {t("Start using CCP-Bot")}
           </button>
         )}
         {/*
@@ -119,7 +120,7 @@ export function Ask({
               onBack();
             }}
           >
-            Change the model
+            {t("Change the model")}
           </button>
         )}
         {answer !== null && (
@@ -129,13 +130,13 @@ export function Ask({
             onClick={ask}
             disabled={asking}
           >
-            Ask again
+            {t("Ask again")}
           </button>
         )}
       </div>
 
       <p className="footnote">
-        Your question goes to the AI provider you connected.
+        {t("Your question goes to the AI provider you connected.")}
       </p>
     </div>
   );

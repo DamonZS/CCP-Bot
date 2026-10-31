@@ -2,6 +2,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { useEffect, useState } from "react";
 import { isHttpEndpointUrl } from "./http-endpoint-url";
 import { Mark } from "./Mark";
+import { t } from "./lib/i18n";
 
 export type Harness = {
   id: string;
@@ -77,7 +78,7 @@ export function HarnessPicker({
     return (
       <div className="sheet">
         <div className="blocker" role="alert">
-          <h2>The list of Bots could not be read</h2>
+          <h2>{t("The list of Bots could not be read")}</h2>
           <p>{failure}</p>
         </div>
       </div>
@@ -86,8 +87,8 @@ export function HarnessPicker({
 
   return (
     <div className="sheet">
-      <p className="steps-of">Step 1 of 4</p>
-      <h1>Your first Bot</h1>
+      <p className="steps-of">{t("Step 1 of 4")}</p>
+      <h1>{t("Your first Bot")}</h1>
       {/*
         Written to the person who has to act, not about the situation.
 
@@ -97,22 +98,20 @@ export function HarnessPicker({
         applies to will read it.
       */}
       <p className="lede">
-        CCP-Bot sets this up for you. If you write code, you can choose the
-        agent framework below.
+        {t("CCP-Bot sets this up for you. If you write code, you can choose the agent framework below.")}
       </p>
 
       <details open={open} onToggle={(e) => setOpen(e.currentTarget.open)}>
         <summary>
           {picked && picked.id !== DEFAULT_HARNESS
             ? `Using ${picked.name}`
-            : "Choose the agent framework"}
+            : t("Choose the agent framework")}
         </summary>
         <p className="footnote" style={{ margin: "0.6rem 0 0" }}>
-          Any of these works with any AI provider. Only the last one asks you
-          for an address.
+          {t("Any of these works with any AI provider. Only the last one asks you for an address.")}
         </p>
         <fieldset className="picker">
-          <legend className="sr-only">Bot</legend>
+          <legend className="sr-only">{t("Bot")}</legend>
           {rows.map((row) => (
             <label
               key={row.id}
@@ -138,20 +137,20 @@ export function HarnessPicker({
               <span className="tile-name">{row.name}</span>
               <span className="tile-summary">{row.summary}</span>
               {row.credential === "anthropic" && (
-                <span className="tile-note">No API key needed</span>
+                <span className="tile-note">{t("No API key needed")}</span>
               )}
               {row.credential === "google" && (
-                <span className="tile-note">Needs a Gemini key</span>
+                <span className="tile-note">{t("Needs a Gemini key")}</span>
               )}
               {row.credential === "their-endpoint" && (
-                <span className="tile-note">Uses your running agent</span>
+                <span className="tile-note">{t("Uses your running agent")}</span>
               )}
             </label>
           ))}
         </fieldset>
         {chosenId === "byo-url" && (
           <div className="field" style={{ marginTop: "0.75rem" }}>
-            <label htmlFor="agent-url">AG-UI endpoint</label>
+            <label htmlFor="agent-url">{t("AG-UI endpoint")}</label>
             <input
               id="agent-url"
               value={byoAgentUrl}
@@ -161,7 +160,7 @@ export function HarnessPicker({
                   agentUrl: event.target.value,
                 })
               }
-              placeholder="https://your-agent.example/ag-ui"
+              placeholder={t("https://your-agent.example/ag-ui")}
               spellCheck={false}
             />
           </div>
@@ -170,14 +169,14 @@ export function HarnessPicker({
 
       <div className="row">
         <button type="button" className="quiet" onClick={onBack}>
-          Back
+          {t("Back")}
         </button>
         <button
           type="button"
           disabled={chosenId === "byo-url" && !byoReady}
           onClick={onContinue}
         >
-          Continue
+          {t("Continue")}
         </button>
       </div>
     </div>

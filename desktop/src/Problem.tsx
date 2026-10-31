@@ -1,4 +1,5 @@
 import { ExternalLink } from "./ExternalLink";
+import { t } from "./lib/i18n";
 
 /**
  * A failure, in both registers, wherever one happens.
@@ -34,7 +35,7 @@ function SetupHelp() {
     "https://github.com/DamonZS/CCP-Bot/issues/new/choose";
   return (
     <ExternalLink className="setup-help" href={url}>
-      Get setup help
+      {t("Get setup help")}
     </ExternalLink>
   );
 }
@@ -42,13 +43,13 @@ function SetupHelp() {
 export function Failure({ problem }: { problem: Problem }) {
   return (
     <div className="blocker" role="alert">
-      <h2>That did not finish</h2>
+      <h2>{t("That did not finish")}</h2>
       <p>{problem.said}</p>
       {/* The real output, kept but not the headline. Whoever is debugging opens this; the person
           reading the sentence above never has to. */}
       {problem.detail && (
         <details className="detail-of">
-          <summary>Technical details</summary>
+          <summary>{t("Technical details")}</summary>
           <pre>{problem.detail}</pre>
         </details>
       )}
@@ -70,7 +71,7 @@ export function InlineFailure({ problem }: { problem: Problem }) {
       <p className="caution">{problem.said}</p>
       {problem.detail && (
         <details className="detail-of">
-          <summary>Technical details</summary>
+          <summary>{t("Technical details")}</summary>
           <pre>{problem.detail}</pre>
         </details>
       )}

@@ -6,6 +6,15 @@ afterwards, and does not when only the code moved.
 
 Newest first. `Unreleased` is what is on `main` and not yet tagged.
 
+## 0.3.0 - the window speaks Chinese
+
+The window was half translated. The page CCP-Bot serves had been in Chinese for several releases;
+the shell around it - the first screen, the setup wizard, the local run page, every message a
+problem brings - was still English. One window, two languages, which is what it looked like.
+
+The shell now says what the page says. Its sentences are translated where they are shown rather than
+in the crate, which keeps the crate's English and the tests that assert it honest: a log line is
+written for whoever reads the log, not for the person in the window.
 ## 0.2.9 - a fresh install runs on its own
 
 Three things stood between a downloaded installer and a working stack, and each one only showed up on

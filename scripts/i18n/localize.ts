@@ -17,7 +17,7 @@
  *   reported, so a second pass can pick those up by hand.
  */
 import { readdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
-import { join } from "node:path";
+import { dirname, join, relative } from "node:path";
 import ts from "typescript";
 
 /** Attributes whose value is rendered to a person rather than read by code. */
@@ -73,6 +73,14 @@ const PROTOCOL_TOKENS = new Set([
 
 const IMPORT_FROM_APP = "@/lib/i18n";
 
+/**
+ * The specifier the injected import is written with, per file.
+ *
+ * The app resolves `@/`, but `desktop/` is a separate Vite project with no alias, so a package that
+ * does not use the alias asks for `--import-relative` and gets a real relative path instead.
+ */
+let importFrom = IMPORT_FROM_APP;
+
 type Mode = "scan" | "apply";
 
 type Kind =
@@ -105,7 +113,7 @@ function walk(root: string): string[] {
       continue;
     }
     if (
-      entry.endsWith(".tsx") ||
+      (entry.endsWith(".tsx") && !entry.endsWith(".test.tsx")) ||
       (entry.endsWith(".ts") && !entry.endsWith(".test.ts"))
     ) {
       out.push(path);
@@ -370,7 +378,7 @@ function collect(file: string, text: string, hits: Hit[], skipped: Skipped[]) {
  * no-op.
  */
 function addImport(text: string): string {
-  if (/from\s+["']@\/lib\/i18n[\w/]*["']/.test(text)) {
+  if (/from\s+["'][^"']*lib\/i18n[^"']*["']/.test(text)) {
     return text;
   }
   const source = ts.createSourceFile(
@@ -388,7 +396,7 @@ function addImport(text: string): string {
       break;
     }
   }
-  const line = `\nimport { t } from "${IMPORT_FROM_APP}";`;
+  const line = `\nimport { t } from "${importFrom}";`;
   if (insertAt === 0) {
     return `${line.trim()}\n${text}`;
   }
@@ -411,6 +419,7 @@ function main() {
   const root = rootFlag >= 0 ? (args[rootFlag + 1] as string) : "app/src";
   const outFlag = args.indexOf("--out");
   const out = outFlag >= 0 ? (args[outFlag + 1] as string) : undefined;
+  const relativeImport = args.includes("--import-relative");
 
   const files = walk(root);
   const hits: Hit[] = [];
@@ -418,6 +427,10 @@ function main() {
   const texts = new Map<string, string>();
 
   for (const file of files) {
+    if (relativeImport) {
+      const target = relative(dirname(file), join(root, "lib", "i18n")).replaceAll("\\", "/");
+      importFrom = target.startsWith(".") ? target : `./${target}`;
+    }
     const text = readFileSync(file, "utf8");
     texts.set(file, text);
     collect(file, text, hits, skipped);

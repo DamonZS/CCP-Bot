@@ -87,3 +87,5 @@ extension/**/*.pem
 /computer/
 /workspace/
 /workspace.txt
+# Editor and agent tooling state; the tree is not a place to publish it.
+/.dsh-ops/

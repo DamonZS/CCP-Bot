@@ -1,3 +1,4 @@
+import { t } from "./lib/i18n";
 /**
  * What CCP-Bot is, before it asks for anything.
  *
@@ -10,21 +11,19 @@ export function Welcome({ onStart }: { onStart: () => void }) {
     <div className="sheet">
       <div className="lockup">
         <div className="orb" aria-hidden="true" />
-        <span>CCP-Bot</span>
+        <span>{t("CCP-Bot")}</span>
       </div>
-      <h1>Your own AI coworkers, on this computer.</h1>
+      <h1>{t("Your own AI coworkers, on this computer.")}</h1>
       <p className="lede big">
-        They answer questions, use the tools you connect, and can work in a
-        browser for you.
+        {t("They answer questions, use the tools you connect, and can work in a browser for you.")}
       </p>
       <div className="row">
         <button type="button" onClick={onStart}>
-          Set up CCP-Bot
+          {t("Set up CCP-Bot")}
         </button>
       </div>
       <p className="footnote">
-        Takes a few minutes. CCP-Bot installs what it needs first, then asks you
-        to sign in to the AI plan you already have.
+        {t("Takes a few minutes. CCP-Bot installs what it needs first, then asks you to sign in to the AI plan you already have.")}
       </p>
     </div>
   );

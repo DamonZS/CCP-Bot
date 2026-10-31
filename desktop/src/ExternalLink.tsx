@@ -1,5 +1,6 @@
 import { invoke } from "@tauri-apps/api/core";
 import { type MouseEvent, type ReactNode, useState } from "react";
+import { t } from "./lib/i18n";
 
 /** Open setup links explicitly so a refused browser launch is visible and retryable. */
 export function ExternalLink({
@@ -37,8 +38,8 @@ export function ExternalLink({
       </a>
       {failure && (
         <span className="external-link-error" role="alert">
-          Could not open your browser. Try the link again or open {href}{" "}
-          manually. ({failure})
+          {t("Could not open your browser. Try the link again or open")} {href}{" "}
+          {t("manually. (")}{failure})
         </span>
       )}
     </>

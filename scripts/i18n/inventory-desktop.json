@@ -1,0 +1,858 @@
+{
+  "root": "desktop/src",
+  "files": 21,
+  "filesWithHits": 11,
+  "wraps": 230,
+  "unique": 207,
+  "byKind": {
+    "property": 6,
+    "jsx-text": 139,
+    "jsx-expression": 57,
+    "attribute": 9,
+    "return-literal": 19
+  },
+  "perFile": [
+    "desktop\\src\\App.test.tsx",
+    "desktop\\src\\App.tsx",
+    "desktop\\src\\Ask.tsx",
+    "desktop\\src\\ExternalLink.tsx",
+    "desktop\\src\\HarnessPicker.tsx",
+    "desktop\\src\\LocalRun.tsx",
+    "desktop\\src\\OrganizationSignIn.tsx",
+    "desktop\\src\\Problem.tsx",
+    "desktop\\src\\ProviderPicker.tsx",
+    "desktop\\src\\StartFresh.tsx",
+    "desktop\\src\\Welcome.tsx"
+  ],
+  "entries": [
+    {
+      "source": "Back",
+      "count": 5
+    },
+    {
+      "source": "Installation options",
+      "count": 3
+    },
+    {
+      "source": "Continue",
+      "count": 3
+    },
+    {
+      "source": "Starting…",
+      "count": 3
+    },
+    {
+      "source": "API key",
+      "count": 3
+    },
+    {
+      "source": "Repair installation",
+      "count": 2
+    },
+    {
+      "source": "Start CCP-Bot",
+      "count": 2
+    },
+    {
+      "source": "Change installation",
+      "count": 2
+    },
+    {
+      "source": "Sign in to CopilotKit again",
+      "count": 2
+    },
+    {
+      "source": "Waiting for you to approve it…",
+      "count": 2
+    },
+    {
+      "source": "Waiting for your browser…",
+      "count": 2
+    },
+    {
+      "source": "Stop CCP-Bot",
+      "count": 2
+    },
+    {
+      "source": "In progress",
+      "count": 2
+    },
+    {
+      "source": "Technical details",
+      "count": 2
+    },
+    {
+      "source": "Model name",
+      "count": 2
+    },
+    {
+      "source": "Use a saved",
+      "count": 2
+    },
+    {
+      "source": "Restore access to saved setup",
+      "count": 1
+    },
+    {
+      "source": "CCP-Bot could not check Windows setup",
+      "count": 1
+    },
+    {
+      "source": "CCP-Bot needs one thing first",
+      "count": 1
+    },
+    {
+      "source": "Or run CCP-Bot on this computer instead. It brings its own database and its own runtime, so it needs no administrator, nothing switched on in Windows, and nothing installed first.",
+      "count": 1
+    },
+    {
+      "source": "Run it on this computer",
+      "count": 1
+    },
+    {
+      "source": "Starting CCP-Bot",
+      "count": 1
+    },
+    {
+      "source": "Opening CCP-Bot",
+      "count": 1
+    },
+    {
+      "source": "Opening your saved setup…",
+      "count": 1
+    },
+    {
+      "source": "Checking your saved setup…",
+      "count": 1
+    },
+    {
+      "source": "Running on this computer",
+      "count": 1
+    },
+    {
+      "source": "Run it on this computer instead",
+      "count": 1
+    },
+    {
+      "source": "Step 2 of 4",
+      "count": 1
+    },
+    {
+      "source": "Nothing to install on this computer",
+      "count": 1
+    },
+    {
+      "source": "This step fetches nothing. The first Start prepares the runtime, the portable database, the interface and its schema itself, then serves them from this folder.",
+      "count": 1
+    },
+    {
+      "source": "Using",
+      "count": 1
+    },
+    {
+      "source": "Docker",
+      "count": 1
+    },
+    {
+      "source": "Podman",
+      "count": 1
+    },
+    {
+      "source": "for local services.",
+      "count": 1
+    },
+    {
+      "source": "Where CCP-Bot lives",
+      "count": 1
+    },
+    {
+      "source": "Installing local software…",
+      "count": 1
+    },
+    {
+      "source": "Continue to sign in",
+      "count": 1
+    },
+    {
+      "source": "Installing…",
+      "count": 1
+    },
+    {
+      "source": "Use Docker instead",
+      "count": 1
+    },
+    {
+      "source": "CCP-Bot is stopped",
+      "count": 1
+    },
+    {
+      "source": "Your installation and saved connections are ready to reopen.",
+      "count": 1
+    },
+    {
+      "source": "Change AI connection",
+      "count": 1
+    },
+    {
+      "source": "Change CopilotKit connection",
+      "count": 1
+    },
+    {
+      "source": "Step 4 of 4",
+      "count": 1
+    },
+    {
+      "source": "CCP-Bot is running",
+      "count": 1
+    },
+    {
+      "source": "The stack is up. CCP-Bot is in this window; the menu bar has it too, and stops it.",
+      "count": 1
+    },
+    {
+      "source": "Connected to Intelligence.",
+      "count": 1
+    },
+    {
+      "source": "Connected to CopilotKit.",
+      "count": 1
+    },
+    {
+      "source": "A saved CopilotKit connection will be checked when you start.",
+      "count": 1
+    },
+    {
+      "source": "Finish signing in to CopilotKit in your browser. If it did not open, this is the address:",
+      "count": 1
+    },
+    {
+      "source": "Which project should CCP-Bot use?",
+      "count": 1
+    },
+    {
+      "source": "Project",
+      "count": 1
+    },
+    {
+      "source": "That account has no available projects. Ask your Intelligence administrator for access, or sign in with a different account.",
+      "count": 1
+    },
+    {
+      "source": "That account has no projects yet. Create one below, or sign in with a different account.",
+      "count": 1
+    },
+    {
+      "source": "Sign in again",
+      "count": 1
+    },
+    {
+      "source": "New project name",
+      "count": 1
+    },
+    {
+      "source": "Creating project…",
+      "count": 1
+    },
+    {
+      "source": "Create project",
+      "count": 1
+    },
+    {
+      "source": "Optional on this computer: connect CopilotKit to keep conversations there. CCP-Bot starts without it.",
+      "count": 1
+    },
+    {
+      "source": "CCP-Bot keeps your conversations in CopilotKit. Sign in and it sets the rest up for you.",
+      "count": 1
+    },
+    {
+      "source": "Sign in to CopilotKit",
+      "count": 1
+    },
+    {
+      "source": "Use a saved connection",
+      "count": 1
+    },
+    {
+      "source": "Point at your own Intelligence server",
+      "count": 1
+    },
+    {
+      "source": "Enter your Intelligence server’s addresses, then sign in to choose a project. CCP-Bot creates its Learning container for you. Sign-in requires Chrome or Microsoft Edge. You can also use an existing project key.",
+      "count": 1
+    },
+    {
+      "source": "Project key",
+      "count": 1
+    },
+    {
+      "source": "the key from your own Intelligence",
+      "count": 1
+    },
+    {
+      "source": "API URL",
+      "count": 1
+    },
+    {
+      "source": "Gateway WebSocket URL",
+      "count": 1
+    },
+    {
+      "source": "Sign in to Intelligence",
+      "count": 1
+    },
+    {
+      "source": "Cancel Intelligence sign-in",
+      "count": 1
+    },
+    {
+      "source": "Finish signing in in the Intelligence browser window…",
+      "count": 1
+    },
+    {
+      "source": "Sign in through your organization",
+      "count": 1
+    },
+    {
+      "source": "Enter your organization’s CCP-Bot address to use its sign-in and access rules.",
+      "count": 1
+    },
+    {
+      "source": "Organization CCP-Bot URL",
+      "count": 1
+    },
+    {
+      "source": "https://ccpbot.your-company.com",
+      "count": 1
+    },
+    {
+      "source": "Show CCP-Bot",
+      "count": 1
+    },
+    {
+      "source": "Working…",
+      "count": 1
+    },
+    {
+      "source": "Setup progress",
+      "count": 1
+    },
+    {
+      "source": "elapsed",
+      "count": 1
+    },
+    {
+      "source": "Windows Subsystem for Linux is not installed",
+      "count": 1
+    },
+    {
+      "source": "Windows Subsystem for Linux is at version 1",
+      "count": 1
+    },
+    {
+      "source": "Virtual Machine Platform is switched off",
+      "count": 1
+    },
+    {
+      "source": "Virtualization is off in this machine's firmware",
+      "count": 1
+    },
+    {
+      "source": "This account cannot install Windows components",
+      "count": 1
+    },
+    {
+      "source": "Container engine",
+      "count": 1
+    },
+    {
+      "source": "Engine machine",
+      "count": 1
+    },
+    {
+      "source": "Starting the machine",
+      "count": 1
+    },
+    {
+      "source": "Engine answering",
+      "count": 1
+    },
+    {
+      "source": "Deployment",
+      "count": 1
+    },
+    {
+      "source": "Settings",
+      "count": 1
+    },
+    {
+      "source": "Ports",
+      "count": 1
+    },
+    {
+      "source": "Dependencies",
+      "count": 1
+    },
+    {
+      "source": "Recorder",
+      "count": 1
+    },
+    {
+      "source": "Local software",
+      "count": 1
+    },
+    {
+      "source": "Installation",
+      "count": 1
+    },
+    {
+      "source": "Answering",
+      "count": 1
+    },
+    {
+      "source": "Containers",
+      "count": 1
+    },
+    {
+      "source": "Database",
+      "count": 1
+    },
+    {
+      "source": "Last step",
+      "count": 1
+    },
+    {
+      "source": "Ask it something.",
+      "count": 1
+    },
+    {
+      "source": "Your Bot is set up. This proves it can answer before you start using it.",
+      "count": 1
+    },
+    {
+      "source": "Your question",
+      "count": 1
+    },
+    {
+      "source": "Your Bot said",
+      "count": 1
+    },
+    {
+      "source": "Asking…",
+      "count": 1
+    },
+    {
+      "source": "Ask",
+      "count": 1
+    },
+    {
+      "source": "Start using CCP-Bot",
+      "count": 1
+    },
+    {
+      "source": "Change the model",
+      "count": 1
+    },
+    {
+      "source": "Ask again",
+      "count": 1
+    },
+    {
+      "source": "Your question goes to the AI provider you connected.",
+      "count": 1
+    },
+    {
+      "source": "Could not open your browser. Try the link again or open",
+      "count": 1
+    },
+    {
+      "source": "manually. (",
+      "count": 1
+    },
+    {
+      "source": "The list of Bots could not be read",
+      "count": 1
+    },
+    {
+      "source": "Step 1 of 4",
+      "count": 1
+    },
+    {
+      "source": "Your first Bot",
+      "count": 1
+    },
+    {
+      "source": "CCP-Bot sets this up for you. If you write code, you can choose the agent framework below.",
+      "count": 1
+    },
+    {
+      "source": "Choose the agent framework",
+      "count": 1
+    },
+    {
+      "source": "Any of these works with any AI provider. Only the last one asks you for an address.",
+      "count": 1
+    },
+    {
+      "source": "Bot",
+      "count": 1
+    },
+    {
+      "source": "No API key needed",
+      "count": 1
+    },
+    {
+      "source": "Needs a Gemini key",
+      "count": 1
+    },
+    {
+      "source": "Uses your running agent",
+      "count": 1
+    },
+    {
+      "source": "AG-UI endpoint",
+      "count": 1
+    },
+    {
+      "source": "https://your-agent.example/ag-ui",
+      "count": 1
+    },
+    {
+      "source": "Portable database",
+      "count": 1
+    },
+    {
+      "source": "Interface",
+      "count": 1
+    },
+    {
+      "source": "Services",
+      "count": 1
+    },
+    {
+      "source": "A Bot of your own",
+      "count": 1
+    },
+    {
+      "source": "Hands on your files",
+      "count": 1
+    },
+    {
+      "source": "No Docker, no virtual machine, no administrator",
+      "count": 1
+    },
+    {
+      "source": "Run CCP-Bot on this computer",
+      "count": 1
+    },
+    {
+      "source": "CCP-Bot brings its own database and its own runtime, so nothing has to be installed for it and nothing has to be switched on in Windows. The first run takes a few minutes; later ones start in seconds.",
+      "count": 1
+    },
+    {
+      "source": "Local mode",
+      "count": 1
+    },
+    {
+      "source": "Ready",
+      "count": 1
+    },
+    {
+      "source": "Not yet",
+      "count": 1
+    },
+    {
+      "source": "Start on this computer",
+      "count": 1
+    },
+    {
+      "source": "Choose the folder a Bot works in",
+      "count": 1
+    },
+    {
+      "source": "Everything it needs is unpacked into this folder the first time, so a second run works with no network at all. The database listens on the loopback address only.",
+      "count": 1
+    },
+    {
+      "source": "Sign in to your organization",
+      "count": 1
+    },
+    {
+      "source": "Your installation is ready. Sign in through your organization's CCP-Bot to continue.",
+      "count": 1
+    },
+    {
+      "source": "Continue with",
+      "count": 1
+    },
+    {
+      "source": "Complete sign-in in your browser, then return to CCP-Bot.",
+      "count": 1
+    },
+    {
+      "source": "Open organization sign-in",
+      "count": 1
+    },
+    {
+      "source": "Organization sign-in address",
+      "count": 1
+    },
+    {
+      "source": "Get setup help",
+      "count": 1
+    },
+    {
+      "source": "That did not finish",
+      "count": 1
+    },
+    {
+      "source": "Step 3 of 4",
+      "count": 1
+    },
+    {
+      "source": "Refresh your AI connection",
+      "count": 1
+    },
+    {
+      "source": "Connect your AI",
+      "count": 1
+    },
+    {
+      "source": "Connect your provider with a supported plan or an API key.",
+      "count": 1
+    },
+    {
+      "source": "Model provider",
+      "count": 1
+    },
+    {
+      "source": "Sign in with my plan",
+      "count": 1
+    },
+    {
+      "source": "Authorize Gemini API access using the configured Google Cloud project and its API quota.",
+      "count": 1
+    },
+    {
+      "source": "Authorize CCP-Bot to use models available to your xAI account.",
+      "count": 1
+    },
+    {
+      "source": "Signed in to",
+      "count": 1
+    },
+    {
+      "source": "Waiting for you to approve sign-in in your browser.",
+      "count": 1
+    },
+    {
+      "source": "Verification code:",
+      "count": 1
+    },
+    {
+      "source": "Open sign-in page",
+      "count": 1
+    },
+    {
+      "source": "Cancel sign-in",
+      "count": 1
+    },
+    {
+      "source": "Sign in",
+      "count": 1
+    },
+    {
+      "source": "again ",
+      "count": 1
+    },
+    {
+      "source": "with",
+      "count": 1
+    },
+    {
+      "source": "Preparing sign-in…",
+      "count": 1
+    },
+    {
+      "source": "Your plan will be used.",
+      "count": 1
+    },
+    {
+      "source": "Sign in again with",
+      "count": 1
+    },
+    {
+      "source": "Your Bot will be",
+      "count": 1
+    },
+    {
+      "source": "Claude Agent SDK",
+      "count": 1
+    },
+    {
+      "source": "LangGraph",
+      "count": 1
+    },
+    {
+      "source": ", which is the one that can use this plan.",
+      "count": 1
+    },
+    {
+      "source": "Approve the request in your browser, then paste the code it shows you.",
+      "count": 1
+    },
+    {
+      "source": "Didn't open?",
+      "count": 1
+    },
+    {
+      "source": "Open the sign-in page",
+      "count": 1
+    },
+    {
+      "source": "Code from your browser",
+      "count": 1
+    },
+    {
+      "source": "Checking…",
+      "count": 1
+    },
+    {
+      "source": "Finish signing in",
+      "count": 1
+    },
+    {
+      "source": "Opens",
+      "count": 1
+    },
+    {
+      "source": "in your browser. Nothing is typed here and no key is stored.",
+      "count": 1
+    },
+    {
+      "source": "Claude",
+      "count": 1
+    },
+    {
+      "source": "ChatGPT",
+      "count": 1
+    },
+    {
+      "source": "A saved",
+      "count": 1
+    },
+    {
+      "source": "API key will be used.",
+      "count": 1
+    },
+    {
+      "source": "A saved API key for this endpoint will be used.",
+      "count": 1
+    },
+    {
+      "source": "Continue without the saved key",
+      "count": 1
+    },
+    {
+      "source": "Base URL",
+      "count": 1
+    },
+    {
+      "source": "https://…/v1",
+      "count": 1
+    },
+    {
+      "source": "Advanced compatible endpoint options",
+      "count": 1
+    },
+    {
+      "source": "Container Base URL, if different",
+      "count": 1
+    },
+    {
+      "source": "http://ollama:11434/v1",
+      "count": 1
+    },
+    {
+      "source": "Leave this empty unless containers need a different address for a locally hosted model. Remote endpoints usually use the same Base URL.",
+      "count": 1
+    },
+    {
+      "source": "the name the endpoint knows it by",
+      "count": 1
+    },
+    {
+      "source": "API key, if the endpoint needs one",
+      "count": 1
+    },
+    {
+      "source": "Get a",
+      "count": 1
+    },
+    {
+      "source": "What this means",
+      "count": 1
+    },
+    {
+      "source": "A previous CCP-Bot installation left data here",
+      "count": 1
+    },
+    {
+      "source": "It includes",
+      "count": 1
+    },
+    {
+      "source": ". A new installation does not reuse it. Start fresh permanently deletes that data, then starts CCP-Bot.",
+      "count": 1
+    },
+    {
+      "source": "Starting fresh…",
+      "count": 1
+    },
+    {
+      "source": "Start fresh",
+      "count": 1
+    },
+    {
+      "source": "To keep that data instead, do not start. Restore the previous installation’s folder",
+      "count": 1
+    },
+    {
+      "source": ", with its original encryption key,",
+      "count": 1
+    },
+    {
+      "source": "and choose it under Installation options.",
+      "count": 1
+    },
+    {
+      "source": "What Start fresh deletes",
+      "count": 1
+    },
+    {
+      "source": "It first removes these stopped containers from the previous installation, which still use those volumes:",
+      "count": 1
+    },
+    {
+      "source": "CCP-Bot",
+      "count": 1
+    },
+    {
+      "source": "Your own AI coworkers, on this computer.",
+      "count": 1
+    },
+    {
+      "source": "They answer questions, use the tools you connect, and can work in a browser for you.",
+      "count": 1
+    },
+    {
+      "source": "Set up CCP-Bot",
+      "count": 1
+    },
+    {
+      "source": "Takes a few minutes. CCP-Bot installs what it needs first, then asks you to sign in to the AI plan you already have.",
+      "count": 1
+    }
+  ],
+  "skipped": []
+}

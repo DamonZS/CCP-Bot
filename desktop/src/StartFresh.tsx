@@ -1,3 +1,4 @@
+import { t } from "./lib/i18n";
 /**
  * Only rendered when native setup has identified leftover data it can remove.
  *
@@ -32,11 +33,10 @@ export function StartFresh({
   return (
     <section className="blocker" aria-labelledby="start-fresh-title">
       <h2 id="start-fresh-title">
-        A previous CCP-Bot installation left data here
+        {t("A previous CCP-Bot installation left data here")}
       </h2>
       <p>
-        It includes {left}. A new installation does not reuse it. Start fresh
-        permanently deletes that data, then starts CCP-Bot.
+        {t("It includes")} {left}{t(". A new installation does not reuse it. Start fresh permanently deletes that data, then starts CCP-Bot.")}
       </p>
       <div className="row">
         <button
@@ -44,17 +44,15 @@ export function StartFresh({
           disabled={busy}
           onClick={() => onStartFresh(volumes, containers)}
         >
-          {busy ? "Starting fresh…" : "Start fresh"}
+          {busy ? t("Starting fresh…") : t("Start fresh")}
         </button>
       </div>
       <p className="footnote">
-        To keep that data instead, do not start. Restore the previous
-        installation’s folder
-        {database ? ", with its original encryption key," : ""} and choose it
-        under Installation options.
+        {t("To keep that data instead, do not start. Restore the previous installation’s folder")}
+        {database ? t(", with its original encryption key,") : ""} {t("and choose it under Installation options.")}
       </p>
       <details>
-        <summary>What Start fresh deletes</summary>
+        <summary>{t("What Start fresh deletes")}</summary>
         <ul>
           {volumes.map((volume) => (
             <li key={volume}>
@@ -65,8 +63,7 @@ export function StartFresh({
         {containers.length > 0 && (
           <>
             <p>
-              It first removes these stopped containers from the previous
-              installation, which still use those volumes:
+              {t("It first removes these stopped containers from the previous installation, which still use those volumes:")}
             </p>
             <ul>
               {containers.map((container) => (

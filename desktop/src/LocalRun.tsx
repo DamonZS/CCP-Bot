@@ -1,3 +1,4 @@
+import { t } from "./lib/i18n";
 /*
  * The way in for a computer that has no container engine.
  *
@@ -72,7 +73,7 @@ export function LocalRun({
   const running = status?.health != null;
   const rows = [
     {
-      label: "Portable database",
+      label: t("Portable database"),
       done: status?.database_running ?? false,
       // Prepared and stopped is a real state, and it is the one a returning machine is in: the
       // archive is unpacked in the folder and nothing is running yet.
@@ -85,7 +86,7 @@ export function LocalRun({
             : "Unpacked into this folder on the first run, then reused.",
     },
     {
-      label: "Interface",
+      label: t("Interface"),
       done: status?.interface_built ?? false,
       idle: true,
       detail: status?.interface_built
@@ -93,7 +94,7 @@ export function LocalRun({
         : "Built here the first time, from the project’s own sources.",
     },
     {
-      label: "Services",
+      label: t("Services"),
       done: running,
       idle: true,
       detail: running
@@ -104,7 +105,7 @@ export function LocalRun({
     // without `agent-bot/` runs the interface and the routing perfectly well and has no coworker to
     // talk to, and this is where a person finds that out.
     {
-      label: "A Bot of your own",
+      label: t("A Bot of your own"),
       done: status?.bot_health != null,
       idle: true,
       detail:
@@ -117,7 +118,7 @@ export function LocalRun({
     // Talking is not working. This is the line that says the Bot can actually read the files it is
     // asked about and run something — the difference between a chat window and a coworker.
     {
-      label: "Hands on your files",
+      label: t("Hands on your files"),
       done: status?.computer_health != null,
       idle: true,
       detail:
@@ -130,14 +131,12 @@ export function LocalRun({
   ];
   return (
     <div className="sheet">
-      <p className="steps-of">No Docker, no virtual machine, no administrator</p>
-      <h1>Run CCP-Bot on this computer</h1>
+      <p className="steps-of">{t("No Docker, no virtual machine, no administrator")}</p>
+      <h1>{t("Run CCP-Bot on this computer")}</h1>
       <p className="lede">
-        CCP-Bot brings its own database and its own runtime, so nothing has to be installed for it
-        and nothing has to be switched on in Windows. The first run takes a few minutes; later ones
-        start in seconds.
+        {t("CCP-Bot brings its own database and its own runtime, so nothing has to be installed for it and nothing has to be switched on in Windows. The first run takes a few minutes; later ones start in seconds.")}
       </p>
-      <ol className="steps" aria-label="Local mode" aria-live="polite">
+      <ol className="steps" aria-label={t("Local mode")} aria-live="polite">
         {rows.map((row) => (
           <li className="step" key={row.label}>
             <span
@@ -147,7 +146,7 @@ export function LocalRun({
               {row.done ? "✓" : ""}
             </span>
             <span className="step-label">{row.label}</span>
-            <span className="step-status">{row.done ? "Ready" : "Not yet"}</span>
+            <span className="step-status">{row.done ? t("Ready") : t("Not yet")}</span>
             <span className="detail">{row.detail}</span>
           </li>
         ))}
@@ -157,7 +156,7 @@ export function LocalRun({
               <span className="step-spinner" />
             </span>
             <span className="step-label">{localStepLabel(status.step)}</span>
-            <span className="step-status">In progress</span>
+            <span className="step-status">{t("In progress")}</span>
             <span className="detail">{status.step_detail}</span>
           </li>
         )}
@@ -165,22 +164,21 @@ export function LocalRun({
       <div className="row">
         {running ? (
           <button type="button" disabled={busy} onClick={onStop}>
-            Stop CCP-Bot
+            {t("Stop CCP-Bot")}
           </button>
         ) : (
           <button type="button" disabled={busy} onClick={onStart}>
-            {busy ? "Starting…" : "Start on this computer"}
+            {busy ? t("Starting…") : t("Start on this computer")}
           </button>
         )}
         {/* The last mile of "install and use it": telling it which folder to work in should be a
             click on the folder, not a line in a file. */}
         <button type="button" className="quiet" disabled={busy} onClick={onChooseWorkspace}>
-          Choose the folder a Bot works in
+          {t("Choose the folder a Bot works in")}
         </button>
       </div>
       <p className="footnote">
-        Everything it needs is unpacked into this folder the first time, so a second run works with
-        no network at all. The database listens on the loopback address only.
+        {t("Everything it needs is unpacked into this folder the first time, so a second run works with no network at all. The database listens on the loopback address only.")}
       </p>
     </div>
   );

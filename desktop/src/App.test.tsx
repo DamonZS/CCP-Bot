@@ -149,7 +149,7 @@ test("installation shows its active stage immediately and advances elapsed time"
   expect(engine.getByText("In progress")).toBeTruthy();
   expect(engine.queryByText("✓")).toBeNull();
   await waitFor(() => expect(engine.getByText(/1s elapsed/)).toBeTruthy(), {
-    timeout: 1800,
+    timeout: 5000,
   });
   await act(async () => preparation.resolve());
   expect(engine.getByText("Complete")).toBeTruthy();

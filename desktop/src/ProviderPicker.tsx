@@ -5,6 +5,7 @@ import { ExternalLink } from "./ExternalLink";
 import { isHttpEndpointUrl } from "./http-endpoint-url";
 import { Mark } from "./Mark";
 import { asProblem, InlineFailure, type Problem } from "./Problem";
+import { t } from "./lib/i18n";
 
 export type Login = "plan" | "api-key" | "endpoint" | "oauth";
 
@@ -473,14 +474,14 @@ export function ProviderPicker({
 
   return (
     <div className="sheet">
-      {!returning && <p className="steps-of">Step 3 of 4</p>}
-      <h1>{returning ? "Refresh your AI connection" : "Connect your AI"}</h1>
+      {!returning && <p className="steps-of">{t("Step 3 of 4")}</p>}
+      <h1>{returning ? t("Refresh your AI connection") : t("Connect your AI")}</h1>
       <p className="lede">
-        Connect your provider with a supported plan or an API key.
+        {t("Connect your provider with a supported plan or an API key.")}
       </p>
 
       <fieldset className="picker providers">
-        <legend className="sr-only">Model provider</legend>
+        <legend className="sr-only">{t("Model provider")}</legend>
         {rows.map((r) => (
           <label
             key={r.id}
@@ -559,7 +560,7 @@ export function ProviderPicker({
                   }}
                 >
                   {option === "plan"
-                    ? "Sign in with my plan"
+                    ? t("Sign in with my plan")
                     : option === "oauth"
                       ? "Sign in"
                       : "Use an API key"}
@@ -572,38 +573,38 @@ export function ProviderPicker({
             <>
               <p className="footnote">
                 {row.id === "google"
-                  ? "Authorize Gemini API access using the configured Google Cloud project and its API quota."
-                  : "Authorize CCP-Bot to use models available to your xAI account."}
+                  ? t("Authorize Gemini API access using the configured Google Cloud project and its API quota.")
+                  : t("Authorize CCP-Bot to use models available to your xAI account.")}
               </p>
               {oauthSignedIn === row.id ? (
-                <p className="lede">Signed in to {row.name}.</p>
+                <p className="lede">{t("Signed in to")} {row.name}.</p>
               ) : signInUrl ? (
                 <>
                   <p role="status">
-                    Waiting for you to approve sign-in in your browser.
+                    {t("Waiting for you to approve sign-in in your browser.")}
                   </p>
                   {oauthCode && (
                     <p>
-                      Verification code: <strong>{oauthCode}</strong>
+                      {t("Verification code:")} <strong>{oauthCode}</strong>
                     </p>
                   )}
                   <ExternalLink href={signInUrl}>
-                    Open sign-in page
+                    {t("Open sign-in page")}
                   </ExternalLink>
                   <button type="button" className="quiet" onClick={cancelOAuth}>
-                    Cancel sign-in
+                    {t("Cancel sign-in")}
                   </button>
                 </>
               ) : null}
               {!busy && (
                 <button type="button" onClick={beginOAuth}>
-                  Sign in {oauthSignedIn === row.id ? "again " : ""}with{" "}
+                  {t("Sign in")} {oauthSignedIn === row.id ? t("again ") : ""}{t("with")}{" "}
                   {row.name}
                 </button>
               )}
-              {busy && !signInUrl && <p role="status">Preparing sign-in…</p>}
+              {busy && !signInUrl && <p role="status">{t("Preparing sign-in…")}</p>}
               <div className="field">
-                <label htmlFor="oauth-model">Model name</label>
+                <label htmlFor="oauth-model">{t("Model name")}</label>
                 <input
                   id="oauth-model"
                   value={model}
@@ -621,11 +622,11 @@ export function ProviderPicker({
                   {token
                     ? `Signed in to ${row.name}.`
                     : `A saved ${row.name} sign-in will be checked when you start.`}{" "}
-                  Your plan will be used.
+                  {t("Your plan will be used.")}
                 </p>
                 {!token && (
                   <button type="button" disabled={busy} onClick={beginSignIn}>
-                    Sign in again with {row.name}
+                    {t("Sign in again with")} {row.name}
                   </button>
                 )}
                 {/*
@@ -637,31 +638,30 @@ export function ProviderPicker({
                  * `harness::speaking_for` for the failure that came of not saying it at all.
                  */}
                 <p className="footnote">
-                  Your Bot will be{" "}
-                  {row.id === "anthropic" ? "Claude Agent SDK" : "LangGraph"},
-                  which is the one that can use this plan.
+                  {t("Your Bot will be")}{" "}
+                  {row.id === "anthropic" ? t("Claude Agent SDK") : t("LangGraph")}{t(", which is the one that can use this plan.")}
                 </p>
               </>
             ) : signInUrl ? (
               <>
                 <p className="lede">
                   {row.id === "anthropic"
-                    ? "Approve the request in your browser, then paste the code it shows you."
+                    ? t("Approve the request in your browser, then paste the code it shows you.")
                     : `Approve the request in your browser. ${row.name} will finish this on its own.`}
                 </p>
                 {/* Shown as well as opened. On a machine with no registered
                     browser the open does nothing and says nothing, and a code
                     box with no link is then a dead end. */}
                 <p className="fallback">
-                  Didn't open?{" "}
+                  {t("Didn't open?")}{" "}
                   <a href={signInUrl} target="_blank" rel="noreferrer">
-                    Open the sign-in page
+                    {t("Open the sign-in page")}
                   </a>
                 </p>
                 {row.id === "anthropic" ? (
                   <>
                     <div className="field">
-                      <label htmlFor="code">Code from your browser</label>
+                      <label htmlFor="code">{t("Code from your browser")}</label>
                       <input
                         id="code"
                         value={code}
@@ -675,24 +675,23 @@ export function ProviderPicker({
                       disabled={busy || code.trim().length === 0}
                       onClick={finishSignIn}
                     >
-                      {busy ? "Checking…" : "Finish signing in"}
+                      {busy ? t("Checking…") : t("Finish signing in")}
                     </button>
                   </>
                 ) : (
                   <p className="footnote" style={{ margin: 0 }}>
-                    Waiting for you to approve it…
+                    {t("Waiting for you to approve it…")}
                   </p>
                 )}
               </>
             ) : (
               <>
                 <p className="lede">
-                  Opens {row.name} in your browser. Nothing is typed here and no
-                  key is stored.
+                  {t("Opens")} {row.name} {t("in your browser. Nothing is typed here and no key is stored.")}
                 </p>
                 <div className="provider-sign-in-actions">
                   <button type="button" disabled={busy} onClick={beginSignIn}>
-                    {busy ? "Starting…" : `Sign in with ${row.name}`}
+                    {busy ? t("Starting…") : `Sign in with ${row.name}`}
                   </button>
                   {!busy &&
                     (row.id === "openai" || row.id === "anthropic") &&
@@ -704,8 +703,8 @@ export function ProviderPicker({
                           setReuse({ provider: row.id, login: "plan" })
                         }
                       >
-                        Use a saved{" "}
-                        {row.id === "anthropic" ? "Claude" : "ChatGPT"} sign-in
+                        {t("Use a saved")}{" "}
+                        {row.id === "anthropic" ? t("Claude") : t("ChatGPT")} sign-in
                       </button>
                     )}
                 </div>
@@ -720,7 +719,7 @@ export function ProviderPicker({
           {login === "api-key" && (
             <>
               {savedApiKey && !apiKey ? (
-                <p className="lede">A saved {row.name} API key will be used.</p>
+                <p className="lede">{t("A saved")} {row.name} {t("API key will be used.")}</p>
               ) : null}
               {!savedApiKey &&
                 (row.id === "openai" || row.id === "anthropic") &&
@@ -733,11 +732,11 @@ export function ProviderPicker({
                       setReuse({ provider: row.id, login: "api-key" });
                     }}
                   >
-                    Use a saved {row.name} API key
+                    {t("Use a saved")} {row.name} {t("API key")}
                   </button>
                 )}
               <div className="field">
-                <label htmlFor="key">{row.name} API key</label>
+                <label htmlFor="key">{row.name} {t("API key")}</label>
                 <input
                   id="key"
                   type="password"
@@ -754,14 +753,14 @@ export function ProviderPicker({
             <>
               {savedEndpointKey && !apiKey && (
                 <p className="lede">
-                  A saved API key for this endpoint will be used.{" "}
+                  {t("A saved API key for this endpoint will be used.")}{" "}
                   {!preset && (
                     <button
                       type="button"
                       className="quiet"
                       onClick={() => setReuseEndpointKey(false)}
                     >
-                      Continue without the saved key
+                      {t("Continue without the saved key")}
                     </button>
                   )}
                 </p>
@@ -769,7 +768,7 @@ export function ProviderPicker({
               {!preset && (
                 <>
                   <div className="field">
-                    <label htmlFor="base">Base URL</label>
+                    <label htmlFor="base">{t("Base URL")}</label>
                     <input
                       id="base"
                       value={baseUrl}
@@ -785,37 +784,35 @@ export function ProviderPicker({
                           setContainerBaseUrl("");
                         }
                       }}
-                      placeholder="https://…/v1"
+                      placeholder={t("https://…/v1")}
                       spellCheck={false}
                     />
                   </div>
                   <details className="field">
-                    <summary>Advanced compatible endpoint options</summary>
+                    <summary>{t("Advanced compatible endpoint options")}</summary>
                     <label htmlFor="container-base">
-                      Container Base URL, if different
+                      {t("Container Base URL, if different")}
                     </label>
                     <input
                       id="container-base"
                       value={containerBaseUrl}
                       onChange={(e) => setContainerBaseUrl(e.target.value)}
-                      placeholder="http://ollama:11434/v1"
+                      placeholder={t("http://ollama:11434/v1")}
                       spellCheck={false}
                     />
                     <p className="footnote">
-                      Leave this empty unless containers need a different
-                      address for a locally hosted model. Remote endpoints
-                      usually use the same Base URL.
+                      {t("Leave this empty unless containers need a different address for a locally hosted model. Remote endpoints usually use the same Base URL.")}
                     </p>
                   </details>
                 </>
               )}
               <div className="field">
-                <label htmlFor="model">Model name</label>
+                <label htmlFor="model">{t("Model name")}</label>
                 <input
                   id="model"
                   value={model}
                   onChange={(e) => setModel(e.target.value)}
-                  placeholder="the name the endpoint knows it by"
+                  placeholder={t("the name the endpoint knows it by")}
                   spellCheck={false}
                 />
               </div>
@@ -823,7 +820,7 @@ export function ProviderPicker({
                 <label htmlFor="ekey">
                   {preset
                     ? `${row.name} API key`
-                    : "API key, if the endpoint needs one"}
+                    : t("API key, if the endpoint needs one")}
                 </label>
                 <input
                   id="ekey"
@@ -837,7 +834,7 @@ export function ProviderPicker({
               {preset && (
                 <p className="footnote">
                   <ExternalLink key={preset.keyUrl} href={preset.keyUrl}>
-                    Get a {row.name} API key
+                    {t("Get a")} {row.name} {t("API key")}
                   </ExternalLink>
                 </p>
               )}
@@ -855,7 +852,7 @@ export function ProviderPicker({
                 target="_blank"
                 rel="noreferrer"
               >
-                What this means
+                {t("What this means")}
               </a>
             </p>
           )}
@@ -869,14 +866,14 @@ export function ProviderPicker({
           onClick={onBack}
           disabled={starting}
         >
-          Back
+          {t("Back")}
         </button>
         <button
           type="button"
           disabled={starting || !row || !login || !ready}
           onClick={continueWithChoice}
         >
-          Continue
+          {t("Continue")}
         </button>
       </div>
     </div>
