@@ -31,7 +31,7 @@ use std::collections::BTreeMap;
 use std::io::{Read, Write};
 use std::net::{TcpListener, TcpStream};
 use std::path::{Path, PathBuf};
-use std::process::{Child, Stdio};
+use std::process::{Child, ExitStatus, Stdio};
 use std::time::{Duration, Instant};
 
 use crate::install::{self, Download};
@@ -1180,14 +1180,28 @@ pub fn forget(root: &Path) -> Result<(), Problem> {
     }
 }
 
+/// The postmaster's own file, written while it runs and removed when it stops.
+const POSTMASTER_PID: &str = "postmaster.pid";
+
+/// How long the loopback is given to answer before the database counts as not running.
+const DATABASE_PROBE: Duration = Duration::from_millis(250);
+
 /// Whether the cluster is already answering.
+///
+/// Asked of the machine, not of `pg_ctl`: the window that shows a run's progress reads this once a
+/// second, and a `pg_ctl status` is a whole process per read. Measured on a published installer:
+/// four `pg_ctl` processes from one first run outlived it, two of them sitting on a Windows error
+/// box, and a helper that never exits is a read that never returns. What is read here instead is the
+/// postmaster's pid file and the port it was told to answer on — two facts, no process.
 pub fn postgres_running(root: &Path) -> bool {
-    let data = data_folder(root);
-    quiet::command(tool(root, "pg_ctl"))
-        .args(["-D", data.to_string_lossy().as_ref(), "status"])
-        .output()
-        .map(|output| output.status.success())
-        .unwrap_or(false)
+    if !data_folder(root).join(POSTMASTER_PID).is_file() {
+        return false;
+    }
+    let Some(port) = remembered_port(root) else {
+        return false;
+    };
+    let address = std::net::SocketAddr::from(([127, 0, 0, 1], port));
+    std::net::TcpStream::connect_timeout(&address, DATABASE_PROBE).is_ok()
 }
 
 /// The last few lines of a file, for the failures only the log knows about.
@@ -1224,6 +1238,39 @@ pub fn logs_on_failure(root: &Path) -> String {
         .join("\n")
 }
 
+/// How long a stopping `pg_ctl -w` is given before it is treated as one that never comes back.
+const STOP_PATIENCE: Duration = Duration::from_secs(30);
+
+/// Waits for a helper this mode started, and does not wait forever.
+///
+/// A helper is this mode's to finish. `pg_ctl start` is given its own budget for the work (`-t`), so
+/// the wait here is longer than any answer it can still legitimately be working on; what it catches
+/// is the helper that never answers at all. A process sitting on a Windows error box does not exit,
+/// and its parent waiting on it does not return — measured on a published installer, that is how
+/// `pg_ctl` processes outlived a run. `None` means it had to be killed, and the caller then asks the
+/// machine what actually happened rather than trusting the helper's word.
+fn waited(child: &mut Child, patience: Duration) -> Result<Option<ExitStatus>, Problem> {
+    let started = std::time::Instant::now();
+    loop {
+        match child.try_wait() {
+            Ok(Some(status)) => return Ok(Some(status)),
+            Ok(None) => {}
+            Err(error) => {
+                return Err(Problem::with(
+                    "The local database tool could not be waited for.".to_string(),
+                    format!("waiting for pg_ctl failed: {error}"),
+                ))
+            }
+        }
+        if started.elapsed() >= patience {
+            let _ = child.kill();
+            let _ = child.wait();
+            return Ok(None);
+        }
+        std::thread::sleep(Duration::from_millis(25));
+    }
+}
+
 /// Starts the cluster on the loopback address, and waits for it to accept connections.
 pub fn start_postgres(root: &Path, port: u16) -> Result<(), Problem> {
     if postgres_running(root) {
@@ -1252,7 +1299,8 @@ pub fn start_postgres(root: &Path, port: u16) -> Result<(), Problem> {
      * a start that hung, which is exactly what it did before this was written down. The reason a
      * start failed is in the log `-l` already writes, so the failure reads that instead.
      */
-    let status = quiet::command(tool(root, "pg_ctl"))
+    let patience = POSTGRES_TIMEOUT + Duration::from_secs(20);
+    let mut helper = quiet::command(tool(root, "pg_ctl"))
         .args([
             "-D",
             data_text.as_str(),
@@ -1268,20 +1316,31 @@ pub fn start_postgres(root: &Path, port: u16) -> Result<(), Problem> {
         .stdin(Stdio::null())
         .stdout(Stdio::null())
         .stderr(Stdio::null())
-        .status()
+        .spawn()
         .map_err(|error| {
             Problem::with(
                 "The local database would not start.".to_string(),
                 format!("running pg_ctl failed: {error}"),
             )
         })?;
-    if status.success() {
-        return Ok(());
+    match waited(&mut helper, patience)? {
+        Some(status) if status.success() => Ok(()),
+        // A helper that had to be killed leaves a database that may well have come up anyway: the
+        // start is the postmaster's work, not the helper's, so the machine is asked.
+        None if postgres_running(root) => Ok(()),
+        Some(_) => Err(Problem::with(
+            "The local database would not start.".to_string(),
+            tail_of(&log, 6),
+        )),
+        None => Err(Problem::with(
+            "The local database would not start.".to_string(),
+            format!(
+                "pg_ctl did not come back within {}s and was stopped.\n\n{}",
+                patience.as_secs(),
+                tail_of(&log, 6)
+            ),
+        )),
     }
-    Err(Problem::with(
-        "The local database would not start.".to_string(),
-        tail_of(&log, 6),
-    ))
 }
 
 /// Stops the cluster, leaving the data in place for the next start.
@@ -1294,25 +1353,35 @@ pub fn stop_postgres(root: &Path) -> Result<(), Problem> {
     let log = log_file(root, "postgres");
     // Same reason as the start above: a stopping postmaster still holds the pipes of the command
     // that asked it to stop, so waiting on them waits for the database itself.
-    let status = quiet::command(tool(root, "pg_ctl"))
+    let mut helper = quiet::command(tool(root, "pg_ctl"))
         .args(["-D", data_text.as_str(), "-m", "fast", "-w", "stop"])
         .stdin(Stdio::null())
         .stdout(Stdio::null())
         .stderr(Stdio::null())
-        .status()
+        .spawn()
         .map_err(|error| {
             Problem::with(
                 "The local database would not stop.".to_string(),
                 format!("running pg_ctl failed: {error}"),
             )
         })?;
-    if status.success() {
-        return Ok(());
+    match waited(&mut helper, STOP_PATIENCE)? {
+        Some(status) if status.success() => Ok(()),
+        // A database that stopped while its helper sat there is still a database that stopped.
+        None if !postgres_running(root) => Ok(()),
+        Some(_) => Err(Problem::with(
+            "The local database would not stop.".to_string(),
+            tail_of(&log, 6),
+        )),
+        None => Err(Problem::with(
+            "The local database would not stop.".to_string(),
+            format!(
+                "pg_ctl did not come back within {}s and was stopped.\n\n{}",
+                STOP_PATIENCE.as_secs(),
+                tail_of(&log, 6)
+            ),
+        )),
     }
-    Err(Problem::with(
-        "The local database would not stop.".to_string(),
-        tail_of(&log, 6),
-    ))
 }
 
 /// Creates the application database. Already having one is the outcome that was wanted.
@@ -2331,6 +2400,59 @@ mod tests {
         let missing = tail_of(&root.join("nowhere.log"), 6);
         assert!(missing.contains("nothing to read"), "{missing}");
         let _ = std::fs::remove_dir_all(&root);
+    }
+
+    /// Whether the database runs is answered from the postmaster's own evidence, without starting a
+    /// helper: the window asks once a second, and a helper that never exits is a read that never
+    /// returns. There is no `pg_ctl` in this root at all, so nothing could have been started.
+    #[test]
+    fn a_running_database_is_answered_by_the_machine_without_a_helper() {
+        let root = scratch("database-probe");
+        std::fs::create_dir_all(data_folder(&root)).expect("the data folder");
+        let listener = TcpListener::bind("127.0.0.1:0").expect("a port to answer on");
+        let port = listener.local_addr().expect("the address").port();
+        std::fs::write(port_file(&root), port.to_string()).expect("the port");
+
+        // A port that answers is not the answer on its own: the file is the postmaster's.
+        assert!(!postgres_running(&root), "no postmaster, no database");
+        std::fs::write(data_folder(&root).join(POSTMASTER_PID), "1\n").expect("a pid file");
+        assert!(
+            postgres_running(&root),
+            "the postmaster's file and its port"
+        );
+        drop(listener);
+        assert!(!postgres_running(&root), "the port stopped answering");
+        let _ = std::fs::remove_dir_all(&root);
+    }
+
+    /// A helper this mode starts is this mode's to finish: one that never comes back is killed
+    /// rather than waited on forever. On a published installer, `pg_ctl` sat on a Windows error box
+    /// and outlived the run that started it, with the parent that waited on it not returning.
+    #[test]
+    fn a_helper_that_never_comes_back_is_killed() {
+        #[cfg(windows)]
+        let mut child = quiet::command("cmd")
+            .args(["/c", "ping", "-n", "30", "127.0.0.1"])
+            .stdin(Stdio::null())
+            .stdout(Stdio::null())
+            .stderr(Stdio::null())
+            .spawn()
+            .expect("a helper to wait for");
+        #[cfg(not(windows))]
+        let mut child = quiet::command("/bin/sleep")
+            .args(["30"])
+            .stdin(Stdio::null())
+            .stdout(Stdio::null())
+            .stderr(Stdio::null())
+            .spawn()
+            .expect("a helper to wait for");
+
+        let outcome = waited(&mut child, Duration::from_millis(300)).expect("waiting for it");
+        assert!(outcome.is_none(), "the helper had to be stopped");
+        assert!(
+            child.try_wait().expect("asking after it").is_some(),
+            "the killed helper is reaped, not left behind"
+        );
     }
 
     /// A live test that dies on a runner takes the logs with it, so this block is what has to
