@@ -1194,17 +1194,17 @@ pub fn postgres_running(root: &Path) -> bool {
 ///
 /// `pg_ctl` cannot be asked for its output (see the start below), so the reason a database refused
 /// to come up is read from where it was written instead of being invented.
-fn tail_of(path: &Path) -> String {
+fn tail_of(path: &Path, lines: usize) -> String {
     let text = std::fs::read_to_string(path).unwrap_or_default();
-    let lines: Vec<&str> = text
+    let written: Vec<&str> = text
         .lines()
         .filter(|line| !line.trim().is_empty())
         .collect();
-    if lines.is_empty() {
+    if written.is_empty() {
         return format!("{} holds nothing to read", path.display());
     }
-    let start = lines.len().saturating_sub(6);
-    lines[start..].join("\n")
+    let start = written.len().saturating_sub(lines);
+    written[start..].join("\n")
 }
 
 /// Starts the cluster on the loopback address, and waits for it to accept connections.
@@ -1263,7 +1263,7 @@ pub fn start_postgres(root: &Path, port: u16) -> Result<(), Problem> {
     }
     Err(Problem::with(
         "The local database would not start.".to_string(),
-        tail_of(&log),
+        tail_of(&log, 6),
     ))
 }
 
@@ -1294,7 +1294,7 @@ pub fn stop_postgres(root: &Path) -> Result<(), Problem> {
     }
     Err(Problem::with(
         "The local database would not stop.".to_string(),
-        tail_of(&log),
+        tail_of(&log, 6),
     ))
 }
 
@@ -1950,9 +1950,14 @@ pub fn start(
             let status = wait_for_health(COMPUTER_TIMEOUT, || health_status(&address)).map_err(
                 |problem| {
                     let last = problem.detail.unwrap_or_default();
+                    // Why it never came up is written in the computer's own log, and nothing else
+                    // prints that file: without this the failure reads as a port that stayed silent.
+                    let log = tail_of(&log_file(root, "computer"), 80);
                     Problem::with(
                         "The computer did not answer.".to_string(),
-                        format!("{address} never answered /health. Last time: {last}"),
+                        format!(
+                            "{address} never answered /health. Last time: {last}\n\nThe computer's log:\n{log}"
+                        ),
                     )
                 },
             )?;
@@ -2290,21 +2295,21 @@ mod tests {
         let _ = std::fs::remove_dir_all(&root);
     }
 
-    /// The whole point of unpacking once: a machine that already has the database never touches the
-    /// network again. The fetch here fails loudly if it is called at all.
+    /// A failure only the log knows about is read from the log rather than invented: the last few
+    /// lines of a file, and an honest "nothing to read" when there is no file there at all.
     #[test]
     fn a_failure_is_read_from_the_last_lines_of_the_log() {
         let root = scratch("tail");
         std::fs::create_dir_all(logs_folder(&root)).expect("the logs folder");
         let log = log_file(&root, "postgres");
         std::fs::write(&log, "one\ntwo\nthree\nfour\nfive\nsix\nseven\neight\n").expect("a log");
-        let tail = tail_of(&log);
+        let tail = tail_of(&log, 6);
         assert!(tail.contains("eight"), "{tail}");
         assert!(tail.contains("three"), "{tail}");
         assert!(!tail.contains("one"), "{tail}");
         assert!(!tail.contains("two"), "{tail}");
 
-        let missing = tail_of(&root.join("nowhere.log"));
+        let missing = tail_of(&root.join("nowhere.log"), 6);
         assert!(missing.contains("nothing to read"), "{missing}");
         let _ = std::fs::remove_dir_all(&root);
     }
