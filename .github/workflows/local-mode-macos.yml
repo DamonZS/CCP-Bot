@@ -82,13 +82,21 @@ jobs:
       # a flaky one. `--include-ignored` is the point of the job: every `live_` test is ignored by
       # default precisely because it does this.
       #
-      # Left out on purpose: `live_a_fresh_folder_installs_the_bots_own_dependencies`, which prepares a
-      # checkout from the *published* release and then starts it with this tree's route, so it can only
-      # pass when the published sources agree with it. They do not today: 0.3.2's server still refuses to
-      # start without a CopilotKit connection, while this tree's route stopped inventing one (0.4.0). Put
-      # it back once `latest` resolves to a 0.4.0-or-later release. The macOS half of what it proves —
-      # unpacking the portable database, installing the Bot's own dependencies, `[schema]` — is already
-      # in the decisive step above, whose log shows them on a checkout that started empty.
+      # Left out on purpose, both of them because they prepare a checkout from the *published* release
+      # and then start it with this tree's route, so they can only pass when the two agree:
+      #
+      # * `live_a_fresh_folder_installs_the_bots_own_dependencies` — 0.3.2's server still refuses to
+      #   start without a CopilotKit connection, while this tree's route stopped inventing one (0.4.0),
+      #   so the server it fetches never answers the health check. The macOS half of what it proves —
+      #   unpacking the portable database, installing the Bot's own dependencies, `[schema]` — is
+      #   already in the decisive step above, whose log shows them on a checkout that started empty.
+      # * `live_an_empty_folder_is_filled_from_the_release` — resolves `releases/latest` through the
+      #   GitHub API, and a runner's shared address is refused when the call carries no token
+      #   (`403 Forbidden`, measured twice out of three runs). It passed when the call was answered, so
+      #   this is the runner's network and not this Mac; a job that is red for it is a job nobody reads.
+      #
+      # Both come back when the lookup stops depending on an anonymous `latest` — a build should fetch
+      # the sources of its own version, and say so when that version is not published yet (task-24).
       - name: Run the rest of the local-mode live tests
         run: |
           set -euo pipefail
@@ -102,7 +110,6 @@ jobs:
               exit 1
             fi
           }
-          run_one --lib "local::tests::live_an_empty_folder_is_filled_from_the_release"
           run_one --bin ccpbot-desktop "tests::live_a_run_on_this_computer_records_what_it_owns"
           run_one --bin ccpbot-desktop "tests::live_quitting_stops_the_stack_this_computer_started"
 
