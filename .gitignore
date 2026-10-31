@@ -62,3 +62,18 @@ extension/**/*.pem
 .i18n-*.json
 .typecheck.log
 .build.log
+
+# Local mode: what the desktop app creates in the folder it runs from. `postgres/` is 1.5 GB of
+# unpacked PostgreSQL binaries plus the cluster, `logs/` is every local process's output appended
+# across runs, and `.ccpbot-local` is the marker that says this folder runs the local stack, so the
+# Windows stage stops asking its owner about WSL. All three are machine state rather than source,
+# and all three are safe to delete: the next start rebuilds them, and the download stays cached.
+/postgres/
+/logs/
+/.ccpbot-local
+
+# The vault's copy in this folder: the six secrets a local deployment mints, each sealed to the
+# Windows account that ran it (`*.dpapi`). They are only readable by that account on that machine,
+# and they must never travel — a clone that carried them would be handing out another deployment's
+# key material. The next start mints its own.
+/.secrets/

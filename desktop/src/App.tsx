@@ -23,6 +23,7 @@ import {
   recordSetupEvent,
   type SetupStep,
 } from "./telemetry";
+import { LocalRun, type LocalStatus } from "./LocalRun";
 import { Welcome } from "./Welcome";
 
 type EngineStatus = {
@@ -80,6 +81,16 @@ export function App() {
   const [engine, setEngine] = useState<EngineStatus | null>(null);
   const [blocker, setBlocker] = useState<Blocker | null>(null);
   const [blockerFailure, setBlockerFailure] = useState<Problem | null>(null);
+  /*
+   * Running the stack as programs on this computer, and the choice to do it that way.
+   *
+   * `localPicked` is the window's copy of the decision because the folder's marker is only written
+   * when a local run actually starts — and the machine has to be told which way it is going before
+   * that, or it would ask for the Windows feature it is being routed around.
+   */
+  const [local, setLocal] = useState<LocalStatus | null>(null);
+  const [localPicked, setLocalPicked] = useState(false);
+  const [localBusy, setLocalBusy] = useState(false);
   const [instruction, setInstruction] = useState("");
   const [root, setRoot] = useState("");
   const [reuseIntelligence, setReuseIntelligence] = useState(false);
@@ -378,10 +389,51 @@ export function App() {
     [clearRootScopedSavedState],
   );
 
+  /**
+   * The one place local mode is chosen without being asked for.
+   *
+   * A machine with no engine at all cannot run the container route, and the way around it is a
+   * Windows feature this account may not be allowed to switch on. Local mode needs neither, so that
+   * machine starts there instead of on a requirement it cannot meet. Only that machine: with Docker
+   * or Podman present the existing route keeps the decision, and "Use Docker instead" on the local
+   * screen still wins afterwards.
+   *
+   * Both answers are read in the promise that fetched them rather than in an effect over them, so the
+   * choice lands in the same render as the answer it was made from instead of costing the window an
+   * extra pass before it can draw.
+   */
+  const localDefaulted = useRef(false);
+  const localAnswer = useRef<LocalStatus | null>(null);
+  const defaultToLocal = (found: EngineStatus | null, here: LocalStatus | null) => {
+    if (localDefaulted.current) return;
+    if (!found || !here?.supported) return;
+    localDefaulted.current = true;
+    if (found.engine === null && !here.wanted) setLocalPicked(true);
+  };
+
   useEffect(() => {
     let active = true;
     invoke<EngineStatus>("detect_engine")
-      .then(setEngine)
+      .then((found) => {
+        if (!active) return;
+        setEngine(found);
+        defaultToLocal(found, localAnswer.current);
+      })
+      .catch(() => undefined);
+    // Local mode is read here rather than at the moment somebody asks for it: a machine that has run
+    // this way before should not be shown a Windows requirement it already chose its way around.
+    invoke<LocalStatus>("local_status")
+      .then((found) => {
+        if (!active) return;
+        localAnswer.current = found;
+        setLocal(found);
+        if (found.wanted) {
+          setLocalPicked(true);
+          localDefaulted.current = true;
+          return;
+        }
+        defaultToLocal(engine, found);
+      })
       .catch(() => undefined);
     const windowsReady = invoke<Blocker | null>("windows_blocker")
       .then(async (found) => {
@@ -523,6 +575,53 @@ export function App() {
     };
   }, [loadConfiguredRoot, recoverFromStart]);
 
+  /*
+   * Starts the local stack, then hands the window over.
+   *
+   * The same handover as the container route and for the same reason: `show_ccpbot` is what turns
+   * this window into CCP-Bot, and it will not do it until something answers on the address.
+   */
+  async function runLocally() {
+    if (localBusy) return;
+    setLocalBusy(true);
+    setFailure(null);
+    setLocalPicked(true);
+    try {
+      const found = await invoke<LocalStatus>("local_start", {
+        // The CopilotKit connection, because a local run writes its own `.env` and the server
+        // refuses to start without either that or an identity provider.
+        request: { apiUrl, gatewayWsUrl: wsUrl, apiKey },
+      });
+      setLocal(found);
+      setRunning(true);
+      savedLaunch.current = installationKey;
+      setStep("connect");
+      setRefreshIntelligence(false);
+      await invoke("show_ccpbot");
+    } catch (error) {
+      setFailure(asProblem(error));
+      // The step that failed is worth keeping on screen afterwards: it names the part that needs
+      // attention, which the failure sentence alone does not.
+      setLocal(await invoke<LocalStatus>("local_status").catch(() => null));
+    } finally {
+      setLocalBusy(false);
+    }
+  }
+
+  async function stopLocally() {
+    if (localBusy) return;
+    setLocalBusy(true);
+    setFailure(null);
+    try {
+      setLocal(await invoke<LocalStatus>("local_stop"));
+      setRunning(false);
+    } catch (error) {
+      setFailure(asProblem(error));
+    } finally {
+      setLocalBusy(false);
+    }
+  }
+
   async function install() {
     if (busy || !root.trim()) return;
     setBusy(true);
@@ -553,6 +652,17 @@ export function App() {
   async function start(nextModel = model) {
     if (!installationReady) {
       setStep("install");
+      return;
+    }
+    /*
+     * Local mode starts the same stack with different plumbing.
+     *
+     * Everything below this line is about engines, ports and images, and none of it applies to a
+     * run that is two `bun` processes and a database in the folder — so the decision is made here,
+     * once, rather than through `if (local)` branches down the whole of the container route.
+     */
+    if (localPicked) {
+      await runLocally();
       return;
     }
     setBusy(true);
@@ -691,13 +801,30 @@ export function App() {
     );
   }
 
-  if (blocker) {
+  if (blocker && !localPicked) {
     return (
       <main>
         <h1>CCP-Bot needs one thing first</h1>
         <div className="blocker">
           <h2>{titleFor(blocker)}</h2>
           <p>{instruction}</p>
+        </div>
+        <p className="lede">
+          Or run CCP-Bot on this computer instead. It brings its own database and its own runtime,
+          so it needs no administrator, nothing switched on in Windows, and nothing installed
+          first.
+        </p>
+        <div className="row">
+          <button
+            type="button"
+            disabled={localBusy}
+            onClick={() => {
+              setLocalPicked(true);
+              setStep("welcome");
+            }}
+          >
+            Run it on this computer
+          </button>
         </div>
       </main>
     );
@@ -755,6 +882,24 @@ export function App() {
     return (
       <main>
         <Welcome onStart={() => setStep("harness")} />
+        {/*
+          The other way to run the same stack, offered before the wizard rather than buried in it:
+          a machine with no container engine should not have to walk all four screens to find this
+          out, and a machine that has one may still prefer it.
+        */}
+        <div className="row">
+          <button
+            type="button"
+            className="quiet"
+            disabled={busy}
+            onClick={() => {
+              setLocalPicked(true);
+              setStep("harness");
+            }}
+          >
+            {localPicked ? "Running on this computer" : "Run it on this computer instead"}
+          </button>
+        </div>
         {displayedFailure && <Failure problem={displayedFailure} />}
       </main>
     );
@@ -928,6 +1073,36 @@ export function App() {
   }
 
   if (!running && returningToInstallation && !refreshIntelligence) {
+    /*
+     * A machine set up for local mode gets the local screen, which carries its own Start and Stop
+     * and says what the two processes and the database are doing. The container route's Start button
+     * would be a promise this machine cannot keep: there is no engine here to start anything with.
+     */
+    if (localPicked) {
+      return (
+        <main>
+          <LocalRun
+            status={local}
+            busy={localBusy}
+            onStart={runLocally}
+            onStop={stopLocally}
+          />
+          <SetupProgress steps={steps} />
+          {displayedFailure && <Failure problem={displayedFailure} />}
+          <button
+            type="button"
+            className="quiet"
+            disabled={localBusy}
+            onClick={() => {
+              setLocalPicked(false);
+              setStep("model");
+            }}
+          >
+            Use Docker instead
+          </button>
+        </main>
+      );
+    }
     return (
       <main>
         <h1>CCP-Bot is stopped</h1>

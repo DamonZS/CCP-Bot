@@ -13,7 +13,7 @@ mod test_support;
 
 use ccpbot_desktop_lib::{
     acquire, deployment, deployment_release, engine, env as ccpbot_env, harness, host_access,
-    install, local_browser, preparation,
+    install, local, local_browser, preparation,
     problem::{LeftoverReset, Problem},
     provider, pull_metrics, quiet, recorder_external, recorder_host, recorder_install, stack,
     supervise, telemetry, tray, windows as win,
@@ -32,6 +32,16 @@ struct Shell {
     host_access: Mutex<Option<host_access::HostAccess>>,
     /// Named, because a restart policy that cannot say which process died cannot start it again.
     children: Mutex<Vec<(&'static str, std::process::Child)>>,
+    /// The server and the worker of a local run, kept apart from the container route's children
+    /// because stopping them is a different job: the database beside them is a cluster this app
+    /// started, and it has to be shut down in order rather than killed.
+    local_children: Mutex<Vec<std::process::Child>>,
+    /// What local mode is doing right now, in two lines.
+    ///
+    /// A first local run unpacks 1.5 GB of PostgreSQL and builds an interface, which is minutes of
+    /// work with nothing to show in the window unless the step is written down somewhere the window
+    /// can read. This is that place, and it is read by `local_status`.
+    local_step: Mutex<(String, String)>,
     /// Native Linux engine API owned by this desktop session, kept through Stop/Start.
     #[cfg(target_os = "linux")]
     podman_api: Mutex<engine::local_api::Service>,
@@ -465,10 +475,12 @@ fn windows_blocker<R: tauri::Runtime>(
         .try_state::<Shell>()
         .and_then(|shell| shell.selected_root.lock().unwrap().clone())
         .unwrap_or_else(stack::default_root);
-    // A machine that would run the stack on Docker has no Windows stage: the stage is there for the
-    // Podman fallback, and WSL is needed for nothing else. Reporting a blocker here would send a
-    // person to an administrator for a machine that already runs their containers.
-    let result = if install::docker_is_the_engine(&root) {
+    // Two machines have no Windows stage. One that would run the stack on Docker: the stage is
+    // there for the Podman fallback, and WSL is needed for nothing else, so reporting a blocker
+    // would send somebody to an administrator for a machine that already runs their containers. And
+    // one that runs the stack locally: there is nothing to install and no virtual machine to
+    // enable, which is the whole reason local mode exists.
+    let result = if local::wanted(&root) || install::docker_is_the_engine(&root) {
         Ok(None)
     } else {
         win::blocker()
@@ -507,6 +519,133 @@ fn record_setup_event<R: tauri::Runtime>(app: tauri::AppHandle<R>, event: serde_
 #[tauri::command]
 fn windows_blocker_instruction(blocker: win::Blocker) -> String {
     blocker.instruction().to_string()
+}
+
+/// What local mode looks like from the window.
+#[derive(Serialize)]
+struct LocalStatus {
+    /// Whether this build can run CCP-Bot this way at all. Only Windows is wired up, and the window
+    /// reads this before it offers the choice: an option that cannot be honoured is worse than no
+    /// option.
+    supported: bool,
+    /// Whether this folder is run by local mode at all — what the Windows stage check reads too.
+    wanted: bool,
+    /// The port its database listens on, once one has been chosen. Chosen once and reused, so this
+    /// is stable across starts.
+    database_port: Option<u16>,
+    database_running: bool,
+    interface_built: bool,
+    /// What `/health` answered, when it answered at all.
+    health: Option<u16>,
+    address: String,
+    /// The step being worked on, and what it is doing.
+    step: String,
+    step_detail: String,
+}
+
+/// The folder local mode works in: the one the window picked, or the default root.
+fn local_root<R: tauri::Runtime>(app: &tauri::AppHandle<R>) -> PathBuf {
+    app.try_state::<Shell>()
+        .and_then(|shell| shell.selected_root.lock().unwrap().clone())
+        .unwrap_or_else(stack::default_root)
+}
+
+fn local_status_of<R: tauri::Runtime>(app: &tauri::AppHandle<R>, root: &Path) -> LocalStatus {
+    let step = app
+        .try_state::<Shell>()
+        .map(|shell| shell.local_step.lock().unwrap().clone())
+        .unwrap_or_default();
+    LocalStatus {
+        supported: cfg!(windows),
+        wanted: local::wanted(root),
+        database_port: local::remembered_port(root),
+        database_running: local::postgres_running(root),
+        interface_built: local::interface_built(root),
+        health: local::health_status(local::SERVER_ADDRESS).ok(),
+        address: local::SERVER_ADDRESS.to_string(),
+        step: step.0,
+        step_detail: step.1,
+    }
+}
+
+#[tauri::command]
+async fn local_status(app: tauri::AppHandle) -> Result<LocalStatus, Problem> {
+    let root = local_root(&app);
+    Ok(local_status_of(&app, &root))
+}
+
+/// Start CCP-Bot as programs on this machine, and return only once it answers.
+///
+/// The same Start button, the same window: what changes is that nothing here needs a container
+/// engine, a virtual machine, or an administrator — which is what makes a downloaded installer
+/// enough on its own.
+/// The CopilotKit connection the wizard collected, sent along with a local start.
+///
+/// The container route writes these into `.env` from the start call it already had; a local run
+/// needs the same values, and needs them for the same reason: the server refuses to start without
+/// either an identity provider or the single-user flag, and this is the connection it serves.
+#[derive(Debug, Clone, Default, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct LocalStartRequest {
+    api_url: Option<String>,
+    gateway_ws_url: Option<String>,
+    api_key: Option<String>,
+}
+
+#[tauri::command]
+async fn local_start(
+    app: tauri::AppHandle,
+    request: Option<LocalStartRequest>,
+) -> Result<LocalStatus, Problem> {
+    let root = local_root(&app);
+    local::remember(&root)?;
+    let connection = request.unwrap_or_default();
+    let handle = app.clone();
+    let started_root = root.clone();
+    let outcome = tauri::async_runtime::spawn_blocking(move || {
+        if connection.api_key.is_some() {
+            local::write_intelligence(
+                &started_root,
+                connection.api_url.as_deref().unwrap_or_default(),
+                connection.gateway_ws_url.as_deref().unwrap_or_default(),
+                connection.api_key.as_deref().unwrap_or_default(),
+            )?;
+        }
+        let shell = handle.state::<Shell>();
+        let cache = started_root.clone();
+        let bun = which_bun();
+        local::start(&started_root, &cache, bun, |step, detail| {
+            *shell.local_step.lock().unwrap() = (step.to_string(), detail.to_string());
+        })
+    })
+    .await
+    .map_err(|error| Problem::plain(format!("The local start did not finish: {error}")))?;
+    let started = outcome?;
+    {
+        let shell = app.state::<Shell>();
+        let mut children = shell.local_children.lock().unwrap();
+        children.push(started.server);
+        children.push(started.worker);
+    }
+    Ok(local_status_of(&app, &root))
+}
+
+/// Stop the local stack: the services, then the database, in that order.
+#[tauri::command]
+async fn local_stop(app: tauri::AppHandle, root: Option<String>) -> Result<LocalStatus, Problem> {
+    let root = root
+        .map(|typed| stack::root_from(&typed))
+        .unwrap_or_else(|| local_root(&app));
+    let stopped_root = root.clone();
+    let handle = app.clone();
+    tauri::async_runtime::spawn_blocking(move || {
+        let shell = handle.state::<Shell>();
+        let mut children = shell.local_children.lock().unwrap();
+        local::stop(&stopped_root, &mut children)
+    })
+    .await
+    .map_err(|error| Problem::plain(format!("The local stop did not finish: {error}")))??;
+    Ok(local_status_of(&app, &root))
 }
 
 /// Bring the engine up: create the machine if it is missing, start it, then prove it answers.
@@ -2027,6 +2166,13 @@ where
         failures.push(format!("Compose down failed: {problem}"));
     }
 
+    // A local run is stopped here too, because this is the one place all the ways of asking for a
+    // stop arrive. A database left running is a failure this stack already learned about the hard
+    // way: the next Start finds a port taken by something nobody can see.
+    if let Err(problem) = local::stop(&root, &mut shell.local_children.lock().unwrap()) {
+        failures.push(problem_detail(problem));
+    }
+
     if failures.is_empty() {
         clear_recovery_required(shell, &root);
         Ok(())
@@ -2594,6 +2740,11 @@ where
     }
     if let Err(problem) = down_containers_with(shell, &root, down) {
         failures.push(format!("Compose down failed: {problem}"));
+    }
+    // Quitting is the other way to ask for a stop, and the local database has to go with it:
+    // nothing else knows that this process started one.
+    if let Err(problem) = local::stop(&root, &mut shell.local_children.lock().unwrap()) {
+        failures.push(problem_detail(problem));
     }
     #[cfg(target_os = "linux")]
     if let Err(problem) = shell.podman_api.lock().unwrap().stop() {
@@ -4424,6 +4575,9 @@ fn main() {
             windows_blocker_instruction,
             prepare_engine,
             prepare_installation,
+            local_status,
+            local_start,
+            local_stop,
             start_stack,
             reset_leftover_database,
             stop_stack,

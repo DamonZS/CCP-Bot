@@ -617,16 +617,8 @@ pub fn compose(
      * Two installs still do not share a key. A machine with nothing stored generates, which is what
      * a first run is.
      */
-    for key in MINTED {
-        let value = kept
-            .get(key)
-            .map(|value| value.trim().to_string())
-            // `usable` and not merely "not empty": an example key copied out of `.env.example` is
-            // present, is published, and must still be replaced. It also holds
-            // `KEY_ENCRYPTION_KEY` to the 32 bytes it has to decode to.
-            .filter(|value| usable(key, value))
-            .unwrap_or_else(secret);
-        env.insert(key.into(), value);
+    for (key, value) in minted(kept) {
+        env.insert(key, value);
     }
 
     env.insert(
@@ -1001,6 +993,26 @@ const PUBLISHED: [&str; 4] = [
 /// Start checks this before composition so an existing installation cannot silently rotate its key.
 pub fn usable_encryption_key(value: &str) -> bool {
     !PUBLISHED.contains(&value) && matches!(BASE64.decode(value), Ok(bytes) if bytes.len() == 32)
+}
+
+/// The secrets this deployment mints for itself, given what a previous run already produced.
+///
+/// `usable` is the rule that decides "already produced": an example key copied out of `.env.example`
+/// is present, is published, and has to be replaced all the same. Both routes that start the stack ask
+/// this one question, so they get one answer — a local start that minted with its own copy of the rule
+/// would be free to disagree with the container route about which secrets exist.
+pub fn minted(kept: &BTreeMap<String, String>) -> BTreeMap<String, String> {
+    MINTED
+        .iter()
+        .map(|key| {
+            let value = kept
+                .get(*key)
+                .map(|value| value.trim().to_string())
+                .filter(|value| usable(key, value))
+                .unwrap_or_else(secret);
+            ((*key).to_string(), value)
+        })
+        .collect()
 }
 
 fn usable(key: &str, value: &str) -> bool {
@@ -1963,6 +1975,55 @@ HTTPS_PROXY=http://proxy:8080
             .find(|line| line.starts_with(&format!("{key}=")))
             .map(|line| line.split_once('=').unwrap().1.to_string())
             .unwrap_or_else(|| panic!("{key} is not in the file"))
+    }
+
+    /// The rule both routes share. `usable` is what makes this more than "not empty": a value copied out
+    /// of `.env.example` is present, is published, and still has to go.
+    #[test]
+    fn minting_keeps_what_was_produced_and_replaces_what_is_published() {
+        let published = PUBLISHED[0].to_string();
+        let kept = BTreeMap::from([
+            ("KEY_ENCRYPTION_KEY".to_string(), published.clone()),
+            ("COMPUTER_TOKEN".to_string(), "kept-token".to_string()),
+            ("WORKER_SHARED_SECRET".to_string(), "   ".to_string()),
+        ]);
+
+        let minted_once = minted(&kept);
+
+        assert_eq!(
+            minted_once.get("COMPUTER_TOKEN").map(String::as_str),
+            Some("kept-token"),
+            "a secret the deployment already has was replaced"
+        );
+        assert_ne!(
+            minted_once.get("KEY_ENCRYPTION_KEY").map(String::as_str),
+            Some(published.as_str()),
+            "the published example key was kept"
+        );
+        assert!(usable_encryption_key(
+            minted_once.get("KEY_ENCRYPTION_KEY").unwrap()
+        ));
+        assert!(
+            !minted_once
+                .get("WORKER_SHARED_SECRET")
+                .unwrap()
+                .trim()
+                .is_empty(),
+            "a blank secret was carried instead of minted"
+        );
+        for key in MINTED {
+            assert!(
+                minted_once.contains_key(key),
+                "{key} was not minted at all"
+            );
+        }
+
+        let elsewhere = minted(&BTreeMap::new());
+        assert_ne!(
+            minted_once.get("COMPUTER_TOKEN"),
+            elsewhere.get("COMPUTER_TOKEN"),
+            "two deployments shared a secret"
+        );
     }
 
     #[test]

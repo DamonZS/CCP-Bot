@@ -162,7 +162,7 @@ pub fn compose_download() -> Result<Download, Problem> {
 /// A file already there with the right digest is kept, so a retry after a failed install is not a
 /// second download. A file already there with the wrong one is replaced: that is a half-written
 /// download far more often than it is an attack, and either way it must not be run.
-fn fetch_verified(download: &Download, into: &Path) -> Result<PathBuf, Problem> {
+pub(crate) fn fetch_verified(download: &Download, into: &Path) -> Result<PathBuf, Problem> {
     let path = into.join(download.file);
     if let Ok(existing) = std::fs::read(&path) {
         if digest_of(&existing) == download.sha256 {

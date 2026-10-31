@@ -1,0 +1,1557 @@
+//! Running CCP-Bot as ordinary programs on this machine.
+//!
+//! Why this exists: the container route needs a container engine, and on Windows that engine is a
+//! virtual machine with its own installer, its own terms page and — for the WSL half of it —
+//! administrator rights. Somebody who downloaded an installer for a desktop application should not
+//! have to pass any of that. Everything here is instead ordinary files in the app's own folder and
+//! ordinary child processes: a portable PostgreSQL, the runtime the app already knows how to fetch,
+//! and `bun` running the server and the worker out of the checkout.
+//!
+//! The layout under the root folder:
+//!
+//! ```text
+//! postgres/pgsql/bin/initdb.exe     the portable build, unpacked once
+//! postgres/data/                    the cluster, initialised once and reused
+//! postgres/port                     the port the cluster was told to listen on
+//! logs/local-*.log                  one file per process, appended across runs
+//! .env                              the database and page settings, merged into whatever is there
+//! app/dist                          the interface, built once from the checkout
+//! ```
+//!
+//! Two deliberate choices worth knowing when reading the code below:
+//!
+//! - The database listens on `127.0.0.1` only, and `initdb` is asked for `trust` authentication.
+//!   That is not a shortcut around a password: a cluster that cannot be reached from another
+//!   machine has no use for one, and asking for one would mean a second secret to store and get
+//!   wrong. The container route's `ccpbot:ccpbot` pair stays as it is.
+//! - The PostgreSQL download is pinned by digest, like the deployment pins image digests. A version
+//!   is what somebody hoped would be served; the digest is what was actually unpacked and run.
+
+use std::collections::BTreeMap;
+use std::io::{Read, Write};
+use std::net::{TcpListener, TcpStream};
+use std::path::{Path, PathBuf};
+use std::process::{Child, Stdio};
+use std::time::{Duration, Instant};
+
+use crate::install::{self, Download};
+use crate::problem::Problem;
+use crate::quiet;
+
+/// The portable PostgreSQL this is built against: EDB's Windows binaries zip, which needs no
+/// installer and no administrator — unzip it anywhere and it runs.
+#[cfg(windows)]
+pub const POSTGRES_URL: &str =
+    "https://get.enterprisedb.com/postgresql/postgresql-17.6-1-windows-x64-binaries.zip";
+#[cfg(windows)]
+pub const POSTGRES_ARCHIVE: &str = "postgresql-17.6-1-windows-x64-binaries.zip";
+
+/// What that archive has to hash to before anything is unpacked or run.
+///
+/// Fetched and measured on a real machine: 329,891,687 bytes, and the first attempt at downloading
+/// it was cut short by the server, which is exactly the sort of thing a digest catches.
+pub const POSTGRES_SHA256: &str =
+    "d378882abd001a186735acd6f6ba716bca6ccd192e800412d4fd15ed25376b3e";
+
+pub const POSTGRES_FOLDER: &str = "postgres";
+/// What the EDB archive holds at its top level, so that is where unpacking leaves the binaries.
+pub const POSTGRES_UNPACKED: &str = "pgsql";
+
+/// The pgvector build for the portable server above, from the Windows binaries the extension's own
+/// documentation points at.
+///
+/// The first migration is `CREATE EXTENSION IF NOT EXISTS vector;`, and the EDB build does not
+/// bundle the extension — a container gets it from the `pgvector/pgvector` image, a machine running
+/// PostgreSQL itself has to be handed one. Without it the very first migration stops with
+/// `extension "vector" is not available`, and nothing after it runs.
+#[cfg(windows)]
+pub const VECTOR_URL: &str =
+    "https://github.com/andreiramani/pgvector_pgsql_windows/releases/download/0.8.6_17/vector.v0.8.6-pg17.zip";
+#[cfg(windows)]
+pub const VECTOR_ARCHIVE: &str = "vector.v0.8.6-pg17.zip";
+
+/// What that archive has to hash to: 169,689 bytes, measured on the same machine.
+pub const VECTOR_SHA256: &str = "420388e9e9f05d92f06d6967ce8772483629b27a66ca9255925fa0fdd445438e";
+
+/// Where the extension archive is unpacked before its files are placed into the server.
+pub const VECTOR_FOLDER: &str = "pgvector";
+/// The file the server looks for to know the extension exists.
+pub const VECTOR_CONTROL: &str = "vector.control";
+pub const DATA_FOLDER: &str = "data";
+pub const PORT_FILE: &str = "port";
+pub const LOGS_FOLDER: &str = "logs";
+pub const SERVER_ADDRESS: &str = "http://127.0.0.1:3010";
+/// The port the interface is served on, and the one the server is told about through `.env`.
+pub const SERVER_PORT: u16 = 3010;
+pub const DATABASE_USER: &str = "ccpbot";
+pub const DATABASE_NAME: &str = "ccpbot";
+
+/// The health check gets a long time on a first run: the interface may still be building and the
+/// worker is starting up beside it.
+pub const HEALTH_TIMEOUT: Duration = Duration::from_secs(120);
+/// `pg_ctl -w` waits this long for the cluster, which is longer than a first start needs.
+pub const POSTGRES_TIMEOUT: Duration = Duration::from_secs(90);
+const HEALTH_INTERVAL: Duration = Duration::from_millis(500);
+
+/// The keys in `.env` this mode owns. Everything else in the file is left exactly as it was, which
+/// matters: the same file carries the person's own provider and intelligence settings.
+pub const MANAGED_KEYS: [&str; 7] = [
+    "DATABASE_URL",
+    "PORT",
+    "SERVER_PORT",
+    "APP_DIST_DIR",
+    "CCPBOT_SINGLE_USER",
+    "SERVER_INTERNAL_URL",
+    "NODE_ENV",
+];
+
+/// The archive to unpack for this platform, or why there is not one.
+///
+/// Only Windows is wired up. The packages exist elsewhere, but each platform's archive is a
+/// different shape and none of them has been run here, so the honest answer for now is that the
+/// container route is the one to use.
+pub fn postgres() -> Result<Download, Problem> {
+    #[cfg(windows)]
+    {
+        return Ok(Download {
+            url: POSTGRES_URL.to_string(),
+            sha256: POSTGRES_SHA256,
+            file: POSTGRES_ARCHIVE,
+        });
+    }
+    #[cfg(not(windows))]
+    {
+        Err(Problem::with(
+            "Local mode ships a portable database for Windows only.",
+            format!(
+                "no portable PostgreSQL is wired up for {} on {}",
+                std::env::consts::OS,
+                std::env::consts::ARCH
+            ),
+        ))
+    }
+}
+
+pub fn postgres_folder(root: &Path) -> PathBuf {
+    root.join(POSTGRES_FOLDER)
+}
+
+pub fn unpacked_folder(root: &Path) -> PathBuf {
+    postgres_folder(root).join(POSTGRES_UNPACKED)
+}
+
+pub fn bin_folder(root: &Path) -> PathBuf {
+    unpacked_folder(root).join("bin")
+}
+
+pub fn data_folder(root: &Path) -> PathBuf {
+    postgres_folder(root).join(DATA_FOLDER)
+}
+
+/// Where the chosen database port is kept, so a restart connects to the cluster it left behind.
+pub fn port_file(root: &Path) -> PathBuf {
+    postgres_folder(root).join(PORT_FILE)
+}
+
+pub fn logs_folder(root: &Path) -> PathBuf {
+    root.join(LOGS_FOLDER)
+}
+
+pub fn log_file(root: &Path, name: &str) -> PathBuf {
+    logs_folder(root).join(format!("local-{name}.log"))
+}
+
+/// One of PostgreSQL's own programs, from the unpacked archive.
+pub fn tool(root: &Path, name: &str) -> PathBuf {
+    let file = if cfg!(windows) {
+        format!("{name}.exe")
+    } else {
+        name.to_string()
+    };
+    bin_folder(root).join(file)
+}
+
+/// The connection string for a cluster that only listens on the loopback address.
+pub fn database_url(port: u16) -> String {
+    format!("postgres://{DATABASE_USER}@127.0.0.1:{port}/{DATABASE_NAME}")
+}
+
+/// A port nothing is listening on, asked of the operating system rather than guessed.
+pub fn free_port() -> Result<u16, Problem> {
+    let listener = TcpListener::bind(("127.0.0.1", 0)).map_err(|error| {
+        Problem::with(
+            "Local mode could not find a free port.",
+            format!("binding 127.0.0.1:0 failed: {error}"),
+        )
+    })?;
+    let port = listener.local_addr().map_err(|error| {
+        Problem::with(
+            "Local mode could not find a free port.",
+            format!("the bound socket has no address: {error}"),
+        )
+    })?;
+    drop(listener);
+    Ok(port.port())
+}
+
+/// The database port: the one used before if there is one, a new one otherwise.
+///
+/// Remembered rather than picked fresh each time, because the same value also goes into
+/// `DATABASE_URL` in `.env` — a port that changed on every start would rewrite that line every time
+/// and break anything that connected a moment earlier.
+/// The port this folder's database was given, once one has been chosen.
+///
+/// Read rather than chosen, so asking about a folder that has never run cannot create the file that
+/// says it has.
+pub fn remembered_port(root: &Path) -> Option<u16> {
+    std::fs::read_to_string(port_file(root))
+        .ok()
+        .and_then(|text| text.trim().parse::<u16>().ok())
+        .filter(|port| *port > 0)
+}
+
+pub fn database_port(root: &Path) -> Result<u16, Problem> {
+    let file = port_file(root);
+    if let Ok(text) = std::fs::read_to_string(&file) {
+        if let Ok(port) = text.trim().parse::<u16>() {
+            if port > 0 {
+                return Ok(port);
+            }
+        }
+    }
+    let port = free_port()?;
+    if let Some(parent) = file.parent() {
+        std::fs::create_dir_all(parent).map_err(|error| {
+            Problem::with(
+                "Local mode could not store the database port.",
+                format!("creating {} failed: {error}", parent.display()),
+            )
+        })?;
+    }
+    std::fs::write(&file, format!("{port}\n")).map_err(|error| {
+        Problem::with(
+            "Local mode could not store the database port.",
+            format!("writing {} failed: {error}", file.display()),
+        )
+    })?;
+    Ok(port)
+}
+
+/// Whether the cluster has been created already — the file `initdb` always leaves behind.
+pub fn initialised(root: &Path) -> bool {
+    data_folder(root).join("PG_VERSION").is_file()
+}
+
+/// Whether the portable PostgreSQL is unpacked and usable.
+pub fn postgres_ready(root: &Path) -> bool {
+    tool(root, "postgres").is_file() && tool(root, "initdb").is_file()
+}
+
+/// `.env` with our keys set, everything else left alone.
+///
+/// The keys this mode owns are replaced in place where they already exist, and appended at the end
+/// where they do not. Any earlier value for a key we own is replaced rather than kept, because the
+/// whole point is that the values here are the ones that describe this machine's database.
+pub fn merged_env(existing: &str, values: &[(&str, String)]) -> String {
+    let mut lines: Vec<String> = Vec::new();
+    for line in existing.lines() {
+        let trimmed = line.trim_start();
+        let key = trimmed.split('=').next().unwrap_or("").trim();
+        match values.iter().find(|(name, _)| *name == key) {
+            Some((name, value)) => lines.push(format!("{name}={value}")),
+            None => lines.push(line.to_string()),
+        }
+    }
+    let mut written: Vec<&str> = Vec::new();
+    for (name, value) in values {
+        let already = lines
+            .iter()
+            .any(|line| line.trim_start().split('=').next().unwrap_or("").trim() == *name);
+        if already {
+            continue;
+        }
+        if written.is_empty() {
+            lines.push(String::new());
+            lines.push("# Written by CCP-Bot local mode.".to_string());
+        }
+        lines.push(format!("{name}={value}"));
+        written.push(name);
+    }
+    let mut text = lines.join("\n");
+    text.push('\n');
+    text
+}
+
+/// The secrets this deployment needs, minted once and kept in the credential store.
+///
+/// Measured on a real machine: without this the server refuses to start with
+/// `KEY_ENCRYPTION_KEY must be configured` (it decrypts everything it stores with that key, so there
+/// is nothing sensible to do without one). The other five are the tokens the parts of the stack share
+/// with each other. The container route keeps these in the vault rather than in `.env`; the local
+/// route does the same and hands them to its children as environment, so no file a person can open
+/// carries a secret — and a restart reuses what the first run minted rather than rotating it, which
+/// would make everything already encrypted unreadable.
+pub fn deployment_secrets(root: &Path) -> Result<BTreeMap<String, String>, Problem> {
+    let kept = crate::vault::already_given_no_ui(root, &root.join(".env"), &crate::env::MINTED)?;
+    let secrets = crate::env::minted(&kept);
+    for (key, value) in &secrets {
+        if kept.get(key) == Some(value) {
+            continue;
+        }
+        crate::vault::remember(root, key, value)?;
+    }
+    Ok(secrets)
+}
+
+/// The arguments every local service is started with: one file, so there is one place the settings
+/// live, rather than a second copy in the environment of each child.
+pub fn service_arguments(environment_file: &str, entry: &str) -> Vec<String> {
+    vec![format!("--env-file={environment_file}"), entry.to_string()]
+}
+
+/// Fetches and unpacks the portable PostgreSQL, once.
+pub fn ensure_postgres(root: &Path, cache: &Path) -> Result<PathBuf, Problem> {
+    ensure_postgres_with(root, cache, install::fetch_verified)
+}
+
+/// The same, with the download passed in, so that "already unpacked" can be tested without a
+/// network and a failing download can be tested without breaking one.
+fn ensure_postgres_with(
+    root: &Path,
+    cache: &Path,
+    fetch: impl Fn(&Download, &Path) -> Result<PathBuf, Problem>,
+) -> Result<PathBuf, Problem> {
+    if postgres_ready(root) {
+        return Ok(bin_folder(root));
+    }
+    let download = postgres()?;
+    // The archive lives in the same download cache the engine's installers use, so one folder holds
+    // everything this app ever fetched and clearing it is a complete reset of that.
+    let archive = fetch(&download, &crate::acquire::download_dir(cache))?;
+    let destination = postgres_folder(root);
+    std::fs::create_dir_all(&destination).map_err(|error| {
+        Problem::with(
+            "Local mode could not create its database folder.".to_string(),
+            format!("creating {} failed: {error}", destination.display()),
+        )
+    })?;
+    unpack(&archive, &destination)?;
+    if !postgres_ready(root) {
+        return Err(Problem::with(
+            "The unpacked database has no program in it.".to_string(),
+            format!(
+                "{} produced no bin/postgres under {}",
+                archive.display(),
+                destination.display()
+            ),
+        ));
+    }
+    Ok(bin_folder(root))
+}
+
+/// The pgvector archive, on the one platform this mode serves.
+#[cfg(windows)]
+pub fn vector() -> Result<Download, Problem> {
+    Ok(Download {
+        url: VECTOR_URL.to_string(),
+        sha256: VECTOR_SHA256,
+        file: VECTOR_ARCHIVE,
+    })
+}
+
+/// Local mode is Windows-only for now: the portable database is a Windows build, and so is the
+/// extension placed beside it.
+#[cfg(not(windows))]
+pub fn vector() -> Result<Download, Problem> {
+    Err(Problem::with(
+        "Running CCP-Bot on this computer is not implemented here yet.".to_string(),
+        "the portable database and its extension are Windows builds for now".to_string(),
+    ))
+}
+
+/// Where the server keeps the libraries it loads: `lib/` beside it, as in any PostgreSQL install.
+pub fn lib_folder(root: &Path) -> PathBuf {
+    unpacked_folder(root).join("lib")
+}
+
+/// Where the server looks for extensions: one control file and its scripts per extension.
+pub fn extension_folder(root: &Path) -> PathBuf {
+    unpacked_folder(root).join("share").join("extension")
+}
+
+/// Whether the portable server already carries pgvector.
+pub fn vector_installed(root: &Path) -> bool {
+    extension_folder(root).join(VECTOR_CONTROL).is_file()
+}
+
+/// Fetches and places pgvector into the portable server, once. Answers whether anything was done.
+pub fn ensure_vector(root: &Path, cache: &Path) -> Result<bool, Problem> {
+    ensure_vector_with(root, cache, install::fetch_verified)
+}
+
+/// The same, with the download passed in, so that "already placed" can be tested without a network.
+fn ensure_vector_with(
+    root: &Path,
+    cache: &Path,
+    fetch: impl Fn(&Download, &Path) -> Result<PathBuf, Problem>,
+) -> Result<bool, Problem> {
+    if vector_installed(root) {
+        return Ok(false);
+    }
+    let download = vector()?;
+    let archive = fetch(&download, &crate::acquire::download_dir(cache))?;
+    let staging = postgres_folder(root).join(VECTOR_FOLDER);
+    std::fs::create_dir_all(&staging).map_err(|error| {
+        Problem::with(
+            "Local mode could not create the folder for its database extension.".to_string(),
+            format!("creating {} failed: {error}", staging.display()),
+        )
+    })?;
+    unpack(&archive, &staging)?;
+    place_vector(root, &staging)?;
+    if !vector_installed(root) {
+        return Err(Problem::with(
+            "The unpacked extension has no control file in it.".to_string(),
+            format!(
+                "{} produced no share/extension/{}",
+                archive.display(),
+                VECTOR_CONTROL
+            ),
+        ));
+    }
+    Ok(true)
+}
+
+/// Puts the extension where the server looks for it: the library beside the others, the control file
+/// and the upgrade scripts into the extension folder.
+///
+/// The archive also carries headers and a readme; nothing needs them to run the extension, so they
+/// stay in the staging folder instead of being copied into the server.
+pub fn place_vector(root: &Path, staging: &Path) -> Result<(), Problem> {
+    copy_files(&staging.join("lib"), &lib_folder(root))?;
+    copy_files(
+        &staging.join("share").join("extension"),
+        &extension_folder(root),
+    )
+}
+
+/// Copies the files of one folder into another, creating the destination.
+fn copy_files(from: &Path, to: &Path) -> Result<(), Problem> {
+    std::fs::create_dir_all(to).map_err(|error| {
+        Problem::with(
+            "Local mode could not create its database library folder.".to_string(),
+            format!("creating {} failed: {error}", to.display()),
+        )
+    })?;
+    let entries = std::fs::read_dir(from).map_err(|error| {
+        Problem::with(
+            "The unpacked extension is not laid out the way it is expected to be.".to_string(),
+            format!("reading {} failed: {error}", from.display()),
+        )
+    })?;
+    for entry in entries {
+        let entry = entry.map_err(|error| {
+            Problem::with(
+                "The unpacked extension could not be read.".to_string(),
+                format!("reading {} failed: {error}", from.display()),
+            )
+        })?;
+        if !entry.path().is_file() {
+            continue;
+        }
+        let target = to.join(entry.file_name());
+        std::fs::copy(entry.path(), &target).map_err(|error| {
+            Problem::with(
+                "The database extension could not be placed.".to_string(),
+                format!("copying {} failed: {error}", target.display()),
+            )
+        })?;
+    }
+    Ok(())
+}
+
+/// Unpack a zip with the PowerShell that ships with Windows.
+///
+/// `Expand-Archive` is the one unzipper certain to be on the machine. A zip crate would be a
+/// dependency to keep current for a step that runs once in a machine's lifetime.
+#[cfg(windows)]
+fn unpack(archive: &Path, destination: &Path) -> Result<(), Problem> {
+    let script = format!(
+        "Expand-Archive -LiteralPath '{}' -DestinationPath '{}' -Force",
+        archive.display(),
+        destination.display()
+    );
+    let output = quiet::command("powershell")
+        .args(["-NoProfile", "-NonInteractive", "-Command", script.as_str()])
+        .output()
+        .map_err(|error| {
+            Problem::with(
+                "Unpacking the portable database failed.".to_string(),
+                format!("running powershell failed: {error}"),
+            )
+        })?;
+    if output.status.success() {
+        return Ok(());
+    }
+    let said = quiet::said(&output.stderr);
+    Err(Problem::with(
+        "Unpacking the portable database failed.".to_string(),
+        if said.is_empty() {
+            format!("powershell exited with {:?}", output.status.code())
+        } else {
+            said
+        },
+    ))
+}
+
+#[cfg(not(windows))]
+fn unpack(archive: &Path, destination: &Path) -> Result<(), Problem> {
+    Err(Problem::with(
+        "Unpacking is not implemented for this machine.".to_string(),
+        format!(
+            "cannot unpack {} into {}",
+            archive.display(),
+            destination.display()
+        ),
+    ))
+}
+
+/// Creates the cluster, once.
+///
+/// `-A trust` belongs with the loopback-only listener set up in `start_postgres`: a cluster nothing
+/// else can reach does not need a password, and a password here would be one more thing to store.
+pub fn init_cluster(root: &Path) -> Result<(), Problem> {
+    let initdb = tool(root, "initdb");
+    if !initdb.is_file() {
+        return Err(Problem::with(
+            "Local mode has no database program yet.".to_string(),
+            format!("{} does not exist", initdb.display()),
+        ));
+    }
+    let data = data_folder(root);
+    let data_text = data.to_string_lossy().to_string();
+    let output = quiet::command(&initdb)
+        .args([
+            "-D",
+            data_text.as_str(),
+            "-U",
+            DATABASE_USER,
+            "-A",
+            "trust",
+            "-E",
+            "UTF8",
+            "--no-locale",
+        ])
+        .output()
+        .map_err(|error| {
+            Problem::with(
+                "Initialising the database cluster failed.".to_string(),
+                format!("running initdb failed: {error}"),
+            )
+        })?;
+    if output.status.success() {
+        return Ok(());
+    }
+    Err(Problem::with(
+        "Initialising the database cluster failed.".to_string(),
+        quiet::said(&output.stderr),
+    ))
+}
+
+/// The marker that says this folder is run by local mode.
+///
+/// A file rather than a saved setting, because it has to be readable by the Windows stage check
+/// before anything has been prepared, and because "run this folder locally" is a property of the
+/// folder itself: copy it somewhere and the copy is a local run just as much as the original.
+pub const MARKER_FILE: &str = ".ccpbot-local";
+
+pub fn marker(root: &Path) -> PathBuf {
+    root.join(MARKER_FILE)
+}
+
+/// Whether this folder has been run locally before.
+pub fn wanted(root: &Path) -> bool {
+    marker(root).is_file()
+}
+
+/// Records that it has, so the next start takes the same route.
+pub fn remember(root: &Path) -> Result<(), Problem> {
+    let file = marker(root);
+    std::fs::write(&file, "local\n").map_err(|error| {
+        Problem::with(
+            "Could not remember the local choice.".to_string(),
+            format!("writing {} failed: {error}", file.display()),
+        )
+    })
+}
+
+/// Forgets it, for a folder that should go back to the container route.
+pub fn forget(root: &Path) -> Result<(), Problem> {
+    match std::fs::remove_file(marker(root)) {
+        Ok(()) => Ok(()),
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => Ok(()),
+        Err(error) => Err(Problem::with(
+            "Could not clear the local choice.".to_string(),
+            format!("removing {} failed: {error}", marker(root).display()),
+        )),
+    }
+}
+
+/// Whether the cluster is already answering.
+pub fn postgres_running(root: &Path) -> bool {
+    let data = data_folder(root);
+    quiet::command(tool(root, "pg_ctl"))
+        .args(["-D", data.to_string_lossy().as_ref(), "status"])
+        .output()
+        .map(|output| output.status.success())
+        .unwrap_or(false)
+}
+
+/// The last few lines of a file, for the failures only the log knows about.
+///
+/// `pg_ctl` cannot be asked for its output (see the start below), so the reason a database refused
+/// to come up is read from where it was written instead of being invented.
+fn tail_of(path: &Path) -> String {
+    let text = std::fs::read_to_string(path).unwrap_or_default();
+    let lines: Vec<&str> = text
+        .lines()
+        .filter(|line| !line.trim().is_empty())
+        .collect();
+    if lines.is_empty() {
+        return format!("{} holds nothing to read", path.display());
+    }
+    let start = lines.len().saturating_sub(6);
+    lines[start..].join("\n")
+}
+
+/// Starts the cluster on the loopback address, and waits for it to accept connections.
+pub fn start_postgres(root: &Path, port: u16) -> Result<(), Problem> {
+    if postgres_running(root) {
+        return Ok(());
+    }
+    let data = data_folder(root);
+    let log = log_file(root, "postgres");
+    if let Some(parent) = log.parent() {
+        std::fs::create_dir_all(parent).map_err(|error| {
+            Problem::with(
+                "Local mode could not create its log folder.".to_string(),
+                format!("creating {} failed: {error}", parent.display()),
+            )
+        })?;
+    }
+    let data_text = data.to_string_lossy().to_string();
+    let log_text = log.to_string_lossy().to_string();
+    let listen = format!("-p {port} -h 127.0.0.1");
+    let seconds = POSTGRES_TIMEOUT.as_secs().to_string();
+    /*
+     * The output goes nowhere, and that is not laziness.
+     *
+     * `pg_ctl start` leaves a postmaster behind, and the postmaster inherits the handles this process
+     * hands to its child. Asking for `output()` therefore waits for a pipe to close that the
+     * postmaster holds open for as long as it runs — a start that succeeded sits there looking like
+     * a start that hung, which is exactly what it did before this was written down. The reason a
+     * start failed is in the log `-l` already writes, so the failure reads that instead.
+     */
+    let status = quiet::command(tool(root, "pg_ctl"))
+        .args([
+            "-D",
+            data_text.as_str(),
+            "-l",
+            log_text.as_str(),
+            "-o",
+            listen.as_str(),
+            "-w",
+            "-t",
+            seconds.as_str(),
+            "start",
+        ])
+        .stdin(Stdio::null())
+        .stdout(Stdio::null())
+        .stderr(Stdio::null())
+        .status()
+        .map_err(|error| {
+            Problem::with(
+                "The local database would not start.".to_string(),
+                format!("running pg_ctl failed: {error}"),
+            )
+        })?;
+    if status.success() {
+        return Ok(());
+    }
+    Err(Problem::with(
+        "The local database would not start.".to_string(),
+        tail_of(&log),
+    ))
+}
+
+/// Stops the cluster, leaving the data in place for the next start.
+pub fn stop_postgres(root: &Path) -> Result<(), Problem> {
+    if !postgres_running(root) {
+        return Ok(());
+    }
+    let data = data_folder(root);
+    let data_text = data.to_string_lossy().to_string();
+    let log = log_file(root, "postgres");
+    // Same reason as the start above: a stopping postmaster still holds the pipes of the command
+    // that asked it to stop, so waiting on them waits for the database itself.
+    let status = quiet::command(tool(root, "pg_ctl"))
+        .args(["-D", data_text.as_str(), "-m", "fast", "-w", "stop"])
+        .stdin(Stdio::null())
+        .stdout(Stdio::null())
+        .stderr(Stdio::null())
+        .status()
+        .map_err(|error| {
+            Problem::with(
+                "The local database would not stop.".to_string(),
+                format!("running pg_ctl failed: {error}"),
+            )
+        })?;
+    if status.success() {
+        return Ok(());
+    }
+    Err(Problem::with(
+        "The local database would not stop.".to_string(),
+        tail_of(&log),
+    ))
+}
+
+/// Creates the application database. Already having one is the outcome that was wanted.
+pub fn create_database(root: &Path, port: u16) -> Result<(), Problem> {
+    let port_text = port.to_string();
+    let output = quiet::command(tool(root, "createdb"))
+        .args([
+            "-h",
+            "127.0.0.1",
+            "-p",
+            port_text.as_str(),
+            "-U",
+            DATABASE_USER,
+            DATABASE_NAME,
+        ])
+        .output()
+        .map_err(|error| {
+            Problem::with(
+                "Could not create the application database.".to_string(),
+                format!("running createdb failed: {error}"),
+            )
+        })?;
+    let said = format!(
+        "{}{}",
+        String::from_utf8_lossy(&output.stdout),
+        quiet::said(&output.stderr)
+    );
+    if output.status.success() || said.contains("already exists") {
+        return Ok(());
+    }
+    Err(Problem::with(
+        "Could not create the application database.".to_string(),
+        said,
+    ))
+}
+
+/// Starts one service, appending its output to a log under the root.
+///
+/// `environment` goes into the child's environment rather than into `.env`: the vault is where this
+/// deployment keeps what only it should see, and the file is the person's to read.
+pub fn start_service(
+    bun: &Path,
+    working: &Path,
+    arguments: &[String],
+    log: &Path,
+    environment: &BTreeMap<String, String>,
+) -> Result<Child, Problem> {
+    if let Some(parent) = log.parent() {
+        std::fs::create_dir_all(parent).map_err(|error| {
+            Problem::with(
+                "Local mode could not create its log folder.".to_string(),
+                format!("creating {} failed: {error}", parent.display()),
+            )
+        })?;
+    }
+    let mut file = std::fs::OpenOptions::new()
+        .create(true)
+        .append(true)
+        .open(log)
+        .map_err(|error| {
+            Problem::with(
+                "Local mode could not write its log.".to_string(),
+                format!("opening {} failed: {error}", log.display()),
+            )
+        })?;
+    let _ = writeln!(file, "\n$ bun {}", arguments.join(" "));
+    let stdout = file.try_clone().map_err(|error| {
+        Problem::with(
+            "Local mode could not write its log.".to_string(),
+            format!("duplicating the log handle failed: {error}"),
+        )
+    })?;
+    let stderr = file.try_clone().map_err(|error| {
+        Problem::with(
+            "Local mode could not write its log.".to_string(),
+            format!("duplicating the log handle failed: {error}"),
+        )
+    })?;
+    quiet::command(bun)
+        .args(arguments)
+        .envs(environment.iter())
+        .current_dir(working)
+        .stdin(std::process::Stdio::null())
+        .stdout(stdout)
+        .stderr(stderr)
+        .spawn()
+        .map_err(|error| {
+            Problem::with(
+                format!("Starting {} failed.", arguments.join(" ")),
+                format!("spawning bun in {} failed: {error}", working.display()),
+            )
+        })
+}
+
+/// The status code `/health` answers with, or why it could not be asked.
+///
+/// Written with a socket rather than an HTTP client because this runs before anything is known to
+/// be up, on the one address the shell controls, and a request that cannot hang matters more here
+/// than a response that can be parsed in every protocol detail.
+pub fn health_status(address: &str) -> Result<u16, String> {
+    fetch(address, "/health").map(|(status, _)| status)
+}
+
+/// Asks the local server for a path, and gives back its status and body.
+pub fn fetch(address: &str, path: &str) -> Result<(u16, String), String> {
+    let rest = address
+        .strip_prefix("http://")
+        .ok_or_else(|| format!("{address} is not an http address"))?;
+    let (host, port) = match rest.split_once(':') {
+        Some((host, port)) => (
+            host.to_string(),
+            port.trim_end_matches('/')
+                .parse::<u16>()
+                .map_err(|error| format!("{port} is not a port: {error}"))?,
+        ),
+        None => (rest.trim_end_matches('/').to_string(), 80),
+    };
+    let mut stream =
+        TcpStream::connect((host.as_str(), port)).map_err(|error| error.to_string())?;
+    stream
+        .set_read_timeout(Some(Duration::from_millis(2000)))
+        .map_err(|error| error.to_string())?;
+    stream
+        .write_all(
+            format!("GET {path} HTTP/1.1\r\nHost: {host}:{port}\r\nConnection: close\r\n\r\n")
+                .as_bytes(),
+        )
+        .map_err(|error| error.to_string())?;
+    let mut response = Vec::new();
+    let _ = stream.read_to_end(&mut response);
+    let text = String::from_utf8_lossy(&response).to_string();
+    let status = text
+        .lines()
+        .next()
+        .and_then(|line| line.split_whitespace().nth(1))
+        .ok_or_else(|| {
+            format!(
+                "no status line in {}",
+                text.chars().take(80).collect::<String>()
+            )
+        })?
+        .parse::<u16>()
+        .map_err(|error| format!("no status code: {error}"))?;
+    let body = text
+        .split_once("\r\n\r\n")
+        .map(|(_, body)| body.to_string())
+        .unwrap_or_default();
+    Ok((status, body))
+}
+
+/// Waits for the interface to answer, and says what was wrong the last time it did not.
+///
+/// The probe is passed in so the waiting itself can be tested: the loop is the part that gets
+/// written wrong (a timeout measured after the first attempt, a sleep that never happens), and it
+/// does not need a server on the machine to be exercised.
+pub fn wait_for_health(
+    timeout: Duration,
+    mut probe: impl FnMut() -> Result<u16, String>,
+) -> Result<u16, Problem> {
+    let started = Instant::now();
+    loop {
+        // The reason is recomputed on every attempt and the one from the last attempt is the one
+        // reported: an early "connection refused" says very little about a stack that has since
+        // got as far as answering the wrong thing.
+        let reason = match probe() {
+            Ok(status) if (200..300).contains(&status) => return Ok(status),
+            Ok(status) => format!("/health answered {status}"),
+            Err(error) => error,
+        };
+        if started.elapsed() >= timeout {
+            return Err(Problem::with(
+                "CCP-Bot started but its interface never passed the health check.".to_string(),
+                reason,
+            ));
+        }
+        std::thread::sleep(HEALTH_INTERVAL);
+    }
+}
+
+/// The pieces a started local stack leaves behind, so the caller can stop them again.
+///
+/// `Debug` is derived for the tests: `expect_err` on a `Result` whose success type is not printable
+/// does not compile, and a value nobody can print is exactly when a test needs to.
+#[derive(Debug)]
+pub struct Started {
+    pub address: String,
+    pub database_port: u16,
+    pub bun: PathBuf,
+    pub server: Child,
+    pub worker: Child,
+}
+
+/// Whether the dependencies are already installed in this checkout.
+pub fn dependencies_installed(root: &Path) -> bool {
+    root.join("node_modules").is_dir()
+}
+
+/// Whether the interface has been built already — the file the server serves.
+pub fn interface_built(root: &Path) -> bool {
+    root.join("app").join("dist").join("index.html").is_file()
+}
+
+/// Writes the values this mode owns into `.env`, leaving the rest of the file alone.
+pub fn write_env(root: &Path, port: u16) -> Result<PathBuf, Problem> {
+    let file = root.join(".env");
+    let existing = std::fs::read_to_string(&file).unwrap_or_default();
+    let values: Vec<(&str, String)> = vec![
+        ("DATABASE_URL", database_url(port)),
+        ("PORT", SERVER_PORT.to_string()),
+        ("SERVER_PORT", SERVER_PORT.to_string()),
+        (
+            "APP_DIST_DIR",
+            root.join("app").join("dist").to_string_lossy().to_string(),
+        ),
+        ("CCPBOT_SINGLE_USER", "true".to_string()),
+        // The worker refuses to start without it, and there is only one answer here: the server this
+        // machine runs. Compose points it at `http://server:3001`, the container's own name; on this
+        // computer the service is reached over the loopback address the interface is served on.
+        ("SERVER_INTERNAL_URL", SERVER_ADDRESS.to_string()),
+        ("NODE_ENV", String::new()),
+    ];
+    let text = merged_env(&existing, &values);
+    std::fs::write(&file, text).map_err(|error| {
+        Problem::with(
+            "Could not write .env.".to_string(),
+            format!("writing {} failed: {error}", file.display()),
+        )
+    })?;
+    Ok(file)
+}
+
+/// Writes the CopilotKit connection the wizard collected into the same `.env`.
+///
+/// Without this the server refuses to start at all: `server/src/auth/dev-actor.ts` throws when no
+/// identity provider is configured and `CCPBOT_SINGLE_USER` is not true, and it is the CopilotKit
+/// connection that a desktop install uses instead of one. The keys are the ones
+/// `server/src/config.ts` reads, and the service key is written under the name it accepts.
+pub fn write_intelligence(
+    root: &Path,
+    api_url: &str,
+    gateway_ws_url: &str,
+    api_key: &str,
+) -> Result<PathBuf, Problem> {
+    let file = root.join(".env");
+    let existing = std::fs::read_to_string(&file).unwrap_or_default();
+    let values: Vec<(&str, String)> = vec![
+        ("INTELLIGENCE_API_URL", api_url.trim().to_string()),
+        (
+            "INTELLIGENCE_GATEWAY_WS_URL",
+            gateway_ws_url.trim().to_string(),
+        ),
+        ("INTELLIGENCE_API_KEY", api_key.trim().to_string()),
+    ]
+    .into_iter()
+    .filter(|(_, value): &(&str, String)| !value.is_empty())
+    .collect();
+    if values.is_empty() {
+        return Ok(file);
+    }
+    let text = merged_env(&existing, &values);
+    std::fs::write(&file, text).map_err(|error| {
+        Problem::with(
+            "Could not write .env.".to_string(),
+            format!("writing {} failed: {error}", file.display()),
+        )
+    })?;
+    Ok(file)
+}
+
+/// Runs one `bun` command in the checkout and fails on a non-zero exit.
+fn run_bun(bun: &Path, working: &Path, arguments: &[&str]) -> Result<(), Problem> {
+    let output = quiet::command(bun)
+        .args(arguments)
+        .current_dir(working)
+        .stdin(std::process::Stdio::null())
+        .output()
+        .map_err(|error| {
+            Problem::with(
+                format!("bun {} could not run.", arguments.join(" ")),
+                format!("spawning bun in {} failed: {error}", working.display()),
+            )
+        })?;
+    if output.status.success() {
+        return Ok(());
+    }
+    Err(Problem::with(
+        format!("bun {} failed.", arguments.join(" ")),
+        quiet::said(&output.stderr),
+    ))
+}
+
+/// Starts the whole local stack, and only returns once the interface answers.
+///
+/// The order is not arbitrary: the database has to be up before the schema can be applied, the
+/// schema before the server can serve anything, and the interface has to exist before the server
+/// has something to serve. Each step reports itself, because a first run takes minutes and a window
+/// that says nothing for minutes looks broken.
+pub fn start(
+    root: &Path,
+    cache: &Path,
+    bun: Option<PathBuf>,
+    mut report: impl FnMut(&str, &str),
+) -> Result<Started, Problem> {
+    if !root.join("package.json").is_file() {
+        return Err(Problem::with(
+            "Local mode needs a CCP-Bot checkout.".to_string(),
+            format!("{} has no package.json", root.display()),
+        ));
+    }
+    report("runtime", "Preparing the local runtime…");
+    let bun = install::ensure_bun(cache, bun)?;
+    report(
+        "database",
+        "Preparing the local database (downloaded once, then reused)…",
+    );
+    ensure_postgres(root, cache)?;
+    report(
+        "database",
+        "Preparing the database extension (downloaded once, then reused)…",
+    );
+    ensure_vector(root, cache)?;
+    if !initialised(root) {
+        report("database", "Initialising the database cluster…");
+        init_cluster(root)?;
+    }
+    let port = database_port(root)?;
+    report("database", "Starting the database…");
+    start_postgres(root, port)?;
+    create_database(root, port)?;
+    write_env(root, port)?;
+    if !dependencies_installed(root) {
+        report("dependencies", "Installing dependencies…");
+        run_bun(&bun, root, &["install"])?;
+    }
+    if !interface_built(root) {
+        report("interface", "Building the interface…");
+        run_bun(&bun, root, &["run", "--filter", "app", "build"])?;
+    }
+    report("schema", "Updating the database schema…");
+    run_bun(&bun, &root.join("server"), &["run", "db:migrate"])?;
+    report("server", "Starting the services…");
+    let secrets = deployment_secrets(root)?;
+    // Both services run from `server/`, the way the container runs them. The server's default tenant
+    // package is `../examples/fintech`, which only resolves from there — started from the root it
+    // dies on `ENOENT` opening `..\examples\fintech\brand.yaml` — and the worker is started as
+    // `../worker/src/index.ts` from the same place, exactly as compose does it.
+    let services = root.join("server");
+    let server = start_service(
+        &bun,
+        &services,
+        &service_arguments("../.env", "src/index.ts"),
+        &log_file(root, "server"),
+        &secrets,
+    )?;
+    // The worker is handed its three settings and nothing else, as compose hands them: it does not
+    // read the deployment's configuration, and the less this process holds the less a mistake in it
+    // can spend.
+    let worker_environment: BTreeMap<String, String> = [
+        ("DATABASE_URL", database_url(port)),
+        ("SERVER_INTERNAL_URL", SERVER_ADDRESS.to_string()),
+        (
+            "WORKER_SHARED_SECRET",
+            secrets
+                .get("WORKER_SHARED_SECRET")
+                .cloned()
+                .unwrap_or_default(),
+        ),
+    ]
+    .into_iter()
+    .map(|(name, value)| (name.to_string(), value))
+    .collect();
+    let worker = start_service(
+        &bun,
+        &services,
+        &["../worker/src/index.ts".to_string()],
+        &log_file(root, "worker"),
+        &worker_environment,
+    )?;
+    let address = SERVER_ADDRESS.to_string();
+    let status = wait_for_health(HEALTH_TIMEOUT, || health_status(&address))?;
+    report(
+        "ready",
+        &format!("CCP-Bot is running on this computer (/health {status})."),
+    );
+    Ok(Started {
+        address,
+        database_port: port,
+        bun,
+        server,
+        worker,
+    })
+}
+
+/// Ends one service and everything it started.
+///
+/// The tree matters: `bun` starts the server in the same process, but a worker may spawn children,
+/// and on Windows a killed parent leaves its children running — which is how a port stays taken
+/// after the window is gone.
+pub fn end(child: &mut Child) {
+    #[cfg(windows)]
+    {
+        let pid = child.id().to_string();
+        let _ = quiet::command("taskkill")
+            .args(["/PID", pid.as_str(), "/T", "/F"])
+            .output();
+    }
+    let _ = child.kill();
+    let _ = child.wait();
+}
+
+/// Stops the whole local stack: the services, then the database.
+pub fn stop(root: &Path, children: &mut Vec<Child>) -> Result<(), Problem> {
+    for mut child in children.drain(..) {
+        end(&mut child);
+    }
+    stop_postgres(root)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn scratch(name: &str) -> PathBuf {
+        let path =
+            std::env::temp_dir().join(format!("ccpbot-local-{}-{}", std::process::id(), name));
+        let _ = std::fs::remove_dir_all(&path);
+        std::fs::create_dir_all(&path).expect("a scratch folder");
+        path
+    }
+
+    /// Everything this mode creates belongs under the root the person chose, so that deleting that
+    /// folder is a complete uninstall.
+    #[test]
+    fn layout_keeps_everything_under_the_root() {
+        let root = PathBuf::from("C:/somewhere/CCP-Bot");
+        for path in [
+            postgres_folder(&root),
+            bin_folder(&root),
+            data_folder(&root),
+            logs_folder(&root),
+            log_file(&root, "server"),
+            tool(&root, "postgres"),
+        ] {
+            assert!(
+                path.starts_with(&root),
+                "{} escaped {}",
+                path.display(),
+                root.display()
+            );
+        }
+        assert!(tool(&root, "postgres").to_string_lossy().contains("pgsql"));
+        assert!(log_file(&root, "server")
+            .to_string_lossy()
+            .ends_with(".log"));
+    }
+
+    /// The port is written down the first time and read back after that, because the same value
+    /// also lands in `DATABASE_URL` — a port that moved every start would rewrite that line and
+    /// strand anything that connected a moment earlier.
+    #[test]
+    fn the_port_is_asked_for_once_and_remembered() {
+        let root = scratch("port-once");
+        let first = database_port(&root).expect("a port");
+        assert!(first > 0);
+        assert_eq!(database_port(&root).expect("the same port"), first);
+        assert_eq!(
+            std::fs::read_to_string(port_file(&root))
+                .expect("the port file")
+                .trim(),
+            first.to_string()
+        );
+        let _ = std::fs::remove_dir_all(&root);
+    }
+
+    /// `PG_VERSION` is what `initdb` leaves behind, and it is what decides whether a cluster has to
+    /// be created at all.
+    #[test]
+    fn an_initialised_cluster_is_recognised() {
+        let root = scratch("initialised");
+        assert!(!initialised(&root));
+        std::fs::create_dir_all(data_folder(&root)).expect("the data folder");
+        std::fs::write(data_folder(&root).join("PG_VERSION"), "17\n").expect("the marker");
+        assert!(initialised(&root));
+        let _ = std::fs::remove_dir_all(&root);
+    }
+
+    /// Our keys are replaced where they already are: the file belongs to the person, and a second
+    /// `DATABASE_URL` further down would win or lose depending on who read it last.
+    #[test]
+    fn merging_env_replaces_the_keys_it_owns() {
+        let existing = "DATABASE_URL=postgres://old\nPORT=9999\nOTHER=kept\n";
+        let merged = merged_env(
+            existing,
+            &[
+                ("DATABASE_URL", database_url(5433)),
+                ("PORT", SERVER_PORT.to_string()),
+            ],
+        );
+        assert!(merged.contains(&format!(
+            "DATABASE_URL=postgres://ccpbot@127.0.0.1:5433/ccpbot"
+        )));
+        assert!(merged.contains("PORT=3010"));
+        assert!(!merged.contains("9999"));
+        assert_eq!(merged.matches("DATABASE_URL=").count(), 1);
+    }
+
+    /// Comments and settings that are none of our business survive untouched — the same file
+    /// carries the person's own provider keys.
+    #[test]
+    fn merging_env_keeps_comments_and_other_keys() {
+        let existing = "# my notes\nOPENAI_API_KEY=sk-secret\nCCPBOT_SINGLE_USER=false\n";
+        let merged = merged_env(existing, &[("CCPBOT_SINGLE_USER", "true".to_string())]);
+        assert!(merged.contains("# my notes"));
+        assert!(merged.contains("OPENAI_API_KEY=sk-secret"));
+        assert!(merged.contains("CCPBOT_SINGLE_USER=true"));
+        assert!(!merged.contains("CCPBOT_SINGLE_USER=false"));
+        assert!(merged.contains("# my notes"));
+    }
+
+    /// A key the file has never seen is appended, under a line that says who put it there.
+    #[test]
+    fn merging_env_appends_a_key_it_has_never_seen() {
+        let merged = merged_env(
+            "OPENAI_API_KEY=sk-secret\n",
+            &[("APP_DIST_DIR", "/app/dist".to_string())],
+        );
+        assert!(merged.contains("# Written by CCP-Bot local mode."));
+        assert!(merged.contains("APP_DIST_DIR=/app/dist"));
+        assert!(merged.trim_end().ends_with("APP_DIST_DIR=/app/dist"));
+    }
+
+    /// What the wizard collected has to reach the server, and the file is shared with whatever else
+    /// the person put in it.
+    #[test]
+    fn the_copilotkit_connection_is_written_beside_the_rest_of_the_file() {
+        let root = scratch("intelligence");
+        std::fs::write(root.join(".env"), "# mine\nOPENAI_API_KEY=sk-secret\n").expect("a .env");
+        write_intelligence(
+            &root,
+            "https://api.example",
+            "wss://api.example/gateway",
+            "sk-service",
+        )
+        .expect("writing the connection");
+        let written = std::fs::read_to_string(root.join(".env")).expect("the .env");
+        assert!(written.contains("INTELLIGENCE_API_URL=https://api.example"));
+        assert!(written.contains("INTELLIGENCE_API_KEY=sk-service"));
+        assert!(written.contains("# mine"));
+        assert!(written.contains("OPENAI_API_KEY=sk-secret"));
+        let _ = std::fs::remove_dir_all(&root);
+    }
+
+    /// An empty answer is not a value: a wizard that skipped a field must not write a blank key over
+    /// one that was already there.
+    #[test]
+    fn an_empty_connection_leaves_the_file_as_it_was() {
+        let root = scratch("intelligence-empty");
+        std::fs::write(
+            root.join(".env"),
+            "INTELLIGENCE_API_URL=https://kept.example\n",
+        )
+        .expect("a .env");
+        write_intelligence(&root, "", "", "").expect("nothing to write");
+        let written = std::fs::read_to_string(root.join(".env")).expect("the .env");
+        assert_eq!(written, "INTELLIGENCE_API_URL=https://kept.example\n");
+        let _ = std::fs::remove_dir_all(&root);
+    }
+
+    /// The whole point of unpacking once: a machine that already has the database never touches the
+    /// network again. The fetch here fails loudly if it is called at all.
+    #[test]
+    fn a_failure_is_read_from_the_last_lines_of_the_log() {
+        let root = scratch("tail");
+        std::fs::create_dir_all(logs_folder(&root)).expect("the logs folder");
+        let log = log_file(&root, "postgres");
+        std::fs::write(&log, "one\ntwo\nthree\nfour\nfive\nsix\nseven\neight\n").expect("a log");
+        let tail = tail_of(&log);
+        assert!(tail.contains("eight"), "{tail}");
+        assert!(tail.contains("three"), "{tail}");
+        assert!(!tail.contains("one"), "{tail}");
+        assert!(!tail.contains("two"), "{tail}");
+
+        let missing = tail_of(&root.join("nowhere.log"));
+        assert!(missing.contains("nothing to read"), "{missing}");
+        let _ = std::fs::remove_dir_all(&root);
+    }
+
+    /// The extension is fetched once and placed once; a server that already has it is left alone.
+    #[test]
+    fn the_deployment_mints_its_secrets_and_reuses_them() {
+        let root = scratch("secrets");
+        let first = deployment_secrets(&root).expect("minting the deployment secrets");
+        assert_eq!(first.len(), crate::env::MINTED.len());
+        for key in crate::env::MINTED {
+            let value = first.get(key).expect("every secret the deployment needs");
+            assert!(!value.trim().is_empty(), "{key} was minted blank");
+        }
+        // Measured the hard way: `KEY_ENCRYPTION_KEY` decrypts everything the server stores, so a
+        // restart that minted a new one would leave the vault of the run before it unreadable.
+        let second = deployment_secrets(&root).expect("reading them back");
+        assert_eq!(first, second, "a restart minted new secrets");
+        let _ = std::fs::remove_dir_all(&root);
+    }
+
+    /// The extension is fetched once and placed once; a server that already has it is left alone.
+    #[test]
+    fn an_installed_extension_is_not_fetched_again() {
+        let root = scratch("vector");
+        std::fs::create_dir_all(extension_folder(&root)).expect("the extension folder");
+        std::fs::write(
+            extension_folder(&root).join(VECTOR_CONTROL),
+            "comment = 'x'",
+        )
+        .expect("a control file");
+        assert!(vector_installed(&root));
+        let done = ensure_vector_with(
+            &root,
+            &root,
+            |_: &Download, _: &Path| -> Result<PathBuf, Problem> {
+                panic!("a server that already has the extension must not download it again")
+            },
+        )
+        .expect("nothing to do");
+        assert!(!done);
+        let _ = std::fs::remove_dir_all(&root);
+    }
+
+    /// The library and the control file are the two things the server needs; the headers beside them
+    /// in the archive are not, and copying them into the server would be pretending otherwise.
+    #[test]
+    fn placing_the_extension_puts_the_library_and_the_control_file_where_the_server_looks() {
+        let root = scratch("placing");
+        let staging = postgres_folder(&root).join(VECTOR_FOLDER);
+        std::fs::create_dir_all(staging.join("lib")).expect("the staging library");
+        std::fs::create_dir_all(staging.join("share").join("extension"))
+            .expect("the staging scripts");
+        std::fs::create_dir_all(staging.join("include").join("server"))
+            .expect("the staging headers");
+        std::fs::write(staging.join("lib").join("vector.dll"), "dll").expect("a library");
+        std::fs::write(
+            staging.join("share").join("extension").join(VECTOR_CONTROL),
+            "comment = 'x'",
+        )
+        .expect("a control file");
+        std::fs::write(
+            staging
+                .join("share")
+                .join("extension")
+                .join("vector--0.8.6.sql"),
+            "-- vector",
+        )
+        .expect("a script");
+        std::fs::write(staging.join("include").join("server").join("vector.h"), "h")
+            .expect("a header");
+
+        place_vector(&root, &staging).expect("placing the extension");
+        assert!(lib_folder(&root).join("vector.dll").is_file());
+        assert!(vector_installed(&root));
+        let scripts = extension_folder(&root);
+        assert!(scripts.join("vector--0.8.6.sql").is_file());
+        assert!(!unpacked_folder(&root).join("include").exists());
+        let _ = std::fs::remove_dir_all(&root);
+    }
+
+    /// The whole point of unpacking once: a machine that already has the database never touches the
+    /// network again. The fetch here fails loudly if it is called at all.
+    #[test]
+    fn an_unpacked_database_is_not_fetched_again() {
+        let root = scratch("no-refetch");
+        std::fs::create_dir_all(bin_folder(&root)).expect("the bin folder");
+        std::fs::write(tool(&root, "postgres"), b"binary").expect("postgres");
+        std::fs::write(tool(&root, "initdb"), b"binary").expect("initdb");
+        let result = ensure_postgres_with(&root, &root, |_, _| {
+            panic!("an unpacked database must not be downloaded again")
+        });
+        assert!(result.is_ok());
+        let _ = std::fs::remove_dir_all(&root);
+    }
+
+    /// When the download is refused, the reason has to reach the window: "it failed" leaves somebody
+    /// with nothing to do, and the usual reason here is a network that cannot reach the host.
+    #[test]
+    fn a_refused_download_says_why() {
+        let root = scratch("refused");
+        let error = ensure_postgres_with(&root, &root, |_, _| {
+            Err(Problem::with(
+                "Downloading the portable database failed.".to_string(),
+                "connection reset by peer".to_string(),
+            ))
+        })
+        .expect_err("a refused download is an error");
+        assert!(
+            error.said.contains("portable database failed"),
+            "{}",
+            error.said
+        );
+        let detail = error.detail.unwrap_or_default();
+        assert!(detail.contains("connection reset"), "{detail}");
+        let _ = std::fs::remove_dir_all(&root);
+    }
+
+    /// Waiting ends on the first healthy answer rather than after the whole timeout, which is what
+    /// makes a warm start feel fast.
+    #[test]
+    fn waiting_ends_when_health_answers() {
+        let mut attempts = 0;
+        let status = wait_for_health(Duration::from_secs(5), || {
+            attempts += 1;
+            if attempts < 3 {
+                Err("connection refused".to_string())
+            } else {
+                Ok(200)
+            }
+        })
+        .expect("a healthy stack");
+        assert_eq!(status, 200);
+        assert_eq!(attempts, 3);
+    }
+
+    /// A stack that never answers reports the last thing that went wrong, not just that time ran
+    /// out: the last reason is the one that describes what is broken.
+    #[test]
+    fn a_stack_that_never_answers_reports_the_last_reason() {
+        let error = wait_for_health(Duration::from_millis(50), || {
+            Err("connection refused".to_string())
+        })
+        .expect_err("a stack that never answers");
+        let detail = error.detail.unwrap_or_default();
+        assert!(detail.contains("connection refused"), "{detail}");
+    }
+
+    /// Local mode runs the server from a checkout, so there has to be one.
+    #[test]
+    fn local_mode_needs_a_checkout() {
+        let root = scratch("no-checkout");
+        let error = start(&root, &root, None, |_, _| {}).expect_err("no checkout, no start");
+        assert!(error.said.contains("checkout"), "{}", error.said);
+        let _ = std::fs::remove_dir_all(&root);
+    }
+
+    /// One file holds the settings for every service, so there is one place to look when something
+    /// reads the wrong database.
+    #[test]
+    fn every_service_is_started_with_one_env_file() {
+        // The file is named relative to `server/`, because that is where the services run from: the
+        // server's default tenant package is `../examples/fintech`, and started from the root it dies
+        // on `ENOENT` opening `..\examples\fintech\brand.yaml`.
+        assert_eq!(
+            service_arguments("../.env", "src/index.ts"),
+            vec!["--env-file=../.env".to_string(), "src/index.ts".to_string()]
+        );
+    }
+
+    /// The database is reachable from this machine and no other.
+    #[test]
+    fn the_connection_string_is_loopback_only() {
+        let url = database_url(5433);
+        assert_eq!(url, "postgres://ccpbot@127.0.0.1:5433/ccpbot");
+        assert!(!url.contains("0.0.0.0"));
+    }
+
+    /// The choice survives a restart without any settings file, which is what makes the Windows stage
+    /// skip itself on the second start of the same folder.
+    #[test]
+    fn remembering_local_mode_survives_for_the_next_start() {
+        let root = scratch("marker");
+        assert!(!wanted(&root));
+        remember(&root).expect("remembering");
+        assert!(wanted(&root));
+        assert_eq!(marker(&root).file_name().unwrap(), MARKER_FILE);
+        forget(&root).expect("forgetting");
+        assert!(!wanted(&root));
+        // Forgetting something that was never there is the outcome that was wanted, not an error.
+        forget(&root).expect("forgetting twice");
+        let _ = std::fs::remove_dir_all(&root);
+    }
+
+    /// A path that is not there is a status, not a hang: the shell asks before anything is up.
+    #[test]
+    fn fetching_a_missing_path_answers_rather_than_hanging() {
+        let closed = free_port().expect("a closed port");
+        let error = fetch(&format!("http://127.0.0.1:{closed}"), "/health")
+            .expect_err("nothing is listening");
+        assert!(!error.is_empty(), "the reason has to say something");
+        assert!(fetch("not-an-address", "/health").is_err());
+    }
+
+    /// The evidence this mode exists for: on this machine, as a standard account, with no container
+    /// engine anywhere in the picture, the database, the server and the worker come up and the
+    /// interface answers on its own address.
+    ///
+    /// Ignored by default because it is minutes on a first run — it fetches the runtime and the
+    /// portable database, unpacks 1.5 GB of PostgreSQL, builds the interface and starts real
+    /// processes — and because it writes `postgres/`, `logs/` and `.env` under the checkout.
+    #[test]
+    #[ignore = "downloads the runtime, unpacks the portable database and starts real processes"]
+    fn live_start_serves_the_interface_on_this_machine() {
+        let root = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+            .parent()
+            .and_then(|path| path.parent())
+            .expect("the checkout above src-tauri")
+            .to_path_buf();
+        let cache = std::env::temp_dir().join("ccpbot-local-cache");
+        let mut steps: Vec<String> = Vec::new();
+        // The desktop app collects the intelligence connection in its wizard and writes it before it
+        // starts anything, and the server refuses to boot without it. The test does what the app
+        // does, instead of pretending the stack can come up half-configured.
+        write_intelligence(
+            &root,
+            "http://127.0.0.1:9/api",
+            "ws://127.0.0.1:9/gateway",
+            "sk-local-placeholder-for-a-desktop-run",
+        )
+        .expect("the intelligence connection is written");
+        let started = start(&root, &cache, None, |step, detail| {
+            println!("[{step}] {detail}");
+            steps.push(step.to_string());
+        })
+        .expect("the local stack should start");
+
+        let status = health_status(&started.address).expect("the interface answers");
+        assert_eq!(status, 200, "the address is {}", started.address);
+        let (page, body) = fetch(&started.address, "/").expect("the interface is served");
+        assert_eq!(page, 200);
+        assert!(
+            body.to_lowercase().contains("<div id=\"root\"") || body.contains("CCP-Bot"),
+            "the page served is not the interface: {}",
+            body.chars().take(200).collect::<String>()
+        );
+        assert!(
+            steps.iter().any(|step| step == "ready"),
+            "the run reported {steps:?}"
+        );
+        println!(
+            "local stack up on {} with database port {}",
+            started.address, started.database_port
+        );
+
+        let mut children = vec![started.server, started.worker];
+        stop(&root, &mut children).expect("stopping the local stack");
+    }
+}
