@@ -78,6 +78,8 @@ import {
   selectTools,
 } from "./plugins/selection";
 import { grantedToolGuidance, holdsWebSearch } from "./plugins/tools";
+import { LocalThreadRunner } from "./threads/runner";
+import type { ThreadStore } from "./threads/store";
 import { UNTRUSTED_GUIDANCE } from "./untrusted-content";
 
 /**
@@ -91,10 +93,15 @@ import { UNTRUSTED_GUIDANCE } from "./untrusted-content";
  * WHICH MODE IS DECIDED BY `config.runtime`, NOT HERE. Connected, this builds the Intelligence
  * runtime and the platform owns durable threads, memory and learning. Without a connection
  * (`mode: "sse"`; see `RuntimeCapabilities` in config.ts) it builds the SDK's SSE runtime instead:
- * no `intelligence` option is passed, no platform client is constructed, and the runner is the
- * SDK's in-memory one, which keeps no thread across a restart. Durable local threads are the next
- * task; until they land, a history read is answered as empty and says so once. What this file must
- * never do in that mode is pretend — nothing here invents a URL, a key or a thread id.
+ * no `intelligence` option is passed, no platform client is constructed, and the runner is this
+ * deployment's own — `threads/runner.ts` writes each finished conversation to the tables and
+ * `history` reads it back in a later process. A mount given no store has nowhere to keep them, and
+ * answers a read as empty, once. What this file must never do in that mode is pretend — nothing
+ * here invents a URL, a key or a thread id.
+ *
+ * Intelligence Channels are never asked for: no `channels` is passed to `CopilotRuntime` in either
+ * mode, so nothing goes quietly missing when there is no platform. Passing one would fail at
+ * construction ("`channels` requires the Intelligence runtime"), not degrade.
  */
 
 /** Resolve the signed-in person for a request. Threads and memory are scoped to whoever this returns. */
@@ -1813,6 +1820,13 @@ export function mountCopilotRuntime(
       gate: NonNullable<CopilotRuntimeHooks["onBeforeHandler"]>;
       selectLearningContainers: GetTrajectoryLearningContainerIds;
     };
+    /**
+     * Where this deployment's own conversations are kept (`threads/store.ts`). `index.ts` passes it,
+     * because it is the one place that owns a database connection; read by `history()` below and by
+     * the runner that writes to it. Absent, a conversation in SSE mode lives only as long as this
+     * process does, and a history read is answered as empty rather than withheld.
+     */
+    threads?: ThreadStore;
   } = {},
 ) {
   /*
@@ -1828,6 +1842,7 @@ export function mountCopilotRuntime(
     learningSettings,
     personalSkills,
     trajectoryCapture,
+    threads,
   } = options;
 
   /**
@@ -1963,9 +1978,14 @@ export function mountCopilotRuntime(
 
   /*
    * Two constructions rather than one with a spread, so each gets the option shape its mode
-   * declares. In SSE mode the runner is the SDK's own in-memory one: it holds a conversation for as
-   * long as the process lives and no longer, which is what the local threads tables replace.
+   * declares. In SSE mode the runner is ours when this deployment keeps conversations of its own
+   * (`threads/runner.ts`: the SDK's in-memory runner, with each finished run written to the tables),
+   * and the SDK's own in-memory one when nothing passed a store — a conversation that lives exactly
+   * as long as the process, which is the thing the tables replace.
    */
+  const localRunner = threads
+    ? new LocalThreadRunner({ store: threads })
+    : undefined;
   const runtime =
     intelligence && intelligenceClient
       ? new CopilotRuntime({
@@ -1974,7 +1994,10 @@ export function mountCopilotRuntime(
           intelligence: intelligenceClient,
           licenseToken: intelligence.licenseToken,
         })
-      : new CopilotRuntime(shared);
+      : new CopilotRuntime({
+          ...shared,
+          ...(localRunner ? { runner: localRunner } : {}),
+        });
 
   return {
     handler: createCopilotHonoHandler({
@@ -2015,10 +2038,13 @@ export function mountCopilotRuntime(
       : lockWithoutPlatform(),
     agentFor,
     /**
-     * A thread's messages, as the platform holds them.
+     * A thread's messages: the platform's when this deployment is connected to it, this deployment's
+     * own tables when it is not.
      *
-     * The same client the runtime uses, so a hop reads the history a person's run would read rather
-     * than a second view of it that could disagree.
+     * Connected, the same client the runtime uses answers, so a hop reads the history a person's run
+     * would read rather than a second view of it that could disagree. Standing alone, the store is
+     * the whole record, and it is the store the runner writes — which is what makes a conversation
+     * outlive the process that had it.
      */
     history: async (input: { threadId: string; actorId: string }) => {
       /*
@@ -2030,10 +2056,21 @@ export function mountCopilotRuntime(
         ReturnType<CopilotKitIntelligence["getThreadMessages"]>
       >;
       if (!intelligenceClient) {
+        if (threads) {
+          /*
+           * What this deployment kept. The messages went in as the SDK's own and come back as the
+           * same objects, which is what makes this a read of the conversation rather than a
+           * translation of it.
+           */
+          return (await threads.messages(
+            input.threadId,
+            input.actorId,
+          )) as unknown as Read["messages"];
+        }
         /*
-         * Nothing to read: this deployment's conversations are the platform's, and there is no
-         * platform. The local tables land next; until they do, a read is answered as empty rather
-         * than withheld, and it says so once, because a hop reading nothing looks exactly like a
+         * Nothing to read: this deployment's conversations are the platform's, there is no platform,
+         * and nobody handed this mount a store to keep them in. A read is answered as empty rather
+         * than withheld, and it says so once, because reading nothing looks exactly like a
          * conversation nobody ever wrote.
          */
         if (!absentHistoryAnnounced) {

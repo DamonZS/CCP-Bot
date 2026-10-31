@@ -1,24 +1,15 @@
 import { describe, expect, spyOn, test } from "bun:test";
 import { createApp } from "../src/app";
 import { loadConfig } from "../src/config";
-import { testEnvironment } from "./support/environment";
+import {
+  standaloneEnvironment,
+  testEnvironment,
+} from "./support/environment";
 
 /**
- * A deployment with no CopilotKit Intelligence at all.
- *
- * The three settings that address the platform decide this, and all three have to be missing. A
- * partial set is still refused (see `runtimeCapabilities` in config.ts): an operator who set one of
- * the three meant to connect and got it wrong, and half a contract is worse than none.
+ * A deployment with no CopilotKit Intelligence at all: `standaloneEnvironment` is the environment,
+ * and what the three settings decide is documented beside it.
  */
-const standaloneEnvironment = (
-  overrides: Record<string, string | undefined> = {},
-) =>
-  testEnvironment({
-    INTELLIGENCE_API_URL: undefined,
-    INTELLIGENCE_GATEWAY_WS_URL: undefined,
-    INTELLIGENCE_API_KEY: undefined,
-    ...overrides,
-  });
 
 describe("a deployment with no Intelligence", () => {
   test("boots in sse mode rather than refusing to start", () => {

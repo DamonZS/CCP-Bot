@@ -146,6 +146,7 @@ import type { SelfHostBanner } from "./self-host-banner";
 import { createTeamBotRoutes } from "./team-bots/routes";
 import type { TeamBots } from "./team-bots/team-bots";
 import type { PackageStatusReader } from "./tenant-package";
+import { createStoredThreadReader, type ThreadStore } from "./threads/store";
 import {
   INSTRUCTIONS_LIMIT,
   InstructionsTooLongError,
@@ -444,6 +445,13 @@ export function createApp(
       webhooks: Parameters<typeof createDeliveryWebhookRoutes>[0];
     };
     memory?: { store: MemoryStore; ingestion: MemoryIngestion };
+    /**
+     * This deployment's own conversations (`threads/store.ts`), which is what `/api/threads` answers
+     * from when there is no platform holding them. Absent, that route is left unregistered rather
+     * than mounted and refusing: a deployment that cannot tell whether a thread is still there has
+     * nothing to say about one. Minting needs neither.
+     */
+    threads?: ThreadStore;
     proactive?: { store: ProactiveStore; engine: ProactiveEngine };
     responsibilities?: {
       store: ResponsibilityStore;
@@ -1985,16 +1993,18 @@ export function createApp(
 
   if (threadIdentity) {
     /*
-     * Whether a thread still exists is a question only Intelligence can answer — it holds the
-     * threads. A deployment with none (see `RuntimeCapabilities` in config.ts) has nothing to ask
-     * and no thread anyone else could have, so the route that answers it is left unregistered
-     * rather than mounted and refusing: `createThreadRoutes` takes the reader as optional for
-     * exactly this case, and minting a thread needs nothing.
+     * Whether a thread still exists is a question about whoever holds it: CopilotKit Intelligence
+     * when this deployment is connected to it, this deployment's own table when it is not (see
+     * `RuntimeCapabilities` in config.ts). With neither, the route is left unregistered rather than
+     * mounted and refusing — `createThreadRoutes` takes the reader as optional for exactly that
+     * case, and minting a thread needs no reader at all.
      */
     const readThread =
       config.runtime.mode === "intelligence"
         ? createThreadReader(createIntelligenceClient(config.runtime.intelligence))
-        : undefined;
+        : coworker?.threads
+          ? createStoredThreadReader(coworker.threads)
+          : undefined;
     app.route(
       "/api/threads",
       createThreadRoutes(threadIdentity, requireUser, readThread),

@@ -287,6 +287,7 @@ import { createIntentRouter } from "./routing/classify";
 import { createModelCompleter } from "./routing/model";
 import { createSelfHostBanner } from "./self-host-banner";
 import { createTeamBots } from "./team-bots/team-bots";
+import { createThreadStore } from "./threads/store";
 import {
   createPackageStatusReader,
   loadTenantPackage,
@@ -308,6 +309,10 @@ clearLearningRevisionFallback();
 const port = config.port;
 const database = createDatabase(config.databaseUrl);
 const profileStore = createProfileStore(database);
+// This deployment's own conversations: who has one, and what was said in it. Built here because this
+// is where the connection lives — the runner writes it (`copilotRuntime`'s own runner), `history()`
+// reads it, and `/api/threads` answers from it. See threads/store.ts.
+const threadStore = createThreadStore(database);
 // Every dispatch point asks this database whether its person paused the Bot. See agents/lifecycle.ts.
 configureBotLifecycle({ database });
 const learningSettingsStore = createLearningSettingsStore(
@@ -1971,6 +1976,8 @@ const copilotRuntime = mountCopilotRuntime(
       sharingAllowed: skillSharingInSnapshot,
     },
     trajectoryCapture: recorderExtension.trajectoryCapture,
+    // Where a conversation lives when no platform holds it. See threads/store.ts.
+    threads: threadStore,
   },
 );
 
@@ -2889,6 +2896,8 @@ const app = createApp(
       },
     },
     memory: { store: personalMemoryStore, ingestion: memoryIngestion },
+    // What `/api/threads` answers with when there is no platform to ask. See threads/store.ts.
+    threads: threadStore,
     proactive: { store: proactiveStore, engine: proactiveEngine },
     responsibilities: {
       store: responsibilityStore,

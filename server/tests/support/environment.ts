@@ -36,6 +36,24 @@ export function testEnvironment(
 }
 
 /**
+ * The same base with none of the three Intelligence values: the deployment that stands on its own
+ * tables (`RuntimeCapabilities` in config.ts).
+ *
+ * All three have to be missing for that. A partial set is still refused, because an operator who set
+ * one of the three meant to connect and got it wrong, and half a contract is worse than none.
+ */
+export function standaloneEnvironment(
+  overrides: Record<string, string | undefined> = {},
+): Record<string, string | undefined> {
+  return testEnvironment({
+    INTELLIGENCE_API_URL: undefined,
+    INTELLIGENCE_GATEWAY_WS_URL: undefined,
+    INTELLIGENCE_API_KEY: undefined,
+    ...overrides,
+  });
+}
+
+/**
  * How long a session lasts unused on a deployment that signs people in through Better Auth: Better Auth's own default,
  * a week, which CCP-Bot does not change. Production reads it from the auth instance (`sessionLifetimeMs`); tests that
  * build the Recorder's wiring without one pass this, and recorder-lifetime.integration.test.ts holds the two together.
