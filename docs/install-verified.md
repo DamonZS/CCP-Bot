@@ -1,6 +1,6 @@
 # CCP-Bot 安装包实机验证报告
 
-同一台机器上按同一套判据跑了四轮，四轮的结论都保留：
+同一台机器上按同一套判据跑了五轮，五轮的结论都保留：
 
 | 部分 | 安装包 | 时间 | 一句话 |
 | --- | --- | --- | --- |
@@ -8,6 +8,7 @@
 | **Part 2 · v0.2.9** | `CCP-Bot_0.2.9_x64-setup.exe` | 2026-10-31 21:30–22:25 | Bot 与「手」都修好了、真的能到 `/health` 200，但出厂状态仍被两个 blocker 挡住，要在向导外补两步 |
 | **Part 3 · v0.3.2** | `CCP-Bot_0.3.2_x64-setup.exe` | 2026-10-31 23:36–2026-11-01 00:45 | **空机器一次成功**：8 分 21 秒到 `/health` 200，窗口自己就能显示应用；装完只需要一个模型 key |
 | **Part 4 · v0.4.0** | `CCP-Bot_0.4.0_x64-setup.exe` | 2026-11-01 04:50–05:31 | **空机器一次成功**：6 分 16 秒到 `/health` 200，零 CopilotKit 配置可启动；模型 key 进凭据库；X 只隐藏、Quit 干净停、kill 后重启认得出来 |
+| **Part 5 · v0.4.1** | `CCP-Bot_0.4.1_x64-setup.exe` | 2026-11-01 05:47–06:20 | **迁移 0071 干净跑通（72）**；无 embedding 端点时**不是** `memory-embedding-absent` 而是「有端点、调用失败 → 词法回退仍命中」；一次成功 6 分 35 秒到 `/health` 200，窗口自己显示应用、Quit 4 秒内全 0；`pg_ctl` 对话框与残留、`Ctrl+Q` 无效仍在 |
 
 验证机器：本机 Windows x64，用户 `Damon`，已装 Docker 29.8.2，`gh` CLI 已登录
 验证方式：下载官方 Release 资产 → 静默安装 → 双击启动 → 走完向导 → 观察进程、端口、`<root>\logs\local-*.log` 与界面文字
@@ -2255,6 +2256,378 @@ Remove-Item 'C:\Users\Damon\CCP-Bot' -Recurse -Force
 ---
 
 *Part 4 结束。所有界面文字、日志、命令输出均为本次验证的原样记录；引用源码的地方均标注了文件与行号。*
+
+---
+
+# Part 5 · v0.4.1（2026-11-01 05:47 – 06:20）
+
+验证对象：Windows 安装包 `CCP-Bot_0.4.1_x64-setup.exe`（GitHub Release `v0.4.1`，isDraft=false，publishedAt `2026-10-31T21:30:00Z`）。
+本轮范围（按 lead 的口径）：**只验 0.4.1 才有的两件事 + 一次不回归确认**，没有重跑 Part 4 那份逐屏 6 分钟时间线；macOS 不在本轮（见 §64）。
+
+## 55. 一句话结论
+
+- **必验 ①（干净库上的迁移 0071）通过**：一次跑到 **72** 条迁移，`vector` 扩展、`documents`/`document_chunks`/`personal_memories` 三表、两个 HNSW 索引（`document_chunks_embedding_idx`、`personal_memories_embedding_idx`）与 `embedding vector` 列都在；`local-postgres.log` 全程 `migErr=0`，没有 `42P07`、没有 `extension "vector" is not available`。
+- **必验 ②（无 embedding 端点时的降级）与 lead 的预期不同，这里照实写**：这台机器上**不会**出现 `{"type":"memory-embedding-absent"}` —— 桌面路线**故意把模型凭据以进程环境交给 server**（`local-v0.4.1.rs:1901-1909` 把 vault 里的 `MODEL_KEYS` 并进 `secrets`，`:2012` 再把整个 `secrets` 交给 server 进程），`server/src/memory/embedding/config.ts:39-47` 于是认为「有 embedding 端点」（默认 `https://api.openai.com` + `text-embedding-3-small`）。实测走的是**有端点、调用失败 → 词法回退**，日志原文是 `{"type":"memory-embedding-failed",…}`；**词法回退确实仍然命中**（写进去的知识库文档，用中文子串与英文子串各检索一次，2/2 命中，`score: 0.5`）。
+- **不回归：全部保持** —— 空机器一次成功、点击到 `/health` 200 用 **395 秒（6 分 35 秒）**；`.env` 540 B、零 `INTELLIGENCE_*`、零 `OPENAI_API_KEY=`；`local-server.log` 有 `intelligence-absent`；`.secrets` 7 个（含 `OPENAI_API_KEY.dpapi`）；**窗口自己就显示了应用页**；菜单 `Quit` → 4 秒内 `3010/bun/postgres` 全 0。
+- **旧异常复核**：`pg_ctl.exe - 应用程序错误` 硬错误对话框**再现**（`wins.ps1 -Close` 关掉一个后立刻又冒一个，hwnd `84216006` → `84281542`），`pg_ctl` 残留 **2 个**（06:01:00 / 06:01:01 起，Quit 之后仍活着）；`Ctrl+Q` **仍无效**；语言混排仍在；上一轮那次 WebView2 崩溃**没有**再现（新 profile 的 Crashpad `reports` 目录为空）。
+- **一处更正**：lead 消息与任务卡里给的 `sha256 97530ec4c0e195cb2da12cc6e4ebb5be4e156da89eae9189cc974011907c41` 只有 60 位十六进制（`97530ec4` 之后漏了 `34`）；Release 资产的 digest 是 64 位 `97530ec434c0e195cb2da12cc6e4ebb5be4e156da89eae9189cc974011907c41`，安装包 **4,800,256 B** 与它逐字对上（我按 release digest 校验，开工时已把这一点告知 lead）。
+
+## 56. 安装包身份与安装结果
+
+Release 资产（`gh release view v0.4.1 --json tagName,publishedAt,isDraft,assets`）：
+
+| 资产 | 字节 | digest |
+| --- | --- | --- |
+| `CCP-Bot_0.4.1_aarch64.dmg` | 9,658,403 | `sha256:b1438c4d9a11f56841d1ba39127c4640c8883d180a9e55e0ff51f96c2f711850` |
+| `CCP-Bot_0.4.1_x64-setup.exe` | **4,800,256** | `sha256:97530ec434c0e195cb2da12cc6e4ebb5be4e156da89eae9189cc974011907c41` |
+| `CCP-Bot_0.4.1_x64_en-US.msi` | 7,012,352 | `sha256:8eebce06bde7270a84f1662748767d5ec23d9e156a240394922d16aa404fad87` |
+| `container-images.json` | 3,063 | `sha256:635dfb4ef6af7e5542201cdfc756d3ec3d8a57be3ba56ad6254933ae98b8bab9` |
+
+（0.2.9 与 0.4.0 的 Release 都没有 `container-images.json`，0.4.1 又有。）
+
+```powershell
+gh release download v0.4.1 --repo DamonZS/CCP-Bot --pattern "CCP-Bot_0.4.1_x64-setup.exe" --dir C:\Users\Damon\AppData\Local\Temp\ccpbot-verify --clobber
+(Get-Item "$env:TEMP\ccpbot-verify\CCP-Bot_0.4.1_x64-setup.exe").Length
+(Get-FileHash "$env:TEMP\ccpbot-verify\CCP-Bot_0.4.1_x64-setup.exe" -Algorithm SHA256).Hash
+(Get-Item "$env:TEMP\ccpbot-verify\CCP-Bot_0.4.1_x64-setup.exe").VersionInfo | Select-Object FileVersion,ProductVersion
+```
+```
+bytes: 4800256
+97530EC434C0E195CB2DA12CC6E4EBB5BE4E156DA89EAE9189CC974011907C41
+FileVersion 0.4.1 / ProductVersion 0.4.1
+```
+
+字节数与 release 一致、sha256 与 release digest 一致 → 继续。
+
+开工前的 3010 时间窗检查（bot-deps 的 task-27 会占 3010）：
+```
+3010 listeners: 0        （另有 3 条 TIME_WAIT，OwningProcess 0）
+ccpbot-desktop: 0   postgres: 0   pg_ctl: 0
+bun: 3                    ← 全部是 C:\Users\Damon\AppData\Local\Temp\bun143\...\bun.exe（别人的临时 bun）
+H:\CCP-Bot: True          ← 但没有 ccpbot-desktop.exe / uninstall.exe，只有 21 项他人遗留
+HKCU 卸载键: False        C:\Users\Damon\CCP-Bot: False
+elevated shell: False
+```
+→ 3010 空闲、无我方进程、无先前安装，可以开工。
+
+静默安装：
+
+```powershell
+$p = Start-Process "$env:TEMP\ccpbot-verify\CCP-Bot_0.4.1_x64-setup.exe" -ArgumentList '/S' -Wait -PassThru
+$p.ExitCode
+Get-ItemProperty 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall\CCP-Bot' | Select-Object DisplayName,DisplayVersion,InstallLocation,UninstallString,Publisher,EstimatedSize
+Test-Path 'HKLM:\Software\Microsoft\Windows\CurrentVersion\Uninstall\CCP-Bot'
+Test-Path 'HKCU:\Software\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\CCP-Bot'
+```
+```
+ExitCode: 0     （0.6 秒内返回，全程没有管理员提示）
+DisplayName CCP-Bot / DisplayVersion 0.4.1 / InstallLocation "H:\CCP-Bot" /
+UninstallString "H:\CCP-Bot\uninstall.exe" / Publisher ccpbot / EstimatedSize 19155
+HKLM: False      WOW6432Node: False
+```
+
+落点仍是 **`H:\CCP-Bot`**（安装器自己选的、按用户装）；桌面与开始菜单快捷方式 `True/True`，公共桌面 `False`。
+
+```powershell
+Get-Item 'H:\CCP-Bot\ccpbot-desktop.exe' | Select-Object Length,LastWriteTime,@{n='Product';e={$_.VersionInfo.ProductVersion}}
+(Get-FileHash 'H:\CCP-Bot\ccpbot-desktop.exe' -Algorithm SHA256).Hash
+(Get-Item 'H:\CCP-Bot\uninstall.exe').Length
+Test-Path 'C:\Users\Damon\CCP-Bot'
+```
+```
+Length 19536384 / ProductVersion 0.4.1
+2941022CDE0EF773437F9D2AFF89AFB8BD4A934B96963EC25CE1CA85EB964C16
+79319
+False      ← 安装完运行目录还不存在（第一次 Start 才由应用自己建）
+```
+
+## 57. 时间线：6 分 35 秒
+
+| 时刻 | 发生了什么 |
+| --- | --- |
+| 05:51:13 | `Start-Process H:\CCP-Bot\ccpbot-desktop.exe`（先把 `%LOCALAPPDATA%\app.ccpbot.desktop` 移开成 `.bak-0547`，拿到全新机器首启画面）；pid **9540**，窗口 `rect=(104,104)-(1020,783)` 916x679 |
+| 05:51–05:55 | 向导四屏走完（§58），只填了一个模型 key，CopilotKit 一个字段都没填 |
+| 05:55:08.578 | 点击 `启动 CCP-Bot`（窗口内偏移 375,529；点击前 `3010 listeners: 0`、`root exists: False`） |
+| +15 秒 | `C:\Users\Damon\CCP-Bot` **已存在**（应用自己建的；本轮没有手工 `mkdir`） |
+| +44 秒 | `<root>` 里出现 `ccpbot-engine` 与 `postgres\pgsql\bin\psql.exe` |
+| +310 秒 | 便携 PostgreSQL 起在随机端口（本次 postgres **55538** / bot **55539** / computer **55540**），`local-postgres.log=0`、`migErr=0` |
+| +323 秒 | `.env` 540 B 落盘（`intelLines=0 oaiLines=0`），`OPENAI_API_KEY.dpapi` 进 vault |
+| +406 秒 | `agent-bot\node_modules`、`agent-computer\node_modules`、`app\dist` 都在，`.secrets` 7 个 |
+| **06:01:43（+417 秒）** | `/health` 返回 **200** `{"status":"ok"}`，`bun=4`、`postgres=29`、五个 `local-*.log` 齐、`migErr=0` |
+
+⇒ **点击到 `/health` 200：395 秒（6 分 35 秒）**，一次成功。（0.4.0 是 501 秒、0.3.2 也是 501 秒；差值只是下载速度。）
+
+监控脚本：`mon41.ps1 -MaxMinutes 20 -IntervalSeconds 10`（后台 job `pwsh-d821563812374298`，日志 `mon41.log` 9,322 B，截图 `prog41-01…32.png`）。
+
+## 58. 向导逐屏（0.4.1；本轮窗口原点 (104,104)，窗口内偏移 = PNG 像素）
+
+| 屏 | 截图 | 字节 | 原样文字（要点） |
+| --- | --- | --- | --- |
+| Welcome | `v41-01-welcome.png` | 27,155 | `你自己的 AI 同事，就在这台电脑上。` / `它们回答问题，使用你连接的各类工具，还能替你在浏览器里工作。` / `[设置 CCP-Bot]` / 脚注 `需要几分钟。CCP-Bot 会先安装所需内容，然后请你登录你已有的 AI 方案。` / 安静按钮 **`改为在本机运行`** |
+| 第 1 步 | `v41-02-step1.png` | 22,026 | `第 1 步，共 4 步` / `你的第一个 Bot` / `CCP-Bot 会帮你完成设置。如果你写代码，可以在下面选择 Agent 框架。` / `▸ 选择 Agent 框架` |
+| 第 2 步 | `v41-03-step2.png` | 23,215 | `第 2 步，共 4 步` / **`本机无需安装任何内容`** / `这一步不下载任何内容。首次启动时它会自行准备运行时、便携数据库、界面及其数据结构，然后从该文件夹提供服务。` / `CCP-Bot 的位置` = `C:\Users\Damon\CCP-Bot` / `返回` + **`继续`**（**没有** Docker 脚注、**没有**镜像拉取行） |
+| 第 3 步 | `v41-04-step3.png` | 31,445 | `第 3 步，共 4 步` / `连接你的 AI` / `使用受支持的订阅方案或 API key 连接你的服务商。` / 四行 OpenAI / Anthropic / Google Gemini / xAI（英文副标题）/ `返回` + 灰 `继续` |
+| OpenAI 展开 | `v41-05-openai-row.png` | 42,124 | 芯片 `使用我的方案登录`（选中）\| `Use an API key`；`将打开 OpenAI 在浏览器中。此处不输入任何内容，也不保存任何密钥。`；`Sign in with OpenAI` / `使用已保存的 ChatGPT sign-in` |
+| API key 面板 | `v41-06-apikey.png` | 38,577 | `使用已保存的 OpenAI API 密钥` / 字段 `OpenAI API 密钥`（空掩码输入） |
+| 填完 key | `v41-07-keyed.png` | 40,304 | 输入的是占位值 `sk-verify-0.4.1-openai-placeholder`；`继续` 变成可点 —— **向导不做任何凭据校验** |
+| 最后一屏 | `v41-08-final.png` | 28,205 | `Run CCP-Bot on this computer` / `Installation is complete. This stack runs on this computer, and the model you chose is enough to start it — a CopilotKit connection is optional here.` / `在本机为可选操作：连接 CopilotKit，把对话保存在那里。不连接也能启动 CCP-Bot。` / `登录 CopilotKit` + `使用已保存的连接` / 折叠项 `指向你自己的 Intelligence 服务器`、`通过你的组织登录`、`安装选项` / 页脚 `返回` + **`启动 CCP-Bot`（深色、可点）** |
+
+**结论：这一屏没有编号（0.4.0 起就不再自称「第 4 步」），且 CopilotKit / Intelligence 一个字段都没填时 `启动 CCP-Bot` 就是可点的。** 语言混排仍在（标题与首段英文、其余中文）。
+
+## 59. 必验 ①：干净库上的迁移 0071
+
+用便携 psql（`<root>\postgres\pgsql\bin\psql.exe`，PostgreSQL 17.6），端口取自 `<root>\postgres\port` = **55538**：
+
+```powershell
+$env:PGPASSWORD=''
+$psql = 'C:\Users\Damon\CCP-Bot\postgres\pgsql\bin\psql.exe'
+& $psql 'postgres://ccpbot@127.0.0.1:55538/ccpbot' -c 'select count(*) from drizzle.__drizzle_migrations;'
+& $psql 'postgres://ccpbot@127.0.0.1:55538/ccpbot' -c "select id, hash, created_at from drizzle.__drizzle_migrations order by id desc limit 3;"
+& $psql 'postgres://ccpbot@127.0.0.1:55538/ccpbot' -c 'select extname from pg_extension order by extname;'
+& $psql 'postgres://ccpbot@127.0.0.1:55538/ccpbot' -c "select tablename from pg_tables where schemaname='public' order by tablename;"
+```
+```
+ count
+-------
+    72
+
+ id |                                hash                                    |  created_at
+----+------------------------------------------------------------------------+--------------
+ 72 | d41a4b45772d5e1d05fdf2446cf5c599b117934c836fdff4d3af6d286f8eabb1     | 1793473343441
+ 71 | f15c16dc058a7619fcfae29b08f71d7cfb451b3a1de26a2a3c4f81d6a1326299     | 1793469194402
+ 70 | 4173a8d02766be6e0e580d6d26d19e13a2118f5e1a514f280dac0941088240ca     | 1793224884828
+
+ extname
+---------
+ plpgsql
+ vector
+
+     tablename
+------------------
+ document_chunks
+ documents
+ personal_memories
+```
+
+索引：**第一次我用 `indexname ilike '%hnsw%'` 查，返回空**（HNSW 不是索引名的一部分），按定义查才对：
+
+```powershell
+& $psql 'postgres://ccpbot@127.0.0.1:55538/ccpbot' -c "select indexname from pg_indexes where schemaname='public' and indexdef ilike '%hnsw%';"
+& $psql 'postgres://ccpbot@127.0.0.1:55538/ccpbot' -c "select indexdef from pg_indexes where schemaname='public' and indexdef ilike '%hnsw%';"
+& $psql 'postgres://ccpbot@127.0.0.1:55538/ccpbot' -c "select table_name, column_name, data_type, udt_name from information_schema.columns where column_name='embedding' and table_schema='public';"
+```
+```
+ count
+-------
+     2
+
+CREATE INDEX document_chunks_embedding_idx ON public.document_chunks USING hnsw (embedding vector_cosine_ops)
+CREATE INDEX personal_memories_embedding_idx ON public.personal_memories USING hnsw (embedding vector_cosine_ops)
+
+   table_name    | column_name |  data_type   | udt_name
+-----------------+-------------+--------------+----------
+ document_chunks | embedding   | USER-DEFINED | vector
+ personal_memories | embedding | USER-DEFINED | vector
+```
+
+迁移阶段日志里**没有** `bun run db:migrate failed.`、`extension "vector" is not available`、`42P07`：监控脚本每一轮都扫 `local-postgres.log` 的这三个模式，全程 **`migErr=0`**。
+`select version();` → `PostgreSQL 17.6 on x86_64-windows, compiled by msvc-19.44.35213, 64-bit`。
+
+## 60. 必验 ②：没有 embedding 端点时的降级 —— 实测现象与 lead 的预期不同
+
+**这台机器上不存在「没有 embedding 端点」这个状态。** 桌面路线把模型凭据交给了 server 进程：
+
+- `desktop/src-tauri/src/local.rs:1901-1909`
+  ```rust
+  let mut secrets = deployment_secrets(root)?;
+  // The model screen's credentials are secrets, so they are not in `.env` — that is the line
+  // `vault::is_secret` draws — and they reach the children below as environment instead
+  for (key, value) in crate::vault::recall_all(root, &crate::env::MODEL_KEYS)? {
+      if !value.trim().is_empty() { secrets.insert(key, value); }
+  }
+  ```
+- `local.rs:2003-2012` 把同一个 `secrets` 作为 **server** 进程环境；`start_service` 用的是 `.envs(environment)`（叠加而不是清空，`local.rs:1394-1401`）。
+- `server/src/memory/embedding/config.ts:32-56`：`apiKey = MEMORY_EMBEDDING_API_KEY ?? OPENAI_API_KEY`，`baseUrl` 默认 `https://api.openai.com`、模型默认 `text-embedding-3-small`；**只要进程环境里有 `OPENAI_API_KEY`，它就返回一份配置**。
+- 于是 `server/src/memory/store.ts:154`（`memoryEmbeddingConfig(options.environment ?? process.env)`）拿到的是「有端点」，而 `memory-embedding-absent`（`store.ts:138-165`，只在配置为 undefined 时打印）**根本不会走到**。
+
+实测（把一条记忆与两份知识库文档写进去）：
+
+```powershell
+# 1) 写一条记忆（走 dev actor，无需任何凭据）
+$body = @{ content = '0.4.1 记忆降级验证：这台机器的便携 PostgreSQL 端口写在 postgres\port 文件里。' } | ConvertTo-Json -Compress
+(Invoke-WebRequest 'http://127.0.0.1:3010/api/memory' -Method Post -ContentType 'application/json' -Body $body -UseBasicParsing).Content
+# 2) 读回来
+(Invoke-WebRequest 'http://127.0.0.1:3010/api/memory' -UseBasicParsing).Content
+```
+```
+201 → {"memory":{"id":"683724f0-2b84-45d3-b3a0-d8835f9c99af","ownerUserId":"dev-local-user", … "formedBy":"person","reviewState":"confirmed", … "embedding":null,"embeddingDigest":null,"embeddingModel":null, …}}
+200 → memories 里读回同一条（id 一致、formedBy person、reviewState confirmed），embedding 仍为 null
+```
+
+记忆路由只有 `GET /`（列表）、`POST /`、`PATCH /:id`、`DELETE /:id`（`server/src/memory/routes.ts:42-114`），**没有检索端点**（`store.retrieve` 只给 Bot 的工具用）。可复现的「检索」入口是同一份 store 的 `/api/knowledge/search`：
+
+```powershell
+$doc = @{ title='0.4.1 降级验证文档'; text='这段文字只在本次验证里出现：紫色风筝在第七码头等待，斑马线观测站记录了一次降级回退。'; source='verify-0.4.1' } | ConvertTo-Json -Compress
+(Invoke-WebRequest 'http://127.0.0.1:3010/api/knowledge/documents' -Method Post -ContentType 'application/json' -Body $doc -UseBasicParsing).Content
+(Invoke-WebRequest 'http://127.0.0.1:3010/api/knowledge/search?q=%E7%B4%AB%E8%89%B2%E9%A3%8E%E7%AD%9D' -UseBasicParsing).Content
+```
+```
+201 → {"documentId":"512628ad-72e2-490b-b02f-04e89ad064f1","title":"0.4.1 降级验证文档","chunks":1,"embedded":0}
+200 → {"results":[{"documentId":"512628ad-72e2-490b-b02f-04e89ad064f1","title":"0.4.1 降级验证文档","position":0,"heading":null,"content":"这段文字只在本次验证里出现：紫色风筝在第七码头等待，斑马线观测站记录了一次降级回退。","score":0.5}]}
+```
+
+英文同样命中（`purple kite`、`purple` 各 1 条，`score: 0.5`）。`score` 恰好 0.5 = 只有词法权重、没有任何向量贡献（`knowledge/store.ts:150` 的 `LEXICAL_WEIGHT`）。检索实现是**大小写无关的子串匹配**：`sql\`strpos(lower(${documentChunks.content}), lower(${term})) > 0\``（`knowledge/store.ts:138`）——所以查询串必须是原文里连续出现的一段；我第一把查询写成 `紫色风筝 第七码头`（中间带空格）返回 `{"results":[]}`，去掉空格即命中。
+
+日志（`<root>\logs\local-server.log`，原样）：
+
+```
+{"type":"memory-embedding-failed","model":"text-embedding-3-small","reason":"The operation timed out.","note":"The memory is stored either way; recall falls back to keywords until the endpoint answers."}
+{"type":"memory-embedding-failed","model":"text-embedding-3-small","reason":"ECONNREFUSED: Unable to connect. Is the computer able to access the url?","note":"The memory is stored either way; recall falls back to keywords until the endpoint answers."}
+```
+
+**口径**：① `memory-embedding-absent` 的条件是「进程环境里连模型凭据都没有」——装上向导要了模型 key 之后，桌面路线会把它交给 server，所以**按设计就不会出现**；要构造这个状态，得让进程环境里既没有 `MEMORY_EMBEDDING_*` 也没有 `OPENAI_API_KEY`（集成测试 `server/tests/memory-retrieval.integration.test.ts:88-101` 正是这样断言 `degradedWarnings` 里恰好 1 条、有端点时 0 条）。② 降级本身是**有效的**：嵌入失败 → 只按词法检索，条目照样命中。③ 这台机器上真正出现的是 `memory-embedding-failed`（占位 key 打到真实的 `api.openai.com`：一次超时、一次连接被拒），而**记忆与文档都已经落库**（`embedded: 0`、`embedding: null`），没有丢数据。
+
+## 61. 不回归四条
+
+| 判据 | 读数 |
+| --- | --- |
+| `.env` 没有任何 `INTELLIGENCE_*` 行，且 `local-server.log` 有 `intelligence-absent` | `.env` **540 B**、`intelLines=0`、`oaiLines=0`；日志有 `{"type":"intelligence-absent","mode":"sse","reason":"No CopilotKit Intelligence is configured, …"}` |
+| `.env` 没有 `OPENAI_API_KEY=`，`<root>\.secrets\OPENAI_API_KEY.dpapi` 在 | 上面 `oaiLines=0`；`.secrets` **7 个 352 B 文件**：AGENT_TOOL_TOKEN、COMPUTER_TOKEN、KEY_ENCRYPTION_KEY、MANAGED_AGENT_TOKEN、**OPENAI_API_KEY.dpapi**、SUPERVISOR_TOKEN、WORKER_SHARED_SECRET |
+| 一次成功、`/health` = 200 的耗时 | **395 秒（6 分 35 秒）**，没有手工建目录 |
+| 窗口自己显示应用页 | `v41-10-ready.png` **169,823 B**：`每个 Bot 都有自己的浏览器和文件` + 插图 + `继续`（PrintWindow `lit=373`） |
+| 菜单 `Quit` → 4 秒内 `3010/bun/postgres` 全 0 | 见下 |
+
+`<root>\.env` 原文（540 B）：
+
+```
+# Written by CCP-Bot Desktop. Anything else in this file is left alone.
+BOT_PROVIDER=
+CCPBOT_MODEL_OAUTH_FILE=
+CHATGPT_AUTH_FILE=
+OPENAI_BASE_URL=
+OPENAI_CONTAINER_BASE_URL=
+
+# Written by CCP-Bot local mode.
+DATABASE_URL=postgres://ccpbot@127.0.0.1:55538/ccpbot
+PORT=3010
+SERVER_PORT=3010
+APP_DIST_DIR=C:\Users\Damon\CCP-Bot\app\dist
+CCPBOT_SINGLE_USER=true
+SERVER_INTERNAL_URL=http://127.0.0.1:3010
+NODE_ENV=
+MANAGED_AGENT_AG_UI_URL=http://127.0.0.1:55539
+AGENT_COMPUTER_URL=http://127.0.0.1:55540
+AGENT_COMPUTER_ALLOW_PRIVATE_HOSTS=true
+```
+
+`/health` → `200 application/json` `{"status":"ok"}`；`/api/capabilities` → 200：
+```
+{"mode":"sse","durableHistory":false,"generativeUi":true,"selfHostBanner":true,"localEvaluation":true,"transcription":false,"voice":false,"authProviders":[],"ssoConfigured":false,"ssoRequired":false}
+```
+
+菜单 `Quit`（原生菜单：窗口内偏移 (18,41) 打开，`Quit  Ctrl+Q` 行在 (120,100)）：
+```
+06:14:41 after row Quit: health3010=err 3010listeners=0 bun=1 postgres=0 app=0
+06:14:51 +6s more:      health3010=err 3010listeners=0 bun=1 postgres=0 app=0
+```
+（剩下的 `bun=1` 不是这次安装的栈：路径是 `C:\Users\Damon\AppData\Roaming\npm\node_modules\bun\bin\bun.exe`、06:14:34 起；我这轮的四个 bun 全停了。）
+
+## 62. 上轮异常复核（一行结论 + 一条证据）
+
+| 上轮的记录 | 0.4.1 复核 |
+| --- | --- |
+| `pg_ctl.exe - 应用程序错误` 硬错误对话框 | **仍在**：Quit 之后 `hwnd=84216006 class=#32770 pid=1420 rect=(1062,638)-(1514,817) title=pg_ctl.exe - 应用程序错误`；`wins.ps1 -Close 84216006` 关掉后**立刻又冒一个** `hwnd=84281542`（同标题、同位置） |
+| `pg_ctl` 残留进程 | **仍在**：Quit 之后仍有 2 个 —— pid `24272`（06:01:00）、`28548`（06:01:01），路径都是 `C:\Users\Damon\CCP-Bot\postgres\pgsql\bin\pg_ctl.exe`；要手动 `Stop-Process` 才清干净 |
+| `Ctrl+Q` 无效 | **仍在**：重新启动应用（pid 11632）后 `keys.ps1 -Keys '^q'`，+3 秒与 +8 秒 `app count` 都是 `1`（没有退出） |
+| 语言混排 | **仍在**：最后一屏标题与首段英文、其余中文；OpenAI 行副标题与两个按钮也是英文 |
+| WebView2 崩溃（0.4.0 那次黑屏 + 两个 `.dmp`） | **没有再现**：新 profile 的 `%LOCALAPPDATA%\app.ccpbot.desktop\EBWebView\Crashpad\reports` 目录为空；本轮窗口截图一直有内容（`lit=373/375`） |
+
+## 63. 卸载与机器还原
+
+```powershell
+& "$t\menu40.ps1" -ClickRow Quit -AfterClickWait 2
+Get-Process ccpbot-desktop | Stop-Process -Force
+Get-Process pg_ctl -EA SilentlyContinue | Where-Object { $_.Path -like 'C:\Users\Damon\CCP-Bot*' } | Stop-Process -Force
+(Start-Process 'H:\CCP-Bot\uninstall.exe' -ArgumentList '/S' -Wait -PassThru).ExitCode
+Remove-Item 'C:\Users\Damon\CCP-Bot' -Recurse -Force
+```
+```
+uninstall ExitCode: 0
+HKLM key False / HKCU key False
+desktop lnk False / startmenu lnk False / public desktop lnk False
+%LOCALAPPDATA%\CCP-Bot False
+HKCU …\Chrome\NativeMessagingHosts\app.ccpbot.recorder False
+H:\CCP-Bot exists: True   entries: 21   ← 仍是那 21 项他人遗留；本次的 ccpbot-desktop.exe 与 uninstall.exe 都已删掉
+run root exists: True  size MB: 2621.4   → 删除后 False
+最终：ccpbot-desktop 0 / bun 0 / postgres 0 / pg_ctl 0 / 3010 listeners 0
+```
+
+保留的证据（不删）：`C:\Users\Damon\AppData\Local\Temp\ccpbot-verify`（脚本 + 全部截图 + `mon41.log`）、`%LOCALAPPDATA%\app.ccpbot.desktop.bak-0547` 与 `.bak-235036`（两次移开的 WebView2 profile）、`H:\CCP-Bot` 里那 21 项（不是我的，也不该由我删）。
+
+## 64. 未验证 / 边界
+
+- **macOS 由 CI 覆盖**：本机没有 Mac；`local-mode-macos` workflow run **41240143297**（master，success，created 2026-10-31T20:42:19Z）已经给了 mac 上本机进程路线的证据。
+- **应用内 `Stop` 未复测**（与 Part 4 同样的原因）：干净 Quit 之后应用总是回到「刷新 AI 连接」屏，运行中的栈界面到不了；0.2.9 / 0.3.2 的记录（文案失败、进程真停）继续有效。
+- **`memory-embedding-absent` 不是「没验」，是「按设计到不了」**：证据与机制见 §60。若要的是「进程环境里完全没有任何模型凭据时会不会退化成纯词法」，需要在那个条件下跑（集成测试已覆盖）。
+- `pg_ctl` 对话框与残留属于 bot-deps 的 task-27 范围；本轮只做复核，不给结论。
+- 本轮没有 commit：报告留在工作树里由 lead 决定何时提交（`git status` 里我的改动只有 `docs/install-verified.md`）。
+
+## 65. 复现命令
+
+```powershell
+$t = 'C:\Users\Damon\AppData\Local\Temp\ccpbot-verify'
+
+# 1) 确认 3010 空闲、无我方进程
+Get-NetTCPConnection -LocalPort 3010 -State Listen -EA SilentlyContinue | Measure-Object
+Get-Process ccpbot-desktop,postgres,pg_ctl -EA SilentlyContinue
+
+# 2) 下载并与 release digest 对齐
+gh release download v0.4.1 --repo DamonZS/CCP-Bot --pattern "CCP-Bot_0.4.1_x64-setup.exe" --dir $t --clobber
+(Get-Item "$t\CCP-Bot_0.4.1_x64-setup.exe").Length
+(Get-FileHash "$t\CCP-Bot_0.4.1_x64-setup.exe" -Algorithm SHA256).Hash
+
+# 3) 静默安装
+(Start-Process "$t\CCP-Bot_0.4.1_x64-setup.exe" -ArgumentList '/S' -Wait -PassThru).ExitCode
+
+# 4) 全新首启（把 webview profile 移开）
+Move-Item "$env:LOCALAPPDATA\app.ccpbot.desktop" "$env:LOCALAPPDATA\app.ccpbot.desktop.bak-0547" -EA SilentlyContinue
+Start-Process 'H:\CCP-Bot\ccpbot-desktop.exe'
+
+# 5) 向导（窗口内偏移；本轮窗口原点 (104,104)）：
+#    改为在本机运行 → 继续 → 继续 → OpenAI 行 → Use an API key → 填 key → 继续
+& "$t\clickwin.ps1" -Dx 455 -Dy 552
+& "$t\clickwin.ps1" -Dx 346 -Dy 452
+& "$t\clickwin.ps1" -Dx 347 -Dy 473
+& "$t\clickwin.ps1" -Dx 455 -Dy 293
+& "$t\clickwin.ps1" -Dx 421 -Dy 484
+& "$t\clicktype.ps1" -Dx 400 -Dy 598 -Text 'sk-verify-0.4.1-openai-placeholder'
+& "$t\scroll.ps1" -Dx 454 -Dy 500 -Steps 5
+& "$t\clickwin.ps1" -Dx 341 -Dy 618
+
+# 6) 启动 + 全程采样（健康检查、端口、日志、migErr、截图）—— 内部在偏移 (375,529) 点「启动 CCP-Bot」
+& "$t\mon41.ps1" -MaxMinutes 20 -IntervalSeconds 10
+
+# 7) 迁移 0071 的五个问题（端口取自 <root>\postgres\port）
+$env:PGPASSWORD=''
+& 'C:\Users\Damon\CCP-Bot\postgres\pgsql\bin\psql.exe' 'postgres://ccpbot@127.0.0.1:55538/ccpbot' -c 'select count(*) from drizzle.__drizzle_migrations;'
+
+# 8) 降级：写记忆 / 读记忆 / 导入文档 / 词法检索
+$body = @{ content = '0.4.1 记忆降级验证：这台机器的便携 PostgreSQL 端口写在 postgres\port 文件里。' } | ConvertTo-Json -Compress
+Invoke-WebRequest 'http://127.0.0.1:3010/api/memory' -Method Post -ContentType 'application/json' -Body $body -UseBasicParsing
+Invoke-WebRequest 'http://127.0.0.1:3010/api/memory' -UseBasicParsing
+Invoke-WebRequest 'http://127.0.0.1:3010/api/knowledge/search?q=%E7%B4%AB%E8%89%B2%E9%A3%8E%E7%AD%9D' -UseBasicParsing
+
+# 9) 菜单 Quit → 4 秒内应全 0
+& "$t\menu40.ps1" -ClickRow 'Quit' -AfterClickWait 4
+
+# 10) 卸载并删掉运行目录
+(Start-Process 'H:\CCP-Bot\uninstall.exe' -ArgumentList '/S' -Wait -PassThru).ExitCode
+Remove-Item 'C:\Users\Damon\CCP-Bot' -Recurse -Force
+```
+
+---
+
+*Part 5 结束。所有界面文字、日志、命令输出均为本次验证的原样记录；引用源码的地方均标注了文件与行号。*
 
 ---
 
