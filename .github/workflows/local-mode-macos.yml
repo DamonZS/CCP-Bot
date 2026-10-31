@@ -57,6 +57,12 @@ jobs:
       # was renamed, would also look like a pass. The log is checked for the two lines the stack
       # prints when it is up — the server answering, and the Bot's own process answering.
       - name: Prove this Mac runs the stack
+        # GitHub counts anonymous requests per address, and a runner's address is shared with every
+        # other job on it: without a token this step's own release lookup came back `403 Forbidden`
+        # twice out of three runs, for a reason that has nothing to do with this Mac. The app sends
+        # the token only to GitHub's own hosts, so nothing here changes where it downloads from.
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
         shell: bash
         run: |
           log=local-mode-live.log
@@ -99,6 +105,11 @@ jobs:
       #   dependencies are installed on a machine that has never run this: it is the macOS half of the
       #   0.2.7 defect, and it starts the fetched stack, so it needs the two versions to agree.
       - name: Run the rest of the local-mode live tests
+        # Same reason as the step above: the two release exams below ask GitHub for this build's own
+        # release, and a runner's shared address runs out of anonymous requests. With the token they
+        # run for real instead of naming themselves as skipped.
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
           # Each test is named, and every invocation is asserted to have run exactly one test. A filter
