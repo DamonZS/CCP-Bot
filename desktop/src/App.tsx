@@ -590,15 +590,52 @@ export function App() {
   }, [loadConfiguredRoot, recoverFromStart]);
 
   /*
+   * What a local start is doing, while it is doing it.
+   *
+   * A first run takes minutes and the machine reports nothing on its own, so the step being worked
+   * on is asked for instead: `local_status` answers with the one the run is on, and the progress
+   * list is where the container route says the same kind of thing. The asking stops with the run,
+   * because this effect ends when `localBusy` does.
+   */
+  useEffect(() => {
+    if (!localPicked || !localBusy) return;
+    let active = true;
+    const ask = () =>
+      invoke<LocalStatus>("local_status")
+        .then((found) => {
+          if (!active) return;
+          setLocal(found);
+          if (!found.step) return;
+          // One row, updated in place: this is a run working through a list of steps, not a log.
+          setSteps([
+            {
+              step: found.step,
+              ok: found.health != null,
+              running: found.health == null,
+              detail: found.step_detail,
+            },
+          ]);
+        })
+        .catch(() => undefined);
+    void ask();
+    const timer = setInterval(() => void ask(), 1000);
+    return () => {
+      active = false;
+      clearInterval(timer);
+    };
+  }, [localBusy, localPicked]);
+
+  /*
    * Starts the local stack, then hands the window over.
    *
    * The same handover as the container route and for the same reason: `show_ccpbot` is what turns
    * this window into CCP-Bot, and it will not do it until something answers on the address.
    */
-  async function runLocally() {
+  async function runLocally(nextModel: ModelChoice | null = model) {
     if (localBusy) return;
     setLocalBusy(true);
     setFailure(null);
+    setSteps([]);
     setLocalPicked(true);
     try {
       const found = await invoke<LocalStatus>("local_start", {
@@ -607,7 +644,18 @@ export function App() {
         //
         // The folder travels with the request too: the wizard can be pointed somewhere other than the
         // default root, and the stack that starts has to be the one the person is looking at.
-        request: { root: root.trim(), apiUrl, gatewayWsUrl: wsUrl, apiKey },
+        //
+        // The model answer travels with them as a whole, not as a bare key: the built-in Bot is a
+        // process that reads its credential out of the environment, so the provider, the endpoint
+        // and the key the person typed on the model screen are the difference between a Bot that
+        // answers and one that cannot start at all. The container route sends the same object.
+        request: {
+          root: root.trim(),
+          apiUrl,
+          gatewayWsUrl: wsUrl,
+          apiKey,
+          model: nextModel,
+        },
       });
       setLocal(found);
       setRunning(true);
@@ -616,7 +664,10 @@ export function App() {
       setRefreshIntelligence(false);
       await invoke("show_ccpbot");
     } catch (error) {
-      setFailure(asProblem(error));
+      const problem = asProblem(error);
+      setFailure(problem);
+      // The row stops claiming to be working on something the moment nothing is.
+      setSteps((current) => settleProgress(current, problem));
       // The step that failed is worth keeping on screen afterwards: it names the part that needs
       // attention, which the failure sentence alone does not.
       setLocal(await invoke<LocalStatus>("local_status").catch(() => null));

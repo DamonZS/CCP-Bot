@@ -6,6 +6,16 @@ afterwards, and does not when only the code moved.
 
 Newest first. `Unreleased` is what is on `main` and not yet tagged.
 
+## 0.3.1 - the first click works on an empty machine
+
+"Run it on this computer" writes a marker into the folder it is going to run, and it wrote that
+marker before anything had made the folder. A machine with nothing set up yet - which is every
+machine that has just installed this - had no folder, so the click failed six seconds later with
+Could not remember the local choice. and nothing was downloaded or started. The marker now makes
+the folder it marks: choosing to run a folder locally is the moment that folder comes into being.
+
+Found by installing the published installer on a clean machine and pressing the button, not by
+reading the code.
 ## 0.3.0 - the window speaks Chinese
 
 The window was half translated. The page CCP-Bot serves had been in Chinese for several releases;

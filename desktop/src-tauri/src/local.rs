@@ -876,14 +876,20 @@ pub fn wanted(root: &Path) -> bool {
 }
 
 /// Records that it has, so the next start takes the same route.
+///
+/// It makes the folder if it is not there yet. Choosing to run a folder locally is the moment that
+/// folder comes into being: a window with nothing set up yet has no root at all, and refusing to
+/// write the marker into it left that window failing before anything could be prepared.
 pub fn remember(root: &Path) -> Result<(), Problem> {
     let file = marker(root);
-    std::fs::write(&file, "local\n").map_err(|error| {
-        Problem::with(
-            "Could not remember the local choice.".to_string(),
-            format!("writing {} failed: {error}", file.display()),
-        )
-    })
+    std::fs::create_dir_all(root)
+        .and_then(|()| std::fs::write(&file, "local\n"))
+        .map_err(|error| {
+            Problem::with(
+                "Could not remember the local choice.".to_string(),
+                format!("writing {} failed: {error}", file.display()),
+            )
+        })
 }
 
 /// Forgets it, for a folder that should go back to the container route.
@@ -2263,6 +2269,18 @@ mod tests {
         let _ = std::fs::remove_dir_all(&root);
     }
 
+    /// A window that has never been set up has no root yet, and "run this folder locally" is the click
+    /// that brings it into being: writing the marker must make the folder rather than fail on it.
+    #[test]
+    fn remembering_a_folder_that_is_not_there_yet_makes_it() {
+        let parent = scratch("marker-makes");
+        let root = parent.join("nested").join("ccpbot");
+        assert!(!root.exists());
+        remember(&root).expect("remembering into a folder that does not exist yet");
+        assert!(wanted(&root));
+        let _ = std::fs::remove_dir_all(&parent);
+    }
+
     /// A path that is not there is a status, not a hang: the shell asks before anything is up.
     #[test]
     fn fetching_a_missing_path_answers_rather_than_hanging() {
@@ -2540,7 +2558,10 @@ mod tests {
             std::fs::create_dir_all(root.join("node_modules").join("@ccpbot").join(name))
                 .expect("a workspace folder");
         }
-        assert!(workspace_links_land_here(&root), "links that land here are fine");
+        assert!(
+            workspace_links_land_here(&root),
+            "links that land here are fine"
+        );
 
         // A checkout that was moved keeps folders that point outside itself, which is the state that
         // makes the server die with `Cannot find module '@ccpbot/shared/…'`.
@@ -2549,8 +2570,11 @@ mod tests {
         std::fs::remove_dir_all(root.join("node_modules").join("@ccpbot").join("shared"))
             .expect("the stale link");
         #[cfg(windows)]
-        std::os::windows::fs::symlink_dir(&elsewhere, root.join("node_modules").join("@ccpbot").join("shared"))
-            .expect("a link to somewhere else");
+        std::os::windows::fs::symlink_dir(
+            &elsewhere,
+            root.join("node_modules").join("@ccpbot").join("shared"),
+        )
+        .expect("a link to somewhere else");
         assert!(
             !workspace_links_land_here(&root),
             "a link out of this checkout is what has to be repaired"
