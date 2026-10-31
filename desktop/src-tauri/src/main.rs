@@ -671,6 +671,10 @@ async fn local_start(
             Some(model) => Some(start_stack_credential(&started_root, model)?),
             None => None,
         };
+        // A run with nothing to answer with stops here rather than after the runtime, the database
+        // and PostgreSQL have been downloaded: a Bot started without an answer exits on startup
+        // anyway, and the sentence a person needs is the one that names the model screen.
+        local::require_a_model(&started_root, credential.as_ref())?;
         local::start(
             &started_root,
             &cache,
@@ -2311,6 +2315,11 @@ fn down_owned_containers(shell: &Shell, root: &Path) -> Result<(), String> {
     match containers.as_ref() {
         Some(owned) => stack::down(&owned.address, root),
         None if shell.stopped_container_root.lock().unwrap().as_deref() == Some(root) => Ok(()),
+        // A folder this machine runs has no containers to stop, and its own marker is the ownership
+        // evidence — the processes belong to `local::stop`, which the caller runs right after this.
+        // The folder a published installer lays down carries `docker-compose.yml`, so this arm has to
+        // come before the error below, which is about containers this session did not start.
+        None if local::wanted(root) => Ok(()),
         None if root.join("docker-compose.yml").exists() => Err(
             "CCP-Bot has no runtime ownership for this installation. Stop its containers using the original engine and context before starting CCP-Bot again.".into(),
         ),
@@ -7538,6 +7547,32 @@ mod tests {
             Some(&fallback)
         );
         let _ = std::fs::remove_dir_all(fallback);
+    }
+
+    /// The folder a published installer lays down carries `docker-compose.yml` even when the person
+    /// runs the stack on this machine, so the stop path reads the folder's own marker before it
+    /// complains about containers: the processes in it belong to `local::stop`, and no engine is
+    /// asked about containers nobody started.
+    #[test]
+    fn a_stop_on_a_folder_this_machine_runs_does_not_ask_compose() {
+        let folder = temp_root("ccpbot-stop-a-local-run");
+        std::fs::create_dir_all(&folder).unwrap();
+        std::fs::write(folder.join("docker-compose.yml"), "services: {}\n").unwrap();
+        let shell = Shell::default();
+
+        // Without the marker the same folder is the unknown-ownership case: a container deployment
+        // this session did not start.
+        let unowned = down_owned_containers(&shell, &folder).unwrap_err();
+        assert!(unowned.contains("no runtime ownership"), "{unowned}");
+
+        std::fs::write(local::marker(&folder), "local\n").unwrap();
+        assert!(local::wanted(&folder));
+        assert!(
+            down_owned_containers(&shell, &folder).is_ok(),
+            "a folder this machine runs has no containers to stop"
+        );
+
+        let _ = std::fs::remove_dir_all(&folder);
     }
 
     #[test]

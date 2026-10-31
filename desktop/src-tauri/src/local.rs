@@ -371,13 +371,14 @@ pub fn bot_address(port: u16) -> String {
     format!("http://127.0.0.1:{port}")
 }
 
-/// What the bundled Bot needs in its environment, and nothing else.
+/// What the bundled Bot needs in its environment.
 ///
 /// Its token first: the process holds a model credential and refuses to start without one
-/// (`agent-bot/src/index.ts` exits when the variable is absent). Its port second. The model key and
-/// any relay address come from `.env`, which is where the wizard already put them.
+/// (`agent-bot/src/index.ts` exits when the variable is absent). Its port second. The model's keys
+/// come along through `hand_the_model_keys`: a key is a credential, so it travels as environment
+/// rather than in the file a person can open.
 pub fn bot_environment(port: u16, secrets: &BTreeMap<String, String>) -> BTreeMap<String, String> {
-    [
+    let mut environment: BTreeMap<String, String> = [
         ("PORT", port.to_string()),
         (
             "MANAGED_AGENT_TOKEN",
@@ -389,7 +390,26 @@ pub fn bot_environment(port: u16, secrets: &BTreeMap<String, String>) -> BTreeMa
     ]
     .into_iter()
     .map(|(name, value)| (name.to_string(), value))
-    .collect()
+    .collect();
+    hand_the_model_keys(secrets, &mut environment);
+    environment
+}
+
+/// Hands one child the model's keys, which live in this machine's credential store.
+///
+/// `--env-file` only fills in what the environment does not already carry: measured on the runtime
+/// this ships (bun 1.4.3, and 1.2.21 before it), a variable that is already set wins over the file,
+/// so a key handed over here reaches the process even though the file deliberately holds no key.
+/// Which keys these are is `env::MODEL_KEYS` — the same list the writer splits on, not a second one.
+fn hand_the_model_keys(
+    secrets: &BTreeMap<String, String>,
+    environment: &mut BTreeMap<String, String>,
+) {
+    for key in crate::env::MODEL_KEYS {
+        if let Some(value) = secrets.get(key).filter(|value| !value.trim().is_empty()) {
+            environment.insert(key.to_string(), value.clone());
+        }
+    }
 }
 
 /// The folder a Bot does its work in.
@@ -511,13 +531,16 @@ pub fn computer_address(port: u16) -> String {
 /// `WORKSPACE_DIR` is the whole point of this process in local mode: it is the folder on this machine
 /// the Bot may read, write and run commands in, and `agent-computer/src/workspace.ts` confines every
 /// path to it.
+///
+/// The model's keys come along the same way a container's environment carries them to every service,
+/// through `hand_the_model_keys` rather than through the file.
 pub fn computer_environment(
     root: &Path,
     port: u16,
     secrets: &BTreeMap<String, String>,
     workspace: &Path,
 ) -> BTreeMap<String, String> {
-    [
+    let mut environment: BTreeMap<String, String> = [
         ("PORT", port.to_string()),
         (
             "COMPUTER_TOKEN",
@@ -535,7 +558,9 @@ pub fn computer_environment(
     ]
     .into_iter()
     .map(|(name, value)| (name.to_string(), value))
-    .collect()
+    .collect();
+    hand_the_model_keys(secrets, &mut environment);
+    environment
 }
 
 /// Whether the cluster has been created already — the file `initdb` always leaves behind.
@@ -1253,15 +1278,23 @@ pub fn interface_built(root: &Path) -> bool {
 }
 
 /// Writes the values this mode owns into `.env`, leaving the rest of the file alone.
-/// Writes the model the model screen chose into `.env`, through the one rule the container route
-/// also uses (`env::model_environment`), so the two routes cannot disagree about what a choice means.
+/// Writes the model the model screen chose where the two routes keep it: the credentials into this
+/// machine's own store, the settings into `.env`, through the one rule the container route also uses
+/// (`env::model_environment`), so the two routes cannot disagree about what a choice means.
 ///
-/// Why this is needed at all: the built-in Bot is a process on this machine, and the only place it
-/// hears about a model is the environment its `--env-file=.env` names. Measured on a published
-/// installer — the wizard's answer reached neither `.env` nor the credential store, and the Bot
-/// exited on startup saying `OPENAI_API_KEY is not set, and no OPENAI_BASE_URL names an endpoint
-/// that needs no key.` A person who had just answered the model screen was then told the Bot cannot
-/// answer without a model. This is the missing half of that round trip.
+/// Why this is needed at all: the built-in Bot is a process on this machine, and it hears about a
+/// model only from its environment — the one its parent hands it, and the file `--env-file` fills in
+/// around that. Measured on a published installer — the wizard's answer reached neither `.env` nor
+/// the credential store, and the Bot exited on startup saying `OPENAI_API_KEY is not set, and no
+/// OPENAI_BASE_URL names an endpoint that needs no key.` A person who had just answered the model
+/// screen was then told the Bot cannot answer without a model. This is the missing half of that
+/// round trip.
+///
+/// A key is a credential, and a credential does not belong in a file somebody can open and paste
+/// into a chat, so the split is `vault::is_secret`'s rather than a second list: `OPENAI_API_KEY` and
+/// its siblings go to the store and reach the children as environment (`hand_the_model_keys`), while
+/// `BOT_MODEL`, `OPENAI_BASE_URL` and the rest stay in the file. `purge` takes out of the file every
+/// key of the rule this answer did not produce — including the copy an earlier version wrote there.
 ///
 /// Written before `write_env`, which owns only its own keys and keeps every other line: a key
 /// somebody typed into this file by hand survives both writers.
@@ -1275,9 +1308,53 @@ pub fn remember_model(
     if matches!(credential, crate::env::ModelCredential::None) {
         return Ok(());
     }
-    let keys = crate::env::model_environment(credential, server_port);
-    crate::env::write(&root.join(".env"), &keys, &BTreeMap::new())
-        .map_err(|error| Problem::with("The model choice could not be saved.", format!("{error}")))
+    let (settings, secrets) =
+        crate::vault::split(crate::env::model_environment(credential, server_port));
+    let mut purge = secrets.clone();
+    for key in crate::env::MODEL_KEYS {
+        if !settings.contains_key(key) {
+            purge.insert(key.to_string(), String::new());
+        }
+    }
+    crate::vault::write_env_after_remembering(root, &root.join(".env"), &settings, &secrets, &purge)
+        .map_err(|problem| {
+            Problem::with(
+                "The model choice could not be saved.",
+                problem.detail.unwrap_or(problem.said),
+            )
+        })
+}
+
+/// Refuses a local run that has no answer to give the Bot, before it starts downloading anything.
+///
+/// The Bot is started with `--env-file=.env` plus the environment its parent hands it, so a machine
+/// with nothing to answer with gets a Bot that exits on startup — measured on a published installer:
+/// `OPENAI_API_KEY is not set, and no OPENAI_BASE_URL names an endpoint that needs no key.` Waiting
+/// minutes for the runtime, the database and PostgreSQL before saying that is no service to anyone,
+/// so the answer is checked first.
+///
+/// A machine whose file already carries a key was told nothing this run, and either half of an answer
+/// counts: the store this mode keeps, or a key in the file a person typed or pasted.
+pub fn require_a_model(
+    root: &Path,
+    credential: Option<&crate::env::ModelCredential>,
+) -> Result<(), Problem> {
+    if credential.is_some() || a_model_is_named(root) {
+        return Ok(());
+    }
+    Err(Problem::with(
+        "CCP-Bot is waiting for a model.",
+        "The built-in Bot cannot answer without one. Choose a model in CCP-Bot's model screen, or put a key in the folder's `.env` file, and start again.",
+    ))
+}
+
+/// Whether this folder already has an answer to hand the Bot: a credential in this machine's store,
+/// or one set in the file. `OPENAI_BASE_URL` counts, which is how a keyless endpoint is named.
+fn a_model_is_named(root: &Path) -> bool {
+    let stored = crate::vault::recall_all(root, &crate::env::MODEL_KEYS)
+        .map(|named| !named.is_empty())
+        .unwrap_or(false);
+    stored || !crate::env::already_set(&root.join(".env"), &crate::env::MODEL_KEYS).is_empty()
 }
 
 pub fn write_env(
@@ -1559,7 +1636,15 @@ pub fn start(
     }
     report("schema", "Updating the database schema…");
     run_bun(&bun, &root.join("server"), &["run", "db:migrate"])?;
-    let secrets = deployment_secrets(root)?;
+    let mut secrets = deployment_secrets(root)?;
+    // The model screen's credentials are secrets, so they are not in `.env` — that is the line
+    // `vault::is_secret` draws — and they reach the children below as environment instead: the file
+    // `--env-file` names fills in only what the process environment does not already set.
+    for (key, value) in crate::vault::recall_all(root, &crate::env::MODEL_KEYS)? {
+        if !value.trim().is_empty() {
+            secrets.insert(key, value);
+        }
+    }
     // The built-in Bot comes up before the server, because a Bot the server cannot reach is a Bot
     // the window offers and then fails to use: the address is read at startup, and there is nobody
     // to wait for it afterwards. A checkout without `agent-bot/` skips this and says so.
@@ -1655,10 +1740,10 @@ pub fn start(
         &log_file(root, "server"),
         &server_environment(root, &secrets),
     )?;
-    // The worker is handed its three settings and nothing else, as compose hands them: it does not
-    // read the deployment's configuration, and the less this process holds the less a mistake in it
-    // can spend.
-    let worker_environment: BTreeMap<String, String> = [
+    // The worker is handed its three settings and the model's keys, the way compose hands its one
+    // environment to every service: it does not read the deployment's configuration, and the less
+    // this process holds the less a mistake in it can spend.
+    let mut worker_environment: BTreeMap<String, String> = [
         ("DATABASE_URL", database_url(port)),
         ("SERVER_INTERNAL_URL", SERVER_ADDRESS.to_string()),
         (
@@ -1672,6 +1757,7 @@ pub fn start(
     .into_iter()
     .map(|(name, value)| (name.to_string(), value))
     .collect();
+    hand_the_model_keys(&secrets, &mut worker_environment);
     let worker = start_service(
         &bun,
         &services,
@@ -2327,19 +2413,14 @@ mod tests {
         assert!(fetch("not-an-address", "/health").is_err());
     }
 
-    /// The evidence this mode exists for: on this machine, as a standard account, with no container
-    /// engine anywhere in the picture, the database, the server and the worker come up and the
-    /// interface answers on its own address.
-    ///
-    /// Ignored by default because it is minutes on a first run — it fetches the runtime and the
-    /// portable database, unpacks 1.5 GB of PostgreSQL, builds the interface and starts real
-    /// processes — and because it writes `postgres/`, `logs/` and `.env` under the checkout.
-    /// The model screen's answer has to reach the file the Bot is told to read it from. Measured on a
-    /// published installer, it reached nothing: the Bot exited saying `OPENAI_API_KEY is not set, and
-    /// no OPENAI_BASE_URL names an endpoint that needs no key.` after a person had just answered that
-    /// screen.
+    /// The model screen's answer has to reach the Bot, which on this machine is a process started
+    /// with `--env-file=.env`. The credential belongs in this machine's own store — a key is not
+    /// written into a file anybody can open — and the settings around it belong in `.env`. Measured
+    /// on a published installer, the answer reached neither, and a person who had just answered that
+    /// screen was told `OPENAI_API_KEY is not set, and no OPENAI_BASE_URL names an endpoint that needs
+    /// no key.`
     #[test]
-    fn a_model_choice_reaches_the_file_the_bot_reads() {
+    fn a_model_choice_reaches_the_store_and_not_the_file() {
         let tmp = std::env::temp_dir().join(format!("ccpbot-local-model-{}", std::process::id()));
         std::fs::create_dir_all(&tmp).expect("a scratch folder");
         let file = tmp.join(".env");
@@ -2355,15 +2436,20 @@ mod tests {
         )
         .expect("the model choice is written");
 
-        let written = std::fs::read_to_string(&file).expect("the file is readable");
-        assert!(
-            written.contains("OPENAI_API_KEY=sk-from-the-model-screen"),
-            "{written}"
+        assert_eq!(
+            crate::vault::recall(&tmp, "OPENAI_API_KEY").expect("the store is readable"),
+            Some("sk-from-the-model-screen".to_string())
         );
-        // Every other model key is emptied, so a plan answered in an earlier run cannot be preferred
-        // over the key somebody just gave: whichever key a Bot reads first decides who is billed.
-        assert!(written.contains("ANTHROPIC_API_KEY="), "{written}");
-        assert!(!written.contains("ANTHROPIC_API_KEY=sk"), "{written}");
+        let written = std::fs::read_to_string(&file).expect("the file is readable");
+        // Not in the file: a key anybody can read is a key anybody can paste into a chat, and the
+        // Bot is handed the credential through its environment instead.
+        assert!(!written.contains("sk-from-the-model-screen"), "{written}");
+        // Every other model key is either emptied in the file (the settings around the credential) or
+        // kept out of it (the credentials themselves), so a plan answered in an earlier run cannot be
+        // preferred over the key somebody just gave: whichever key a Bot reads first decides who is
+        // billed.
+        assert!(written.contains("BOT_PROVIDER="), "{written}");
+        assert!(!written.contains("ANTHROPIC_API_KEY="), "{written}");
         // And a line this writer does not own survives it, which is what lets a hand-written key stay.
         assert!(written.contains("SOMETHING_MINE=1"), "{written}");
 
@@ -2388,6 +2474,39 @@ mod tests {
 
         let _ = std::fs::remove_dir_all(&tmp);
     }
+
+    /// A run with nothing to answer with is refused before it starts: the sentence a person reads
+    /// names the screen that fixes it, instead of a Bot failure minutes after the download.
+    #[test]
+    fn a_run_with_nothing_to_answer_with_is_refused_before_it_starts() {
+        let empty = scratch("waiting-for-a-model");
+        assert!(
+            require_a_model(&empty, None).is_err(),
+            "an empty folder has no answer to give the Bot"
+        );
+
+        // A key in the store is the answer the model screen leaves behind for the next Start.
+        crate::vault::remember(&empty, "OPENAI_API_KEY", "sk-answered-earlier")
+            .expect("a stored key");
+        assert!(require_a_model(&empty, None).is_ok());
+
+        // A key in the file is an answer too, and it is how a keyless endpoint names itself: no
+        // credential, only the address it is reached at.
+        let typed = scratch("waiting-for-a-model-file");
+        std::fs::write(
+            typed.join(".env"),
+            "OPENAI_BASE_URL=http://127.0.0.1:9/v1\n",
+        )
+        .expect("a file somebody wrote");
+        assert!(require_a_model(&typed, None).is_ok());
+
+        // And the answer that arrives with the request counts before anything has been written.
+        let chosen = crate::env::ModelCredential::OpenAi {
+            api_key: "sk-from-the-model-screen".to_string(),
+        };
+        let fresh = scratch("waiting-for-a-model-request");
+        assert!(require_a_model(&fresh, Some(&chosen)).is_ok());
+    }
     #[test]
     #[ignore = "downloads the runtime, unpacks the portable database and starts real processes"]
     fn live_start_serves_the_interface_on_this_machine() {
@@ -2409,15 +2528,17 @@ mod tests {
              that one is not needed",
             root.join(".env").display()
         );
-        // And the model key, which an earlier step of the wizard puts in the same file through this
-        // same writer. The built-in Bot holds a model credential and exits with
+        // And the model key. The built-in Bot holds a model credential and exits with
         // `OPENAI_API_KEY is not set, and no OPENAI_BASE_URL names an endpoint that needs no key`
         // without one — measured on this machine, not assumed — so the test supplies the placeholder
         // that a person's own key replaces.
         // Through the same path the window uses, rather than a key written here by hand: a local run
-        // is handed the model screen's answer, and the key it implies has to land in the file the Bot
-        // is told to read. This placeholder is what makes a local run startable without a person's own
-        // key, and it is the exact shape the wizard sends.
+        // is handed the model screen's answer, and the credential it implies goes into this machine's
+        // own store (a key is not written into a file anybody can open) while the settings around it
+        // go into `.env`. The children are handed the store's secret as environment
+        // (`hand_the_model_keys`), which is the one place `--env-file` does not override. This
+        // placeholder is what makes a local run startable without a person's own key, and it is the
+        // exact shape the wizard sends.
         let credential = crate::env::ModelCredential::OpenAi {
             api_key: "sk-local-placeholder-for-a-desktop-run".to_string(),
         };
@@ -2427,10 +2548,16 @@ mod tests {
         })
         .expect("the local stack should start");
 
+        // The store, not the file: the Bot answered with this key, and it did so without the key ever
+        // being written where anybody can read it.
         let file = std::fs::read_to_string(root.join(".env")).expect("the file is readable");
         assert!(
-            file.contains("OPENAI_API_KEY=sk-local-placeholder-for-a-desktop-run"),
+            !file.contains("sk-local-placeholder-for-a-desktop-run"),
             "{file}"
+        );
+        assert_eq!(
+            crate::vault::recall(&root, "OPENAI_API_KEY").expect("the store is readable"),
+            Some("sk-local-placeholder-for-a-desktop-run".to_string())
         );
         let status = health_status(&started.address).expect("the interface answers");
         assert_eq!(status, 200, "the address is {}", started.address);
