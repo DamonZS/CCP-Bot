@@ -182,6 +182,11 @@ pub const WORKSPACE_FOLDER: &str = "workspace";
 pub const WORKSPACE_FILE: &str = "workspace.txt";
 /// Where Playwright keeps the browser the computer launches for a Bot that needs a page.
 pub const BROWSERS_FOLDER: &str = "browsers";
+/// Where those browsers keep their profiles: the logins a Bot signed into, one folder per Bot.
+///
+/// Its own folder rather than the browsers': the program and the profile are different things to
+/// lose, and `agent-computer` refuses to start when the folder it is told about cannot be written.
+pub const PROFILES_FOLDER: &str = "profiles";
 
 /// The health check gets a long time on a first run: the interface may still be building and the
 /// worker is starting up beside it.
@@ -534,6 +539,15 @@ pub fn browsers_folder(root: &Path) -> PathBuf {
     computer_folder(root).join(BROWSERS_FOLDER)
 }
 
+/// Where the computer's browsers keep their profiles, also out of the workspace a Bot may delete.
+///
+/// The computer is told this rather than left to guess: its own fallback is `/profiles`, and a machine
+/// whose root cannot be written (measurably: an Apple silicon runner, `EROFS`) makes it refuse to
+/// start instead of running a browser whose profile is thrown away.
+pub fn profiles_folder(root: &Path) -> PathBuf {
+    computer_folder(root).join(PROFILES_FOLDER)
+}
+
 /// The computer's entry file, when this checkout has one.
 pub fn computer_entry(root: &Path) -> Option<PathBuf> {
     let entry = root.join(COMPUTER_ENTRY);
@@ -594,6 +608,7 @@ pub fn computer_environment(
         ),
         ("WORKSPACE_DIR", workspace.display().to_string()),
         ("COMPUTER_BOT_ID", "shared".to_string()),
+        ("PROFILES_DIR", profiles_folder(root).display().to_string()),
         // The browser the computer launches for a Bot that needs a page, kept under this
         // deployment's own folder rather than in the account's shared Playwright cache: uninstalling
         // CCP-Bot should not silently take a browser away from something else that uses it.
@@ -3305,6 +3320,18 @@ mod tests {
         assert!(
             !environment.contains_key("COMPUTER_PEOPLE_ONLY"),
             "that mark belongs to the browser a person watches, not to a Bot's computer"
+        );
+
+        let profiles = environment
+            .get("PROFILES_DIR")
+            .expect("the folder the browsers keep their profiles in");
+        assert!(
+            profiles.starts_with(&root.join(COMPUTER_FOLDER).display().to_string()),
+            "the profiles stay under this deployment, where one Bot's files cannot reach another's: {profiles}"
+        );
+        assert_ne!(
+            profiles, browsers,
+            "the browser and the profiles it writes are two folders, not one"
         );
 
         let _ = std::fs::remove_dir_all(&root);
