@@ -562,6 +562,24 @@ fn local_root<R: tauri::Runtime>(app: &tauri::AppHandle<R>) -> PathBuf {
         .unwrap_or_else(stack::default_root)
 }
 
+/// The folder a local start works in: the one the request names, or the one the window already
+/// knows.
+///
+/// The wizard's "Where CCP-Bot lives" field reaches a local start only as a value in the start
+/// call, so a start that ignores it lays the whole stack out in the remembered folder — a
+/// different one from the folder the window shows. One remembered here is what `local_status`
+/// reads back, so the two agree from this point on. A blank field is not a folder to move to.
+fn local_start_root<R: tauri::Runtime>(app: &tauri::AppHandle<R>, named: Option<&str>) -> PathBuf {
+    match named.map(str::trim).filter(|named| !named.is_empty()) {
+        Some(named) => {
+            let root = stack::root_from(named);
+            remember_selected_root(&app.state::<Shell>(), &root);
+            root
+        }
+        None => local_root(app),
+    }
+}
+
 fn local_status_of<R: tauri::Runtime>(app: &tauri::AppHandle<R>, root: &Path) -> LocalStatus {
     let step = app
         .try_state::<Shell>()
@@ -609,6 +627,8 @@ async fn local_status(app: tauri::AppHandle) -> Result<LocalStatus, Problem> {
 #[derive(Debug, Clone, Default, Deserialize)]
 #[serde(rename_all = "camelCase")]
 struct LocalStartRequest {
+    /// The folder the window shows. Blank or absent means the remembered one.
+    root: Option<String>,
     api_url: Option<String>,
     gateway_ws_url: Option<String>,
     api_key: Option<String>,
@@ -619,7 +639,8 @@ async fn local_start(
     app: tauri::AppHandle,
     request: Option<LocalStartRequest>,
 ) -> Result<LocalStatus, Problem> {
-    let root = local_root(&app);
+    let named = request.as_ref().and_then(|request| request.root.as_deref());
+    let root = local_start_root(&app, named);
     local::remember(&root)?;
     let connection = request.unwrap_or_default();
     let handle = app.clone();
@@ -7489,6 +7510,40 @@ mod tests {
             Some(&fallback)
         );
         let _ = std::fs::remove_dir_all(fallback);
+    }
+
+    #[test]
+    fn a_local_start_follows_the_folder_the_request_names() {
+        let app = tauri::test::mock_builder()
+            .manage(Shell::default())
+            .build(tauri::test::mock_context(tauri::test::noop_assets()))
+            .unwrap();
+        let remembered = temp_root("ccpbot-local-start-remembered-root");
+        let named = temp_root("ccpbot-local-start-named-root");
+        let shell = app.state::<Shell>();
+
+        // Nothing remembered and nothing named is the default root, exactly as before.
+        assert_eq!(local_start_root(app.handle(), None), stack::default_root());
+        assert_eq!(
+            local_start_root(app.handle(), Some("   ")),
+            stack::default_root()
+        );
+        assert!(shell.selected_root.lock().unwrap().is_none());
+
+        remember_selected_root(&shell, &remembered);
+        assert_eq!(local_start_root(app.handle(), None), remembered);
+
+        // The folder in the request is the one the stack lands in, and the shell says so too:
+        // `local_status` reads its root back from here. The wizard sends it as `root`.
+        let request: LocalStartRequest = serde_json::from_value(serde_json::json!({
+            "root": format!("  {}  ", named.display()),
+        }))
+        .unwrap();
+        assert_eq!(
+            local_start_root(app.handle(), request.root.as_deref()),
+            named
+        );
+        assert_eq!(shell.selected_root.lock().unwrap().as_ref(), Some(&named));
     }
 
     #[test]
