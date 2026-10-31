@@ -25,7 +25,7 @@ import { createLearningSharingStore } from "../src/learning/sharing";
 import { createRecorderExtension } from "../src/recorder/wiring";
 import { createRequestActor } from "../src/request-actor";
 import { TEST_POOL, testDatabaseUrl } from "./support/database";
-import { SESSION_LIFETIME_MS, testEnvironment } from "./support/environment";
+import { intelligenceOf, SESSION_LIFETIME_MS, testEnvironment } from "./support/environment";
 
 const database = createDatabase(testDatabaseUrl(), TEST_POOL);
 const prefix = `recorder-scope-${randomUUID()}`;
@@ -278,7 +278,7 @@ describe("a recorder bearer works only on the Recorder's own routes", () => {
     expect(answer.ok).toBe(false);
     expect(threadsFor).toEqual([owner]);
     expect(loadedFor.slice(loaded)).not.toContain(owner);
-    const intelligence = config.runtime.intelligence.apiUrl;
+    const intelligence = intelligenceOf(config).apiUrl;
     expect(dialled.filter((url) => url.startsWith(intelligence))).toEqual([]);
   });
 

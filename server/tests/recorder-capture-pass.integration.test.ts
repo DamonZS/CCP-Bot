@@ -34,7 +34,7 @@ import { createRecorderExtension } from "../src/recorder/wiring";
 import { createRequestActor } from "../src/request-actor";
 import { skillSnapshot } from "./fixtures/learned-skills";
 import { TEST_POOL, testDatabaseUrl } from "./support/database";
-import { SESSION_LIFETIME_MS, testEnvironment } from "./support/environment";
+import { intelligenceOf, SESSION_LIFETIME_MS, testEnvironment } from "./support/environment";
 
 /*
  * The capture pass end to end, through the app index.ts builds: the Recorder's routes, the runtime mounted with the
@@ -56,7 +56,7 @@ const config = loadConfig(
     INTELLIGENCE_GATEWAY_WS_URL: "ws://127.0.0.1:7103",
   }),
 );
-const intelligenceApi = config.runtime.intelligence.apiUrl.replace(/\/$/, "");
+const intelligenceApi = intelligenceOf(config).apiUrl.replace(/\/$/, "");
 const roleRepository: RoleRepository = { rolesForUser: async () => ["user"] };
 const getSession = async ({ headers }: { headers: Headers }) => {
   const cookie = headers.get("cookie") ?? "";

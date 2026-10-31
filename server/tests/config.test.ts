@@ -59,15 +59,22 @@ describe("deployment configuration", () => {
         INTELLIGENCE_API_KEY: legacy,
         CPK_INTELLIGENCE_API_KEY: "  cpk-current-project  ",
       });
+      if (config.runtime.mode !== "intelligence") {
+        throw new Error("expected the Intelligence runtime");
+      }
       expect(config.runtime.intelligence.apiKey).toBe("cpk-current-project");
     },
   );
 
   test("an empty CLI key preserves legacy-only deployments", () => {
-    expect(
-      loadConfig({ ...baseEnvironment, CPK_INTELLIGENCE_API_KEY: "  " }).runtime
-        .intelligence.apiKey,
-    ).toBe("tenant-api-key");
+    const config = loadConfig({
+      ...baseEnvironment,
+      CPK_INTELLIGENCE_API_KEY: "  ",
+    });
+    if (config.runtime.mode !== "intelligence") {
+      throw new Error("expected the Intelligence runtime");
+    }
+    expect(config.runtime.intelligence.apiKey).toBe("tenant-api-key");
   });
 
   test("organization authority disables the standalone actor without requiring local provider secrets", () => {
@@ -79,9 +86,12 @@ describe("deployment configuration", () => {
     expect(config.singleUser).toBe(false);
     expect(config.auth).toBeUndefined();
     expect(config.organizationAuthUrl).toBe("https://ccpbot.company.example");
+    if (config.runtime.mode !== "intelligence") {
+      throw new Error("expected the Intelligence runtime");
+    }
     expect(config.runtime.intelligence.apiKey).toBe("tenant-api-key");
   });
-  test("resolves the Intelligence runtime, which is the only runtime", () => {
+  test("resolves the Intelligence runtime when the three addressing values are set", () => {
     const config = loadConfig(baseEnvironment);
 
     expect(config.runtime).toEqual({

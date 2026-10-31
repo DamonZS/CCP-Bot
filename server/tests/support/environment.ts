@@ -1,3 +1,8 @@
+import type {
+  IntelligenceSettings,
+  RuntimeCapabilities,
+} from "../../src/config";
+
 /**
  * The minimum environment a deployment is allowed to boot with, for tests that need a config but are
  * not testing configuration itself.
@@ -51,6 +56,26 @@ export function standaloneEnvironment(
     INTELLIGENCE_API_KEY: undefined,
     ...overrides,
   });
+}
+
+/**
+ * The Intelligence contract of a configuration built with one, for tests that read a value out of it.
+ *
+ * `RuntimeCapabilities` is a union, because a deployment may have no connection at all and stand on
+ * its own tables (see standalone.test.ts). Every test that spreads `testEnvironment` is about the
+ * connected deployment, but the compiler cannot know that from an environment object — so the read
+ * narrows here, loudly, once: a fixture that stopped configuring Intelligence must fail the test
+ * that asked for its contract rather than hand it `undefined` to assert against.
+ */
+export function intelligenceOf(config: {
+  runtime: RuntimeCapabilities;
+}): IntelligenceSettings {
+  if (config.runtime.mode !== "intelligence") {
+    throw new Error(
+      "this test builds a deployment with CopilotKit Intelligence configured",
+    );
+  }
+  return config.runtime.intelligence;
 }
 
 /**

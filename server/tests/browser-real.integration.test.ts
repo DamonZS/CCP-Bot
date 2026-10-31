@@ -53,7 +53,7 @@ import { recorderConnections } from "../src/db/schema/recorder";
 import { createRecorderConnectionStore } from "../src/recorder/connections";
 import { createRecorderExtension } from "../src/recorder/wiring";
 import { TEST_POOL, testDatabaseUrl } from "./support/database";
-import { SESSION_LIFETIME_MS, testEnvironment } from "./support/environment";
+import { intelligenceOf, SESSION_LIFETIME_MS, testEnvironment } from "./support/environment";
 
 const database = createDatabase(testDatabaseUrl(), TEST_POOL);
 const prefix = `browser-real-${randomUUID()}`;
@@ -268,7 +268,7 @@ function build(
     native: config.browser !== undefined,
     allowPrivateHosts: false,
     ccpbotUrls: [config.publicUrl, config.appUrl],
-    gatewayUrl: config.runtime.intelligence.gatewayWsUrl,
+    gatewayUrl: intelligenceOf(config).gatewayWsUrl,
   });
   const provider = withPolicyPushOnWake(
     withPersonBrowsers(
