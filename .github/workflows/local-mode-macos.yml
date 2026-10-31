@@ -77,3 +77,18 @@ jobs:
           cargo test -p ccpbot-desktop --manifest-path desktop/src-tauri/Cargo.toml \
             --lib -- local::tests::live_ --include-ignored --nocapture -- --test-threads=1 \
             --skip live_start_serves_the_interface_on_this_machine
+
+      # A failing test says which part did not answer and nothing about why: the reason is in the
+      # process's own log, which lives on the runner that is about to be deleted. Learned the hard
+      # way — the first run that got past the compile error failed at the computer and left no
+      # trace of it, so the whole run had to be repeated just to read one file. `always()` because
+      # the interesting case is exactly the one where a step above already failed.
+      - name: Keep the local logs when something did not come up
+        if: always()
+        shell: bash
+        run: |
+          for log in logs/local-computer.log logs/local-server.log logs/local-bot.log \
+            logs/local-postgres.log; do
+            echo "===== $log ====="
+            if [ -f "$log" ]; then tail -200 "$log"; else echo "(not written)"; fi
+          done
