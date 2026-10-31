@@ -71,6 +71,11 @@ jobs:
             *arm64*) ;;
             *) echo "expected an arm64 extension, got: $archs"; exit 1 ;;
           esac
+          # What it links decides whether the portable PostgreSQL can load it: an extension that
+          # needed a library only this runner has would fail at `CREATE EXTENSION` on somebody's Mac,
+          # where the only libraries are the ones the portable database unpacks beside it.
+          otool -L out/vector.dylib
+          otool -l out/vector.dylib | grep -A4 LC_BUILD_VERSION | head -12
 
       - name: Pack the three files a CREATE EXTENSION needs
         shell: bash
