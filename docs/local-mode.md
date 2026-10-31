@@ -58,6 +58,23 @@ CCP-Bot 桌面端一路走来都是「容器里的栈」：它自己挑一个容
 - **端口**：数据库端口选一次后写在 `<root>/postgres/port`，之后沿用（否则每次启动都会让 `.env` 里的连接串变化）；占用时换一个空闲端口。
 - **错误**：下载失败（离线/被掐断）→ 说明可以重试、或改用容器路线；`initdb` 失败 → 把 `initdb` 的原始输出带出来；端口占用 → 换端口并说明。
 
+## 首次运行只需要一个模型 key
+
+除了一样，首次运行要的东西都由本机自己填掉：
+
+- 便携 PostgreSQL、pgvector、数据簇、库：见上一节。
+- **身份提供方**：`.env` 里写 `CCPBOT_SINGLE_USER=true`、`NODE_ENV` 留空，`server/src/auth/dev-actor.ts` 于是不再要求 `GOOGLE_OAUTH_*` 之类。
+- **`KEY_ENCRYPTION_KEY`**：`server/src/config.ts:507` 的硬前置，由 `deployment_secrets()` 从 vault + `env::minted` 取得（与容器路线同一条判据，重启复用、不轮换），只放进子进程环境，不写 `.env`。
+- **CopilotKit Intelligence 的三项**：`server/src/config.ts:1007-1021` 要求 `INTELLIGENCE_API_URL`、`INTELLIGENCE_GATEWAY_WS_URL` 和一个 key，少一项就直接拒绝启动（原文 `CopilotKit Intelligence is required and is not configured. Missing: …`）。本地模式自己顶上：`local.rs` 的 `LOCAL_INTELLIGENCE`（占位地址 `http://127.0.0.1:9/api` 与 `ws://127.0.0.1:9/gateway`、占位 key）由 `server_environment()` 放进 server 子进程的环境。本机跑起来的栈不靠这套地址回答任何东西——Bot 是回环上的内建进程，server 认的是 `MANAGED_AGENT_AG_UI_URL`。
+- 于是留给人的只有**模型凭据**：`agent-bot` 没有它会直接退出（`OPENAI_API_KEY is not set, and no OPENAI_BASE_URL names an endpoint that needs no key`），而它决定 Bot 用哪个模型，所以本地模式不替人猜——向导的模型屏写它（与容器路线同一个 writer `env::write`），或者自己在 `.env` 里写一行。
+
+两个刻意的取舍：
+
+- **占位值放环境变量，不放 `.env`**：`.env` 正是向导回读「这个部署已经有 Intelligence 连接」的地方（`main.rs` 的 `already_configured_for_root` 读的是 `INTELLIGENCE_API_KEY`），把占位值写进去，它和容器路线都会当成真连接。环境变量不动那个文件，而且**优先于 `--env-file`**（bun 1.2.21 实测：进程环境里的同名变量覆盖文件里的值）。
+- **人自己的连接永远赢**：`.env` 里有非空的 `INTELLIGENCE_API_KEY` 或 `CPK_INTELLIGENCE_API_KEY`（向导签到或粘贴 key 时写的就是它们）就不放占位值，起来的就是那个连接。
+
+依据：`local::tests::live_start_serves_the_interface_on_this_machine` 现在**不写任何 Intelligence 配置**，只在 `.env` 里留一行占位模型密钥，整条栈照常起到 `/health` 200（见下方实测证据）；判定本身由两条单测钉住：`a_run_with_no_connection_of_its_own_answers_for_one`（没有连接就顶上三项）、`a_connection_in_the_file_is_left_alone`（有连接就一项都不动）。
+
 ## 技术约束
 
 - 只用既有依赖与外部程序：`bun`（既有的 `install::ensure_bun`）、`powershell`（解包 zip，与仓库既有的做法一致）、PostgreSQL 自带的 `initdb`/`pg_ctl`/`createdb`。**不新增 crate**。
@@ -86,9 +103,10 @@ CCP-Bot 桌面端一路走来都是「容器里的栈」：它自己挑一个容
   `[runtime] Preparing the local runtime…` → `[database] Preparing the local database (downloaded once, then reused)…` → `[database] Preparing the database extension (downloaded once, then reused)…` → `[database] Starting the database…` → `[schema] Updating the database schema…` → `[bot] Starting the built-in Bot…` → `[bot] The built-in Bot is answering (/health 200).` → `[server] Starting the services…` → `[ready] CCP-Bot is running on this computer (/health 200).`
   同一次运行打印 `local stack up on http://127.0.0.1:3010 with database port 63133 and the Bot on http://127.0.0.1:63659`，用例自身断言 `/health` 为 200、`/` 返回的就是界面、步骤里出现过 `ready`。
 - `logs/local-server.log` 里的服务器侧证据：迁移跑过之后 `CCP-Bot server listening on http://127.0.0.1:3010`，以及 `No identity provider is configured, so every request is treated as dev@ccpbot.local (administrator).`（即 `CCPBOT_SINGLE_USER=true` 生效）；`logs/local-worker.log` 里是例程巡检在跑（`{"type":"routine-sweep","offered":[],"considered":0,"fired":[],"skipped":[]}`）；`logs/local-bot.log` 里是 `agent-bot listening on http://127.0.0.1:63659/ag-ui`。
-- 内建 Bot 的模型凭据是真机跑出来的第二个要求：第一次跑时它 97 秒不响应，`logs/local-bot.log` 原文 `OPENAI_API_KEY is not set, and no OPENAI_BASE_URL names an endpoint that needs no key. This Bot cannot answer without a model.`。这和向导里给模型密钥的是同一步（同一个 writer：`main.rs:4905` / `saved_intent.rs:238` / `stack.rs:4527` 都用 `env::write`），所以 live 用例照向导的做法先写一行占位密钥。
+- 内建 Bot 的模型凭据是真机跑出来的第二个要求：第一次跑时它 97 秒不响应，`logs/local-bot.log` 原文 `OPENAI_API_KEY is not set, and no OPENAI_BASE_URL names an endpoint that needs no key. This Bot cannot answer without a model.`。这和向导里给模型密钥的是同一步（同一个 writer：`main.rs:4905` / `saved_intent.rs:238` / `stack.rs:4527` 都用 `env::write`），所以 live 用例照向导的做法先写一行占位密钥（Intelligence 那三项已经不用写：没有连接时 `server_environment()` 自己顶上）。
 - 空文件夹取源码：`cargo test -p ccpbot-desktop --manifest-path desktop/src-tauri/Cargo.toml --lib -- local::tests::live_an_empty_folder --include-ignored --nocapture` → `[checkout] Downloading CCP-Bot itself (once, then reused)…`、`downloaded "version": "0.2.6"`、`1 passed … finished in 6.13s`（断言清单、`server/`、`agent-bot/src/index.ts` 都到位）。
 - 单元与集成：`-- local:: env::tests::minting` → 26 passed / 0 failed / 2 ignored（含上述两条 live 为 ignored）；桌面端 `bun run --cwd desktop typecheck` 无输出；`bun test desktop/src` → **155 pass / 0 fail**（其中 `LocalRun.test.tsx` 5 pass）；`bunx biome lint --error-on-warnings .` exit 0（12186 files）。
+- **装完只给一个模型 key（2026-10-31 复测）**：`.env` 里**一项 Intelligence 都没有**（`INTELLIGENCE_API_URL` / `INTELLIGENCE_GATEWAY_WS_URL` / `INTELLIGENCE_API_KEY` / `CPK_INTELLIGENCE_API_KEY` 全不在，只剩一行占位 `OPENAI_API_KEY`）时，上面那条 live 用例 → `test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 651 filtered out; finished in 13.50s`，步骤一路到 `[ready] CCP-Bot is running on this computer (/health 200)`、`the computer wrote …\workspace\ccpbot-hands-check.txt and ran a command in it`。同一天的对照实验：单独起 server（`bun --env-file=../.env src/index.ts`，只在进程环境里补 `KEY_ENCRYPTION_KEY` / `MANAGED_AGENT_TOKEN` 与端口）→ `error: CopilotKit Intelligence is required and is not configured. Missing: INTELLIGENCE_API_URL, INTELLIGENCE_GATEWAY_WS_URL, CPK_INTELLIGENCE_API_KEY (or INTELLIGENCE_API_KEY)`（`server/src/config.ts:1018`）；把 `LOCAL_INTELLIGENCE` 那三项放进进程环境再起，配置这一关就过了，随后只因库没起而报 `ERR_POSTGRES_CONNECTION_CLOSED`。代价说清楚：占位地址没人应答，所以 Intelligence 那条线在本机用不了，日志里会留一行 `{"type":"intelligence-entitlement-unreadable","reason":"Runtime entitlement request failed"}`（`server/src/intelligence-entitlement-check.ts:83`），栈本身与内建 Bot 照常跑。同一天 `bun test desktop/src` → **156 pass / 0 fail**。
 - **Bot 真能在本机干活（computer 的实测）**：同一条 live 用例现在把整条链走通并留证 ——
   `[dependencies] Installing the computer's dependencies…` → `[bot] The built-in Bot is answering (/health 200).` → `[computer] Starting the computer your Bot works in…` → `[computer] Bots work in D:\Project\CCP-Bot\workspace (/health 200).` → `[server] Starting the services…` → `[ready] CCP-Bot is running on this computer (/health 200).`，随后用**这套部署自己铸出的 `COMPUTER_TOKEN`**（从 `vault::already_given_no_ui` 取回，与 server 调用它的方式一致）POST 它的两个真端点：
   - `POST /files/write` `{"path":"ccpbot-hands-check.txt","contents":"written by the computer"}` → 200，并且**在磁盘上**断言该文件就在 `workspace/` 里、内容逐字相符；
@@ -100,7 +118,7 @@ CCP-Bot 桌面端一路走来都是「容器里的栈」：它自己挑一个容
 
 1. **`pg_ctl start` 的管道会被 postmaster 继承** → 用 `.output()` 等它会在数据库已经起来之后仍然挂住（现场：测试进程 CPU 停住、日志显示 `database system is ready to accept connections`）。改成 `Stdio::null()` + `.status()`，失败原因改读 `<root>/logs/local-postgres.log` 的尾部。
 2. **EDB 便携版不带 pgvector** → 第一次迁移停在 `extension "vector" is not available`（`Could not open extension control file … vector.control`）。接入 `andreiramani/pgvector_pgsql_windows` 的 `vector.v0.8.6-pg17.zip`（169,689 字节，SHA-256 钉住），只把 `lib/` 与 `share/extension/` 拷进去。
-3. **服务需要密钥与 Intelligence 才能启动** → 分别是 `KEY_ENCRYPTION_KEY must be configured`（`server/src/config.ts:507`）与 `CopilotKit Intelligence is required and is not configured. Missing: INTELLIGENCE_API_URL, INTELLIGENCE_GATEWAY_WS_URL`（`config.ts:1018`）；密钥走 vault + `env::minted`（与容器路线同一条判据，重启复用不轮换），Intelligence 由向导写入 `.env`。
+3. **服务需要密钥与 Intelligence 才能启动** → 分别是 `KEY_ENCRYPTION_KEY must be configured`（`server/src/config.ts:507`）与 `CopilotKit Intelligence is required and is not configured. Missing: INTELLIGENCE_API_URL, INTELLIGENCE_GATEWAY_WS_URL`（`config.ts:1018`）；密钥走 vault + `env::minted`（与容器路线同一条判据，重启复用不轮换）；Intelligence 三项原本只有人签到或粘贴过连接才由向导写入 `.env`，现在没有连接时由本模式自己顶上（`LOCAL_INTELLIGENCE` + `server_environment()`，见「首次运行只需要一个模型 key」），只有人自己配了连接时才写文件。
 4. **server 必须从 `server/` 目录运行** → 从仓库根启动时租户包默认路径 `../examples/fintech` 解析到仓库外，直接 `ENOENT` 打不开 `brand.yaml`；现在两个服务都以 `server/` 为工作目录，server 读 `--env-file=../.env`、worker 以 `../worker/src/index.ts` 启动（与 compose 一致），worker 只拿它自己的三个变量。
 5. **内建 Bot 要一个模型凭据** → 没有它，`agent-bot` 直接退出并说明 `OPENAI_API_KEY is not set, and no OPENAI_BASE_URL names an endpoint that needs no key`，从外面看只是「97 秒没有响应」。这正是向导里给模型密钥的那一步，本地模式不去猜、也不替人填：没有它就照实说 Bot 不响应。
 6. **部署要复制的目录里原本没有 `agent-bot`** → 空文件夹从发布版取源码时，Bot 会缺席（第一次跑这条 live 用例就断言失败在这里：清单在、`server/` 在、`agent-bot/src/index.ts` 不在）。它被补进 `deployment::ALSO_COPIED`，理由写在常量旁边：容器路线从镜像拿 Bot，本地路线从这棵树里起它。

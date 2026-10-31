@@ -625,12 +625,19 @@ async fn local_start(
     let handle = app.clone();
     let started_root = root.clone();
     let outcome = tauri::async_runtime::spawn_blocking(move || {
-        if connection.api_key.is_some() {
+        // An empty key is the wizard saying "no connection": the two addresses it sends are the
+        // managed defaults it starts with, not something a person chose, and writing them without a
+        // key would leave a file claiming a connection that local mode then has to answer for itself.
+        if let Some(key) = connection
+            .api_key
+            .as_deref()
+            .filter(|key| !key.trim().is_empty())
+        {
             local::write_intelligence(
                 &started_root,
                 connection.api_url.as_deref().unwrap_or_default(),
                 connection.gateway_ws_url.as_deref().unwrap_or_default(),
-                connection.api_key.as_deref().unwrap_or_default(),
+                key,
             )?;
         }
         let shell = handle.state::<Shell>();
