@@ -114,15 +114,14 @@ jobs:
       # The architecture is asserted rather than assumed. `macos-latest` is an Apple-silicon runner
       # today and the disk image it packs is named `…_aarch64.dmg`; if that label ever moves back to
       # Intel, or a build silently emits the other slice, this fails the release instead of handing
-      # somebody a `.dmg` their Mac cannot open. The bundle is what ships, so the bundle is what is
-      # inspected — not the bare binary cargo left in `target/release`.
-      - name: Assert the disk image holds an arm64 app
+      # somebody a `.dmg` their Mac cannot open. The payload is what the disk image carries: the
+      # bundler deletes its staging `.app` the moment the `.dmg` is packed (the log says
+      # `Cleaning …/bundle/macos/CCP-Bot.app`), so the binary it copied is the one to look at.
+      - name: Assert the payload is arm64
         if: runner.os == 'macOS'
         shell: bash
         run: |
-          app="$(ls -d desktop/src-tauri/target/release/bundle/macos/*.app | head -1)"
-          binary="$(ls "$app"/Contents/MacOS/* | head -1)"
-          echo "$binary"
+          binary=desktop/src-tauri/target/release/ccpbot-desktop
           archs="$(lipo -archs "$binary")"
           echo "archs: $archs"
           case "$archs" in
