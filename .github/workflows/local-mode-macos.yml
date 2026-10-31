@@ -100,18 +100,24 @@ jobs:
       - name: Run the rest of the local-mode live tests
         run: |
           set -euo pipefail
+          # Each test is named, and every invocation is asserted to have run exactly one test. A filter
+          # that matches nothing exits 0, so a mistyped name — or a test that lives in the other target —
+          # would look like a pass. Measured on this job twice: a `--lib` invocation given the name of a
+          # test in the binary reported `0 passed; 723 filtered out`, and a call this helper read the
+          # wrong way was caught by the same assertion rather than by going green.
           run_one() {
-            local target="$1" name="$2" log="live-$2.log"
-            echo "===== $name ($target) ====="
+            local name="$1" target_args="$2" log="live-$1.log"
+            echo "===== $name ($target_args) ====="
+            # shellcheck disable=SC2086
             cargo test -p ccpbot-desktop --manifest-path desktop/src-tauri/Cargo.toml \
-              "$target" -- "$name" --include-ignored --nocapture 2>&1 | tee "$log"
+              $target_args -- "$name" --include-ignored --nocapture 2>&1 | tee "$log"
             if ! grep -q 'test result: ok. 1 passed' "$log"; then
               echo "::error::$name did not run, or did not pass"
-              exit 1
+              return 1
             fi
           }
-          run_one --bin ccpbot-desktop "tests::live_a_run_on_this_computer_records_what_it_owns"
-          run_one --bin ccpbot-desktop "tests::live_quitting_stops_the_stack_this_computer_started"
+          run_one "tests::live_a_run_on_this_computer_records_what_it_owns" "--bin ccpbot-desktop"
+          run_one "tests::live_quitting_stops_the_stack_this_computer_started" "--bin ccpbot-desktop"
 
       # A failing test says which part did not answer and nothing about why: the reason is in the
       # process's own log, which lives on the runner that is about to be deleted. Learned the hard
