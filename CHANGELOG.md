@@ -6,6 +6,16 @@ afterwards, and does not when only the code moved.
 
 Newest first. `Unreleased` is what is on `main` and not yet tagged.
 
+## 0.4.0 - it does not need CopilotKit
+
+A deployment with no CopilotKit connection starts now. The three values — an API URL, a gateway WebSocket URL and a key — used to be a requirement the server enforced at boot, and the local route answered it by inventing a connection nobody had; with none of the three set it runs on its own database instead, and `/api/capabilities` says so (`mode: "sse"`). A *partial* set is still refused: a half-configured connection is the more dangerous shape, because it looks like one. Whichever it is, the log says which — `intelligence-absent` when the deployment is on its own, `handoff-absent` when work cannot be handed between Bots because the platform's threads and locks are not there. The window's fourth step no longer asks for a connection before it starts and no longer calls itself a step: what a connection buys is still offered, and is now optional on both routes.
+
+Conversations stay on this machine. A thread used to live in the platform, and the SDK's own local endpoint could not be the place it lived: its reads are synchronous and a read from a database never is. Threads and their messages are the deployment's own tables now (migration 0070), written as a conversation happens and read back after the process is gone — start it again and the history is there. Given no store at all, a read still answers empty and says once that it had nothing to read from.
+
+On this computer, five things that were wrong are fixed. The model key from the model screen goes to this machine's credential store rather than into `.env`, and travels to the Bot as environment (a file given with `--env-file` does not override a variable that is already set, which is what makes that safe). A Stop no longer reports a failed `compose down` for a folder that never used containers. Quitting CCP-Bot stops the stack it started, and a window opened again on a running stack recognises it as its own instead of showing the welcome screen. The progress line during a first start says which step it is working on in words. Two smaller ones are worth naming because they were invisible: the computer is now told where to keep its browser profiles — macOS refused the fallback (`/profiles` is on the read-only system volume) and Windows only ever got away with it by accident — and a computer that never answers now brings the last of its own log to the failure that reports it.
+
+macOS on Apple silicon runs the same route as Windows: no container engine, no administrator, no virtual machine. It unpacks the same portable PostgreSQL — one universal download serves both architectures — and rebuilds the symbolic links inside it, takes the vector extension as a build published for that platform, and ends a service by its process group. Intel Macs are not covered: there is no container engine package for them to install either, so that build still needs Podman Desktop or Docker Desktop placed by hand first.
+
 ## 0.3.2 - the model you choose reaches the Bot, and the window shows its own stack
 
 Two things a downloaded installer still asked a person to do by hand, both measured on a clean
