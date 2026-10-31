@@ -48,19 +48,15 @@ jobs:
         with:
           workspaces: desktop/src-tauri -> target
 
-      # One test at a time: each of these starts a real database and four processes, and letting
-      # them race for ports and for the same checkout root would turn a real failure into a flaky
-      # one. `--include-ignored` is the point of the job — every `live_` test is ignored by default
-      # precisely because it does all of this.
-      - name: Run the local-mode live tests
-        run: |
-          cargo test -p ccpbot-desktop --manifest-path desktop/src-tauri/Cargo.toml \
-            --lib -- local::tests::live_ --include-ignored --nocapture -- --test-threads=1
-
-      # The step above passes only if a test passed; a filter that matched nothing would also
-      # "pass", so the log is checked for the line each run prints when the stack is up. Without
-      # this, a rename of the tests would quietly turn the job into a no-op.
-      - name: Assert the stack actually came up
+      # The decisive one goes first, so a Mac that cannot run the stack fails in the first few
+      # minutes instead of after every other live test has spent its download. This is also the
+      # step that would catch a `#[cfg(unix)]` compile error — the one thing a Windows machine
+      # cannot check, because it never compiles those branches.
+      #
+      # An exit code is not enough evidence here: a filter that matched nothing, or a test that
+      # was renamed, would also look like a pass. The log is checked for the two lines the stack
+      # prints when it is up — the server answering, and the Bot's own process answering.
+      - name: Prove this Mac runs the stack
         shell: bash
         run: |
           log=local-mode-live.log
@@ -71,3 +67,13 @@ jobs:
             || { echo "the local stack never reached ready on this Mac"; tail -40 "$log"; exit 1; }
           grep -F '[bot] The built-in Bot is answering (/health 200).' "$log" \
             || { echo "the built-in Bot never answered on this Mac"; tail -40 "$log"; exit 1; }
+
+      # Everything else the local route claims, minus the one above. One test at a time: each of
+      # these starts a real database and four processes, and letting them race for ports and for the
+      # same checkout root would turn a real failure into a flaky one. `--include-ignored` is the
+      # point of the job — every `live_` test is ignored by default precisely because it does this.
+      - name: Run the rest of the local-mode live tests
+        run: |
+          cargo test -p ccpbot-desktop --manifest-path desktop/src-tauri/Cargo.toml \
+            --lib -- local::tests::live_ --include-ignored --nocapture -- --test-threads=1 \
+            --skip live_start_serves_the_interface_on_this_machine
