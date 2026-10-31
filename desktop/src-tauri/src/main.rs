@@ -9880,7 +9880,7 @@ fn main() {
             api_key: "sk-local-placeholder-for-a-desktop-run".to_string(),
         };
         let mut steps: Vec<String> = Vec::new();
-        let mut started =
+        let started =
             crate::local::start(&root, &cache, None, Some(&credential), |step, detail| {
                 println!("[{step}] {detail}");
                 steps.push(step.to_string());
@@ -9920,6 +9920,190 @@ fn main() {
             !crate::stack::recorded_process_owns_port(&root, "app", crate::local::SERVER_PORT)
                 .expect("the app question after the stop"),
             "a run that is over owns nothing"
+        );
+        if !had_marker {
+            std::fs::remove_file(crate::local::marker(&root)).expect("the marker this test wrote");
+        }
+    }
+
+    /// A process that keeps running until something stops it.
+    #[cfg(windows)]
+    fn a_process_that_waits() -> std::process::Child {
+        std::process::Command::new("cmd")
+            .args(["/c", "ping", "-n", "30", "127.0.0.1"])
+            .stdin(std::process::Stdio::null())
+            .stdout(std::process::Stdio::null())
+            .spawn()
+            .expect("a child that keeps running")
+    }
+
+    #[cfg(unix)]
+    fn a_process_that_waits() -> std::process::Child {
+        std::process::Command::new("/bin/sleep")
+            .arg("30")
+            .stdin(std::process::Stdio::null())
+            .stdout(std::process::Stdio::null())
+            .spawn()
+            .expect("a child that keeps running")
+    }
+
+    #[cfg(windows)]
+    fn is_still_running(pid: u32) -> bool {
+        let output = std::process::Command::new("tasklist")
+            .args(["/FI", format!("PID eq {pid}").as_str(), "/NH"])
+            .output()
+            .expect("tasklist");
+        String::from_utf8_lossy(&output.stdout).contains(&pid.to_string())
+    }
+
+    #[cfg(unix)]
+    fn is_still_running(pid: u32) -> bool {
+        Path::new(&format!("/proc/{pid}")).exists()
+    }
+
+    /// Quitting stops what this computer started. The container step answers for a folder whose
+    /// processes its record lists; a folder this computer runs has to end up in `local::stop`, the
+    /// only thing that also knows a database was started beside the services.
+    #[test]
+    fn quitting_stops_the_processes_a_run_on_this_computer_started() {
+        let root = temp_root("quit-stops-a-local-run");
+        std::fs::create_dir_all(&root).unwrap();
+        std::fs::write(crate::local::marker(&root), "local\n").unwrap();
+        let shell = Shell::default();
+        let child = a_process_that_waits();
+        let pid = child.id();
+        shell.local_children.lock().unwrap().push(child);
+        let phases = std::cell::RefCell::new(Vec::<String>::new());
+
+        let failures = exit_cleanup_with(
+            &shell,
+            &root,
+            |_| {
+                phases.borrow_mut().push("cleanup".to_string());
+                Ok(0)
+            },
+            |root| {
+                phases.borrow_mut().push("down".to_string());
+                down_containers_on_quit(&shell, root)
+            },
+        );
+
+        assert!(failures.is_empty(), "{failures:?}");
+        assert_eq!(
+            *phases.borrow(),
+            vec!["cleanup".to_string(), "down".to_string()],
+            "the quit cleanup runs the same two steps a Stop does"
+        );
+        assert!(
+            !failures
+                .iter()
+                .any(|line| line.contains("Compose down failed")),
+            "a folder this computer runs is not Compose's to stop: {failures:?}"
+        );
+        assert!(
+            shell.local_children.lock().unwrap().is_empty(),
+            "quitting left the processes this computer started in the list"
+        );
+        assert!(
+            !is_still_running(pid),
+            "pid {pid} is still running after quitting"
+        );
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    /// A failure while quitting is written down, and the next start sees it. The local stack is the
+    /// one with a database behind it, so its failure is the notice's `host-processes` kind.
+    #[test]
+    fn a_local_stop_failure_of_the_quit_cleanup_reaches_the_next_start() {
+        let root = temp_root("quit-notice-local-stop");
+        std::fs::create_dir_all(&root).unwrap();
+        let lines = vec![format!(
+            "[exit] cleanup failed: {}",
+            problem_detail(Problem::with(
+                "The local database would not stop.",
+                "pg_ctl refused to stop it"
+            ))
+        )];
+
+        write_quit_cleanup_notice(&root, &lines).unwrap();
+
+        let shell = Shell::default();
+        assert!(
+            recovery_required_or_pending_quit_notice(&shell, &root),
+            "the next start has to see the failure"
+        );
+        let notice = read_quit_cleanup_notice(&root)
+            .unwrap()
+            .expect("the notice is there");
+        let detail = notice.detail.unwrap_or_default();
+        assert!(detail.contains("app processes stopped"), "{detail}");
+        assert!(!detail.contains("containers stopped"), "{detail}");
+        assert!(read_quit_cleanup_notice(&root).unwrap().is_none());
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    /// Quitting for real: the stack this computer started stops, the record goes with it, and the
+    /// port and the database answer nothing afterwards.
+    #[test]
+    #[ignore = "starts the real local stack and takes the local ports"]
+    fn live_quitting_stops_the_stack_this_computer_started() {
+        let root = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+            .parent()
+            .unwrap()
+            .parent()
+            .unwrap()
+            .to_path_buf();
+        let cache = std::env::temp_dir().join("ccpbot-local-cache");
+        let had_marker = crate::local::wanted(&root);
+        crate::local::remember(&root).expect("the folder this run answers for");
+        let credential = ccpbot_env::ModelCredential::OpenAi {
+            api_key: "sk-local-placeholder-for-a-desktop-run".to_string(),
+        };
+        let started =
+            crate::local::start(&root, &cache, None, Some(&credential), |step, detail| {
+                println!("[{step}] {detail}");
+            })
+            .expect("the local stack should start");
+        let owned = started_host_processes(&started);
+        crate::stack::record_host_processes(&root, &owned).expect("the ownership record");
+
+        // The window's own bookkeeping, filled the way `local_start` fills it.
+        let shell = Shell::default();
+        {
+            let mut children = shell.local_children.lock().unwrap();
+            children.push(started.server);
+            children.push(started.worker);
+            if let Some(bot) = started.bot {
+                children.push(bot);
+            }
+            if let Some(computer) = started.computer {
+                children.push(computer);
+            }
+        }
+
+        let failures = exit_cleanup_with(&shell, &root, stack::stop_processes_under, |root| {
+            down_containers_on_quit(&shell, root)
+        });
+
+        assert!(failures.is_empty(), "{failures:?}");
+        assert!(
+            shell.local_children.lock().unwrap().is_empty(),
+            "quitting left the processes this computer started in the list"
+        );
+        assert!(
+            crate::stack::recorded_host_processes(&root)
+                .expect("the record")
+                .is_empty(),
+            "the record outlived the run it described"
+        );
+        assert!(
+            crate::local::health_status(crate::local::SERVER_ADDRESS).is_err(),
+            "something still answers on {}",
+            crate::local::SERVER_ADDRESS
+        );
+        assert!(
+            !crate::local::postgres_running(&root),
+            "the database this run started is still up"
         );
         if !had_marker {
             std::fs::remove_file(crate::local::marker(&root)).expect("the marker this test wrote");
