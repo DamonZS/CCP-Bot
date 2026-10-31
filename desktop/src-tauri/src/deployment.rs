@@ -402,6 +402,54 @@ pub fn get_asset(url: &str) -> Result<Vec<u8>, String> {
 /// How long a download may go without receiving anything before it is given up.
 const IDLE_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(30);
 
+/// The token this machine can offer GitHub, if it has one.
+///
+/// GitHub counts anonymous requests per address — 60 an hour — and the address is not this
+/// machine's: a CI runner, an office NAT, a phone hotspot shared by everyone behind it are all one
+/// address to GitHub. One of those can spend the budget before this app asks, and then a first run
+/// fails to resolve its own release with `403 Forbidden`, which has nothing to do with the machine
+/// it is running on. A token moves the limit to the account's own.
+///
+/// Three names, in this order, because a machine may keep one for this app and one for `gh`:
+/// `CCPBOT_RELEASE_TOKEN`, `GH_TOKEN`, `GITHUB_TOKEN`. Nothing set means exactly the anonymous
+/// request this app has always made: a token is an improvement here, never a requirement.
+///
+/// WHERE THIS VALUE MAY GO: one request header, to GitHub, and nowhere else. Not `.env` (that file
+/// is handed to the Bot and to Compose), not a log line, not a `Problem`'s text — a credential in
+/// any of those is a credential in a file somebody else can read.
+pub fn release_token(look_up: impl Fn(&str) -> Option<String>) -> Option<String> {
+    ["CCPBOT_RELEASE_TOKEN", "GH_TOKEN", "GITHUB_TOKEN"]
+        .into_iter()
+        .find_map(|name| {
+            let value = look_up(name)?.trim().to_string();
+            (!value.is_empty()).then_some(value)
+        })
+}
+
+/// Whether this URL may be handed this machine's GitHub token.
+///
+/// Only GitHub's own hosts: the same fetch helper downloads the portable database and the runtime
+/// from vendors who are not GitHub (`get.enterprisedb.com`), and a token sent there would be handed
+/// to somebody the token does not belong to.
+fn may_carry_a_token(url: &str) -> bool {
+    let host = url
+        .split_once("://")
+        .map(|(_, rest)| rest)
+        .unwrap_or_default()
+        .split(['/', '?', '#'])
+        .next()
+        .unwrap_or_default()
+        .rsplit('@')
+        .next()
+        .unwrap_or_default()
+        .split(':')
+        .next()
+        .unwrap_or_default();
+    host == "github.com"
+        || host.ends_with(".github.com")
+        || host.ends_with(".githubusercontent.com")
+}
+
 /**
 `get`, giving up only when nothing arrives for `idle`.
 
@@ -409,6 +457,9 @@ READ AS A STREAM, NOT WITH `bytes()`. The blocking client's timeout (30 s by def
 read on a stream, but `bytes()` waits for the whole body within it, and reports running out of time
 as "error decoding response body". So any download that took longer than 30 seconds failed, however
 steadily it was arriving: Bun's 30 MB on a connection under about 1 MB/s, every time.
+
+The request itself is built by `prepared`, which is also the one place that decides whether this
+machine's GitHub token belongs on it.
 */
 fn get_waiting(
     url: &str,
@@ -416,6 +467,31 @@ fn get_waiting(
     accept: Option<&str>,
 ) -> Result<Vec<u8>, String> {
     use std::io::Read;
+    let mut response = prepared(
+        url,
+        idle,
+        accept,
+        release_token(|name| std::env::var(name).ok()),
+    )?
+    .send()
+    .map_err(|error| format!("could not reach {url}: {error}"))?;
+    if !response.status().is_success() {
+        return Err(format!("{url} answered {}", response.status()));
+    }
+    let mut body = Vec::new();
+    response
+        .read_to_end(&mut body)
+        .map_err(|error| format!("the download did not finish: {error}"))?;
+    Ok(body)
+}
+
+/// The request `get_waiting` sends, assembled but not sent — so what it carries can be asserted.
+fn prepared(
+    url: &str,
+    idle: std::time::Duration,
+    accept: Option<&str>,
+    token: Option<String>,
+) -> Result<reqwest::blocking::RequestBuilder, String> {
     let mut request = reqwest::blocking::Client::builder()
         .user_agent("ccpbot-desktop")
         .timeout(idle)
@@ -425,17 +501,10 @@ fn get_waiting(
     if let Some(accept) = accept {
         request = request.header(reqwest::header::ACCEPT, accept);
     }
-    let mut response = request
-        .send()
-        .map_err(|error| format!("could not reach {url}: {error}"))?;
-    if !response.status().is_success() {
-        return Err(format!("{url} answered {}", response.status()));
+    if let Some(token) = token.filter(|_| may_carry_a_token(url)) {
+        request = request.header(reqwest::header::AUTHORIZATION, format!("Bearer {token}"));
     }
-    let mut body = Vec::new();
-    response
-        .read_to_end(&mut body)
-        .map_err(|error| format!("the download did not finish: {error}"))?;
-    Ok(body)
+    Ok(request)
 }
 
 #[cfg(test)]
@@ -961,5 +1030,108 @@ mod tests {
                 "{workspace} is a root workspace that a frozen install needs, but is not copied"
             );
         }
+    }
+    #[test]
+    fn the_names_are_tried_in_order_and_a_blank_one_is_not_a_token() {
+        let set = |pairs: &[(&str, &str)]| {
+            let pairs: Vec<(String, String)> = pairs
+                .iter()
+                .map(|(name, value)| (name.to_string(), value.to_string()))
+                .collect();
+            move |name: &str| {
+                pairs
+                    .iter()
+                    .find(|(set, _)| set == name)
+                    .map(|(_, value)| value.clone())
+            }
+        };
+        assert_eq!(
+            release_token(set(&[("GH_TOKEN", "gh"), ("GITHUB_TOKEN", "other")])),
+            Some("gh".to_string())
+        );
+        assert_eq!(
+            release_token(set(&[("CCPBOT_RELEASE_TOKEN", "   "), ("GH_TOKEN", "gh")])),
+            Some("gh".to_string())
+        );
+        assert_eq!(
+            release_token(set(&[
+                ("CCPBOT_RELEASE_TOKEN", " own "),
+                ("GH_TOKEN", "gh")
+            ])),
+            Some("own".to_string())
+        );
+        assert_eq!(release_token(set(&[])), None);
+    }
+
+    #[test]
+    fn the_token_goes_to_githubs_own_hosts_and_nowhere_else() {
+        assert!(may_carry_a_token(
+            "https://api.github.com/repos/x/releases/latest"
+        ));
+        assert!(may_carry_a_token(
+            "https://github.com/x/y/releases/download/v1/z.tar.gz"
+        ));
+        assert!(may_carry_a_token("https://objects.githubusercontent.com/x"));
+        assert!(!may_carry_a_token(
+            "https://get.enterprisedb.com/postgresql/x.zip"
+        ));
+        assert!(!may_carry_a_token("https://github.example.com/x"));
+        assert!(!may_carry_a_token("not a url"));
+    }
+
+    #[test]
+    fn a_request_that_may_carry_the_token_carries_it() {
+        let request = prepared(
+            "https://api.github.com/repos/DamonZS/CCP-Bot/releases/tags/v0.4.1",
+            IDLE_TIMEOUT,
+            None,
+            release_token(|name| (name == "GH_TOKEN").then(|| " ghp-example ".to_string())),
+        )
+        .unwrap()
+        .build()
+        .unwrap();
+        assert_eq!(
+            request
+                .headers()
+                .get(reqwest::header::AUTHORIZATION)
+                .unwrap()
+                .to_str()
+                .unwrap(),
+            "Bearer ghp-example"
+        );
+    }
+
+    #[test]
+    fn a_request_for_somebody_else_carries_none_and_nothing_set_is_anonymous() {
+        // The same helper fetches the portable database from a vendor that is not GitHub.
+        let elsewhere = prepared(
+            "https://get.enterprisedb.com/postgresql/postgresql-17.6-1-osx-binaries.zip",
+            IDLE_TIMEOUT,
+            None,
+            Some("ghp-example".to_string()),
+        )
+        .unwrap()
+        .build()
+        .unwrap();
+        assert!(
+            elsewhere
+                .headers()
+                .get(reqwest::header::AUTHORIZATION)
+                .is_none(),
+            "a vendor that is not GitHub must not be handed this machine's token"
+        );
+        let anonymous = prepared(
+            "https://api.github.com/repos/DamonZS/CCP-Bot/releases/tags/v0.4.1",
+            IDLE_TIMEOUT,
+            None,
+            release_token(|_| None),
+        )
+        .unwrap()
+        .build()
+        .unwrap();
+        assert!(anonymous
+            .headers()
+            .get(reqwest::header::AUTHORIZATION)
+            .is_none());
     }
 }
