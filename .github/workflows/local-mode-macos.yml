@@ -68,33 +68,43 @@ jobs:
           grep -F '[bot] The built-in Bot is answering (/health 200).' "$log" \
             || { echo "the built-in Bot never answered on this Mac"; tail -40 "$log"; exit 1; }
 
-      # The rest of what the local route claims, each test named and run on its own. Not
-      # `local::tests::live_` with `--skip`: measured on this job's first run, three `--skip` flags
-      # were echoed and ignored, so the test that cannot pass here ran anyway and the job went red for
-      # a reason that is not this Mac. One name per invocation also makes "one test at a time"
-      # structural instead of a flag — each of these starts a real database and four processes, and
-      # letting them race for ports and the same checkout root would turn a real failure into a flaky
-      # one. `--include-ignored` is the point of the job: every `live_` test is ignored by default
-      # precisely because it does this.
+      # Each test is named, one per invocation, and every invocation is asserted to have run exactly one
+      # test. A filter matching nothing exits 0 — measured on this job: a `--lib` invocation given the
+      # name of a test that lives in the binary reported `0 passed; 723 filtered out` and the step went
+      # green, which is what a real gap in coverage looks like when nobody counts. Two of the three are
+      # in `main.rs` (the ownership records a start writes and a quit cleans up), one is in the library.
       #
-      # Left out on purpose: `live_a_fresh_folder_installs_the_bots_own_dependencies`. It prepares a
-      # checkout from the *published* release and then starts the stack with the route in this tree,
-      # so it only passes when the published sources agree with it. They do not today: 0.3.2's server
-      # still refuses to start without a CopilotKit connection, while this tree's route stopped
-      # inventing one (0.4.0). Run it again once a 0.4.0-or-later release is what `latest` resolves to.
-      # The macOS half of what it proves — unpacking the portable database and installing the Bot's
-      # own dependencies — is already in the step above, whose log shows `[database] Preparing…`,
-      # `[dependencies]` and `[schema]` on a runner whose checkout started empty.
+      # Not `local::tests::live_` with `--skip`: measured on this job's first run, three `--skip` flags
+      # were echoed and every one of them was ignored, so the test that cannot pass here ran anyway and
+      # the job went red for a reason that is not this Mac. One name per invocation also makes "one test
+      # at a time" structural rather than a flag — each of these starts a real database and four
+      # processes, and letting them race for ports and the same checkout root turns a real failure into
+      # a flaky one. `--include-ignored` is the point of the job: every `live_` test is ignored by
+      # default precisely because it does this.
+      #
+      # Left out on purpose: `live_a_fresh_folder_installs_the_bots_own_dependencies`, which prepares a
+      # checkout from the *published* release and then starts it with this tree's route, so it can only
+      # pass when the published sources agree with it. They do not today: 0.3.2's server still refuses to
+      # start without a CopilotKit connection, while this tree's route stopped inventing one (0.4.0). Put
+      # it back once `latest` resolves to a 0.4.0-or-later release. The macOS half of what it proves —
+      # unpacking the portable database, installing the Bot's own dependencies, `[schema]` — is already
+      # in the decisive step above, whose log shows them on a checkout that started empty.
       - name: Run the rest of the local-mode live tests
         run: |
-          for t in \
-            live_an_empty_folder_is_filled_from_the_release \
-            live_a_run_on_this_computer_records_what_it_owns \
-            live_quitting_stops_the_stack_this_computer_started; do
-            echo "===== $t ====="
+          set -euo pipefail
+          run_one() {
+            local target="$1" name="$2" log="live-$2.log"
+            echo "===== $name ($target) ====="
             cargo test -p ccpbot-desktop --manifest-path desktop/src-tauri/Cargo.toml \
-              --lib -- "local::tests::$t" --include-ignored --nocapture
-          done
+              "$target" -- "$name" --include-ignored --nocapture 2>&1 | tee "$log"
+            if ! grep -q 'test result: ok. 1 passed' "$log"; then
+              echo "::error::$name did not run, or did not pass"
+              exit 1
+            fi
+          }
+          run_one --lib "local::tests::live_an_empty_folder_is_filled_from_the_release"
+          run_one --bin ccpbot-desktop "tests::live_a_run_on_this_computer_records_what_it_owns"
+          run_one --bin ccpbot-desktop "tests::live_quitting_stops_the_stack_this_computer_started"
 
       # A failing test says which part did not answer and nothing about why: the reason is in the
       # process's own log, which lives on the runner that is about to be deleted. Learned the hard
