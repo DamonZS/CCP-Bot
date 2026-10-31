@@ -403,7 +403,7 @@ test("CopilotKit Back preserves the selected AI and connection settings", async 
   );
   await userEvent.click(view.getByRole("button", { name: "Continue" }));
   expect(
-    view.getByRole("heading", { name: "Connect to CopilotKit" }),
+    view.getByRole("heading", { name: "Start CCP-Bot" }),
   ).toBeTruthy();
   await userEvent.click(
     view.getByText("Point at your own Intelligence server"),
@@ -630,9 +630,10 @@ test.each([false, true])(
     expect(
       view.getByRole("heading", { name: "Starting CCP-Bot" }),
     ).toBeTruthy();
-    expect(
-      view.queryByRole("heading", { name: "Connect to CopilotKit" }),
-    ).toBeNull();
+    // The connection screen's own sentence, not its old heading: the heading was renamed when a
+    // connection stopped being a prerequisite, and an assertion on a heading nobody renders passes
+    // whether or not the screen is there.
+    expect(view.queryByText(/a CopilotKit connection is optional/)).toBeNull();
     expect(view.queryByRole("button", { name: "Set up CCP-Bot" })).toBeNull();
     await act(async () => launch.resolve());
     await waitFor(() =>
@@ -1872,7 +1873,7 @@ test("Change the model after an Ask failure stops the stack and reaches the prov
   expect(view.queryByRole("button", { name: "Stop CCP-Bot" })).toBeNull();
 });
 
-test("empty Intelligence projects keep sign-in retryable while Start waits for a project key", async () => {
+test("empty Intelligence projects keep sign-in retryable without holding up Start", async () => {
   let projectLists = 0;
   invokeHandler = async (command) => {
     if (command === "prepare_installation") return null;
@@ -1958,7 +1959,7 @@ test("empty Intelligence projects keep sign-in retryable while Start waits for a
   ).toBeTruthy();
   expect(view.getByRole("button", { name: "Start CCP-Bot" })).toHaveProperty(
     "disabled",
-    true,
+    false,
   );
 
   await userEvent.click(view.getByRole("button", { name: "Sign in again" }));
@@ -2433,7 +2434,7 @@ test.each([
     }
     await user.click(view.getByRole("button", { name: "Continue" }));
     const previousStart = view.getByRole("button", { name: "Start CCP-Bot" });
-    expect(previousStart).toHaveProperty("disabled", !savedModel);
+    expect(previousStart).toHaveProperty("disabled", false);
     await user.click(view.getByRole("button", { name: "Change installation" }));
     const rootField = view.getByLabelText("Where CCP-Bot lives");
 
@@ -3113,7 +3114,7 @@ for (const provider of [
       await userEvent.click(view.getByRole("button", { name: "Continue" }));
       expect(
         view.getByRole("button", { name: "Start CCP-Bot" }),
-      ).toHaveProperty("disabled", true);
+      ).toHaveProperty("disabled", false);
       await userEvent.click(
         view.getByRole("button", { name: "Use a saved connection" }),
       );
@@ -3474,9 +3475,13 @@ test("a first run on this computer starts with the model alone", async () => {
   expect(
     view.getByRole("heading", { name: "Run CCP-Bot on this computer" }),
   ).toBeTruthy();
+  // The connection is offered below, and never numbered as a step that has to be taken.
+  expect(view.queryByText(/Step \d of 4/)).toBeNull();
   expect(
-    view.queryByRole("heading", { name: "Connect to CopilotKit" }),
-  ).toBeNull();
+    view.getByText(
+      "Optional on this computer: connect CopilotKit to keep conversations there. CCP-Bot starts without it.",
+    ),
+  ).toBeTruthy();
   expect(view.getByRole("button", { name: "Start CCP-Bot" })).toHaveProperty(
     "disabled",
     false,
@@ -3537,8 +3542,47 @@ test("a local start on this computer says which step it is working on", async ()
   started.resolve(localInstallationStatus({ wanted: true, step: "ready" }));
 });
 
-test("the container route still waits for a connection before it starts", async () => {
-  setupRootConfiguration("/tmp/container-needs-connection", async () =>
+test.each([
+  ["database", "Database"],
+  ["ready", "Answering"],
+])(
+  "a local run's step %s is named %s on the connection screen",
+  async (step, shown) => {
+    const root = `/tmp/local-step-${step}`;
+    const view = await enterLocalFirstRunSetup(root);
+    const started = deferred<unknown>();
+    const containerHandlers = invokeHandler;
+    invokeHandler = async (command, args) => {
+      if (command === "local_start") return started.promise;
+      if (command === "local_status")
+        return localInstallationStatus({
+          wanted: true,
+          step,
+          step_detail:
+            "Preparing the local database (downloaded once, then reused)…",
+        });
+      return containerHandlers(command, args);
+    };
+    await userEvent.click(await view.findByRole("radio", { name: /OpenAI/ }));
+    await userEvent.type(
+      view.getByLabelText("OpenAI API key"),
+      "model-only-key",
+    );
+    await userEvent.click(view.getByRole("button", { name: "Continue" }));
+    await userEvent.click(view.getByRole("button", { name: "Start CCP-Bot" }));
+
+    // Named the way `LocalRun` names the same step, from the one table they share — and the run's
+    // own id is not what the row says, even though the detail line below it is the run's own prose.
+    expect(await view.findByRole("listitem", { name: shown })).toBeTruthy();
+    expect(view.getByText(shown)).toBeTruthy();
+    expect(view.queryByText(step)).toBeNull();
+
+    started.resolve(localInstallationStatus({ wanted: true, step: "ready" }));
+  },
+);
+
+test("the container route starts on a model key without a connection", async () => {
+  setupRootConfiguration("/tmp/container-without-a-connection", async () =>
     emptyConfiguration(),
   );
   const view = await renderApp();
@@ -3548,21 +3592,34 @@ test("the container route still waits for a connection before it starts", async 
   await userEvent.type(view.getByLabelText("OpenAI API key"), "model-only-key");
   await userEvent.click(view.getByRole("button", { name: "Continue" }));
 
+  // Nothing here is numbered as a step that has to be taken, nothing asks for a connection, and
+  // Start is not waiting for one: the form below offers one, and the server decides what an empty
+  // one means for the stack it is asked to start.
+  expect(view.queryByText(/Step \d of 4/)).toBeNull();
+  expect(view.getByRole("heading", { name: "Start CCP-Bot" })).toBeTruthy();
   expect(
-    view.getByRole("heading", { name: "Connect to CopilotKit" }),
+    view.getByText(
+      "Installation is complete. Start CCP-Bot — a CopilotKit connection is optional.",
+    ),
   ).toBeTruthy();
-  expect(view.getByRole("button", { name: "Start CCP-Bot" })).toHaveProperty(
-    "disabled",
-    true,
-  );
+  const startButton = view.getByRole("button", { name: "Start CCP-Bot" });
+  expect(startButton).toHaveProperty("disabled", false);
+  await userEvent.click(startButton);
+
+  expect(getStartStackPayload()).toMatchObject({
+    root: "/tmp/container-without-a-connection",
+    apiKey: "",
+    model: { provider: "openai", login: "api-key", apiKey: "model-only-key" },
+  });
 });
 
 test("a window reopened on a running local stack shows it without starting it again", async () => {
   const root = "/tmp/running-local-root";
+  // No launch record: the local route writes none, so this is the half that used to fall through to
+  // the wizard and land on a screen whose Stop could not be reached.
   setupRootConfiguration(root, async () => ({
     ...savedOpenAiConfiguration(),
     saved: { ...savedOpenAiConfiguration().saved, model: "open-ai-api-key" },
-    launch: { harness: { id: "langgraph" } },
   }));
   const containerHandlers = invokeHandler;
   invokeHandler = async (command, args) => {
@@ -3586,14 +3643,15 @@ test("a window reopened on a running local stack shows it without starting it ag
   ).toBeTruthy();
   expect(invokeCalls).toContainEqual({ command: "show_ccpbot" });
   expect(invokeCalls.some((call) => call.command === "start_stack")).toBe(false);
+  expect(invokeCalls.some((call) => call.command === "local_start")).toBe(false);
 });
 
 test("a window reopened on a stopped local stack leaves the start to the local screen", async () => {
   const root = "/tmp/stopped-local-root";
+  // Marked and stopped, and still no launch record: the folder is not a fresh wizard either way.
   setupRootConfiguration(root, async () => ({
     ...savedOpenAiConfiguration(),
     saved: { ...savedOpenAiConfiguration().saved, model: "open-ai-api-key" },
-    launch: { harness: { id: "langgraph" } },
   }));
   const containerHandlers = invokeHandler;
   invokeHandler = async (command, args) => {
@@ -3610,5 +3668,37 @@ test("a window reopened on a stopped local stack leaves the start to the local s
   expect(
     await view.findByRole("button", { name: "Start on this computer" }),
   ).toBeTruthy();
+  expect(invokeCalls.some((call) => call.command === "start_stack")).toBe(false);
+});
+
+test("the welcome button goes to a stack that came up behind it", async () => {
+  const root = "/tmp/menu-started-local-root";
+  setupRootConfiguration(root, async () => emptyConfiguration());
+  // A window that knows of no stack when it opens, and a stack that is up by the time its other way
+  // in is clicked: the menu bar starts one without the wizard.
+  let startedFromTheMenu = false;
+  const containerHandlers = invokeHandler;
+  invokeHandler = async (command, args) => {
+    if (command === "local_status") {
+      return localInstallationStatus(
+        startedFromTheMenu ? { wanted: true, health: 200, step: "ready" } : {},
+      );
+    }
+    if (command === "show_ccpbot") return null;
+    return containerHandlers(command, args);
+  };
+
+  const view = await renderApp();
+  const button = await view.findByRole("button", {
+    name: "Run it on this computer instead",
+  });
+  startedFromTheMenu = true;
+  await userEvent.click(button);
+
+  expect(
+    await view.findByRole("heading", { name: "CCP-Bot is running" }),
+  ).toBeTruthy();
+  expect(invokeCalls).toContainEqual({ command: "show_ccpbot" });
+  expect(invokeCalls.some((call) => call.command === "local_start")).toBe(false);
   expect(invokeCalls.some((call) => call.command === "start_stack")).toBe(false);
 });

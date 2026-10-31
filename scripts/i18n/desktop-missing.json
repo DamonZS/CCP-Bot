@@ -199,5 +199,6 @@
   "Your own AI coworkers, on this computer.",
   "They answer questions, use the tools you connect, and can work in a browser for you.",
   "Set up CCP-Bot",
-  "Takes a few minutes. CCP-Bot installs what it needs first, then asks you to sign in to the AI plan you already have."
+  "Takes a few minutes. CCP-Bot installs what it needs first, then asks you to sign in to the AI plan you already have.",
+  "Installation is complete. Start CCP-Bot — a CopilotKit connection is optional."
 ]

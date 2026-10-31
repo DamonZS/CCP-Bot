@@ -135,6 +135,7 @@ export const ZH_CN: Record<string, string> = {
   "Initialising the database cluster failed.": "数据库集群初始化失败。",
   "Initialising the database cluster…": "正在初始化数据库集群…",
   "Installation": "安装",
+  "Installation is complete. Start CCP-Bot — a CopilotKit connection is optional.": "安装已完成。启动 CCP-Bot 即可，CopilotKit 连接是可选的。",
   "Installation options": "安装选项",
   "Installing dependencies…": "正在安装依赖…",
   "Installing local software…": "正在安装本地软件…",

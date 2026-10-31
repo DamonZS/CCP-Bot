@@ -187,5 +187,6 @@
   "Your own AI coworkers, on this computer.": "你自己的 AI 同事，就在这台电脑上。",
   "They answer questions, use the tools you connect, and can work in a browser for you.": "它们回答问题，使用你连接的各类工具，还能替你在浏览器里工作。",
   "Set up CCP-Bot": "设置 CCP-Bot",
-  "Takes a few minutes. CCP-Bot installs what it needs first, then asks you to sign in to the AI plan you already have.": "需要几分钟。CCP-Bot 会先安装所需内容，然后请你登录你已有的 AI 方案。"
+  "Takes a few minutes. CCP-Bot installs what it needs first, then asks you to sign in to the AI plan you already have.": "需要几分钟。CCP-Bot 会先安装所需内容，然后请你登录你已有的 AI 方案。",
+  "Installation is complete. Start CCP-Bot — a CopilotKit connection is optional.": "安装已完成。启动 CCP-Bot 即可，CopilotKit 连接是可选的。"
 }

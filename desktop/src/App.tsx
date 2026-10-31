@@ -23,7 +23,7 @@ import {
   recordSetupEvent,
   type SetupStep,
 } from "./telemetry";
-import { LocalRun, type LocalStatus } from "./LocalRun";
+import { LocalRun, localStepLabel, type LocalStatus } from "./LocalRun";
 import { Welcome } from "./Welcome";
 import { t } from "./lib/i18n";
 
@@ -288,6 +288,12 @@ export function App() {
     localPicked ||
     (preparation?.key === installationKey && preparation.status === "complete");
   const returningToInstallation = savedLaunch.current === installationKey;
+  /*
+   * Whether this folder's stack is up: the marker says it runs that way here, and the answer on the
+   * port says it is running. The marker alone is what the welcome button used to follow, which left
+   * it saying "running" about a stack that had been stopped.
+   */
+  const localStackUp = Boolean(local?.wanted && local?.health != null);
   const [running, setRunning] = useState(false);
   const visibleSetupStep =
     checkingResume ||
@@ -510,6 +516,40 @@ export function App() {
           recoverFromStart(interrupted);
           return;
         }
+        /*
+         * A folder that runs this stack as programs on this computer answers for itself.
+         *
+         * The marker says this folder has run that way and the port says the stack is up now. Neither
+         * is a launch intent, and the local route writes no such record: the container route's own
+         * answers below cannot recognise this stack, so a window opened on one it is already serving
+         * would offer to set the whole thing up again — and the Stop on the screen that follows would
+         * be the one place it could not be reached from.
+         */
+        const localStack = await invoke<LocalStatus>("local_status").catch(
+          () => null,
+        );
+        if (!active) return;
+        if (localStack?.wanted && !configured?.launch) {
+          setLocal(localStack);
+          setLocalPicked(true);
+          setRecoveryFailure(null);
+          if (localStack.health != null) {
+            // Up now: what is missing is the window, not the stack.
+            setRunning(true);
+            await invoke("show_ccpbot");
+            return;
+          }
+          // Marked and stopped. This folder is not a fresh wizard, and its own screen carries the
+          // Start that knows how to start it. The harness is the record's when there is one and the
+          // default otherwise — the same pair the render builds this key from — read as a value
+          // rather than as state, which this check must not re-run whenever somebody changes it.
+          savedLaunch.current = installationKeyFor(
+            found,
+            installed?.harness ?? { id: DEFAULT_HARNESS },
+          );
+          setStep(resumedModel ? "connect" : "model");
+          return;
+        }
         // A stack this app started may still be up from a previous window. Ask, rather than
         // offering to set up something that is already running.
         if (
@@ -625,9 +665,12 @@ export function App() {
           setLocal(found);
           if (!found.step) return;
           // One row, updated in place: this is a run working through a list of steps, not a log.
+          // The name is the one `LocalRun` shows for the same id — one table, from where it already
+          // lives — because this row and that screen describe the same run. The detail beside it
+          // stays as the run wrote it: those sentences are the machine's own words, not a label.
           setSteps([
             {
-              step: found.step,
+              step: localStepLabel(found.step),
               ok: found.health != null,
               running: found.health == null,
               detail: found.step_detail,
@@ -999,11 +1042,34 @@ export function App() {
             className="quiet"
             disabled={busy}
             onClick={() => {
-              setLocalPicked(true);
-              setStep("harness");
+              /*
+               * Asked rather than assumed. This window may have been sitting on this screen since
+               * before the stack was started — by the menu bar, or by a window that was closed —
+               * and walking into the wizard then would start a second stack over the first.
+               */
+              void (async () => {
+                const found = await invoke<LocalStatus>("local_status").catch(
+                  () => null,
+                );
+                if (found) setLocal(found);
+                if (found?.wanted && found.health != null) {
+                  setLocalPicked(true);
+                  setRunning(true);
+                  try {
+                    await invoke("show_ccpbot");
+                  } catch (error) {
+                    recoverFromStart(error);
+                  }
+                  return;
+                }
+                setLocalPicked(true);
+                setStep("harness");
+              })();
             }}
           >
-            {localPicked ? t("Running on this computer") : t("Run it on this computer instead")}
+            {localStackUp
+              ? t("Running on this computer")
+              : t("Run it on this computer instead")}
           </button>
         </div>
         {displayedFailure && <Failure problem={displayedFailure} />}
@@ -1294,9 +1360,6 @@ export function App() {
           />
         )}
 
-        {!running && !returningToInstallation && (
-          <p className="steps-of">{t("Step 4 of 4")}</p>
-        )}
         <h1>
           {running && !displayedFailure
             ? t("CCP-Bot is running")
@@ -1304,7 +1367,7 @@ export function App() {
               ? "Refresh your CopilotKit connection"
               : localPicked
                 ? "Run CCP-Bot on this computer"
-                : "Connect to CopilotKit"}
+                : t("Start CCP-Bot")}
         </h1>
         <p className="lede">
           {running && !displayedFailure
@@ -1313,7 +1376,7 @@ export function App() {
               ? "Update this connection to reopen your existing CCP-Bot."
               : localPicked
                 ? "Installation is complete. This stack runs on this computer, and the model you chose is enough to start it — a CopilotKit connection is optional here."
-                : "Local installation is complete. Connect CopilotKit, then start CCP-Bot."}
+                : t("Installation is complete. Start CCP-Bot — a CopilotKit connection is optional.")}
         </p>
 
         {!running && (
@@ -1637,19 +1700,14 @@ export function App() {
               // The model is answered by its own screen now, so what is checked here is that it was
               // answered at all, not that some field on this screen is non-empty.
               //
-              // The connection is checked for the container route only. That route hands these
-              // addresses to a stack that starts against what `.env` says, so an empty connection
-              // there is still a reason to wait. A run on this computer is the other way round:
-              // `server_environment` in `local.rs` stands in for the connection nobody made, and the
-              // Bot it talks to is the one on this machine, so the model is the whole requirement.
+              // A connection is not a prerequisite on either route. This screen offers one, and a
+              // start without one is answered for where it runs: `server_environment` in `local.rs`
+              // stands in on this computer, and the server decides for itself what a connection it
+              // was not given means. Waiting here would only hide that answer.
               disabled={
                 busy ||
                 signingIn ||
                 !installationReady ||
-                (!localPicked &&
-                  apiKey.trim() === "" &&
-                  !alreadyHeld.saved?.intelligenceApiKey &&
-                  !reuseIntelligence) ||
                 !modelCanStart() ||
                 root.trim() === ""
               }
