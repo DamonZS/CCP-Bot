@@ -82,21 +82,22 @@ jobs:
       # a flaky one. `--include-ignored` is the point of the job: every `live_` test is ignored by
       # default precisely because it does this.
       #
-      # Left out on purpose, both of them because they prepare a checkout from the *published* release
-      # and then start it with this tree's route, so they can only pass when the two agree:
+      # The two exams below prepare a checkout from a *release* and then start it with this tree's
+      # route, so they can only mean something when the two agree. That used to be a reason to leave
+      # them out: they resolved `releases/latest`, which was still 0.3.2 while this tree was 0.4.0, and
+      # 0.3.2's server refuses to start without a CopilotKit connection that this tree's route no longer
+      # invents — a red job for a version mismatch, not for this Mac.
       #
-      # * `live_a_fresh_folder_installs_the_bots_own_dependencies` — 0.3.2's server still refuses to
-      #   start without a CopilotKit connection, while this tree's route stopped inventing one (0.4.0),
-      #   so the server it fetches never answers the health check. The macOS half of what it proves —
-      #   unpacking the portable database, installing the Bot's own dependencies, `[schema]` — is
-      #   already in the decisive step above, whose log shows them on a checkout that started empty.
-      # * `live_an_empty_folder_is_filled_from_the_release` — resolves `releases/latest` through the
-      #   GitHub API, and a runner's shared address is refused when the call carries no token
-      #   (`403 Forbidden`, measured twice out of three runs). It passed when the call was answered, so
-      #   this is the runner's network and not this Mac; a job that is red for it is a job nobody reads.
+      # They ask for this build's own release now (task-24), and they say so instead of pretending when
+      # that version is not published yet, so both belong here:
       #
-      # Both come back when the lookup stops depending on an anonymous `latest` — a build should fetch
-      # the sources of its own version, and say so when that version is not published yet (task-24).
+      # * `live_an_empty_folder_is_filled_from_the_release` unpacks a published checkout into an empty
+      #   folder, and skipped itself until 0.4.0 was published. The lookup can still be refused by a
+      #   runner's shared address (`403 Forbidden` with no token, measured twice out of three runs);
+      #   that is answered as a lookup failure, which is a skip with a named line, not a red job.
+      # * `live_a_fresh_folder_installs_the_bots_own_dependencies` is the one that proves the Bot's
+      #   dependencies are installed on a machine that has never run this: it is the macOS half of the
+      #   0.2.7 defect, and it starts the fetched stack, so it needs the two versions to agree.
       - name: Run the rest of the local-mode live tests
         run: |
           set -euo pipefail
@@ -115,9 +116,17 @@ jobs:
               echo "::error::$name did not run, or did not pass"
               return 1
             fi
+            # A named skip is a result too — it says this build's own release is not published yet, or
+            # that the lookup itself failed — and it is worth seeing in the annotations rather than
+            # being mistaken for coverage.
+            if grep -q 'skipped,' "$log"; then
+              echo "::notice::$name did not run: $(grep -m1 'skipped,' "$log")"
+            fi
           }
           run_one "tests::live_a_run_on_this_computer_records_what_it_owns" "--bin ccpbot-desktop"
           run_one "tests::live_quitting_stops_the_stack_this_computer_started" "--bin ccpbot-desktop"
+          run_one "local::tests::live_an_empty_folder_is_filled_from_the_release" "--lib"
+          run_one "local::tests::live_a_fresh_folder_installs_the_bots_own_dependencies" "--lib"
 
       # A failing test says which part did not answer and nothing about why: the reason is in the
       # process's own log, which lives on the runner that is about to be deleted. Learned the hard
