@@ -111,6 +111,38 @@ jobs:
         working-directory: desktop
         run: bun run tauri build --bundles ${{ matrix.bundles }}
 
+      # The architecture is asserted rather than assumed. `macos-latest` is an Apple-silicon runner
+      # today and the disk image it packs is named `…_aarch64.dmg`; if that label ever moves back to
+      # Intel, or a build silently emits the other slice, this fails the release instead of handing
+      # somebody a `.dmg` their Mac cannot open. The bundle is what ships, so the bundle is what is
+      # inspected — not the bare binary cargo left in `target/release`.
+      - name: Assert the disk image holds an arm64 app
+        if: runner.os == 'macOS'
+        shell: bash
+        run: |
+          app="$(ls -d desktop/src-tauri/target/release/bundle/macos/*.app | head -1)"
+          binary="$(ls "$app"/Contents/MacOS/* | head -1)"
+          echo "$binary"
+          archs="$(lipo -archs "$binary")"
+          echo "archs: $archs"
+          case "$archs" in
+            *arm64*) ;;
+            *) echo "expected an arm64 payload, got: $archs"; exit 1 ;;
+          esac
+
+      - name: Assert the payload is x64
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          # `Machine` in the PE header: 0x8664 is x86-64, 0xAA64 is arm64. Reading it needs no
+          # extraction tool, and it is the field Windows itself picks a loader from.
+          $exe = 'desktop/src-tauri/target/release/ccpbot-desktop.exe'
+          $bytes = [IO.File]::ReadAllBytes($exe)
+          $pe = [BitConverter]::ToInt32($bytes, 0x3C)
+          $machine = [BitConverter]::ToUInt16($bytes, $pe + 4)
+          'machine=0x{0:X4}' -f $machine
+          if ($machine -ne 0x8664) { throw ('expected an x64 payload (0x8664), got 0x{0:X4}' -f $machine) }
+
       # `bundle/` holds one directory per bundle type; the globs are the filenames the bundler writes,
       # so a rename there fails this step loudly instead of shipping an empty artifact.
       - name: Collect the bundles
@@ -122,6 +154,15 @@ jobs:
             | xargs -0 -I{} cp {} out/ 2>/dev/null || true
           ls -l out
           test -n "$(ls -A out)" || { echo "the bundler produced no installer"; exit 1; }
+          # The filenames carry the architecture the bundler chose, so a build that picked the other
+          # slice is caught here rather than by the person whose machine it will not start on. This
+          # is the same fact as the assertion above, seen from the file a user downloads.
+          if [ "${{ runner.os }}" = "macOS" ]; then
+            ls out/*_aarch64.dmg >/dev/null || { echo "the disk image is not the arm64 one"; ls -l out; exit 1; }
+          else
+            ls out/*_x64*.exe >/dev/null || { echo "no x64 .exe in out/"; ls -l out; exit 1; }
+            ls out/*_x64*.msi >/dev/null || { echo "no x64 .msi in out/"; ls -l out; exit 1; }
+          fi
 
       - uses: actions/upload-artifact@v4
         with:
@@ -155,6 +196,12 @@ jobs:
           REPO: ${{ github.repository }}
         run: |
           ls -l installers
+          # One file per platform is the whole promise of the release: the installer picks the asset
+          # for the machine it runs on, so a set missing one of them is worse than a failed job.
+          for pattern in '*_x64-setup.exe' '*_x64_en-US.msi' '*_aarch64.dmg'; do
+            ls installers/$pattern >/dev/null 2>&1 \
+              || { echo "the installers are missing $pattern"; ls -l installers; exit 1; }
+          done
           # The release may not exist yet if this ran before publish-images; creating it here and
           # letting that job upload its manifest to it is the same end state either way.
           gh release view "$TAG" --repo "$REPO" >/dev/null 2>&1 \
