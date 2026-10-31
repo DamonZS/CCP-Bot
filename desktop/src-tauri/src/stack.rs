@@ -2280,7 +2280,7 @@ where
             if record.deployment != deployment
                 || record.start.is_empty()
                 || !safe_unix_pid(record.pid)
-                || !recordable_host(record.name)
+                || !recordable_host(&record.name)
             {
                 return Err(unix_ownership_problem(format!(
                     "invalid Unix ownership record for pid {}",
