@@ -92,3 +92,23 @@ jobs:
             echo "===== $log ====="
             if [ -f "$log" ]; then tail -200 "$log"; else echo "(not written)"; fi
           done
+
+          # What the database said it was compiled for is not what it ran as: EDB configures once
+          # and lipos two slices, so both slices print the same build string. Whether this runner
+          # and the payload are really arm64 is a separate fact, and the claim "this works on Apple
+          # silicon" depends on it — so it is read off the artifacts instead.
+          echo "===== the machine this ran on ====="
+          uname -m
+          sw_vers 2>/dev/null || true
+          echo "===== the database payload this run unpacked ====="
+          if [ -f postgres/pgsql/bin/postgres ]; then
+            lipo -archs postgres/pgsql/bin/postgres
+            file postgres/pgsql/bin/postgres
+          else
+            echo "(the portable database was not unpacked in this run)"
+          fi
+          if [ -f postgres/pgsql/lib/postgresql/vector.dylib ]; then
+            lipo -archs postgres/pgsql/lib/postgresql/vector.dylib
+          else
+            echo "(no vector library where the mac tree expects it)"
+          fi
