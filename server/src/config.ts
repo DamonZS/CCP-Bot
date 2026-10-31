@@ -27,6 +27,10 @@ import {
   type TranscriptionConfig,
   transcriptionConfig,
 } from "./dictation/config";
+import {
+  type MemoryEmbeddingConfig,
+  memoryEmbeddingConfig,
+} from "./memory/embedding/config";
 import type { BrokerProvider } from "./plugins/access";
 import { type VoiceConfig, voiceConfig } from "./voice/config";
 import { type WebBotAuth, webBotAuthFromEnv } from "./web-bot-auth";
@@ -231,6 +235,15 @@ export type DeploymentConfig = {
    * Switching either off stops new defaults and leaves every existing row as it is.
    */
   memoryDefaults: { sources: boolean; research: boolean };
+  /**
+   * Where this deployment embeds text, or absent when it cannot: with no `MEMORY_EMBEDDING_*` and
+   * no `OPENAI_API_KEY` to follow, memories and documents are stored and recalled by keyword.
+   *
+   * Read from the environment rather than from `.env`: both routes hand the process its model
+   * credentials, and a second copy in a file would be one that drifts. See
+   * `memory/embedding/config.ts`.
+   */
+  memoryEmbedding?: MemoryEmbeddingConfig;
   /** Audio configuration is independent of agent model providers. */
   transcription?: TranscriptionConfig;
   voice?: VoiceConfig;
@@ -1453,6 +1466,7 @@ export function loadConfig(
     );
   }
   const workerSharedSecret = optional(environment, "WORKER_SHARED_SECRET");
+  const memoryEmbedding = memoryEmbeddingConfig(environment);
   const deploymentKey = keyEncryptionKey(environment);
   const webBotAuth = webBotAuthFromEnv(environment, {
     publicUrl,
@@ -1491,6 +1505,7 @@ export function loadConfig(
       sources: switchedOn(environment, "CCPBOT_MEMORY_SOURCE_DEFAULTS"),
       research: switchedOn(environment, "CCPBOT_PROACTIVE_DEFAULTS"),
     },
+    ...(memoryEmbedding ? { memoryEmbedding } : {}),
     agentStallTimeoutMs: agentStallTimeoutMs(environment),
     auditRetentionDays: auditRetentionDays(environment),
     oauth: { google },

@@ -3,6 +3,7 @@ import {
   and,
   desc,
   eq,
+  getTableColumns,
   inArray,
   isNotNull,
   isNull,
@@ -16,6 +17,9 @@ import {
 import type { Database } from "../db/client";
 import { memorySources, personalMemories } from "../db/schema/memory";
 import { lockDefaults, recordOptOut, sourceServerId } from "./defaults";
+import { memoryEmbeddingConfig } from "./embedding/config";
+import { createEmbedder } from "./embedding/provider";
+import { createKnowledgeStore } from "./knowledge/store";
 import type {
   IntelligenceMemory,
   IntelligenceMemoryRecord,
@@ -54,6 +58,28 @@ const digestOf = (content: string) =>
 // negated only its first clause.
 const mirrorEligible = sql`(${personalMemories.deletedAt} IS NULL AND ${personalMemories.enabled} AND ${personalMemories.reviewState} IN ('confirmed', 'edited') AND ${personalMemories.content} <> '')`;
 const contentDigest = sql`encode(sha256(convert_to(${personalMemories.content}, 'UTF8')), 'hex')`;
+
+/**
+ * How the two channels are weighed when a query can be embedded: a memory found by keyword scores
+ * `LEXICAL_WEIGHT`, one found by vector adds `VECTOR_WEIGHT` times its cosine similarity.
+ *
+ * 0.5/0.5 is what the memory design this follows measured on its own corpus (`docs/dsh-memory-notes.md`),
+ * and it is a constant rather than a setting on purpose: the same memories must not come back in two
+ * different orders depending on how a deployment is configured.
+ */
+const LEXICAL_WEIGHT = 0.5;
+const VECTOR_WEIGHT = 0.5;
+/** How many nearest rows the vector channel may add to whatever the keyword channel found. */
+const NEARBY_LIMIT = 20;
+/** How many rows without a vector one write catches up on. */
+const PENDING_LIMIT = 25;
+
+/** `<=>` is cosine distance — 0 for the same direction, 2 for the opposite — and scoring wants 0..1. */
+function similarityOf(distance: unknown): number {
+  const value = 1 - Number(distance);
+  if (!Number.isFinite(value)) return 0;
+  return Math.min(1, Math.max(0, value));
+}
 
 type MemoryRow = typeof personalMemories.$inferSelect;
 const isMirrorEligible = (row: MemoryRow) =>
@@ -111,9 +137,32 @@ function fromIntelligence(
  */
 export function createMemoryStore(
   database: Database,
-  options: { intelligence?: IntelligenceMemory } = {},
+  options: {
+    intelligence?: IntelligenceMemory;
+    /**
+     * Where embeddings come from. Defaults to this process's environment, which is where both routes
+     * put the model credentials — see `memory/embedding/config.ts` for the default chain and for why
+     * nothing is read out of `.env`.
+     */
+    environment?: Record<string, string | undefined>;
+    /** Where a failed embedding is reported. Defaults to a JSON line on `console.warn`. */
+    log?: (line: Record<string, unknown>) => void;
+  } = {},
 ) {
   const { intelligence } = options;
+  const log = options.log ?? ((line) => console.warn(JSON.stringify(line)));
+  const embedding = memoryEmbeddingConfig(options.environment ?? process.env);
+  const embedder = createEmbedder(
+    embedding,
+    options.log ? { log: options.log } : {},
+  );
+  if (!embedding) {
+    log({
+      type: "memory-embedding-absent",
+      reason:
+        "No embedding endpoint is configured, so memories and documents are stored and recalled by keyword only. Set MEMORY_EMBEDDING_API_KEY (or OPENAI_API_KEY) and MEMORY_EMBEDDING_BASE_URL (or OPENAI_BASE_URL) to embed them.",
+    });
+  }
   /** One mirror pass per person at a time in this process, so two writes cannot both create. */
   const mirroring = new Map<string, Promise<unknown>>();
 
@@ -279,16 +328,18 @@ export function createMemoryStore(
   }
 
   /**
-   * The rows a Bot may recall, every filter in the query. Bot-formed memories go only to the Bot that
-   * formed them, and only while it still holds their source app; imported ones only through a source
-   * this Bot may use; the person's own to every Bot of theirs.
+   * The rows a Bot may see at all. Bot-formed memories go only to the Bot that formed them, and only
+   * while it still holds their source app; imported ones only through a source this Bot may use; the
+   * person's own to every Bot of theirs.
+   *
+   * Both channels narrow this same set, which is why it is built once and used twice: a memory a Bot
+   * may not see must not come back because it happened to be near the query in vector space.
    */
-  function eligibleRows(
+  function visibleTo(
     ownerUserId: string,
     eligibleSourceIds: string[],
     formed: { botId: string; heldServerIds: ReadonlySet<string> } | undefined,
-    narrow: { term?: string; intelligenceIds?: string[] },
-  ) {
+  ): SQL | undefined {
     const held = [...(formed?.heldServerIds ?? [])];
     const formedByThisBot = formed
       ? and(
@@ -314,17 +365,31 @@ export function createMemoryStore(
           : sql`false`,
       ),
     );
+    return and(
+      eq(personalMemories.ownerUserId, ownerUserId),
+      eq(personalMemories.enabled, true),
+      isNull(personalMemories.deletedAt),
+      formedByThisBot ? or(formedByThisBot, personOrSource) : personOrSource,
+    );
+  }
+
+  /**
+   * The keyword channel: the substring match this store has always done, in the same order and with
+   * the same ceiling. It is what a deployment with no embedding endpoint gets, and what a deployment
+   * with one still gets alongside the vectors.
+   */
+  function eligibleRows(
+    ownerUserId: string,
+    eligibleSourceIds: string[],
+    formed: { botId: string; heldServerIds: ReadonlySet<string> } | undefined,
+    narrow: { term?: string; intelligenceIds?: string[] },
+  ) {
     return database
       .select()
       .from(personalMemories)
       .where(
         and(
-          eq(personalMemories.ownerUserId, ownerUserId),
-          eq(personalMemories.enabled, true),
-          isNull(personalMemories.deletedAt),
-          formedByThisBot
-            ? or(formedByThisBot, personOrSource)
-            : personOrSource,
+          visibleTo(ownerUserId, eligibleSourceIds, formed),
           narrow.term
             ? sql`strpos(lower(${personalMemories.content}), lower(${narrow.term})) > 0`
             : undefined,
@@ -342,7 +407,152 @@ export function createMemoryStore(
       .limit(40);
   }
 
+  /**
+   * The vector channel: the rows nearest this query, among the ones the Bot may see.
+   *
+   * Only rows carrying a vector from the model in use — `pgvector` will not compare two vectors of
+   * different widths, and two models do not share a space, so a vector from another model is not a
+   * worse answer, it is not an answer. Rows with none are simply absent here and are still found by
+   * keyword above.
+   */
+  async function nearestRows(
+    ownerUserId: string,
+    eligibleSourceIds: string[],
+    formed: { botId: string; heldServerIds: ReadonlySet<string> } | undefined,
+    vector: number[],
+  ): Promise<Array<{ row: MemoryRow; similarity: number }>> {
+    const distance = sql<number>`${personalMemories.embedding} <=> ${JSON.stringify(vector)}::vector`;
+    const rows = await database
+      .select({ ...getTableColumns(personalMemories), distance })
+      .from(personalMemories)
+      .where(
+        and(
+          visibleTo(ownerUserId, eligibleSourceIds, formed),
+          isNotNull(personalMemories.embedding),
+          eq(personalMemories.embeddingModel, embedder.model),
+        ),
+      )
+      .orderBy(distance)
+      .limit(NEARBY_LIMIT);
+    return rows.map(({ distance: measured, ...memory }) => ({
+      row: memory,
+      similarity: similarityOf(measured),
+    }));
+  }
+
+  /**
+   * Both channels scored into one order.
+   *
+   * A memory found by keyword scores `LEXICAL_WEIGHT`; a memory found by vector adds
+   * `VECTOR_WEIGHT` times its cosine similarity, so a row both found and near ranks above a row that
+   * only matched the words, and a row that only matched semantically still ranks. There is no
+   * absolute similarity threshold on purpose: on the corpus this design was measured against, real
+   * hits and unrelated rows overlapped in the 0.2–0.4 range, so a cut-off there would drop answers
+   * and keep noise (see `docs/dsh-memory-notes.md`).
+   */
+  async function rerank(
+    ownerUserId: string,
+    eligibleSourceIds: string[],
+    formed: { botId: string; heldServerIds: ReadonlySet<string> } | undefined,
+    term: string,
+    lexical: MemoryRow[],
+  ): Promise<MemoryRecord[]> {
+    const [vector] = (await embedder.embed([term])) ?? [];
+    if (!vector) return lexical;
+    const nearest = await nearestRows(
+      ownerUserId,
+      eligibleSourceIds,
+      formed,
+      vector,
+    );
+    if (nearest.length === 0) return lexical;
+    const scored = new Map<string, { row: MemoryRecord; score: number }>();
+    for (const row of lexical) {
+      scored.set(row.id, { row, score: LEXICAL_WEIGHT });
+    }
+    for (const { row, similarity } of nearest) {
+      /*
+       * A row the vectors put at cosine zero shares nothing with the query — orthogonal, which for
+       * an embedding endpoint means unrelated rather than vaguely related — so it enters as a
+       * candidate and adds nothing, or not at all. This is not a threshold: any similarity above
+       * zero still counts, it is just small.
+       */
+      if (similarity <= 0) continue;
+      const found = scored.get(row.id);
+      if (found) found.score += VECTOR_WEIGHT * similarity;
+      else scored.set(row.id, { row, score: VECTOR_WEIGHT * similarity });
+    }
+    return [...scored.values()]
+      .sort(
+        (left, right) =>
+          right.score - left.score ||
+          right.row.updatedAt.getTime() - left.row.updatedAt.getTime(),
+      )
+      .slice(0, 40)
+      .map((entry) => entry.row);
+  }
+
+  /**
+   * Embed the rows of this person's that have no vector for the text they hold, and store them.
+   *
+   * Called after every write rather than inside one: an edit to a memory's content makes its old
+   * vector describe something the row no longer says, and the digest column is what says so. A
+   * failure here leaves the row exactly as it was — the memory is stored either way, and the next
+   * write tries again. This also catches up rows written before this deployment could embed, or
+   * during an outage, so a store that is half embedded is a state that heals on the next write
+   * instead of one that stays half embedded for good.
+   */
+  async function embedPending(ownerUserId: string): Promise<number> {
+    const pending = await database
+      .select({ id: personalMemories.id, content: personalMemories.content })
+      .from(personalMemories)
+      .where(
+        and(
+          eq(personalMemories.ownerUserId, ownerUserId),
+          eq(personalMemories.enabled, true),
+          isNull(personalMemories.deletedAt),
+          or(
+            isNull(personalMemories.embedding),
+            ne(personalMemories.embeddingDigest, contentDigest),
+          ),
+        ),
+      )
+      .orderBy(desc(personalMemories.updatedAt))
+      .limit(PENDING_LIMIT);
+    if (pending.length === 0) return 0;
+    const vectors = await embedder.embed(pending.map((row) => row.content));
+    if (!vectors) return 0;
+    let embedded = 0;
+    for (const [index, row] of pending.entries()) {
+      const vector = vectors[index];
+      if (!vector) continue;
+      await database
+        .update(personalMemories)
+        .set({
+          embedding: vector,
+          embeddingDigest: digestOf(row.content),
+          embeddingModel: embedder.model,
+        })
+        .where(
+          and(
+            eq(personalMemories.id, row.id),
+            eq(personalMemories.ownerUserId, ownerUserId),
+          ),
+        );
+      embedded += 1;
+    }
+    return embedded;
+  }
+
   return {
+    /**
+     * The knowledge base, on this connection and this embedding endpoint. The app mounts its two
+     * routes from here rather than building a store of its own, because the endpoint is resolved
+     * once, from this process's environment, when this store is created.
+     */
+    knowledge: createKnowledgeStore(database, {
+      ...(embedder ? { embedder } : {}),
+    }),
     async list(ownerUserId: string): Promise<MemoryRecord[]> {
       const rows = await database
         .select()
@@ -371,6 +581,7 @@ export function createMemoryStore(
         })
         .returning();
       if (!row) throw new Error("Memory insert returned no row.");
+      await embedPending(ownerUserId);
       await mirror(ownerUserId, row.id);
       return row;
     },
@@ -441,7 +652,10 @@ export function createMemoryStore(
           where: sql`${personalMemories.formedBy} = 'bot'`,
         })
         .returning({ id: personalMemories.id });
-      if (row) return { id: row.id, duplicate: false, forgotten: false };
+      if (row) {
+        await embedPending(ownerUserId);
+        return { id: row.id, duplicate: false, forgotten: false };
+      }
       // Formed by a concurrent run between the check above and this insert.
       const [raced] = await database
         .select({
@@ -510,6 +724,7 @@ export function createMemoryStore(
         )
         .returning();
       if (!row) throw new MemoryNotFoundError();
+      if (patch.content) await embedPending(ownerUserId);
       await mirror(ownerUserId, row.id);
       return row;
     },
@@ -533,6 +748,11 @@ export function createMemoryStore(
           deletedAt: new Date(),
           enabled: false,
           content: "",
+          /* The vector described text this row no longer holds, and a forgotten memory is not a
+           * search candidate; keeping it would only be a stale answer waiting to be argued with. */
+          embedding: null,
+          embeddingDigest: null,
+          embeddingModel: null,
           updatedAt: new Date(),
         })
         .where(
@@ -757,6 +977,7 @@ export function createMemoryStore(
           .where(eq(memorySources.id, sourceId));
       });
       // A confirmed import whose content changed upstream is out of step now; mirror it.
+      await embedPending(ownerUserId);
       await mirror(ownerUserId);
     },
     async retrieve(
@@ -774,15 +995,20 @@ export function createMemoryStore(
       const local = await eligibleRows(ownerUserId, eligibleSourceIds, formed, {
         term,
       });
-      if (!intelligence) return local;
+      /* With a query to embed, the keyword matches are re-scored against the vectors; without one
+       * (or without an endpoint) this is exactly the list it was before. */
+      const scored = term
+        ? await rerank(ownerUserId, eligibleSourceIds, formed, term, local)
+        : local;
+      if (!intelligence) return scored;
       if (term) {
         /*
          * Ranked by Intelligence, filtered by the rows. A recalled memory a row describes reaches
          * this Bot only if that row is one this Bot may recall; one no row describes is the
-         * person's own. The substring matches from the rows follow, for anything recall missed.
+         * person's own. The local matches follow, for anything recall missed.
          */
         const recalled = await intelligence.recall(ownerUserId, term, 20);
-        if (!recalled) return local;
+        if (!recalled) return scored;
         const allowed = await eligibleRows(
           ownerUserId,
           eligibleSourceIds,
@@ -807,13 +1033,13 @@ export function createMemoryStore(
         const seen = new Set(ranked.map((memory) => memory.id));
         return [
           ...ranked,
-          ...local.filter((memory) => !seen.has(memory.id)),
+          ...scored.filter((memory) => !seen.has(memory.id)),
         ].slice(0, 40);
       }
       const remote = await intelligence.list(ownerUserId);
-      if (!remote) return local;
+      if (!remote) return scored;
       return [
-        ...local,
+        ...scored,
         ...(await intelligenceOnly(ownerUserId, remote)).slice(0, 20),
       ].slice(0, 40);
     },

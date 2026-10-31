@@ -181,24 +181,34 @@ describe("CCP-Bot database schema", () => {
     expect(cascading.length).toBe(2);
   });
 
-  test("holds no copy of a customer's documents", () => {
+  test("holds no copy of somebody else's documents, and embeds only what it stores itself", () => {
     /*
-     * The rule this schema is now built on: a Bot answers from a live system by calling that
-     * system's own search as the person asking, so the vendor decides what they may see. A table
-     * of documents here would be a second copy of somebody's corpus, with a second permission
-     * model of our own to keep in step with theirs, and it would outlive their access to the
-     * original. `documents`, `chunks` and `document_acls` were exactly that and are gone.
+     * A Bot answers from a live system by calling that system's own search as the person asking, so
+     * the vendor decides what they may see, and a second copy of somebody's corpus here — with a
+     * second permission model of our own to keep in step with theirs, one that would outlive their
+     * access to the original — is what `chunks` and `document_acls` were. Those two names stay
+     * forbidden: the first is a vendor's corpus kept a second time, the second mirrors their
+     * permission model, and neither belongs in this schema.
+     *
+     * `documents` and `document_chunks` are the other thing, and the rule narrowed to allow them: a
+     * deployment's own knowledge base, imported by the person whose deployment it is, on their own
+     * database. That is the only copy of it anywhere — there is no vendor holding the original and
+     * nothing to revoke — and it is what a self-hosted deployment asked for. No corpus of somebody
+     * else's, and no mirrored permission model, may appear here under any name.
      *
      * This asserts on every table the schema exports rather than on named ones, so it catches a
      * reintroduction under a different name, and on column types rather than column names, so it
-     * catches an embedding smuggled onto a table that sounds like something else.
+     * catches an embedding smuggled onto a table that sounds like something else. The embedding
+     * check is an exact set of `table.column` rather than a floor: a vector column anywhere else
+     * fails until somebody names it here and says why.
      */
     const tables = Object.values(schema).filter((value): value is PgTable =>
       is(value, PgTable),
     );
     expect(tables.length).toBeGreaterThan(20);
 
-    expect(tables.map(getTableName)).not.toContain("documents");
+    expect(tables.map(getTableName)).toContain("documents");
+
     expect(tables.map(getTableName)).not.toContain("chunks");
     expect(tables.map(getTableName)).not.toContain("document_acls");
 
@@ -207,7 +217,9 @@ describe("CCP-Bot database schema", () => {
         .columns.filter((column) => column.getSQLType().startsWith("vector"))
         .map((column) => `${getTableName(table)}.${column.name}`),
     );
-    expect(vectorColumns).toEqual([]);
+    expect(new Set(vectorColumns)).toEqual(
+      new Set(["personal_memories.embedding", "document_chunks.embedding"]),
+    );
   });
 
   test("includes Better Auth's verified Google identity records", () => {

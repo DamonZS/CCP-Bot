@@ -498,6 +498,13 @@
       "when": 1793469194402,
       "tag": "0070_rare_post",
       "breakpoints": true
+    },
+    {
+      "idx": 71,
+      "version": "7",
+      "when": 1793473343441,
+      "tag": "0071_slimy_stature",
+      "breakpoints": true
     }
   ]
 }

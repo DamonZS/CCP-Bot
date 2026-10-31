@@ -101,6 +101,7 @@ import {
   type PersonalLearningRouteDeps,
 } from "./learning/sharing-routes";
 import type { MemoryIngestion } from "./memory/ingestion";
+import { createKnowledgeRoutes } from "./memory/knowledge/routes";
 import { createMemoryRoutes } from "./memory/routes";
 import type { MemoryStore } from "./memory/store";
 import { parsePageLimit } from "./paging";
@@ -1727,7 +1728,7 @@ export function createApp(
         requireUser,
       ),
     );
-  if (coworker?.memory)
+  if (coworker?.memory) {
     app.route(
       "/api/memory",
       createMemoryRoutes(
@@ -1736,6 +1737,16 @@ export function createApp(
         requireUser,
       ),
     );
+    /*
+     * The knowledge base is part of the memory store — same connection, same embedding endpoint,
+     * same actor — so it is mounted here, behind the middleware `/api/memory` already uses, and
+     * not as a dependency of its own.
+     */
+    app.route(
+      "/api/knowledge",
+      createKnowledgeRoutes(coworker.memory.store.knowledge, requireUser),
+    );
+  }
   if (coworker?.responsibilities) {
     const { store, engine, bindings } = coworker.responsibilities;
     app.route(
