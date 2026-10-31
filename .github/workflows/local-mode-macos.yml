@@ -68,27 +68,33 @@ jobs:
           grep -F '[bot] The built-in Bot is answering (/health 200).' "$log" \
             || { echo "the built-in Bot never answered on this Mac"; tail -40 "$log"; exit 1; }
 
-      # Everything else the local route claims, minus the one above — and minus the two that fetch a
-      # published release through the GitHub API. Measured here: `releases/latest` answers
-      # `403 Forbidden` to this runner, because a GitHub runner's shared address is refused when the
-      # call carries no token. That is the runner's network, not this Mac, so demanding those two here
-      # would keep the job red for a reason that has nothing to do with what it is proving. They run on
-      # the developer's machine, where the same call is answered, and the parts of them that are about
-      # macOS (unpacking the portable database, installing the Bot's own dependencies) are already
-      # covered by the decisive test above — its log shows `[database] Preparing…`, `[dependencies]`
-      # and `[schema]` on a runner whose checkout started empty.
-      #
-      # One test at a time: each of these starts a real database and four processes, and letting them
-      # race for ports and for the same checkout root would turn a real failure into a flaky one.
-      # `--include-ignored` is the point of the job — every `live_` test is ignored by default
+      # The rest of what the local route claims, each test named and run on its own. Not
+      # `local::tests::live_` with `--skip`: measured on this job's first run, three `--skip` flags
+      # were echoed and ignored, so the test that cannot pass here ran anyway and the job went red for
+      # a reason that is not this Mac. One name per invocation also makes "one test at a time"
+      # structural instead of a flag — each of these starts a real database and four processes, and
+      # letting them race for ports and the same checkout root would turn a real failure into a flaky
+      # one. `--include-ignored` is the point of the job: every `live_` test is ignored by default
       # precisely because it does this.
+      #
+      # Left out on purpose: `live_a_fresh_folder_installs_the_bots_own_dependencies`. It prepares a
+      # checkout from the *published* release and then starts the stack with the route in this tree,
+      # so it only passes when the published sources agree with it. They do not today: 0.3.2's server
+      # still refuses to start without a CopilotKit connection, while this tree's route stopped
+      # inventing one (0.4.0). Run it again once a 0.4.0-or-later release is what `latest` resolves to.
+      # The macOS half of what it proves — unpacking the portable database and installing the Bot's
+      # own dependencies — is already in the step above, whose log shows `[database] Preparing…`,
+      # `[dependencies]` and `[schema]` on a runner whose checkout started empty.
       - name: Run the rest of the local-mode live tests
         run: |
-          cargo test -p ccpbot-desktop --manifest-path desktop/src-tauri/Cargo.toml \
-            --lib -- local::tests::live_ --include-ignored --nocapture -- --test-threads=1 \
-            --skip live_start_serves_the_interface_on_this_machine \
-            --skip live_an_empty_folder_is_filled_from_the_release \
-            --skip live_a_fresh_folder_installs_the_bots_own_dependencies
+          for t in \
+            live_an_empty_folder_is_filled_from_the_release \
+            live_a_run_on_this_computer_records_what_it_owns \
+            live_quitting_stops_the_stack_this_computer_started; do
+            echo "===== $t ====="
+            cargo test -p ccpbot-desktop --manifest-path desktop/src-tauri/Cargo.toml \
+              --lib -- "local::tests::$t" --include-ignored --nocapture
+          done
 
       # A failing test says which part did not answer and nothing about why: the reason is in the
       # process's own log, which lives on the runner that is about to be deleted. Learned the hard
