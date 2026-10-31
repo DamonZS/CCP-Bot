@@ -482,6 +482,20 @@ pub fn computer_dependencies_installed(root: &Path) -> bool {
     root.join("agent-computer").join("node_modules").is_dir()
 }
 
+/// Whether the Bot's own dependencies are installed.
+///
+/// `agent-bot` is deliberately not a workspace member either, so the root `bun install` never
+/// touches it and its install is its own step, in its own folder.
+///
+/// A development checkout hides how load-bearing that step is: it is hoisted, so `@ag-ui/encoder`
+/// sits at the top level regardless — at 1.0.2, a version `agent-bot/package.json` never asked for,
+/// since it declares 0.0.57 — and `agent-bot/src/index.ts` resolves it by accident. The isolated
+/// layout a deployment installs has no such entry, so the Bot dies before its first request with
+/// `Cannot find module '@ag-ui/encoder'`.
+pub fn bot_dependencies_installed(root: &Path) -> bool {
+    root.join("agent-bot").join("node_modules").is_dir()
+}
+
 /// The address the server reaches the computer on.
 pub fn computer_address(port: u16) -> String {
     format!("http://127.0.0.1:{port}")
@@ -1491,6 +1505,16 @@ pub fn start(
         report("dependencies", "Installing the computer's dependencies…");
         run_bun(&bun, &root.join("agent-computer"), &["install"])?;
     }
+    // The Bot's dependencies are installed apart from the rest for the same reason: it is not a
+    // workspace member either, so `bun install` at the root never installs `@ag-ui/core`,
+    // `@ag-ui/encoder` or `openai`. Without this step a fresh install starts the Bot with
+    // `error: Cannot find module '@ag-ui/encoder' from <root>/agent-bot/src/index.ts` and the whole
+    // start fails at that step, while a development checkout keeps working because its hoisted top
+    // level happens to carry `@ag-ui/encoder` — at a version the Bot never declared.
+    if bot.is_some() && !bot_dependencies_installed(root) {
+        report("dependencies", "Installing the Bot's dependencies…");
+        run_bun(&bun, &root.join("agent-bot"), &["install"])?;
+    }
     report("schema", "Updating the database schema…");
     run_bun(&bun, &root.join("server"), &["run", "db:migrate"])?;
     let secrets = deployment_secrets(root)?;
@@ -2202,6 +2226,27 @@ mod tests {
         let _ = std::fs::remove_dir_all(&root);
     }
 
+    /// The Bot's dependencies are its own install, not the root one: a fresh install runs the root
+    /// `bun install` and still has nothing `agent-bot/src/index.ts` can resolve, which is exactly the
+    /// failure this guard is here to prevent.
+    #[test]
+    fn the_bots_dependencies_are_its_own_install() {
+        let root = scratch("bot-deps");
+        assert!(
+            !bot_dependencies_installed(&root),
+            "nothing is installed yet"
+        );
+        std::fs::create_dir_all(root.join("node_modules")).expect("the root install");
+        assert!(
+            !bot_dependencies_installed(&root),
+            "the root install is not the Bot's install"
+        );
+        std::fs::create_dir_all(root.join("agent-bot").join("node_modules"))
+            .expect("the Bot's install");
+        assert!(bot_dependencies_installed(&root));
+        let _ = std::fs::remove_dir_all(&root);
+    }
+
     /// The choice survives a restart without any settings file, which is what makes the Windows stage
     /// skip itself on the second start of the same folder.
     #[test]
@@ -2396,6 +2441,87 @@ mod tests {
             root.display()
         );
         let _ = std::fs::remove_dir_all(&root);
+    }
+
+    /// What a machine that has never installed CCP-Bot this way does: an empty folder, the sources
+    /// from the published release, and the Bot's own dependencies installed into it before the Bot is
+    /// started. That last step is the one a development checkout hides — its hoisted top level
+    /// carries an `@ag-ui/encoder` the Bot never declared — so a fresh checkout is the only place the
+    /// missing step shows, and building one is what this test is for.
+    #[test]
+    #[ignore = "downloads the published release and starts real processes"]
+    fn live_a_fresh_folder_installs_the_bots_own_dependencies() {
+        let root = std::env::temp_dir().join("ccpbot-local-fresh-install");
+        let _ = std::fs::remove_dir_all(&root);
+        std::fs::create_dir_all(&root).expect("an empty folder");
+        assert!(!checkout_ready(&root), "the folder starts empty");
+
+        let cache = std::env::temp_dir().join("ccpbot-local-cache");
+        prepare_checkout(&root, &mut |step, detail| println!("[{step}] {detail}"))
+            .expect("the sources should arrive");
+        assert!(checkout_ready(&root), "the manifest arrived");
+        assert!(
+            bot_entry(&root).is_some(),
+            "the built-in Bot arrived with the rest"
+        );
+        assert!(
+            !bot_dependencies_installed(&root),
+            "the release carries the Bot's sources, not its dependencies"
+        );
+
+        // The model key, the one thing this mode does not guess: without it the Bot exits saying so
+        // rather than answering, which looks like a Bot that never comes up.
+        let model: BTreeMap<String, String> = [(
+            "OPENAI_API_KEY".to_string(),
+            "sk-local-placeholder-for-a-desktop-run".to_string(),
+        )]
+        .into_iter()
+        .collect();
+        crate::env::write(&root.join(".env"), &model, &BTreeMap::new())
+            .expect("the model key is written");
+
+        let mut steps: Vec<(String, String)> = Vec::new();
+        let started = start(&root, &cache, None, |step, detail| {
+            println!("[{step}] {detail}");
+            steps.push((step.to_string(), detail.to_string()));
+        })
+        .expect("the local stack should start");
+
+        assert!(
+            bot_dependencies_installed(&root),
+            "the Bot's own dependencies should be installed into {}",
+            root.display()
+        );
+        let installed = steps
+            .iter()
+            .find(|(step, detail)| {
+                step == "dependencies" && detail.contains("Installing the Bot's dependencies")
+            })
+            .unwrap_or_else(|| panic!("the run never installed the Bot's dependencies: {steps:?}"));
+        println!("{}", installed.1);
+        let answered = steps
+            .iter()
+            .find(|(step, detail)| {
+                step == "bot" && detail.starts_with("The built-in Bot is answering (/health")
+            })
+            .unwrap_or_else(|| panic!("the Bot never answered in {steps:?}"));
+        println!("the Bot step said: {}", answered.1);
+        assert!(answered.1.contains("/health 200"), "{}", answered.1);
+        let bot_port = started.bot_port.expect("this release ships a built-in Bot");
+        assert_eq!(
+            health_status(&bot_address(bot_port)).expect("the Bot answers"),
+            200
+        );
+
+        let mut children = vec![started.server, started.worker];
+        if let Some(bot) = started.bot {
+            children.push(bot);
+        }
+        if let Some(computer) = started.computer {
+            children.push(computer);
+        }
+        stop(&root, &mut children).expect("stopping the local stack");
+        println!("the fresh checkout is at {}", root.display());
     }
 
     /// The links bun makes are absolute, so a checkout that moved has to be linked again.
