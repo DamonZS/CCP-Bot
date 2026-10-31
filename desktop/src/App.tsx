@@ -69,6 +69,19 @@ const MANAGED_INTELLIGENCE_GATEWAY_WS_URL =
   "wss://realtime.intelligence.copilotkit.ai";
 
 /**
+ * Whether local mode is the right answer without being asked for.
+ *
+ * A machine with no engine at all cannot run the container route, and the way around it is a Windows
+ * feature this account may not be allowed to switch on. Local mode needs neither, so that machine
+ * starts there instead of on a requirement it cannot meet. Only that machine: with Docker or Podman
+ * present the existing route keeps the decision, and "Use Docker instead" on the local screen still
+ * wins afterwards. Both answers are read, because neither promise knows when the other arrives.
+ */
+function defaultToLocal(found: EngineStatus | null, here: LocalStatus | null) {
+  return Boolean(found && here?.supported && found.engine === null && !here.wanted);
+}
+
+/**
  * What the last screen offers to ask, mirroring `ask::SUGGESTED`.
  *
  * Two copies of one sentence, and a test in `ask.rs` pins what it has to contain. The window needs
@@ -402,22 +415,17 @@ export function App() {
    * choice lands in the same render as the answer it was made from instead of costing the window an
    * extra pass before it can draw.
    */
-  const localDefaulted = useRef(false);
   const localAnswer = useRef<LocalStatus | null>(null);
-  const defaultToLocal = (found: EngineStatus | null, here: LocalStatus | null) => {
-    if (localDefaulted.current) return;
-    if (!found || !here?.supported) return;
-    localDefaulted.current = true;
-    if (found.engine === null && !here.wanted) setLocalPicked(true);
-  };
+  const engineAnswer = useRef<EngineStatus | null>(null);
 
   useEffect(() => {
     let active = true;
     invoke<EngineStatus>("detect_engine")
       .then((found) => {
         if (!active) return;
+        engineAnswer.current = found;
         setEngine(found);
-        defaultToLocal(found, localAnswer.current);
+        if (defaultToLocal(found, localAnswer.current)) setLocalPicked(true);
       })
       .catch(() => undefined);
     // Local mode is read here rather than at the moment somebody asks for it: a machine that has run
@@ -427,12 +435,9 @@ export function App() {
         if (!active) return;
         localAnswer.current = found;
         setLocal(found);
-        if (found.wanted) {
+        if (found.wanted || defaultToLocal(engineAnswer.current, found)) {
           setLocalPicked(true);
-          localDefaulted.current = true;
-          return;
         }
-        defaultToLocal(engine, found);
       })
       .catch(() => undefined);
     const windowsReady = invoke<Blocker | null>("windows_blocker")

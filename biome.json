@@ -12,7 +12,10 @@
       "!desktop/src-tauri/gen",
       "!**/target",
       "!server/drizzle",
-      "!server/tests/fixtures/arcade-catalogue.json"
+      "!server/tests/fixtures/arcade-catalogue.json",
+      "!postgres",
+      "!logs",
+      "!.secrets"
     ]
   },
   "formatter": {
