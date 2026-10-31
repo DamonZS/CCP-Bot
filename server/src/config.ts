@@ -1,6 +1,10 @@
 /**
- * What the runtime can do. There is exactly one answer because CopilotKit Intelligence is required
- * for durable threads and memory. Configuration the product cannot function without belongs at the
+ * What the runtime can do, and it is one of two answers: this deployment has CopilotKit Intelligence
+ * behind it, or it stands alone on the tables in its own database.
+ *
+ * What it cannot be is half of one. The addressing values are required together, and a deployment
+ * that means to run with Intelligence and has not finished saying so is refused here rather than
+ * left to fail somewhere later: configuration the product cannot function without belongs at the
  * boot boundary.
  */
 import { intelligenceApiKey } from "@ccpbot/shared/intelligence-key";
@@ -27,11 +31,24 @@ import type { BrokerProvider } from "./plugins/access";
 import { type VoiceConfig, voiceConfig } from "./voice/config";
 import { type WebBotAuth, webBotAuthFromEnv } from "./web-bot-auth";
 
-export type RuntimeCapabilities = {
-  mode: "intelligence";
-  durableHistory: true;
-  intelligence: IntelligenceSettings;
-};
+/**
+ * The two ways this deployment can run, as a pair the type checker keeps apart.
+ *
+ * `"intelligence"` is CopilotKit Intelligence: threads and memory live on the platform, and the
+ * contract that reaches it is required with it. `"sse"` is the name `@copilotkit/runtime` gives a
+ * runtime with no Intelligence behind it, and it is what this deployment is when the three
+ * addressing values are all absent — no cloud connection, no durable history on the platform.
+ *
+ * A deployment never chooses between them: `runtimeCapabilities` decides from the environment, and
+ * narrowing on `mode` is what makes `intelligence` reachable at all. Nothing may assume it.
+ */
+export type RuntimeCapabilities =
+  | { mode: "sse"; durableHistory: false }
+  | {
+      mode: "intelligence";
+      durableHistory: true;
+      intelligence: IntelligenceSettings;
+    };
 
 /**
  * The Intelligence contract. Three values are required; see runtimeCapabilities.
@@ -986,12 +1003,19 @@ function oktaAuth(
 }
 
 /**
- * Resolve the Intelligence contract, or refuse to start.
+ * Resolve the Intelligence contract, or say this deployment has none.
  *
  * The three addressing values are required together. A partial set is the more dangerous shape than
  * none at all: it means somebody intended to configure Intelligence and got it wrong, so failing on
  * the partial set alone (as this did) let a completely unconfigured deployment through as if that
  * were a choice.
+ *
+ * All three absent is not that mistake. It is a deployment that means to stand on its own — the
+ * desktop install with no CopilotKit account behind it, a self-hosted trial — and it starts, as
+ * `mode: "sse"`: the runtime `@copilotkit/runtime` runs with no Intelligence attached, and threads
+ * and memory are this deployment's own tables. It says so once, on the way up, because what it
+ * cannot do is invisible from the outside: a Bot recalls what it was told in this deployment and
+ * nothing that lives on the platform.
  *
  * COPILOTKIT_LICENSE_TOKEN IS NO LONGER ONE OF THEM. Managed Intelligence issues a single project
  * key and derives entitlement from it, and requiring a second credential here sent people hunting
@@ -1013,6 +1037,18 @@ function runtimeCapabilities(environment: Environment): RuntimeCapabilities {
   })
     .filter(([, value]) => !value)
     .map(([name]) => name);
+
+  if (missing.length === 3) {
+    console.warn(
+      JSON.stringify({
+        type: "intelligence-absent",
+        mode: "sse",
+        reason:
+          "No CopilotKit Intelligence is configured, so this deployment runs on its own database: threads and memory do not reach the platform. Set INTELLIGENCE_API_URL, INTELLIGENCE_GATEWAY_WS_URL and CPK_INTELLIGENCE_API_KEY (or INTELLIGENCE_API_KEY) together to connect it.",
+      }),
+    );
+    return { mode: "sse", durableHistory: false };
+  }
 
   if (missing.length > 0) {
     throw new Error(

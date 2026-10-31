@@ -4,8 +4,11 @@
  *
  * It lives in one place because the minimum is a moving target: Intelligence became mandatory and
  * five test files each carried their own copy of the environment, so every one of them started
- * failing for a reason that had nothing to do with what it was testing. Tests that assert on
- * configuration should keep building their environment inline; everything else should spread this.
+ * failing for a reason that had nothing to do with what it was testing. It has since stopped being
+ * mandatory in the other direction — a deployment with none of the three stands on its own tables,
+ * see standalone.test.ts — and this base still configures it, because the tests that spread this
+ * are about the connected deployment. Tests that assert on configuration build their environment
+ * inline; everything else spreads this.
  */
 export function testEnvironment(
   overrides: Record<string, string | undefined> = {},
@@ -19,7 +22,9 @@ export function testEnvironment(
     BETTER_AUTH_URL: "http://localhost:3001",
     // Required whenever a provider is configured: nothing else grants the administrator role.
     INITIAL_ADMIN_EMAILS: "admin@ccpbot.test",
-    // Required. See server/src/config.ts: there is no runtime without Intelligence.
+    // Configured on purpose rather than because it is required: a deployment may have none of the
+    // three and stand on its own tables, and the tests that spread this one are about the connected
+    // deployment.
     INTELLIGENCE_API_URL: "http://localhost:7100",
     INTELLIGENCE_GATEWAY_WS_URL: "ws://localhost:7103",
     INTELLIGENCE_API_KEY: "tenant-api-key",

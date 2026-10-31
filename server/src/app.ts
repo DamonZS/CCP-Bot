@@ -1984,20 +1984,20 @@ export function createApp(
   }
 
   if (threadIdentity) {
+    /*
+     * Whether a thread still exists is a question only Intelligence can answer — it holds the
+     * threads. A deployment with none (see `RuntimeCapabilities` in config.ts) has nothing to ask
+     * and no thread anyone else could have, so the route that answers it is left unregistered
+     * rather than mounted and refusing: `createThreadRoutes` takes the reader as optional for
+     * exactly this case, and minting a thread needs nothing.
+     */
+    const readThread =
+      config.runtime.mode === "intelligence"
+        ? createThreadReader(createIntelligenceClient(config.runtime.intelligence))
+        : undefined;
     app.route(
       "/api/threads",
-      createThreadRoutes(
-        threadIdentity,
-        requireUser,
-        // config.ts refuses to boot without the full Intelligence contract (see copilot.ts's
-        // header comment), so `config.runtime.intelligence` is never missing here. Built from it
-        // rather than assumed, though: this is the one place besides the runtime mount itself that
-        // needs to reach Intelligence, and it should keep working unmodified if that guarantee ever
-        // loosens and a deployment can legitimately have no reader to build.
-        createThreadReader(
-          createIntelligenceClient(config.runtime.intelligence),
-        ),
-      ),
+      createThreadRoutes(threadIdentity, requireUser, readThread),
     );
   }
 

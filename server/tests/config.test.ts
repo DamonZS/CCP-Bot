@@ -2,9 +2,9 @@ import { describe, expect, spyOn, test } from "bun:test";
 import { readFileSync } from "node:fs";
 import { configuredAuthProviders, loadConfig } from "../src/config";
 
-// Intelligence is part of the MINIMUM contract, so it belongs in the base environment every other
-// case builds on. Leaving it out of the base would make most of this file assert the behaviour of a
-// deployment that is not allowed to exist.
+// Intelligence is configured in the base environment every other case builds on: most of this file is
+// about a deployment that is connected to it. A deployment with none of the three is allowed to exist
+// — see standalone.test.ts — so the cases that leave it out say so on purpose.
 const baseEnvironment = {
   DATABASE_URL: "postgres://ccpbot:ccpbot@localhost:5432/ccpbot",
   KEY_ENCRYPTION_KEY: "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
@@ -118,9 +118,10 @@ describe("deployment configuration", () => {
     expect(config.auth).toBeUndefined();
   });
 
-  // The product does not have a mode without Intelligence, so each of these is a refusal to boot
-  // rather than a degraded capability. Named individually because a deployment that sets three of
-  // four is the likeliest real mistake, and the message has to say which one is missing.
+  // Each of these is a PARTIAL set, and a partial set is still a refusal to boot rather than a
+  // degraded capability: somebody meant to connect and got it wrong. Named individually because a
+  // deployment that sets three of four is the likeliest real mistake, and the message has to say
+  // which one is missing. All three absent is a different thing; see standalone.test.ts.
   test.each([
     "INTELLIGENCE_API_URL",
     "INTELLIGENCE_GATEWAY_WS_URL",
@@ -199,15 +200,26 @@ describe("deployment configuration", () => {
     );
   });
 
-  test("refuses to start when Intelligence is absent entirely, rather than degrading", () => {
-    expect(() =>
-      loadConfig({
-        DATABASE_URL: baseEnvironment.DATABASE_URL,
-        KEY_ENCRYPTION_KEY: baseEnvironment.KEY_ENCRYPTION_KEY,
-        MANAGED_AGENT_AG_UI_URL: baseEnvironment.MANAGED_AGENT_AG_UI_URL,
-        MANAGED_AGENT_TOKEN: baseEnvironment.MANAGED_AGENT_TOKEN,
-      }),
-    ).toThrow("CopilotKit Intelligence is required and is not configured");
+  /*
+   * All three absent. Before this it was a refusal to boot; now it is the deployment that stands on
+   * its own tables — a desktop install or a self-hosted trial with no CopilotKit account behind it.
+   * The one thing it is not is a partial set: see the case above. What such a deployment then
+   * answers is in `standalone.test.ts`.
+   */
+  test("starts on its own tables when Intelligence is absent entirely", () => {
+    const environment: Record<string, string | undefined> = {
+      ...baseEnvironment,
+    };
+    for (const name of [
+      "INTELLIGENCE_API_URL",
+      "INTELLIGENCE_GATEWAY_WS_URL",
+      "INTELLIGENCE_API_KEY",
+    ]) {
+      delete environment[name];
+    }
+    const config = loadConfig(environment);
+
+    expect(config.runtime).toEqual({ mode: "sse", durableHistory: false });
   });
 
   test("rejects incomplete OAuth client configuration", () => {

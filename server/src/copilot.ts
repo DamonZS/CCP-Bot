@@ -31,6 +31,7 @@ import { parametersFor } from "@ccpbot/toolkit/granted-tool";
 import { HeadlessToolsMiddleware } from "@ccpbot/toolkit/headless-tools";
 import { sanitizeSeededHistory } from "@ccpbot/toolkit/history-sanitize";
 import { executeNativeApprovalTool } from "@ccpbot/toolkit/native-approval";
+import type { ThreadLock } from "@ccpbot/toolkit/ports";
 import { historyOrEmpty } from "@ccpbot/toolkit/thread-history";
 import { defer, from, switchMap } from "rxjs";
 import { z } from "zod";
@@ -80,17 +81,20 @@ import { grantedToolGuidance, holdsWebSearch } from "./plugins/tools";
 import { UNTRUSTED_GUIDANCE } from "./untrusted-content";
 
 /**
- * The CopilotKit runtime, always in Intelligence mode.
+ * The CopilotKit runtime, in one of the two modes the SDK itself has.
  *
  * Package-declared built-in Bots run as CopilotKit `BuiltInAgent` instances. External Bots are
  * reached over AG-UI as `HttpAgent` instances, so anything that speaks the protocol remains a Bot
  * with no framework adapter here: LangGraph, Pydantic-AI, CrewAI, Mastra, ADK, or a hand-written
  * server.
  *
- * There is no SSE branch. Intelligence is a requirement of the product, not a tier: it owns
- * durable threads, memory and learning, and a deployment without it silently forgets every
- * conversation. config.ts refuses to boot without the full contract, so by the time this runs the
- * settings are present and this file has one mode.
+ * WHICH MODE IS DECIDED BY `config.runtime`, NOT HERE. Connected, this builds the Intelligence
+ * runtime and the platform owns durable threads, memory and learning. Without a connection
+ * (`mode: "sse"`; see `RuntimeCapabilities` in config.ts) it builds the SDK's SSE runtime instead:
+ * no `intelligence` option is passed, no platform client is constructed, and the runner is the
+ * SDK's in-memory one, which keeps no thread across a restart. Durable local threads are the next
+ * task; until they land, a history read is answered as empty and says so once. What this file must
+ * never do in that mode is pretend — nothing here invents a URL, a key or a thread id.
  */
 
 /** Resolve the signed-in person for a request. Threads and memory are scoped to whoever this returns. */
@@ -1749,6 +1753,36 @@ export function generativeUiMiddlewares(enabled: boolean) {
 }
 
 /**
+ * The one sentence for a platform call a deployment with no connection cannot make.
+ *
+ * The three variable names are the fix, and they are the whole of what this string may name: an
+ * address invented here would look configured and answer nothing.
+ */
+function notConnected(what: string): Error {
+  return new Error(
+    `This deployment is not connected to CopilotKit Intelligence, so ${what} is not available. Set INTELLIGENCE_API_URL, INTELLIGENCE_GATEWAY_WS_URL and CPK_INTELLIGENCE_API_KEY (or INTELLIGENCE_API_KEY) together to connect it.`,
+  );
+}
+
+/**
+ * The conversation's run lock, for a deployment with no platform to issue one.
+ *
+ * A run id and the lock that names it are the platform's, so a hop that carried on without them
+ * would be delivering into a run nobody issued. Each of the three calls refuses and says why,
+ * rather than handing back the shape a caller expects and letting it fail somewhere less obvious.
+ * This goes away with the local runner (the next task), which owns its own concurrency.
+ */
+function lockWithoutPlatform(): ThreadLock {
+  const refuse = async (): Promise<never> => {
+    throw notConnected("a conversation's run lock");
+  };
+  return { acquire: refuse, renew: refuse, release: refuse };
+}
+
+/** Said once per process, the first time a conversation is read here. */
+let absentHistoryAnnounced = false;
+
+/**
  * Mount the CopilotKit endpoint onto the host Hono app.
  *
  * `agents` is a factory rather than a fixed map so a Bot registered while the server is running is
@@ -1781,7 +1815,13 @@ export function mountCopilotRuntime(
     };
   } = {},
 ) {
-  const { intelligence } = config.runtime;
+  /*
+   * Present only when this deployment is connected. Narrowing on `mode` is the one way to reach the
+   * settings, so everything below that talks to the platform is built from a value here rather than
+   * assumed from a boot-time guarantee.
+   */
+  const intelligence =
+    config.runtime.mode === "intelligence" ? config.runtime.intelligence : undefined;
   const {
     basePath = "/api/copilotkit",
     onRunBusy,
@@ -1826,8 +1866,16 @@ export function mountCopilotRuntime(
   /*
    * One client, used by the runtime and by anything reading a thread beside it, so a hop reads the
    * history a person's run would read rather than a second view of it that could disagree.
+   *
+   * The subclass, not the base: a thread nobody has run yet reads as empty rather than as a 500. See
+   * IntelligenceKnowingANewThread.
+   *
+   * Built only when there is a platform to reach. The constructor opens nothing, but a client with
+   * nowhere to go is a trap for whoever calls it next, and in SSE mode nothing here may hold one:
+   * the calls that would use it are answered without it, at the bottom of this function.
    */
-  const intelligenceClient: CopilotKitIntelligence =
+  const intelligenceClient: CopilotKitIntelligence | undefined =
+    intelligence &&
     observeIntelligenceAuthentication(
       new IntelligenceKnowingANewThread({
         apiUrl: intelligence.apiUrl,
@@ -1858,25 +1906,32 @@ export function mountCopilotRuntime(
       }),
     );
 
-  const learning: LearningRuntime | undefined = learningSettings
-    ? createLearningRuntime({
-        store: learningSettings,
-        client: intelligenceClient,
-        ...(personalSkills ? { people: personalSkills } : {}),
-      })
-    : undefined;
+  /*
+   * The Learning runtime needs both a settings row and a platform, because learned Skills live on
+   * the platform: the SDK refuses `ɵlearning` in SSE mode outright (runtime.mjs), and a container id
+   * resolved here could not be read back from anywhere. A deployment with neither therefore has no
+   * `learning`, which the Admin shows as no status rather than as a container nobody can reach. See
+   * `learningAutoAssign` in index.ts for the same decision one level up.
+   */
+  const learning: LearningRuntime | undefined =
+    learningSettings && intelligenceClient
+      ? createLearningRuntime({
+          store: learningSettings,
+          client: intelligenceClient,
+          ...(personalSkills ? { people: personalSkills } : {}),
+        })
+      : undefined;
 
-  const runtime = new CopilotRuntime({
-    // `mode` is inferred from the presence of `intelligence`; passing it is a type error.
-    //
+  /*
+   * The options the two modes share, so the mode-specific part below is the only thing that
+   * differs: the SDK tells its modes apart by whether `intelligence` is present, and passing
+   * `runner` beside it is refused (runtime.mjs).
+   */
+  const shared = {
     // identifyUser is NOT optional in practice. Threads and memory are scoped to the user it
     // returns, so omitting it puts every person in the deployment in the same thread space and one
     // person's conversations become another's.
     identifyUser,
-    // The subclass, not the base: a thread nobody has run yet reads as empty rather than as a 500.
-    // See IntelligenceKnowingANewThread.
-    intelligence: intelligenceClient,
-    licenseToken: intelligence.licenseToken,
     // Carried on the events the runtime already sends, so CCP-Bot's traffic is separable from any
     // other deployment's. Adds no events of its own.
     telemetryProperties: {
@@ -1904,7 +1959,22 @@ export function mountCopilotRuntime(
     // `identifyUser` is the Intelligence projection of the same person `identifyActor` returns:
     // one resolver decides both whose threads these are and whose coworkers exist.
     agents: createRequestAgents(identifyActor, resolver) as never,
-  });
+  };
+
+  /*
+   * Two constructions rather than one with a spread, so each gets the option shape its mode
+   * declares. In SSE mode the runner is the SDK's own in-memory one: it holds a conversation for as
+   * long as the process lives and no longer, which is what the local threads tables replace.
+   */
+  const runtime =
+    intelligence && intelligenceClient
+      ? new CopilotRuntime({
+          ...shared,
+          // Passing this is what selects the Intelligence runtime; `mode` is inferred, not passed.
+          intelligence: intelligenceClient,
+          licenseToken: intelligence.licenseToken,
+        })
+      : new CopilotRuntime(shared);
 
   return {
     handler: createCopilotHonoHandler({
@@ -1923,16 +1993,26 @@ export function mountCopilotRuntime(
      * refused with `active_lock_mismatch`: a thread's active run is a lock the platform issues, and
      * the token that holds it is not the API key. The runtime asks the client for both, so anything
      * else driving a run has to ask the same client the same way.
+     *
+     * A hop is the only caller, and a hop needs the platform. Without one this refuses where it is
+     * asked, rather than handing out an address assembled from nothing.
      */
-    runnerConnection: () => ({
-      url: intelligenceClient.ɵgetRunnerWsUrl(),
-      authToken: intelligenceClient.ɵgetRunnerAuthToken(),
-    }),
-    threadLock: createIntelligenceThreadLock({
-      client: intelligenceClient,
-      learning,
-      onRunBusy,
-    }),
+    runnerConnection: () => {
+      if (!intelligenceClient) throw notConnected("a runner connection");
+      return {
+        url: intelligenceClient.ɵgetRunnerWsUrl(),
+        authToken: intelligenceClient.ɵgetRunnerAuthToken(),
+      };
+    },
+    // The lock a hop takes before it delivers; see lockWithoutPlatform for what there is to take
+    // when no platform issued the run.
+    threadLock: intelligenceClient
+      ? createIntelligenceThreadLock({
+          client: intelligenceClient,
+          learning,
+          onRunBusy,
+        })
+      : lockWithoutPlatform(),
     agentFor,
     /**
      * A thread's messages, as the platform holds them.
@@ -1949,6 +2029,25 @@ export function mountCopilotRuntime(
       type Read = Awaited<
         ReturnType<CopilotKitIntelligence["getThreadMessages"]>
       >;
+      if (!intelligenceClient) {
+        /*
+         * Nothing to read: this deployment's conversations are the platform's, and there is no
+         * platform. The local tables land next; until they do, a read is answered as empty rather
+         * than withheld, and it says so once, because a hop reading nothing looks exactly like a
+         * conversation nobody ever wrote.
+         */
+        if (!absentHistoryAnnounced) {
+          absentHistoryAnnounced = true;
+          console.warn(
+            JSON.stringify({
+              type: "intelligence-absent-history",
+              reason:
+                "A conversation was read with no CopilotKit Intelligence configured, and this deployment keeps no history of its own yet, so the read is answered as empty.",
+            }),
+          );
+        }
+        return [] as Read["messages"];
+      }
       const read = await historyOrEmpty<Read>(
         () =>
           intelligenceClient.getThreadMessages({

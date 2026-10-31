@@ -6,7 +6,11 @@ import {
 import { computerGuidance } from "@ccpbot/shared/bot-prompt";
 import { isPersonBrowserId } from "@ccpbot/shared/ccpbot-browser";
 import { workOwner } from "@ccpbot/shared/work-owner";
-import { createTurnRunner } from "@ccpbot/toolkit/run-turn";
+import {
+  createTurnRunner,
+  type IntelligenceLike,
+  type RunnerLike,
+} from "@ccpbot/toolkit/run-turn";
 import { and, eq, inArray, isNull, ne, sql } from "drizzle-orm";
 import { z } from "zod";
 import { createActivityStore } from "./activity/activity";
@@ -134,7 +138,7 @@ import {
   describeComputerIsolation,
 } from "./computer/provider";
 import { createSnapshotStore } from "./computer/snapshot-store";
-import { loadConfig } from "./config";
+import { loadConfig, type IntelligenceSettings } from "./config";
 import {
   chooseOpenAIApi,
   mountCopilotRuntime,
@@ -277,7 +281,7 @@ import { useTriggerTools } from "./responsibilities/trigger-tools";
 import { createTriggerStore } from "./responsibilities/triggers";
 import type { Responsibility } from "./responsibilities/types";
 import { createServerResponsibilityEngine } from "./responsibilities/wiring";
-import { createRoutineRunner } from "./routines/runner";
+import { createRoutineRunner, type RoutineRunner } from "./routines/runner";
 import { createRoutineStore } from "./routines/store";
 import { createIntentRouter } from "./routing/classify";
 import { createModelCompleter } from "./routing/model";
@@ -310,18 +314,112 @@ const learningSettingsStore = createLearningSettingsStore(
   database,
   config.learning,
 );
+/*
+ * What this deployment can ask, and what it says when there is nothing to ask.
+ *
+ * With no Intelligence configured — all three of `INTELLIGENCE_API_URL`, `INTELLIGENCE_GATEWAY_WS_URL`
+ * and `CPK_INTELLIGENCE_API_KEY` missing; see `RuntimeCapabilities` in config.ts — the product still
+ * runs: the Bot on the loopback address answers, and the tables in this database are the whole store.
+ * What does not run is anything driven by a headless turn, because those turns are run by the platform.
+ *
+ * `absentIntelligence`, `absentRunner` and `absentLearningSnapshots` are STAND-INS, and temporary
+ * ones: task-18 gives a standalone deployment a runner and a history of its own, and then none of this
+ * is needed. They are here because the modules that take these values — approvals, responsibilities,
+ * delivery, channel summaries, Learning — take them as required, and because a deployment with no
+ * Intelligence has to say so rather than open a socket to an address nobody configured. There is no
+ * address, no key and no placeholder anywhere in them: the settings are absent, and this is the shape
+ * that absence takes where a value is required.
+ *
+ * The split is deliberate. Reading a conversation is something a person does — a channel's title, the
+ * delivery inbox, an approval checking that the tool call it approves is saved in the conversation —
+ * and empty is the truth here: no thread was ever kept on the platform, and this deployment has no
+ * table of its own to keep one in yet. So `getThreadMessages` answers empty and says so once.
+ * Everything else refuses, naming what to configure: those calls come only from headless turns.
+ */
+const intelligence =
+  config.runtime.mode === "intelligence" ? config.runtime.intelligence : undefined;
+
+const NO_INTELLIGENCE =
+  "This deployment is not connected to CopilotKit Intelligence (INTELLIGENCE_API_URL, INTELLIGENCE_GATEWAY_WS_URL, CPK_INTELLIGENCE_API_KEY), so the platform cannot be asked.";
+
+function absentFromIntelligence(method: string): Error {
+  return new Error(`${NO_INTELLIGENCE} (asked for ${method})`);
+}
+
+let absentHistoryAnnounced = false;
+
+const absentIntelligence: IntelligenceLike = {
+  async getThreadMessages() {
+    if (!absentHistoryAnnounced) {
+      absentHistoryAnnounced = true;
+      console.warn(
+        JSON.stringify({
+          type: "intelligence-absent-history",
+          reason:
+            "A conversation was read with no CopilotKit Intelligence configured, and this deployment keeps no history of its own yet, so the read is answered as empty.",
+        }),
+      );
+    }
+    return { messages: [] };
+  },
+  async getOrCreateThread() {
+    throw absentFromIntelligence("getOrCreateThread");
+  },
+  async ɵacquireThreadLock() {
+    throw absentFromIntelligence("acquireThreadLock");
+  },
+  async ɵrenewThreadLock() {
+    throw absentFromIntelligence("renewThreadLock");
+  },
+  async ɵcleanupThreadLock() {
+    throw absentFromIntelligence("cleanupThreadLock");
+  },
+};
+
+const absentRunner: RunnerLike = {
+  run() {
+    throw absentFromIntelligence("run");
+  },
+  async stop() {
+    throw absentFromIntelligence("stop");
+  },
+};
+
+/*
+ * The one method of the runtime key's client that Learning reaches for. Its error carries no `code`,
+ * which is how both readers say "could not tell" rather than "not there": see `classifyProbeError` in
+ * learning/auto-assign.ts and `classifyLearningSpaceProbe` in learning/personal-space.ts.
+ */
+const absentLearningSnapshots = {
+  async getLearnedSkillsSnapshot(): Promise<never> {
+    throw absentFromIntelligence("getLearnedSkillsSnapshot");
+  },
+};
+
+/*
+ * The same, for the entitlement question. It throws rather than answering "not entitled": the banner
+ * reads a failed entitlement request as "show it" (self-host-banner.ts), and that is what this is — a
+ * read that could not be made, not a licence the platform refused.
+ */
+const absentEntitlementsClient = {
+  async getRuntimeEntitlements(): Promise<never> {
+    throw absentFromIntelligence("getRuntimeEntitlements");
+  },
+};
+
 // Its own client, like the self-host banner's: the constructor opens nothing.
-const learningProbeIntelligence = createIntelligenceClient(
-  config.runtime.intelligence,
-);
+const learningProbeIntelligence = intelligence
+  ? createIntelligenceClient(intelligence)
+  : absentLearningSnapshots;
 /*
  * Who can create the `ccpbot` container here: never the runtime key. A service token the operator
  * configured (local evaluation installs), or a CopilotKit CLI login on this machine, which is what a
  * laptop running `bun run start` has. Neither, and the log and Admin say exactly what to run instead.
  */
 const learningApiOrigin = (() => {
+  if (!intelligence) return undefined;
   try {
-    return intelligenceApiOrigin(config.runtime.intelligence.apiUrl);
+    return intelligenceApiOrigin(intelligence.apiUrl);
   } catch {
     return undefined;
   }
@@ -330,15 +428,14 @@ const learningCanCreate =
   learningApiOrigin !== undefined &&
   (config.learningSetup !== undefined || cliLoginPresent());
 /** The credential that can create a Learning container, for the `ccpbot` default and for each person's own space. */
-const learningCredentials = (apiUrl: string): LearningContainerCredentials => ({
+const learningCredentials = (
+  apiUrl: string,
+  settings: IntelligenceSettings,
+): LearningContainerCredentials => ({
   directory: process.cwd(),
   apiUrl,
   nonInteractive: true,
-  key: keyIntelligence(
-    apiUrl,
-    config.runtime.intelligence.apiKey,
-    config.runtime.intelligence.gatewayWsUrl,
-  ),
+  key: keyIntelligence(apiUrl, settings.apiKey, settings.gatewayWsUrl),
   cliLogin: cliLoginPresent(),
   ...(config.learningSetup
     ? {
@@ -350,17 +447,21 @@ const learningCredentials = (apiUrl: string): LearningContainerCredentials => ({
     : {}),
 });
 const learningAutoAssign = createLearningAutoAssign({
-  enabled: config.learningAutoAssign,
+  // Nothing to assign without Intelligence: the container this would adopt lives on the platform, and
+  // the probe above can only ever report that it could not tell.
+  enabled: config.learningAutoAssign && intelligence !== undefined,
   store: learningSettingsStore,
   probe: (containerId) =>
     probeLearningContainer(learningProbeIntelligence, containerId),
   ...(learningApiOrigin
     ? { instructions: learningSetupInstructions(learningApiOrigin) }
     : {}),
-  ...(learningCanCreate && learningApiOrigin
+  ...(learningCanCreate && learningApiOrigin && intelligence
     ? {
         create: () =>
-          ensureLearningContainer(learningCredentials(learningApiOrigin)),
+          ensureLearningContainer(
+            learningCredentials(learningApiOrigin, intelligence),
+          ),
       }
     : {}),
   audit: createAuditStore(database),
@@ -374,11 +475,11 @@ const personalLearningSpaces = createPersonalLearningSpaces({
   readSettings: () => learningSettingsStore.read(),
   snapshots: learningProbeIntelligence,
   store: createPersonSpaceStore(database),
-  ...(learningCanCreate && learningApiOrigin
+  ...(learningCanCreate && learningApiOrigin && intelligence
     ? {
         create: (container) =>
           createLearningContainer({
-            ...learningCredentials(learningApiOrigin),
+            ...learningCredentials(learningApiOrigin, intelligence),
             container,
           }),
       }
@@ -544,11 +645,14 @@ const { resolveRequestActor, identifyUser, identifyActor } = createRequestActor(
 );
 // Where a person's own CCP-Bot browser may go: not where Bots may, but where their browser on their own laptop would
 // (browser/egress.ts). On CCP-Bot Desktop's host-side computer that is their own desktop, so everywhere.
+// The gateway is the one origin beyond CCP-Bot's own that the allowlist admits. Empty with no
+// Intelligence, which egress reads as "no such origin" — there is no gateway to reach.
+const intelligenceGatewayUrl = intelligence?.gatewayWsUrl ?? "";
 const personBrowserPolicy = personBrowserEgressPolicy({
   native: config.browser !== undefined,
   allowPrivateHosts: config.computer?.allowPrivateHosts ?? false,
   ccpbotUrls: [config.publicUrl, config.appUrl],
-  gatewayUrl: config.runtime.intelligence.gatewayWsUrl,
+  gatewayUrl: intelligenceGatewayUrl,
 });
 // Each computer is pushed its network policy on the way to the action that woke it, because a
 // computer refuses every connection until one arrives (see `withPolicyPushOnWake`). A person's own
@@ -741,23 +845,26 @@ const chooseSkills = createModelCompleter({
  *
  * Not the runtime's own pair: `mountCopilotRuntime` keeps its client and its runner inside
  * `CopilotRuntime` and hands neither back, and reaching into that object would be a worse seam than
- * building our own from the same three settings. Built from `config.runtime.intelligence`, which is
- * required and not optional — `RuntimeCapabilities` has exactly one mode and every Intelligence field
- * with it (`config.ts:10-22`), and `loadConfig` refuses to boot without them — so there is no
- * not-in-Intelligence-mode branch to write here. If a second mode is ever added, THIS is the line that
- * has to grow a guard, and the routine runner must then be left off `createApp` entirely.
+ * building our own from the same three settings. This is the line that grew its guard: a deployment
+ * with no Intelligence configured (`RuntimeCapabilities` in config.ts) has no pair to build, and the
+ * stand-ins above take its place so that everything which requires one still constructs — approving a
+ * tool call, waking a responsibility, naming a channel, reading the delivery inbox. The routine runner
+ * itself is then left off `createApp` entirely: a deployment that cannot run a turn has no routines.
  *
  * One runner for the process, reused across firings: it opens a socket per run and holds no idle
  * connection, but its `threads` map is per instance, and a runner per turn would fragment the
  * already-running check that keeps two turns off one thread. See `toolkit/run-turn.ts`.
  */
-const routineIntelligence = observeIntelligenceAuthentication(
-  new CopilotKitIntelligence({
-    apiUrl: config.runtime.intelligence.apiUrl,
-    wsUrl: config.runtime.intelligence.gatewayWsUrl,
-    apiKey: config.runtime.intelligence.apiKey,
-  }),
-);
+const routineClient = intelligence
+  ? observeIntelligenceAuthentication(
+      new CopilotKitIntelligence({
+        apiUrl: intelligence.apiUrl,
+        wsUrl: intelligence.gatewayWsUrl,
+        apiKey: intelligence.apiKey,
+      }),
+    )
+  : undefined;
+const routineIntelligence: IntelligenceLike = routineClient ?? absentIntelligence;
 const approvalComputerTools = async (
   ownerUserId: string,
   agentId: string,
@@ -1328,13 +1435,16 @@ const hostAccessBroker = createHostAccessBroker(Date.now, {
 // server-dispatched: the selected Bot and the signed-in owner are bound here, then the desktop worker
 // receives only opaque grant ids and relative paths.
 // Memory lives in CopilotKit Intelligence when this deployment is entitled to it, and in CCP-Bot's own
-// tables when it is not; see memory/store.ts. Its own client, like the thread reader's: the
-// constructor opens nothing.
-const personalMemoryStore = createMemoryStore(database, {
-  intelligence: createIntelligenceMemory({
-    client: createIntelligenceClient(config.runtime.intelligence),
-  }),
-});
+// tables when it is not; see memory/store.ts. A deployment with no Intelligence at all never had a
+// platform to mirror to, so the tables are the whole store and there is no client to hand it. Its own
+// client, like the thread reader's: the constructor opens nothing.
+const personalMemoryStore = intelligence
+  ? createMemoryStore(database, {
+      intelligence: createIntelligenceMemory({
+        client: createIntelligenceClient(intelligence),
+      }),
+    })
+  : createMemoryStore(database);
 const recorderExtension = createRecorderExtension({
   config,
   database,
@@ -1758,40 +1868,48 @@ const buildAgentFor = async ({
   }
   return agent;
 };
-const routineAgentRunner = new IntelligenceAgentRunner({
-  url: routineIntelligence.ɵgetRunnerWsUrl(),
-  authToken: routineIntelligence.ɵgetRunnerAuthToken(),
-});
+const routineAgentRunner: RunnerLike = routineClient
+  ? new IntelligenceAgentRunner({
+      url: routineClient.ɵgetRunnerWsUrl(),
+      authToken: routineClient.ɵgetRunnerAuthToken(),
+    })
+  : absentRunner;
 
-const routineRunner = createRoutineRunner({
-  routineStore,
-  channelStore,
-  runTurn: createTurnRunner({
-    admission: serverTurnAdmission,
-    intelligence: routineIntelligence,
-    runner: routineAgentRunner,
-    components: componentCatalog,
-    buildAgentFor,
-    toolsForTurn: async ({ ownerUserId, agentId, initiator }) => {
-      if (!computerGateway) return [];
-      const actor = await actorFor(ownerUserId);
-      const profile = await agentProfileStore.get(actor, agentId);
-      if (!profile) throw new Error("That Bot is not available to this owner.");
-      // A Team Bot's teammate uses the Bot, not its owner's signed-in computer.
-      if (!canUseComputer(profile, actor)) return [];
-      return createHeadlessComputerTools({
-        gateway: computerGateway,
-        seat: await computerGateway.seatFor(agentId, actor.id),
-        actor: { id: actor.id, userId: actor.id, initiator },
-        auditStore: bootAuditStore,
-        ...(signInService ? { signIn: signInService } : {}),
-      });
-    },
-    learningContainerForThread: (input) =>
-      copilotRuntime.learning?.containerForThread(input) ??
-      Promise.resolve(undefined),
-  }),
-});
+// No routines without Intelligence: a routine is a headless turn, and the turns are run by the
+// platform. `createApp` takes this as an optional argument, so this is the whole of the "left off"
+// the pair's comment above describes — switching something off, not pretending it ran.
+const routineRunner: RoutineRunner | undefined = routineClient
+  ? createRoutineRunner({
+      routineStore,
+      channelStore,
+      runTurn: createTurnRunner({
+        admission: serverTurnAdmission,
+        intelligence: routineIntelligence,
+        runner: routineAgentRunner,
+        components: componentCatalog,
+        buildAgentFor,
+        toolsForTurn: async ({ ownerUserId, agentId, initiator }) => {
+          if (!computerGateway) return [];
+          const actor = await actorFor(ownerUserId);
+          const profile = await agentProfileStore.get(actor, agentId);
+          if (!profile)
+            throw new Error("That Bot is not available to this owner.");
+          // A Team Bot's teammate uses the Bot, not its owner's signed-in computer.
+          if (!canUseComputer(profile, actor)) return [];
+          return createHeadlessComputerTools({
+            gateway: computerGateway,
+            seat: await computerGateway.seatFor(agentId, actor.id),
+            actor: { id: actor.id, userId: actor.id, initiator },
+            auditStore: bootAuditStore,
+            ...(signInService ? { signIn: signInService } : {}),
+          });
+        },
+        learningContainerForThread: (input) =>
+          copilotRuntime.learning?.containerForThread(input) ??
+          Promise.resolve(undefined),
+      }),
+    })
+  : undefined;
 
 /**
  * The runtime, and the two things beside it a hop needs.
@@ -2359,16 +2477,33 @@ const personResponseSweep = repeatAfterEach(
 let workOfferedListener: WorkOfferedListener | undefined;
 
 if (config.handoff.maxDepth > 0 && config.handoff.maxPerRun > 0) {
-  workOfferedListener = await startHandoffDelivery({
-    config,
-    database,
-    bootAuditStore,
-    actorFor,
-    copilotRuntime,
-    threadIdentity,
-    groupConversations,
-    channelStore,
-  });
+  /*
+   * A hop is delivered through the platform: the addressed Bot's turn runs on an Intelligence
+   * thread and is held by a lock the platform issues, and `handoff-wiring.ts` takes both from the
+   * runtime's own client rather than from configuration. With no connection there is nothing that
+   * could deliver a hop, so the loop does not start — and it says so, rather than sweeping a queue
+   * that only fills with work nobody here can do.
+   */
+  if (config.runtime.mode === "intelligence") {
+    workOfferedListener = await startHandoffDelivery({
+      config,
+      database,
+      bootAuditStore,
+      actorFor,
+      copilotRuntime,
+      threadIdentity,
+      groupConversations,
+      channelStore,
+    });
+  } else {
+    console.warn(
+      JSON.stringify({
+        type: "handoff-absent",
+        reason:
+          "Handing work between Bots needs the platform's threads and locks, so with no CopilotKit Intelligence connection this deployment cannot deliver a hop.",
+      }),
+    );
+  }
 }
 
 /*
@@ -2462,7 +2597,7 @@ await installEnterpriseControls({
   duringRecording: botBrowserNetwork({
     connections: recorderExtension.connections,
     ccpbotUrls: [config.publicUrl, config.appUrl],
-    gatewayUrl: config.runtime.intelligence.gatewayWsUrl,
+    gatewayUrl: intelligenceGatewayUrl,
   }),
   ...(computerProvider ? { provider: computerProvider } : {}),
   ...(config.computer?.token ? { computerToken: config.computer.token } : {}),
@@ -2487,16 +2622,21 @@ guardHostAccess(
 auditRoutineStore(routineStore, bootAuditStore);
 
 // Asked only whether this deployment pays for Intelligence, for the self-host banner. Its own client
-// rather than the runtime's, the same as the thread reader: the constructor opens nothing.
-const selfHostBannerIntelligence = createIntelligenceClient(
-  config.runtime.intelligence,
-);
+// rather than the runtime's, the same as the thread reader: the constructor opens nothing. With no
+// Intelligence there is nothing to ask, and the stand-in fails the read, which the banner reads as
+// "show it" — the right answer for a deployment that is answering for itself.
+const selfHostBannerIntelligence = intelligence
+  ? createIntelligenceClient(intelligence)
+  : absentEntitlementsClient;
 
 // Said once, at boot, whether Intelligence will let this deployment use what it is licensed for. A
 // self-hosted Intelligence without a licence refuses memory quietly; this is the line that says why.
-void reportIntelligenceEntitlement({
-  entitlements: () => selfHostBannerIntelligence.getRuntimeEntitlements(),
-});
+// Nothing to report when the platform was never configured.
+if (intelligence) {
+  void reportIntelligenceEntitlement({
+    entitlements: () => selfHostBannerIntelligence.getRuntimeEntitlements(),
+  });
+}
 
 const identityGithubCallback =
   config.githubApp && config.publicUrl
@@ -2557,7 +2697,8 @@ const app = createApp(
   intentRouter,
   // What a browsing turn's screen looked like when it finished, so the transcript can show it later.
   pageFrameStore,
-  // What a due routine actually does: a turn, run as its owner, into the thread they will open.
+  // What a due routine actually does: a turn, run as its owner, into the thread they will open. Absent
+  // when there is no Intelligence — `createApp` leaves the runner off entirely in that case.
   routineRunner,
   // A person's own standing instructions: the list, and a switch to stop one.
   routineStore,
