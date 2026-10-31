@@ -1749,9 +1749,11 @@ pub fn checkout_ready(root: &Path) -> bool {
 
 /// Fetches the published sources into an empty folder, once.
 ///
-/// The version comes from the same release the window's other route uses, and the fetch is the same
-/// one: the tarball the release publishes, unpacked into the folder. Nothing here is local mode's
-/// own idea of where sources come from — if the release moves, both routes move with it.
+/// The version is this build's own release when there is one — `deployment_release` chooses, and
+/// falls back to the latest release only for a version that has none — and the fetch is the same one
+/// the window's other route uses: the tarball the release publishes, unpacked into the folder.
+/// Nothing here is local mode's own idea of where sources come from — if the release moves, both
+/// routes move with it.
 fn prepare_checkout(root: &Path, report: &mut impl FnMut(&str, &str)) -> Result<(), Problem> {
     prepare_checkout_with(root, report, |root| {
         let version = crate::deployment_release::resolve_version(root).map_err(|error| {
@@ -3140,10 +3142,50 @@ mod tests {
         stop(&root, &mut children).expect("stopping the local stack");
     }
 
+    /// The version the two exams that fetch sources are about, or `None` when there is nothing this
+    /// build could fetch.
+    ///
+    /// `CCPBOT_LIVE_RELEASE=v0.4.0` names one explicitly — an exam that is about a published version
+    /// should say which one rather than guess. Otherwise it is this build's own release, and an exam
+    /// whose version has no release at all says so in one named line instead of quietly fetching a
+    /// different version: what these exams are about is the route in *this* tree, and the latest
+    /// release is another tree's sources. A lookup that failed — an anonymous rate limit, an offline
+    /// machine — is named with its own text for the same reason: it must not read as "this version
+    /// does not exist". The caller asserts that a skip fetched nothing.
+    fn version_for_this_exam(exam: &str) -> Option<String> {
+        let named = std::env::var("CCPBOT_LIVE_RELEASE")
+            .ok()
+            .map(|version| version.trim().to_string())
+            .filter(|version| !version.is_empty());
+        if let Some(named) = named {
+            println!("{exam}: fetching {named}, named by CCPBOT_LIVE_RELEASE");
+            return Some(named);
+        }
+        let own = crate::deployment_release::own_tag();
+        match crate::deployment_release::own_release_is_published() {
+            Ok(true) => Some(own),
+            Ok(false) => {
+                println!("{exam}: skipped, {own} is not published yet");
+                None
+            }
+            Err(error) => {
+                println!("{exam}: skipped, {own} could not be looked up: {error}");
+                None
+            }
+        }
+    }
+
+    /// The fetch both of those exams do, for the version they decided on.
+    fn fetch_sources(root: &Path, version: &str) -> Result<(), Problem> {
+        crate::deployment::fetch(root, version).map_err(|error| {
+            Problem::with(format!("CCP-Bot {version} could not be downloaded."), error)
+        })
+    }
+
     /// The first run of a machine that has never installed CCP-Bot this way: an empty folder, and
-    /// the sources arrive from the published release. This is the difference between "install and
-    /// use" and "install, then go and find a checkout", so it is measured against the real release
-    /// rather than a stub.
+    /// the sources arrive from the release this build's own tag names. This is the difference
+    /// between "install and use" and "install, then go and find a checkout", so it is measured
+    /// against a real release rather than a stub.
     #[test]
     #[ignore = "downloads the published release from GitHub"]
     fn live_an_empty_folder_is_filled_from_the_release() {
@@ -3152,8 +3194,17 @@ mod tests {
         std::fs::create_dir_all(&root).expect("an empty folder");
         assert!(!checkout_ready(&root), "the folder starts empty");
 
-        prepare_checkout(&root, &mut |step, detail| println!("[{step}] {detail}"))
-            .expect("the sources should arrive");
+        let exam = "live_an_empty_folder_is_filled_from_the_release";
+        let Some(version) = version_for_this_exam(exam) else {
+            assert!(!checkout_ready(&root), "a skipped exam fetched nothing");
+            return;
+        };
+        prepare_checkout_with(
+            &root,
+            &mut |step, detail| println!("[{step}] {detail}"),
+            |root| fetch_sources(root, &version),
+        )
+        .expect("the sources should arrive");
 
         assert!(checkout_ready(&root), "the manifest arrived");
         assert!(root.join("server").is_dir(), "the server sources arrived");
@@ -3175,10 +3226,10 @@ mod tests {
     }
 
     /// What a machine that has never installed CCP-Bot this way does: an empty folder, the sources
-    /// from the published release, and the Bot's own dependencies installed into it before the Bot is
-    /// started. That last step is the one a development checkout hides — its hoisted top level
-    /// carries an `@ag-ui/encoder` the Bot never declared — so a fresh checkout is the only place the
-    /// missing step shows, and building one is what this test is for.
+    /// from the release this build's own tag names, and the Bot's own dependencies installed into it
+    /// before the Bot is started. That last step is the one a development checkout hides — its
+    /// hoisted top level carries an `@ag-ui/encoder` the Bot never declared — so a fresh checkout is
+    /// the only place the missing step shows, and building one is what this test is for.
     #[test]
     #[ignore = "downloads the published release and starts real processes"]
     fn live_a_fresh_folder_installs_the_bots_own_dependencies() {
@@ -3187,9 +3238,18 @@ mod tests {
         std::fs::create_dir_all(&root).expect("an empty folder");
         assert!(!checkout_ready(&root), "the folder starts empty");
 
+        let exam = "live_a_fresh_folder_installs_the_bots_own_dependencies";
+        let Some(version) = version_for_this_exam(exam) else {
+            assert!(!checkout_ready(&root), "a skipped exam fetched nothing");
+            return;
+        };
         let cache = std::env::temp_dir().join("ccpbot-local-cache");
-        prepare_checkout(&root, &mut |step, detail| println!("[{step}] {detail}"))
-            .expect("the sources should arrive");
+        prepare_checkout_with(
+            &root,
+            &mut |step, detail| println!("[{step}] {detail}"),
+            |root| fetch_sources(root, &version),
+        )
+        .expect("the sources should arrive");
         assert!(checkout_ready(&root), "the manifest arrived");
         assert!(
             bot_entry(&root).is_some(),
