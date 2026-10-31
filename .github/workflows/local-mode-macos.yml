@@ -1,0 +1,73 @@
+name: local-mode-macos
+
+# Proves that a Mac can run CCP-Bot the way Windows does: every part as an ordinary process, no
+# container engine, no administrator, no virtual machine.
+#
+# WHY THIS IS NOT PART OF `build-installers`. The local route downloads a portable PostgreSQL
+# (~390 MB on macOS), unpacks it, runs `initdb`, and starts real processes. That is the only place
+# the macOS half of this can be proven — this machine (the developer's) is Windows, and a claim
+# about `darwin` compiled from here is an inference, not evidence. Keeping it in its own workflow
+# means a macOS-only failure cannot stop the installers from being built and attached, which is the
+# same reason `build-pgvector.yml` is separate.
+#
+# BY HAND, ON PURPOSE, FOR NOW. macOS runner minutes are the most expensive ones this repository
+# spends, and a run costs a download of the database plus a few minutes of real processes. Run it
+# when the local route changes; once it has proven itself, adding `push: tags: ["v*"]` here is the
+# way to make a release wait for it.
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: local-mode-macos
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  live:
+    name: the local route, on a Mac
+    runs-on: macos-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.4.3
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      # The first start builds the interface when `app/dist` is missing, and it starts the server
+      # from `server/`, which resolves its workspace links out of the root install. So the root
+      # install is what these tests need — not desktop's own, which is only for the bundler.
+      - name: Install the workspace dependencies
+        run: bun install --frozen-lockfile
+
+      - uses: swatinem/rust-cache@v2
+        with:
+          workspaces: desktop/src-tauri -> target
+
+      # One test at a time: each of these starts a real database and four processes, and letting
+      # them race for ports and for the same checkout root would turn a real failure into a flaky
+      # one. `--include-ignored` is the point of the job — every `live_` test is ignored by default
+      # precisely because it does all of this.
+      - name: Run the local-mode live tests
+        run: |
+          cargo test -p ccpbot-desktop --manifest-path desktop/src-tauri/Cargo.toml \
+            --lib -- local::tests::live_ --include-ignored --nocapture -- --test-threads=1
+
+      # The step above passes only if a test passed; a filter that matched nothing would also
+      # "pass", so the log is checked for the line each run prints when the stack is up. Without
+      # this, a rename of the tests would quietly turn the job into a no-op.
+      - name: Assert the stack actually came up
+        shell: bash
+        run: |
+          log=local-mode-live.log
+          cargo test -p ccpbot-desktop --manifest-path desktop/src-tauri/Cargo.toml \
+            --lib -- local::tests::live_start_serves_the_interface_on_this_machine \
+            --include-ignored --nocapture -- --test-threads=1 2>&1 | tee "$log"
+          grep -F '[ready] CCP-Bot is running on this computer (/health 200).' "$log" \
+            || { echo "the local stack never reached ready on this Mac"; tail -40 "$log"; exit 1; }
+          grep -F '[bot] The built-in Bot is answering (/health 200).' "$log" \
+            || { echo "the built-in Bot never answered on this Mac"; tail -40 "$log"; exit 1; }
