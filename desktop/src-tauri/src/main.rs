@@ -632,6 +632,8 @@ struct LocalStartRequest {
     api_url: Option<String>,
     gateway_ws_url: Option<String>,
     api_key: Option<String>,
+    /// What the model screen chose. Absent on a machine whose file already has a key.
+    model: Option<ChosenModel>,
 }
 
 #[tauri::command]
@@ -643,6 +645,7 @@ async fn local_start(
     let root = local_start_root(&app, named);
     local::remember(&root)?;
     let connection = request.unwrap_or_default();
+    let model = connection.model;
     let handle = app.clone();
     let started_root = root.clone();
     let outcome = tauri::async_runtime::spawn_blocking(move || {
@@ -664,9 +667,19 @@ async fn local_start(
         let shell = handle.state::<Shell>();
         let cache = started_root.clone();
         let bun = which_bun();
-        local::start(&started_root, &cache, bun, |step, detail| {
-            *shell.local_step.lock().unwrap() = (step.to_string(), detail.to_string());
-        })
+        let credential = match model {
+            Some(model) => Some(start_stack_credential(&started_root, model)?),
+            None => None,
+        };
+        local::start(
+            &started_root,
+            &cache,
+            bun,
+            credential.as_ref(),
+            |step, detail| {
+                *shell.local_step.lock().unwrap() = (step.to_string(), detail.to_string());
+            },
+        )
     })
     .await
     .map_err(|error| Problem::plain(format!("The local start did not finish: {error}")))?;
@@ -1187,7 +1200,7 @@ fn sign_in_reference(
 /// Deliberately not the same type as `ModelCredential`: this is whatever arrived over the bridge,
 /// and turning it into a credential is a conversion that can fail. Accepting the credential type
 /// directly would make an impossible combination representable at the boundary.
-#[derive(serde::Deserialize)]
+#[derive(serde::Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 struct ChosenModel {
     provider: String,
@@ -2995,7 +3008,14 @@ fn show_ccpbot_on<R: tauri::Runtime>(
     if recovery_required_or_pending_quit_notice(&shell, &root) && !organization_recovery {
         return Err("Part of CCP-Bot needs recovery. Try starting CCP-Bot once more.".into());
     }
-    let url = owned_app_url(&root, ports).ok_or_else(|| {
+    // A folder this window runs as programs on this computer authorizes its own interface. The recorder's
+    // evidence is the container route's to give, and a local run has none of it: measured on a published
+    // installer, the stack was up and the interface answered while the window refused to show it —
+    // `CCP-Bot could not verify its app on port 3010 belongs to this installation.` What a local run
+    // does have is its own marker and an interface answering on its own address.
+    let url = owned_app_url(&root, ports)
+        .or_else(|| local_app_url(&root))
+        .ok_or_else(|| {
         format!("CCP-Bot could not verify its app on port {port} belongs to this installation. Try starting CCP-Bot again.")
     })?;
     let authority = ccpbot_env::already_set(&root.join(".env"), &["CCPBOT_ORGANIZATION_AUTH_URL"])
@@ -3195,6 +3215,14 @@ fn already_running_at(root: &Path, ports: &ccpbot_env::Ports) -> bool {
     owned_app_url(root, ports).is_some()
 }
 
+/// The same question `owned_app_url` asks, answered for a run on this computer.
+fn local_app_url(root: &Path) -> Option<String> {
+    if !local::wanted(root) {
+        return None;
+    }
+    (local::health_status(local::SERVER_ADDRESS).ok() == Some(200))
+        .then(|| local::SERVER_ADDRESS.to_string())
+}
 /// Neither an owned API nor an answering app port alone authorizes showing a deployment.
 fn owned_app_url(root: &Path, ports: &ccpbot_env::Ports) -> Option<String> {
     if !already_running_on(root, ports.server, stack::recorded_server_owns_port)

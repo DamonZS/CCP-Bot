@@ -398,27 +398,62 @@ fn secret() -> String {
 /// Addresses use `127.0.0.1` rather than `localhost` deliberately. Compose publishes on both
 /// loopback addresses, so either would connect, but naming one removes a whole class of question
 /// about which the resolver picked.
-/// Blank is not a value. See the note in `compose`.
+/// Blank is not a value. See the note in [`model_environment`].
 fn insert_if_given(env: &mut BTreeMap<String, String>, key: &str, value: &str) {
     if !value.trim().is_empty() {
         env.insert(key.into(), value.trim().to_string());
     }
 }
 
-pub fn compose(
-    intelligence: &Intelligence,
-    model: &Model,
-    engine: &EngineStatus,
-    ports: &Ports,
-    images: &[(String, String)],
-    // Absent means no harness was picked, and the package's gated rows stay dropped.
-    harness: Option<&PickedHarness>,
-    // What a previous run of THIS deployment already minted, so it is not minted again. Empty on a
-    // machine that has never run CCP-Bot, which is exactly when generating is right.
-    kept: &BTreeMap<String, String>,
+/// Every environment variable a model answer owns.
+///
+/// The list a route names when it keeps the answer somewhere other than a file: local mode stores the
+/// map the person's answer produced, and reads it back by these names on the next Start. One list
+/// here rather than one per route, because a key added to the rule and missed in a list is an answer
+/// that half-works, which is worse than one that does not work at all.
+pub const MODEL_KEYS: [&str; 11] = [
+    "OPENAI_API_KEY",
+    "OPENAI_BASE_URL",
+    "OPENAI_CONTAINER_BASE_URL",
+    "ANTHROPIC_API_KEY",
+    "CLAUDE_CODE_OAUTH_TOKEN",
+    "CHATGPT_AUTH_FILE",
+    "CCPBOT_MODEL_OAUTH_FILE",
+    "BOT_PROVIDER",
+    "CHATGPT_OAUTH_TOKEN",
+    "BOT_MODEL",
+    "AGENT_BOT_MODEL",
+];
+
+/// What a model answer gives the processes, whichever of the two ways CCP-Bot runs.
+///
+/// `compose` writes this map into the deployment's file for the containers; local mode hands the same
+/// map to the processes it starts on this machine. One rule in one place, because two rules drifting
+/// apart is how a run on this computer ends up asking a provider for a model the model screen never
+/// chose.
+///
+/// Blank is not a value — see `insert_if_given` — but an empty string is: both routes write into
+/// files that preserve lines they do not own, so a key this answer does not imply has to be written
+/// EMPTY rather than omitted. Omitted, an older value from a previous answer outlives the answer that
+/// implied it and is still handed to a harness. `BOT_MODEL` and `AGENT_BOT_MODEL` are the one
+/// exception, removed rather than emptied so `docker-compose.yml`'s own default applies.
+pub fn model_environment(
+    credential: &ModelCredential,
+    server_port: u16,
 ) -> BTreeMap<String, String> {
     let mut env = BTreeMap::new();
-
+    /*
+     * Nothing chosen touches nothing, deliberately.
+     *
+     * The clearing below is for the case where the model screen HAS answered: whichever keys that
+     * answer does not imply are emptied, so switching from a key to a plan cannot leave the old key
+     * behind for a harness to prefer. With no answer there is nothing to be consistent with, and a
+     * key somebody set by hand is theirs to keep — see `write`, which preserves lines this does not
+     * own.
+     */
+    if credential == &ModelCredential::None {
+        return env;
+    }
     /*
      * Only the keys the choice actually implies, and never a blank one: written empty, Compose
      * passes an empty string and the Bot's refusal becomes a confusing one about a key that is set
@@ -441,57 +476,30 @@ pub fn compose(
      *
      * Written empty rather than omitted, for the same reason: omitting leaves the old line in place.
      */
-    if model.credential != ModelCredential::None {
-        for key in [
-            "OPENAI_API_KEY",
-            "OPENAI_BASE_URL",
-            "OPENAI_CONTAINER_BASE_URL",
-            "ANTHROPIC_API_KEY",
-            "CLAUDE_CODE_OAUTH_TOKEN",
-            "CHATGPT_AUTH_FILE",
-            "CCPBOT_MODEL_OAUTH_FILE",
-            "BOT_PROVIDER",
-            /*
-             * Retired, and cleared for exactly that reason. An earlier version put the ChatGPT
-             * plan's access token here; nothing reads it now, and `write` preserves what it does
-             * not own, so without this line a machine that ran that version would keep somebody's
-             * plan token in a file forever with nothing ever using it again.
-             */
-            "CHATGPT_OAUTH_TOKEN",
-        ] {
-            env.insert(key.into(), String::new());
-        }
-        /*
-         * AND THE MODEL NAME, WHICH ONLY ONE ROW IMPLIES.
-         *
-         * Measured: answering the compatible row sets `BOT_MODEL` to whatever the person's own
-         * endpoint calls its model, and switching back to an OpenAI key left it there. The Bot then
-         * asked OpenAI for `local-model` and the last screen said "That account cannot use the
-         * model that was chosen" — about a model this run never chose. Exactly the failure the
-         * clearing above exists for, with one key missed.
-         *
-         * Removed rather than emptied, so `docker-compose.yml`'s own default applies. Blank would
-         * be passed through as a model named "", which is a worse question to ask a provider.
-         */
-        if !matches!(
-            model.credential,
-            ModelCredential::Compatible { .. } | ModelCredential::ProviderOAuth { .. }
-        ) {
-            for key in ["BOT_MODEL", "AGENT_BOT_MODEL"] {
-                env.remove(key);
-            }
+    for key in MODEL_KEYS {
+        env.insert(key.into(), String::new());
+    }
+    /*
+     * AND THE MODEL NAME, WHICH ONLY ONE ROW IMPLIES.
+     *
+     * Measured: answering the compatible row sets `BOT_MODEL` to whatever the person's own endpoint
+     * calls its model, and switching back to an OpenAI key left it there. The Bot then asked OpenAI
+     * for `local-model` and the last screen said "That account cannot use the model that was
+     * chosen" — about a model this run never chose. Exactly the failure the clearing above exists
+     * for, with one key missed.
+     *
+     * Removed rather than emptied, so `docker-compose.yml`'s own default applies. Blank would be
+     * passed through as a model named "", which is a worse question to ask a provider.
+     */
+    if !matches!(
+        credential,
+        ModelCredential::Compatible { .. } | ModelCredential::ProviderOAuth { .. }
+    ) {
+        for key in ["BOT_MODEL", "AGENT_BOT_MODEL"] {
+            env.remove(key);
         }
     }
-    match &model.credential {
-        /*
-         * Nothing chosen touches nothing, deliberately.
-         *
-         * The clearing above is for the case where the model screen HAS answered: whichever keys
-         * that answer does not imply are emptied, so switching from a key to a plan cannot leave
-         * the old key behind for a harness to prefer. With no answer there is nothing to be
-         * consistent with, and a key somebody set by hand is theirs to keep — see `write`, which
-         * preserves lines this does not own.
-         */
+    match credential {
         ModelCredential::None => {}
         ModelCredential::OpenAi { api_key } => {
             insert_if_given(&mut env, "OPENAI_API_KEY", api_key);
@@ -526,14 +534,11 @@ pub fn compose(
             env.insert("OPENAI_API_KEY".into(), proxy_token.clone());
             env.insert(
                 "OPENAI_BASE_URL".into(),
-                format!("http://127.0.0.1:{}/api/model-provider/v1", ports.server),
+                format!("http://127.0.0.1:{server_port}/api/model-provider/v1"),
             );
             env.insert(
                 "OPENAI_CONTAINER_BASE_URL".into(),
-                format!(
-                    "http://host.docker.internal:{}/api/model-provider/v1",
-                    ports.server
-                ),
+                format!("http://host.docker.internal:{server_port}/api/model-provider/v1"),
             );
             env.insert("BOT_PROVIDER".into(), "openai".into());
             env.insert("BOT_MODEL".into(), model.clone());
@@ -581,6 +586,28 @@ pub fn compose(
              */
             insert_if_given(&mut env, "AGENT_BOT_MODEL", name);
         }
+    }
+    env
+}
+
+pub fn compose(
+    intelligence: &Intelligence,
+    model: &Model,
+    engine: &EngineStatus,
+    ports: &Ports,
+    images: &[(String, String)],
+    // Absent means no harness was picked, and the package's gated rows stay dropped.
+    harness: Option<&PickedHarness>,
+    // What a previous run of THIS deployment already minted, so it is not minted again. Empty on a
+    // machine that has never run CCP-Bot, which is exactly when generating is right.
+    kept: &BTreeMap<String, String>,
+) -> BTreeMap<String, String> {
+    let mut env = BTreeMap::new();
+
+    // The model's keys, in one rule shared with local mode: `model_environment` above
+    // says what an answer implies, including the keys it deliberately writes empty.
+    for (key, value) in model_environment(&model.credential, ports.server) {
+        env.insert(key, value);
     }
 
     // Trimmed, the way the model key beside it already is. All four values come from the same
@@ -1454,6 +1481,65 @@ HTTPS_PROXY=http://proxy:8080
         assert_eq!(env["INTELLIGENCE_API_KEY"], "key-with-a-trailing-space");
         // Unchanged, and the reason the other three now match it.
         assert_eq!(env["OPENAI_API_KEY"], "sk-model");
+    }
+
+    #[test]
+    fn the_model_keys_are_one_rule_the_routes_share() {
+        // The pair that must never both be set: a plan writes no key, and answering with a key
+        // empties the plan's token rather than leaving the last answer's behind.
+        let plan = model_environment(
+            &ModelCredential::ClaudePlan {
+                token: "plan-token".into(),
+            },
+            3010,
+        );
+        assert_eq!(plan["CLAUDE_CODE_OAUTH_TOKEN"], "plan-token");
+        assert_eq!(plan["ANTHROPIC_API_KEY"], "");
+        assert_eq!(plan["OPENAI_API_KEY"], "");
+        // A model name only the endpoint rows imply, so a key row leaves none behind.
+        assert!(!plan.contains_key("BOT_MODEL"));
+        let key = model_environment(
+            &ModelCredential::OpenAi {
+                api_key: "sk-one".into(),
+            },
+            3010,
+        );
+        assert_eq!(key["OPENAI_API_KEY"], "sk-one");
+        assert_eq!(key["CLAUDE_CODE_OAUTH_TOKEN"], "");
+        assert!(!key.contains_key("AGENT_BOT_MODEL"));
+        // The endpoint that needs no key still names one: the SDK refuses a blank string. The model
+        // name reaches both Bots, because the person named exactly one.
+        let local = model_environment(
+            &ModelCredential::Compatible {
+                base_url: "http://127.0.0.1:11434/v1".into(),
+                container_base_url: None,
+                api_key: "   ".into(),
+                model: "local-model".into(),
+            },
+            3010,
+        );
+        assert_eq!(local["OPENAI_API_KEY"], NO_KEY_NEEDED);
+        assert_eq!(local["OPENAI_BASE_URL"], "http://127.0.0.1:11434/v1");
+        assert_eq!(local["BOT_MODEL"], "local-model");
+        assert_eq!(local["AGENT_BOT_MODEL"], "local-model");
+        // A relay on this machine, so the address is built from the port this machine's server runs
+        // on rather than the container's own name.
+        let oauth = model_environment(
+            &ModelCredential::ProviderOAuth {
+                provider: "google".into(),
+                path: "C:\\store.json".into(),
+                proxy_token: "proxy-token".into(),
+                model: "gemini-3".into(),
+            },
+            3010,
+        );
+        assert_eq!(oauth["OPENAI_API_KEY"], "proxy-token");
+        assert_eq!(
+            oauth["OPENAI_BASE_URL"],
+            "http://127.0.0.1:3010/api/model-provider/v1"
+        );
+        // Nothing chosen owns nothing: a key somebody set by hand is theirs to keep.
+        assert!(model_environment(&ModelCredential::None, 3010).is_empty());
     }
 
     #[test]

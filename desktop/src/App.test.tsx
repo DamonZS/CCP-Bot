@@ -3330,7 +3330,9 @@ test("self-hosted provisioning failure offers a fresh sign-in without retaining 
   expect(view.getByLabelText("Project key")).toHaveProperty("value", "");
 });
 
-type LocalStartPayload = { request: { root: string; apiKey: string } };
+type LocalStartPayload = {
+  request: { root: string; apiKey: string; model?: unknown };
+};
 
 function isLocalStartPayload(value: unknown): value is LocalStartPayload {
   return (
@@ -3491,11 +3493,48 @@ test("a first run on this computer starts with the model alone", async () => {
   );
   const request = getLocalStartPayload().request;
   expect(request.apiKey).toBe("");
+  // The model screen's whole answer, not a bare key: the built-in Bot reads its credential out of
+  // the environment, and this is the only place a local run hears about it.
+  expect(request.model).toEqual({
+    provider: "openai",
+    login: "api-key",
+    apiKey: "model-only-key",
+  });
   await waitFor(() =>
     expect(
       invokeCalls.filter((call) => call.command === "show_ccpbot"),
     ).toHaveLength(1),
   );
+});
+
+test("a local start on this computer says which step it is working on", async () => {
+  const root = "/tmp/slow-local-first-run";
+  const view = await enterLocalFirstRunSetup(root);
+  const started = deferred<unknown>();
+  const containerHandlers = invokeHandler;
+  invokeHandler = async (command, args) => {
+    if (command === "local_start") return started.promise;
+    if (command === "local_status")
+      return localInstallationStatus({
+        wanted: true,
+        step: "dependencies",
+        step_detail: "Installing the Bot's dependencies…",
+      });
+    return containerHandlers(command, args);
+  };
+  await userEvent.click(await view.findByRole("radio", { name: /OpenAI/ }));
+  await userEvent.type(view.getByLabelText("OpenAI API key"), "model-only-key");
+  await userEvent.click(view.getByRole("button", { name: "Continue" }));
+  await userEvent.click(view.getByRole("button", { name: "Start CCP-Bot" }));
+
+  // The window asks the machine what it is doing while the start is in flight, and says it.
+  expect(
+    await view.findByRole("listitem", { name: "Dependencies" }),
+  ).toBeTruthy();
+  expect(view.getByText("Installing the Bot's dependencies…")).toBeTruthy();
+  expect(view.getByText("In progress")).toBeTruthy();
+
+  started.resolve(localInstallationStatus({ wanted: true, step: "ready" }));
 });
 
 test("the container route still waits for a connection before it starts", async () => {
@@ -3516,4 +3555,60 @@ test("the container route still waits for a connection before it starts", async 
     "disabled",
     true,
   );
+});
+
+test("a window reopened on a running local stack shows it without starting it again", async () => {
+  const root = "/tmp/running-local-root";
+  setupRootConfiguration(root, async () => ({
+    ...savedOpenAiConfiguration(),
+    saved: { ...savedOpenAiConfiguration().saved, model: "open-ai-api-key" },
+    launch: { harness: { id: "langgraph" } },
+  }));
+  const containerHandlers = invokeHandler;
+  invokeHandler = async (command, args) => {
+    if (command === "local_status")
+      return localInstallationStatus({
+        wanted: true,
+        health: 200,
+        step: "ready",
+        step_detail: "The services are answering.",
+      });
+    if (command === "show_ccpbot") return null;
+    return containerHandlers(command, args);
+  };
+
+  const view = await renderApp();
+
+  // A folder that runs this way is not opened with the container route: the stack is already up
+  // and what is missing is the window, so the window is what gets shown.
+  expect(
+    await view.findByRole("heading", { name: "CCP-Bot is running" }),
+  ).toBeTruthy();
+  expect(invokeCalls).toContainEqual({ command: "show_ccpbot" });
+  expect(invokeCalls.some((call) => call.command === "start_stack")).toBe(false);
+});
+
+test("a window reopened on a stopped local stack leaves the start to the local screen", async () => {
+  const root = "/tmp/stopped-local-root";
+  setupRootConfiguration(root, async () => ({
+    ...savedOpenAiConfiguration(),
+    saved: { ...savedOpenAiConfiguration().saved, model: "open-ai-api-key" },
+    launch: { harness: { id: "langgraph" } },
+  }));
+  const containerHandlers = invokeHandler;
+  invokeHandler = async (command, args) => {
+    if (command === "local_status")
+      return localInstallationStatus({ wanted: true });
+    if (command === "show_ccpbot") return null;
+    return containerHandlers(command, args);
+  };
+
+  const view = await renderApp();
+
+  // Prepared and stopped is the local screen's own state, and its Start is the one that knows how
+  // to start it. `start_stack` would be the container route on a machine that has no engine.
+  expect(
+    await view.findByRole("button", { name: "Start on this computer" }),
+  ).toBeTruthy();
+  expect(invokeCalls.some((call) => call.command === "start_stack")).toBe(false);
 });

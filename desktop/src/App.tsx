@@ -527,6 +527,24 @@ export function App() {
         const resumedHarness = configured.launch.harness;
         // An interrupted run needs an explicit Start, with its saved setup still available.
         if (interrupted || configured.autoStart === false) return;
+        /*
+         * A folder that runs this stack as programs on this computer is not opened with
+         * `start_stack`: that is the container route, and a machine that runs it this way has no
+         * engine for it. `local_status` is what knows the folder — and it also answers whether the
+         * stack is already up, in which case what is missing is the window, not the stack.
+         */
+        const localHere = await invoke<LocalStatus>("local_status").catch(
+          () => null,
+        );
+        if (!active) return;
+        if (localHere?.wanted) {
+          setLocal(localHere);
+          if (localHere.health == null) return;
+          setRunning(true);
+          setRecoveryFailure(null);
+          await invoke("show_ccpbot");
+          return;
+        }
         setBusy(true);
         setResuming(true);
         try {
@@ -752,7 +770,7 @@ export function App() {
      * once, rather than through `if (local)` branches down the whole of the container route.
      */
     if (localPicked) {
-      await runLocally();
+      await runLocally(nextModel);
       return;
     }
     setBusy(true);
@@ -1179,7 +1197,7 @@ export function App() {
           <LocalRun
             status={local}
             busy={localBusy}
-            onStart={runLocally}
+            onStart={() => void runLocally()}
             onStop={stopLocally}
             onChooseWorkspace={chooseWorkspace}
           />

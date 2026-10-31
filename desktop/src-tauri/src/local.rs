@@ -1253,6 +1253,33 @@ pub fn interface_built(root: &Path) -> bool {
 }
 
 /// Writes the values this mode owns into `.env`, leaving the rest of the file alone.
+/// Writes the model the model screen chose into `.env`, through the one rule the container route
+/// also uses (`env::model_environment`), so the two routes cannot disagree about what a choice means.
+///
+/// Why this is needed at all: the built-in Bot is a process on this machine, and the only place it
+/// hears about a model is the environment its `--env-file=.env` names. Measured on a published
+/// installer — the wizard's answer reached neither `.env` nor the credential store, and the Bot
+/// exited on startup saying `OPENAI_API_KEY is not set, and no OPENAI_BASE_URL names an endpoint
+/// that needs no key.` A person who had just answered the model screen was then told the Bot cannot
+/// answer without a model. This is the missing half of that round trip.
+///
+/// Written before `write_env`, which owns only its own keys and keeps every other line: a key
+/// somebody typed into this file by hand survives both writers.
+pub fn remember_model(
+    root: &Path,
+    credential: &crate::env::ModelCredential,
+    server_port: u16,
+) -> Result<(), Problem> {
+    // Nothing chosen touches nothing: a machine whose file already carries a key keeps it, and an
+    // empty answer is not a reason to rewrite the file with eleven blank lines in it.
+    if matches!(credential, crate::env::ModelCredential::None) {
+        return Ok(());
+    }
+    let keys = crate::env::model_environment(credential, server_port);
+    crate::env::write(&root.join(".env"), &keys, &BTreeMap::new())
+        .map_err(|error| Problem::with("The model choice could not be saved.", format!("{error}")))
+}
+
 pub fn write_env(
     root: &Path,
     port: u16,
@@ -1448,6 +1475,9 @@ pub fn start(
     root: &Path,
     cache: &Path,
     bun: Option<PathBuf>,
+    // What the model screen chose, absent when nobody answered it (a machine that already has a key
+    // in the file it reads). See `remember_model`: without this the Bot starts and cannot answer.
+    model: Option<&crate::env::ModelCredential>,
     mut report: impl FnMut(&str, &str),
 ) -> Result<Started, Problem> {
     // Nobody is handed a project folder they do not have. A machine that has never installed CCP-Bot
@@ -1493,6 +1523,12 @@ pub fn start(
     report("database", "Starting the database…");
     start_postgres(root, port)?;
     create_database(root, port)?;
+    // The model's keys go in before `write_env`, which owns only its own keys and keeps every other
+    // line: the model choice and the runtime's own addresses are the two halves of the same file the
+    // Bot and the server read once, at startup.
+    if let Some(credential) = model {
+        remember_model(root, credential, SERVER_PORT)?;
+    }
     write_env(root, port, bot, computer)?;
     if !dependencies_installed(root) || !workspace_links_land_here(root) {
         // The second half is not paranoia: those links are absolute, so a checkout that was renamed
@@ -2298,6 +2334,60 @@ mod tests {
     /// Ignored by default because it is minutes on a first run — it fetches the runtime and the
     /// portable database, unpacks 1.5 GB of PostgreSQL, builds the interface and starts real
     /// processes — and because it writes `postgres/`, `logs/` and `.env` under the checkout.
+    /// The model screen's answer has to reach the file the Bot is told to read it from. Measured on a
+    /// published installer, it reached nothing: the Bot exited saying `OPENAI_API_KEY is not set, and
+    /// no OPENAI_BASE_URL names an endpoint that needs no key.` after a person had just answered that
+    /// screen.
+    #[test]
+    fn a_model_choice_reaches_the_file_the_bot_reads() {
+        let tmp = std::env::temp_dir().join(format!("ccpbot-local-model-{}", std::process::id()));
+        std::fs::create_dir_all(&tmp).expect("a scratch folder");
+        let file = tmp.join(".env");
+        std::fs::write(&file, "SOMETHING_MINE=1\nOPENAI_API_KEY=\n")
+            .expect("a file with a line of mine");
+
+        remember_model(
+            &tmp,
+            &crate::env::ModelCredential::OpenAi {
+                api_key: "sk-from-the-model-screen".to_string(),
+            },
+            SERVER_PORT,
+        )
+        .expect("the model choice is written");
+
+        let written = std::fs::read_to_string(&file).expect("the file is readable");
+        assert!(
+            written.contains("OPENAI_API_KEY=sk-from-the-model-screen"),
+            "{written}"
+        );
+        // Every other model key is emptied, so a plan answered in an earlier run cannot be preferred
+        // over the key somebody just gave: whichever key a Bot reads first decides who is billed.
+        assert!(written.contains("ANTHROPIC_API_KEY="), "{written}");
+        assert!(!written.contains("ANTHROPIC_API_KEY=sk"), "{written}");
+        // And a line this writer does not own survives it, which is what lets a hand-written key stay.
+        assert!(written.contains("SOMETHING_MINE=1"), "{written}");
+
+        let _ = std::fs::remove_dir_all(&tmp);
+    }
+
+    /// Nothing answered means nothing touched: a machine whose file already carries a key keeps it.
+    #[test]
+    fn nothing_chosen_leaves_the_file_alone() {
+        let tmp = std::env::temp_dir().join(format!("ccpbot-local-nomodel-{}", std::process::id()));
+        std::fs::create_dir_all(&tmp).expect("a scratch folder");
+        let file = tmp.join(".env");
+        std::fs::write(&file, "OPENAI_API_KEY=typed-by-hand\n").expect("a file somebody wrote");
+
+        remember_model(&tmp, &crate::env::ModelCredential::None, SERVER_PORT)
+            .expect("no choice is not an error");
+
+        assert_eq!(
+            std::fs::read_to_string(&file).expect("the file is readable"),
+            "OPENAI_API_KEY=typed-by-hand\n"
+        );
+
+        let _ = std::fs::remove_dir_all(&tmp);
+    }
     #[test]
     #[ignore = "downloads the runtime, unpacks the portable database and starts real processes"]
     fn live_start_serves_the_interface_on_this_machine() {
@@ -2324,20 +2414,24 @@ mod tests {
         // `OPENAI_API_KEY is not set, and no OPENAI_BASE_URL names an endpoint that needs no key`
         // without one — measured on this machine, not assumed — so the test supplies the placeholder
         // that a person's own key replaces.
-        let model: BTreeMap<String, String> = [(
-            "OPENAI_API_KEY".to_string(),
-            "sk-local-placeholder-for-a-desktop-run".to_string(),
-        )]
-        .into_iter()
-        .collect();
-        crate::env::write(&root.join(".env"), &model, &BTreeMap::new())
-            .expect("the model key is written");
-        let started = start(&root, &cache, None, |step, detail| {
+        // Through the same path the window uses, rather than a key written here by hand: a local run
+        // is handed the model screen's answer, and the key it implies has to land in the file the Bot
+        // is told to read. This placeholder is what makes a local run startable without a person's own
+        // key, and it is the exact shape the wizard sends.
+        let credential = crate::env::ModelCredential::OpenAi {
+            api_key: "sk-local-placeholder-for-a-desktop-run".to_string(),
+        };
+        let started = start(&root, &cache, None, Some(&credential), |step, detail| {
             println!("[{step}] {detail}");
             steps.push(step.to_string());
         })
         .expect("the local stack should start");
 
+        let file = std::fs::read_to_string(root.join(".env")).expect("the file is readable");
+        assert!(
+            file.contains("OPENAI_API_KEY=sk-local-placeholder-for-a-desktop-run"),
+            "{file}"
+        );
         let status = health_status(&started.address).expect("the interface answers");
         assert_eq!(status, 200, "the address is {}", started.address);
         let (page, body) = fetch(&started.address, "/").expect("the interface is served");
@@ -2499,7 +2593,7 @@ mod tests {
             .expect("the model key is written");
 
         let mut steps: Vec<(String, String)> = Vec::new();
-        let started = start(&root, &cache, None, |step, detail| {
+        let started = start(&root, &cache, None, None, |step, detail| {
             println!("[{step}] {detail}");
             steps.push((step.to_string(), detail.to_string()));
         })

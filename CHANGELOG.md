@@ -6,6 +6,27 @@ afterwards, and does not when only the code moved.
 
 Newest first. `Unreleased` is what is on `main` and not yet tagged.
 
+## 0.3.2 - the model you choose reaches the Bot, and the window shows its own stack
+
+Two things a downloaded installer still asked a person to do by hand, both measured on a clean
+machine and both now done by the app.
+
+The model screen's answer now reaches the Bot. The built-in Bot is a program on this computer, and
+the only place it hears about a model is the environment its `--env-file=.env` names — and that file
+was never written with the choice. A person who had just answered the model screen was told the Bot
+could not answer without a model: the Bot exited on startup with `OPENAI_API_KEY is not set, and no
+OPENAI_BASE_URL names an endpoint that needs no key.` The choice now goes through the same rule the
+container route uses (`model_environment`), so the two routes cannot disagree about what a choice
+means, and a key somebody typed into the file by hand still survives both writers.
+
+The window now shows a stack it started itself on this computer. It used to refuse, saying
+`CCP-Bot could not verify its app on port 3010 belongs to this installation.` — that check is the
+container route's recorder evidence, and a local run has none of it. What a local run does have is
+its own marker and an interface answering on its own address, which is what the window now accepts.
+
+Verified by the live test that starts the real stack: it hands the credential to the same entry
+point the window uses, and asserts the key is in the file and that the Bot, the computer and the
+server all answer `/health` 200. The window's own suite is 163 tests, all passing.
 ## 0.3.1 - the first click works on an empty machine
 
 "Run it on this computer" writes a marker into the folder it is going to run, and it wrote that
