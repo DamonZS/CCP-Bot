@@ -636,6 +636,26 @@ struct LocalStartRequest {
     model: Option<ChosenModel>,
 }
 
+/// What a run on this computer started, under the names its ownership record uses.
+///
+/// A reopened window holds no handles for those processes, so a record naming them by pid is the
+/// only thing that can prove this installation owns them — which is what lets its Stop end them
+/// instead of asking Compose about a folder Compose never touched.
+fn started_host_processes(started: &local::Started) -> Vec<(&'static str, u32)> {
+    [
+        ("server", Some(started.server.id())),
+        ("worker", Some(started.worker.id())),
+        ("bot", started.bot.as_ref().map(std::process::Child::id)),
+        (
+            "computer",
+            started.computer.as_ref().map(std::process::Child::id),
+        ),
+    ]
+    .into_iter()
+    .filter_map(|(name, pid)| pid.map(|pid| (name, pid)))
+    .collect()
+}
+
 #[tauri::command]
 async fn local_start(
     app: tauri::AppHandle,
@@ -688,6 +708,7 @@ async fn local_start(
     .await
     .map_err(|error| Problem::plain(format!("The local start did not finish: {error}")))?;
     let started = outcome?;
+    let owned = started_host_processes(&started);
     {
         let shell = app.state::<Shell>();
         let mut children = shell.local_children.lock().unwrap();
@@ -701,6 +722,21 @@ async fn local_start(
         // The computer is what lets a Bot touch files at all, so it is worth the same care.
         if let Some(computer) = started.computer {
             children.push(computer);
+        }
+        // Written while the pids are still ours to name, and only once the children are on the list
+        // a stop can end them: an ownership record nobody can act on would be worse than none.
+        if let Err(problem) = stack::record_host_processes(&root, &owned) {
+            if let Err(stopped) = local::stop(&root, &mut children) {
+                return Err(Problem::with(
+                    problem.said,
+                    format!(
+                        "{}; stopping it also failed: {}",
+                        problem.detail.unwrap_or_default(),
+                        stopped.detail.unwrap_or(stopped.said)
+                    ),
+                ));
+            }
+            return Err(problem);
         }
     }
     Ok(local_status_of(&app, &root))
@@ -748,7 +784,10 @@ async fn local_stop(app: tauri::AppHandle, root: Option<String>) -> Result<Local
     tauri::async_runtime::spawn_blocking(move || {
         let shell = handle.state::<Shell>();
         let mut children = shell.local_children.lock().unwrap();
-        local::stop(&stopped_root, &mut children)
+        local::stop(&stopped_root, &mut children)?;
+        // The run these records named is over: keeping them would let a later question answer "yes"
+        // about processes that are gone.
+        stack::forget_host_processes(&stopped_root)
     })
     .await
     .map_err(|error| Problem::plain(format!("The local stop did not finish: {error}")))??;
@@ -3197,7 +3236,9 @@ fn already_running_on<F>(root: &Path, port: u16, owns_server: F) -> bool
 where
     F: FnOnce(&Path, u16) -> Result<bool, Problem>,
 {
-    if deployment::installed(root).is_none() {
+    // A folder this computer runs itself carries no container stamp: what says this installation
+    // started what is answering there is its own marker and the ownership record beside it.
+    if !crate::local::wanted(root) && deployment::installed(root).is_none() {
         return false;
     }
     server_capabilities_answer(port) && owns_server(root, port).unwrap_or(false)
@@ -9797,6 +9838,92 @@ fn main() {
         }));
         assert_eq!(server.request().path, "/api/capabilities");
         std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn a_folder_this_computer_runs_is_running_only_when_its_own_record_proves_it() {
+        let root = temp_root("already-running-local-root");
+        std::fs::create_dir_all(&root).unwrap();
+        // No container stamp: a folder this computer runs itself never gets one. Its marker says
+        // this installation started something there; only the record says what.
+        std::fs::write(crate::local::marker(&root), "local\n").unwrap();
+        let server = TestServer::new("HTTP/1.1 200 OK\r\nContent-Length: 2\r\n\r\n{}");
+        let port = test_server_port(&server);
+        assert!(!already_running_on(&root, port, |_, _| {
+            Err(Problem::with("ownership unavailable", "synthetic failure"))
+        }));
+        assert_eq!(server.request().path, "/api/capabilities");
+        let server = TestServer::new("HTTP/1.1 200 OK\r\nContent-Length: 2\r\n\r\n{}");
+        let port = test_server_port(&server);
+        assert!(already_running_on(&root, port, |_, _| Ok(true)));
+        assert_eq!(server.request().path, "/api/capabilities");
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    /// The record a run on this computer leaves behind. Without it a reopened window cannot prove
+    /// it owns what is answering, and its Stop asks Compose about a folder Compose never touched.
+    #[test]
+    #[ignore = "starts the real local stack and takes the local ports"]
+    fn live_a_run_on_this_computer_records_what_it_owns() {
+        let root = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+            .parent()
+            .unwrap()
+            .parent()
+            .unwrap()
+            .to_path_buf();
+        let cache = std::env::temp_dir().join("ccpbot-local-cache");
+        // What the window's Start does first, and what the record below is read against: the folder
+        // carries this mode's marker, so the app question about it means the server's own record.
+        let had_marker = crate::local::wanted(&root);
+        crate::local::remember(&root).expect("the folder this run answers for");
+        let credential = ccpbot_env::ModelCredential::OpenAi {
+            api_key: "sk-local-placeholder-for-a-desktop-run".to_string(),
+        };
+        let mut steps: Vec<String> = Vec::new();
+        let mut started =
+            crate::local::start(&root, &cache, None, Some(&credential), |step, detail| {
+                println!("[{step}] {detail}");
+                steps.push(step.to_string());
+            })
+            .expect("the local stack should start");
+        assert!(steps.iter().any(|step| step == "ready"), "{steps:?}");
+        assert!(steps.iter().any(|step| step == "bot"), "{steps:?}");
+
+        let owned = started_host_processes(&started);
+        assert_eq!(
+            owned.len(),
+            4,
+            "the server, the worker, the Bot and the computer: {owned:?}"
+        );
+        crate::stack::record_host_processes(&root, &owned).expect("the ownership record");
+        assert!(
+            crate::stack::recorded_process_owns_port(&root, "app", crate::local::SERVER_PORT)
+                .expect("the app question"),
+            "a folder this computer runs answers for the app from the server's own record"
+        );
+        assert!(already_running_on(
+            &root,
+            crate::local::SERVER_PORT,
+            crate::stack::recorded_server_owns_port
+        ));
+
+        let mut children = vec![started.server, started.worker];
+        if let Some(bot) = started.bot {
+            children.push(bot);
+        }
+        if let Some(computer) = started.computer {
+            children.push(computer);
+        }
+        crate::local::stop(&root, &mut children).expect("the local stop");
+        crate::stack::forget_host_processes(&root).expect("forgetting the record");
+        assert!(
+            !crate::stack::recorded_process_owns_port(&root, "app", crate::local::SERVER_PORT)
+                .expect("the app question after the stop"),
+            "a run that is over owns nothing"
+        );
+        if !had_marker {
+            std::fs::remove_file(crate::local::marker(&root)).expect("the marker this test wrote");
+        }
     }
 
     #[cfg(unix)]

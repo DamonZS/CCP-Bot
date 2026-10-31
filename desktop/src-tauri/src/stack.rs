@@ -141,6 +141,29 @@ pub const HOST_PROCESSES: [HostProcess; 4] = [
 /// The host process that runs the person's own browser.
 pub const LOCAL_BROWSER: &str = "browser";
 
+/// Whether `name` is a role this installation may record as its own.
+///
+/// [`HOST_PROCESSES`] is the Compose route's list: the services a container deployment starts on
+/// this machine. A folder this computer runs itself starts two more — the built-in Bot and the
+/// computer a Bot works in — and those are exactly the processes a reopened window holds no handle
+/// for, so an ownership record is the only thing that can end them.
+pub fn recordable_host(name: &str) -> bool {
+    matches!(name, "bot" | "computer") || HOST_PROCESSES.iter().any(|host| host.name == name)
+}
+
+/// The record a folder's ownership question is answered against.
+///
+/// A folder this computer runs itself serves its interface from the process its records call
+/// `server`: there is no separate app process on this machine. Everywhere else the name is the
+/// name.
+fn record_name_for<'a>(root: &Path, name: &'a str) -> &'a str {
+    if name == "app" && crate::local::wanted(root) {
+        "server"
+    } else {
+        name
+    }
+}
+
 /// The host processes one start runs, in order: the server, the app and the worker always, and the
 /// person's browser where this machine runs one.
 pub fn host_processes(local_browser: bool) -> impl Iterator<Item = &'static HostProcess> {
@@ -1404,6 +1427,24 @@ pub fn record_host_processes(root: &Path, processes: &[(&str, u32)]) -> Result<(
     Ok(())
 }
 
+/// Give up a folder's ownership records: the processes they named are gone.
+///
+/// A folder with nothing recorded is not a failure: stopping twice, or stopping a run that never
+/// recorded anything, must not turn into a sentence nobody can act on.
+pub fn forget_host_processes(root: &Path) -> Result<(), Problem> {
+    match std::fs::remove_file(host_pids_path(root)) {
+        Ok(()) => Ok(()),
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => Ok(()),
+        Err(error) => Err(Problem::with(
+            "CCP-Bot could not forget the processes it owned in this folder.",
+            format!(
+                "removing {} failed: {error}",
+                host_pids_path(root).display()
+            ),
+        )),
+    }
+}
+
 #[cfg(any(windows, test))]
 fn record_windows_host_processes_with(
     root: &Path,
@@ -1422,7 +1463,7 @@ fn record_windows_host_processes_with(
     let mut seen_names = std::collections::HashSet::new();
     let mut seen_pids = std::collections::HashSet::new();
     for (name, pid) in processes {
-        if !HOST_PROCESSES.iter().any(|process| process.name == *name) {
+        if !recordable_host(name) {
             return Err(problem(format!("unknown host launch {name}, pid {pid}")));
         }
         if !seen_names.insert(*name) || !seen_pids.insert(*pid) {
@@ -1741,7 +1782,7 @@ pub fn replace_windows_host_process_with(
         Err(error) => Err(problem(format!("could not inspect replacement: {error}"))),
     };
     require_live(child)?;
-    if !HOST_PROCESSES.iter().any(|host| host.name == name) {
+    if !recordable_host(name) {
         return Err(problem("unknown host role".to_string()));
     }
     let snapshot = windows_processes_with(powershell)?;
@@ -1799,7 +1840,7 @@ fn unix_host_records(
     processes
         .iter()
         .map(|(name, pid)| {
-            if !safe_unix_pid(*pid) || !HOST_PROCESSES.iter().any(|host| host.name == *name) {
+            if !safe_unix_pid(*pid) || !recordable_host(name) {
                 return Err(unix_ownership_problem(format!(
                     "invalid host launch {name}, pid {pid}"
                 )));
@@ -2176,7 +2217,7 @@ fn stop_windows_host_children_with(
         let live = snapshot.iter().find(|live| {
             live.process_id == pid
                 && live.parent_process_id == std::process::id()
-                && HOST_PROCESSES.iter().any(|process| process.name == name)
+                && recordable_host(name)
         });
         let record = live.and_then(|live| RecordedHostProcess::from_live(name, live))
             .filter(|record| !record.executable_path.is_empty() && !record.command_line.is_empty() && !record.creation_date.is_empty())
@@ -2239,7 +2280,7 @@ where
             if record.deployment != deployment
                 || record.start.is_empty()
                 || !safe_unix_pid(record.pid)
-                || !HOST_PROCESSES.iter().any(|host| host.name == record.name)
+                || !recordable_host(record.name)
             {
                 return Err(unix_ownership_problem(format!(
                     "invalid Unix ownership record for pid {}",
@@ -2990,7 +3031,8 @@ pub fn recorded_server_owns_port(root: &Path, port: u16) -> Result<bool, Problem
 /// Every listener on the port must belong to the requested recorded host role. This also rejects
 /// ambiguous IPv4/IPv6 ownership rather than showing whichever unrelated address answers first.
 pub fn recorded_process_owns_port(root: &Path, name: &str, port: u16) -> Result<bool, Problem> {
-    if !HOST_PROCESSES.iter().any(|host| host.name == name) {
+    let name = record_name_for(root, name);
+    if !recordable_host(name) {
         return Ok(false);
     }
     #[cfg(unix)]
@@ -7853,6 +7895,91 @@ fn main() {
             !log.contains("taskkill\t") && !log.contains("netstat\t"),
             "{log}"
         );
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn a_run_on_this_computer_records_the_names_it_starts() {
+        assert!(recordable_host("server"));
+        assert!(recordable_host("app"));
+        assert!(recordable_host("worker"));
+        assert!(recordable_host(LOCAL_BROWSER));
+        // The local route's own two: a reopened window holds no handle for them, so a record is the
+        // only thing that can end them.
+        assert!(recordable_host("bot"));
+        assert!(recordable_host("computer"));
+        assert!(!recordable_host("supervisor"));
+        assert!(!recordable_host("langgraph"));
+        assert!(!recordable_host(""));
+    }
+
+    #[test]
+    fn windows_recording_accepts_the_processes_a_local_run_starts() {
+        if crate::test_support::isolated_process(
+            "stack::tests::windows_recording_accepts_the_processes_a_local_run_starts",
+        ) {
+            return;
+        }
+        let root = temp_root("windows-record-local-names");
+        std::fs::create_dir_all(&root).unwrap();
+        let fixture = CleanupCommandFixture::new(&root);
+        fixture.scenario("held-refusal");
+        std::fs::write(
+            root.join("synthetic-inventory.json"),
+            serde_json::to_vec(&serde_json::json!([
+                {"ProcessId":42,"ParentProcessId":0,"ExecutablePath":"bun.exe","CommandLine":"bun serve","CreationDate":"created-server"},
+                {"ProcessId":44,"ParentProcessId":0,"ExecutablePath":"bun.exe","CommandLine":"bun worker","CreationDate":"created-worker"},
+                {"ProcessId":45,"ParentProcessId":0,"ExecutablePath":"bun.exe","CommandLine":"bun agent-bot/src/index.ts","CreationDate":"created-bot"},
+                {"ProcessId":46,"ParentProcessId":0,"ExecutablePath":"bun.exe","CommandLine":"bun computer","CreationDate":"created-computer"}
+            ])).unwrap(),
+        )
+        .unwrap();
+
+        record_windows_host_processes_with(
+            &root,
+            &[
+                ("server", 42),
+                ("worker", 44),
+                ("bot", 45),
+                ("computer", 46),
+            ],
+            &fixture.command("powershell"),
+        )
+        .unwrap();
+
+        let names: Vec<_> = recorded_host_processes(&root)
+            .unwrap()
+            .into_iter()
+            .map(|record| record.name)
+            .collect();
+        assert_eq!(names, ["server", "worker", "bot", "computer"]);
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn the_app_question_about_a_folder_this_computer_runs_is_the_server_question() {
+        let root = temp_root("local-app-question");
+        std::fs::create_dir_all(&root).unwrap();
+        assert_eq!(record_name_for(&root, "app"), "app");
+        std::fs::write(crate::local::marker(&root), "local\n").unwrap();
+        assert_eq!(record_name_for(&root, "app"), "server");
+        assert_eq!(record_name_for(&root, "server"), "server");
+        assert_eq!(record_name_for(&root, "bot"), "bot");
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn forgetting_host_processes_tolerates_nothing_to_forget() {
+        let root = temp_root("forget-host-processes");
+        std::fs::create_dir_all(root.join(".logs")).unwrap();
+        forget_host_processes(&root).unwrap();
+        std::fs::write(
+            host_pids_path(&root),
+            br#"{"version":1,"processes":[{"name":"bot","pid":45,"executable_path":"bun.exe","command_line":"bun bot","creation_date":"created"}]}"#,
+        )
+        .unwrap();
+        forget_host_processes(&root).unwrap();
+        assert!(!host_pids_path(&root).exists());
         std::fs::remove_dir_all(root).unwrap();
     }
 
