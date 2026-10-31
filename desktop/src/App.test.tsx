@@ -3329,3 +3329,191 @@ test("self-hosted provisioning failure offers a fresh sign-in without retaining 
   ).toHaveProperty("disabled", false);
   expect(view.getByLabelText("Project key")).toHaveProperty("value", "");
 });
+
+type LocalStartPayload = { request: { root: string; apiKey: string } };
+
+function isLocalStartPayload(value: unknown): value is LocalStartPayload {
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    "request" in value &&
+    typeof value.request === "object" &&
+    value.request !== null &&
+    "root" in value.request &&
+    typeof value.request.root === "string" &&
+    "apiKey" in value.request &&
+    typeof value.request.apiKey === "string"
+  );
+}
+
+function getLocalStartPayload() {
+  const args = invokeCalls.find((call) => call.command === "local_start")?.args;
+  if (!isLocalStartPayload(args)) {
+    throw new Error("local_start payload was not captured");
+  }
+  return args;
+}
+
+function localInstallationStatus(overrides: Record<string, unknown> = {}) {
+  return {
+    supported: true,
+    wanted: false,
+    database_port: null,
+    database_running: false,
+    interface_built: false,
+    health: null,
+    bot_port: null,
+    bot_health: null,
+    workspace: "C:\\CCP-Bot\\workspace",
+    computer_port: null,
+    computer_health: null,
+    address: "http://127.0.0.1:3010",
+    step: "",
+    step_detail: "",
+    ...overrides,
+  };
+}
+
+/*
+ * The first-run path as somebody choosing "Run it on this computer instead" walks it, with a machine
+ * that answers nothing about CopilotKit: `already_configured` comes back with no saved connection,
+ * and nothing here ever fills one in.
+ */
+function setupLocalHandlers(root: string) {
+  setupRootConfiguration(root, async () => emptyConfiguration());
+  const containerHandler = invokeHandler;
+  invokeHandler = async (command, args) => {
+    if (command === "local_status") return localInstallationStatus();
+    if (command === "local_start")
+      return localInstallationStatus({ wanted: true, step: "ready" });
+    if (command === "show_ccpbot") return null;
+    return containerHandler(command, args);
+  };
+}
+
+async function enterLocalInstallStep(root: string) {
+  setupLocalHandlers(root);
+  const view = await renderApp();
+  await userEvent.click(
+    view.getByRole("button", { name: "Run it on this computer instead" }),
+  );
+  await userEvent.click(view.getByRole("button", { name: "Continue" }));
+  return view;
+}
+
+async function enterLocalFirstRunSetup(root: string) {
+  const view = await enterLocalInstallStep(root);
+  await userEvent.click(view.getByRole("button", { name: "Continue" }));
+  return view;
+}
+
+test("a run on this computer leaves Step 2 without installing anything", async () => {
+  const root = "/tmp/no-engine-machine";
+  const view = await enterLocalInstallStep(root);
+
+  expect(
+    view.getByRole("heading", { name: "Nothing to install on this computer" }),
+  ).toBeTruthy();
+  expect(view.queryByRole("button", { name: "Install CCP-Bot" })).toBeNull();
+  expect(view.queryByText(/Using Docker for local services/)).toBeNull();
+  expect(view.queryByText("Installation options")).toBeNull();
+  expect(view.queryByRole("button", { name: "Repair installation" })).toBeNull();
+  expect(view.getByRole("button", { name: "Continue" })).toBeTruthy();
+  expect(
+    view.queryByRole("button", { name: "Continue to sign in" }),
+  ).toBeNull();
+
+  await userEvent.click(view.getByRole("button", { name: "Continue" }));
+  expect(
+    invokeCalls.filter((call) => call.command === "prepare_installation"),
+  ).toHaveLength(0);
+
+  await userEvent.click(await view.findByRole("radio", { name: /OpenAI/ }));
+  await userEvent.type(view.getByLabelText("OpenAI API key"), "model-only-key");
+  await userEvent.click(view.getByRole("button", { name: "Continue" }));
+  await userEvent.click(view.getByRole("button", { name: "Start CCP-Bot" }));
+  await waitFor(() =>
+    expect(
+      invokeCalls.filter((call) => call.command === "local_start"),
+    ).toHaveLength(1),
+  );
+  expect(getLocalStartPayload().request.root).toBe(root);
+});
+
+test("the container route still prepares its installation at Step 2", async () => {
+  const root = "/tmp/container-step-two";
+  setupRootConfiguration(root, async () => emptyConfiguration());
+  const view = await renderApp();
+  await enterInstallation(view);
+
+  expect(view.getByRole("heading", { name: "Install CCP-Bot" })).toBeTruthy();
+  expect(view.getByText(/Using Docker for local services/)).toBeTruthy();
+  expect(
+    invokeCalls.filter((call) => call.command === "prepare_installation"),
+  ).toHaveLength(0);
+
+  await userEvent.click(view.getByRole("button", { name: "Install CCP-Bot" }));
+  await waitFor(() =>
+    expect(
+      invokeCalls.filter((call) => call.command === "prepare_installation"),
+    ).toHaveLength(1),
+  );
+  expect(
+    await view.findByRole("button", { name: "Continue to sign in" }),
+  ).toBeTruthy();
+});
+
+test("a first run on this computer starts with the model alone", async () => {
+  const view = await enterLocalFirstRunSetup("/tmp/local-first-run");
+  await userEvent.click(await view.findByRole("radio", { name: /OpenAI/ }));
+  await userEvent.type(view.getByLabelText("OpenAI API key"), "model-only-key");
+  await userEvent.click(view.getByRole("button", { name: "Continue" }));
+
+  expect(
+    view.getByRole("heading", { name: "Run CCP-Bot on this computer" }),
+  ).toBeTruthy();
+  expect(
+    view.queryByRole("heading", { name: "Connect to CopilotKit" }),
+  ).toBeNull();
+  expect(view.getByRole("button", { name: "Start CCP-Bot" })).toHaveProperty(
+    "disabled",
+    false,
+  );
+  expect(
+    invokeCalls.filter((call) => call.command === "local_start"),
+  ).toHaveLength(0);
+
+  await userEvent.click(view.getByRole("button", { name: "Start CCP-Bot" }));
+  await waitFor(() =>
+    expect(
+      invokeCalls.filter((call) => call.command === "local_start"),
+    ).toHaveLength(1),
+  );
+  const request = getLocalStartPayload().request;
+  expect(request.apiKey).toBe("");
+  await waitFor(() =>
+    expect(
+      invokeCalls.filter((call) => call.command === "show_ccpbot"),
+    ).toHaveLength(1),
+  );
+});
+
+test("the container route still waits for a connection before it starts", async () => {
+  setupRootConfiguration("/tmp/container-needs-connection", async () =>
+    emptyConfiguration(),
+  );
+  const view = await renderApp();
+  await enterInstallation(view);
+  await completeInstallation(view);
+  await userEvent.click(await view.findByRole("radio", { name: /OpenAI/ }));
+  await userEvent.type(view.getByLabelText("OpenAI API key"), "model-only-key");
+  await userEvent.click(view.getByRole("button", { name: "Continue" }));
+
+  expect(
+    view.getByRole("heading", { name: "Connect to CopilotKit" }),
+  ).toBeTruthy();
+  expect(view.getByRole("button", { name: "Start CCP-Bot" })).toHaveProperty(
+    "disabled",
+    true,
+  );
+});

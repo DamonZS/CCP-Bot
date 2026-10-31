@@ -276,8 +276,16 @@ export function App() {
     status: "preparing" | "complete" | "failed";
   } | null>(null);
   const installationKey = installationKeyFor(root, harness);
+  /*
+   * A run on this computer is ready as soon as it is chosen.
+   *
+   * Step 2 prepares a container engine and eight images, and `local::start` fetches its own runtime
+   * and portable database when it is started, so nothing on that step is this route's price of entry.
+   * Without this, `start()` sends a local run back to Step 2 and the machine never gets to Start.
+   */
   const installationReady =
-    preparation?.key === installationKey && preparation.status === "complete";
+    localPicked ||
+    (preparation?.key === installationKey && preparation.status === "complete");
   const returningToInstallation = savedLaunch.current === installationKey;
   const [running, setRunning] = useState(false);
   const visibleSetupStep =
@@ -595,7 +603,10 @@ export function App() {
       const found = await invoke<LocalStatus>("local_start", {
         // The CopilotKit connection, because a local run writes its own `.env` and the server
         // refuses to start without either that or an identity provider.
-        request: { apiUrl, gatewayWsUrl: wsUrl, apiKey },
+        //
+        // The folder travels with the request too: the wizard can be pointed somewhere other than the
+        // default root, and the stack that starts has to be the one the person is looking at.
+        request: { root: root.trim(), apiUrl, gatewayWsUrl: wsUrl, apiKey },
       });
       setLocal(found);
       setRunning(true);
@@ -647,6 +658,10 @@ export function App() {
 
   async function install() {
     if (busy || !root.trim()) return;
+    // This preparation is a container engine and eight images, and a machine running the stack as
+    // ordinary processes has neither to fetch: `local::start` downloads its own runtime and database
+    // when it is started. So this action belongs to the container route, and nothing local reaches it.
+    if (localPicked) return;
     setBusy(true);
     setFailure(null);
     setSteps([
@@ -966,12 +981,18 @@ export function App() {
         <div className="sheet">
           <p className="steps-of">Step 2 of 4</p>
           <h1>
-            {installationReady ? "Installation complete" : "Install CCP-Bot"}
+            {localPicked
+              ? "Nothing to install on this computer"
+              : installationReady
+                ? "Installation complete"
+                : "Install CCP-Bot"}
           </h1>
           <p className="lede">
-            {installationReady
-              ? "CCP-Bot’s local software is ready. Next, connect your AI and CopilotKit accounts."
-              : "Install the software CCP-Bot needs on this computer. This can take a few minutes. You’ll sign in after installation finishes."}
+            {localPicked
+              ? "This step fetches nothing. The first Start prepares the runtime, the portable database, the interface and its schema itself, then serves them from this folder."
+              : installationReady
+                ? "CCP-Bot’s local software is ready. Next, connect your AI and CopilotKit accounts."
+                : "Install the software CCP-Bot needs on this computer. This can take a few minutes. You’ll sign in after installation finishes."}
           </p>
           {!installationReady && engine?.responding && (
             <p className="footnote">
@@ -1000,7 +1021,9 @@ export function App() {
           <SetupProgress steps={steps} />
           {displayedFailure && <Failure problem={displayedFailure} />}
           {busy && <p role="status">Installing local software…</p>}
-          {installationReady && (
+          {/* Nothing to repair on this computer: the local route installs at Start, and this block's
+            one action would be the container preparation `install()` refuses to run. */}
+          {installationReady && !localPicked && (
             <details>
               <summary>Installation options</summary>
               <button type="button" className="quiet" onClick={install}>
@@ -1025,7 +1048,7 @@ export function App() {
                   setStep("model");
                 }}
               >
-                Continue to sign in
+                {localPicked ? "Continue" : "Continue to sign in"}
               </button>
             ) : (
               <button
@@ -1212,14 +1235,18 @@ export function App() {
             ? "CCP-Bot is running"
             : returningToInstallation
               ? "Refresh your CopilotKit connection"
-              : "Connect to CopilotKit"}
+              : localPicked
+                ? "Run CCP-Bot on this computer"
+                : "Connect to CopilotKit"}
         </h1>
         <p className="lede">
           {running && !displayedFailure
             ? "The stack is up. CCP-Bot is in this window; the menu bar has it too, and stops it."
             : returningToInstallation
               ? "Update this connection to reopen your existing CCP-Bot."
-              : "Local installation is complete. Connect CopilotKit, then start CCP-Bot."}
+              : localPicked
+                ? "Installation is complete. This stack runs on this computer, and the model you chose is enough to start it — a CopilotKit connection is optional here."
+                : "Local installation is complete. Connect CopilotKit, then start CCP-Bot."}
         </p>
 
         {!running && (
@@ -1349,8 +1376,9 @@ export function App() {
             ) : (
               <>
                 <p className="lede">
-                  CCP-Bot keeps your conversations in CopilotKit. Sign in and it
-                  sets the rest up for you.
+                  {localPicked
+                    ? "Optional on this computer: connect CopilotKit to keep conversations there. CCP-Bot starts without it."
+                    : "CCP-Bot keeps your conversations in CopilotKit. Sign in and it sets the rest up for you."}
                 </p>
                 <div className="row connection-actions">
                   <button
@@ -1546,11 +1574,18 @@ export function App() {
               onClick={() => start()}
               // The model is answered by its own screen now, so what is checked here is that it was
               // answered at all, not that some field on this screen is non-empty.
+              //
+              // The connection is checked for the container route only. That route hands these
+              // addresses to a stack that starts against what `.env` says, so an empty connection
+              // there is still a reason to wait. A run on this computer is the other way round:
+              // `server_environment` in `local.rs` stands in for the connection nobody made, and the
+              // Bot it talks to is the one on this machine, so the model is the whole requirement.
               disabled={
                 busy ||
                 signingIn ||
                 !installationReady ||
-                (apiKey.trim() === "" &&
+                (!localPicked &&
+                  apiKey.trim() === "" &&
                   !alreadyHeld.saved?.intelligenceApiKey &&
                   !reuseIntelligence) ||
                 !modelCanStart() ||
