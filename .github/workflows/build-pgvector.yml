@@ -138,9 +138,13 @@ jobs:
           # Another workflow may be creating the same release in the same minute; a create that
           # loses that race is not a failure here, because the upload below is the point.
           gh release view "$TAG" --repo "$REPO" >/dev/null 2>&1 \
-            || gh release create "$TAG" --repo "$REPO" --title "CCP-Bot $TAG" --notes "CCP-Bot $TAG" \
+            || gh release create "$TAG" --repo "$REPO" --title "pgvector 0.8.6 for macOS (arm64)" \
+              --notes "An archive macOS local mode downloads: vector.dylib, vector.control and vector--0.8.6.sql for Apple silicon. Not a product release." \
             || true
           gh release upload "$TAG" extension/pgvector-macos-arm64.zip --repo "$REPO" --clobber
-          gh release edit "$TAG" --repo "$REPO" --draft=false
+          # Never the "latest" release: that name belongs to the installers, and anything reading it —
+          # the window's download page included — would otherwise be handed an archive with no
+          # application in it. macOS local mode finds this one by its tag.
+          gh release edit "$TAG" --repo "$REPO" --draft=false --latest=false
           gh release view "$TAG" --repo "$REPO" --json tagName,isDraft,assets \
             | jq -r '.assets[] | "\(.name)\t\(.size)"'
