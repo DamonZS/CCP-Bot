@@ -29,11 +29,13 @@ CCP-Bot 桌面端一路走来都是「容器里的栈」：它自己挑一个容
 ## 用户视角
 
 1. 装好 CCP-Bot，双击。
-2. 窗口里不再问 WSL 或 Docker，而是显示正在准备：本机运行时 → 本地数据库（首次会下载一次） → 数据库扩展 → 数据库结构 → 内建 Bot → 启动服务。
+2. 窗口里不再问 WSL 或 Docker，而是显示正在准备：CCP-Bot 源码（首次会下载一次） → 本机运行时 → 本地数据库（首次会下载一次） → 数据库扩展 → 数据库结构 → 内建 Bot → 启动服务。
 3. 十几秒到一两分钟后，窗口里就是 CCP-Bot 的界面，地址 `http://127.0.0.1:3010`。
 4. 关掉再打开：跳过下载与初始化，只起进程。
 
 ## 功能要求
+
+- **源码自己拿**：本地模式要有检出才能跑（`package.json`、`server/`、`app/`、`worker/`、`agent-bot/`）。一个从没这样装过的机器手上是**空文件夹**，而叫这个人「先去弄一份源码」正是这条路线要消灭的那种前置条件 —— 所以本地模式自己下载一次：复用容器路线同一条 `deployment::fetch`（发布版 tarball + 同一份 `unpack` 布局），版本从 `deployment_release::resolve_version` 取；失败会把「版本解析失败」与「下载失败」分开说清楚。下载这一步也算一个报出来的步骤（`checkout`）。**同时把 `agent-bot` 加进部署要复制的目录**：容器路线从镜像里拿 Bot、不读这份源码，但本地模式是从这棵树里把它当程序起起来的，漏掉它就等于「装完没有同事」。
 
 - **引擎选择**：`local` 为默认；已保存过别的引擎的老机器不自动改（避免把正在用 Docker 的人的栈换掉）。
 - **一次性准备**（首次运行）：
@@ -81,7 +83,8 @@ CCP-Bot 桌面端一路走来都是「容器里的栈」：它自己挑一个容
   同一次运行打印 `local stack up on http://127.0.0.1:3010 with database port 63133 and the Bot on http://127.0.0.1:63659`，用例自身断言 `/health` 为 200、`/` 返回的就是界面、步骤里出现过 `ready`。
 - `logs/local-server.log` 里的服务器侧证据：迁移跑过之后 `CCP-Bot server listening on http://127.0.0.1:3010`，以及 `No identity provider is configured, so every request is treated as dev@ccpbot.local (administrator).`（即 `CCPBOT_SINGLE_USER=true` 生效）；`logs/local-worker.log` 里是例程巡检在跑（`{"type":"routine-sweep","offered":[],"considered":0,"fired":[],"skipped":[]}`）；`logs/local-bot.log` 里是 `agent-bot listening on http://127.0.0.1:63659/ag-ui`。
 - 内建 Bot 的模型凭据是真机跑出来的第二个要求：第一次跑时它 97 秒不响应，`logs/local-bot.log` 原文 `OPENAI_API_KEY is not set, and no OPENAI_BASE_URL names an endpoint that needs no key. This Bot cannot answer without a model.`。这和向导里给模型密钥的是同一步（同一个 writer：`main.rs:4905` / `saved_intent.rs:238` / `stack.rs:4527` 都用 `env::write`），所以 live 用例照向导的做法先写一行占位密钥。
-- 单元与集成：`-- local:: env::tests::minting` → 26 passed / 0 failed / 1 ignored（含上述 live 为 ignored）；桌面端 `bun run --cwd desktop typecheck` 无输出；`bun test desktop/src` → **155 pass / 0 fail**（其中 `LocalRun.test.tsx` 5 pass）；`bunx biome lint --error-on-warnings .` exit 0（12186 files）。
+- 空文件夹取源码：`cargo test -p ccpbot-desktop --manifest-path desktop/src-tauri/Cargo.toml --lib -- local::tests::live_an_empty_folder --include-ignored --nocapture` → `[checkout] Downloading CCP-Bot itself (once, then reused)…`、`downloaded "version": "0.2.6"`、`1 passed … finished in 6.13s`（断言清单、`server/`、`agent-bot/src/index.ts` 都到位）。
+- 单元与集成：`-- local:: env::tests::minting` → 26 passed / 0 failed / 2 ignored（含上述两条 live 为 ignored）；桌面端 `bun run --cwd desktop typecheck` 无输出；`bun test desktop/src` → **155 pass / 0 fail**（其中 `LocalRun.test.tsx` 5 pass）；`bunx biome lint --error-on-warnings .` exit 0（12186 files）。
 
 ## 真机跑出来的四个坑（都已修，写在代码注释里）
 
@@ -90,3 +93,4 @@ CCP-Bot 桌面端一路走来都是「容器里的栈」：它自己挑一个容
 3. **服务需要密钥与 Intelligence 才能启动** → 分别是 `KEY_ENCRYPTION_KEY must be configured`（`server/src/config.ts:507`）与 `CopilotKit Intelligence is required and is not configured. Missing: INTELLIGENCE_API_URL, INTELLIGENCE_GATEWAY_WS_URL`（`config.ts:1018`）；密钥走 vault + `env::minted`（与容器路线同一条判据，重启复用不轮换），Intelligence 由向导写入 `.env`。
 4. **server 必须从 `server/` 目录运行** → 从仓库根启动时租户包默认路径 `../examples/fintech` 解析到仓库外，直接 `ENOENT` 打不开 `brand.yaml`；现在两个服务都以 `server/` 为工作目录，server 读 `--env-file=../.env`、worker 以 `../worker/src/index.ts` 启动（与 compose 一致），worker 只拿它自己的三个变量。
 5. **内建 Bot 要一个模型凭据** → 没有它，`agent-bot` 直接退出并说明 `OPENAI_API_KEY is not set, and no OPENAI_BASE_URL names an endpoint that needs no key`，从外面看只是「97 秒没有响应」。这正是向导里给模型密钥的那一步，本地模式不去猜、也不替人填：没有它就照实说 Bot 不响应。
+6. **部署要复制的目录里原本没有 `agent-bot`** → 空文件夹从发布版取源码时，Bot 会缺席（第一次跑这条 live 用例就断言失败在这里：清单在、`server/` 在、`agent-bot/src/index.ts` 不在）。它被补进 `deployment::ALSO_COPIED`，理由写在常量旁边：容器路线从镜像拿 Bot，本地路线从这棵树里起它。

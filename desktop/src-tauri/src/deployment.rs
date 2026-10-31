@@ -204,7 +204,7 @@ fn layout() -> Vec<String> {
 pub const REQUIRED: [&str; 4] = ["docker-compose.yml", "server", "app", "worker"];
 
 /// The rest of what a deployment needs, which is not what it is checked for.
-pub const ALSO_COPIED: [&str; 11] = [
+pub const ALSO_COPIED: [&str; 12] = [
     "shared",
     // The dependency patches `package.json` names in `patchedDependencies`. Without them `bun install
     // --frozen-lockfile` stops with `Couldn't find patch file`.
@@ -229,6 +229,10 @@ pub const ALSO_COPIED: [&str; 11] = [
     // its source, its public assets and its public key, and `bun install --frozen-lockfile` needs
     // its manifest as a workspace.
     "extension",
+    // The built-in Bot, whole. The container route runs it from an image and does not read this, but
+    // local mode starts it as a program out of this tree - and a machine with no engine has no image
+    // to fall back on, so a deployment that left the Bot behind would arrive without a coworker.
+    "agent-bot",
 ];
 
 /// Single files copied from a directory that is otherwise left behind. None now: the Recorder's

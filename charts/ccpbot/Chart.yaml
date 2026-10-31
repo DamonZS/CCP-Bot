@@ -3,10 +3,10 @@ name: ccpbot
 description: Run CCP-Bot on any Kubernetes cluster, managed or your own
 type: application
 # The chart's own version, bumped when templates or defaults change.
-version: 0.1.9
+version: 0.1.10
 # The CCP-Bot release this chart's default image tag points at. Kept equal to package.json's version
 # (the last version published) by the release workflow, and CI refuses a tree where they have drifted.
-appVersion: "0.2.6"
+appVersion: "0.2.7"
 home: https://github.com/DamonZS/CCP-Bot
 sources:
   - https://github.com/DamonZS/CCP-Bot

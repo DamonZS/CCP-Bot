@@ -1102,6 +1102,47 @@ pub fn write_intelligence(
     Ok(file)
 }
 
+/// Whether this folder already holds the sources local mode runs.
+///
+/// `package.json` is the whole test: it is what every step afterwards reads, and a folder that has
+/// it has been fetched (or cloned) already.
+pub fn checkout_ready(root: &Path) -> bool {
+    root.join("package.json").is_file()
+}
+
+/// Fetches the published sources into an empty folder, once.
+///
+/// The version comes from the same release the window's other route uses, and the fetch is the same
+/// one: the tarball the release publishes, unpacked into the folder. Nothing here is local mode's
+/// own idea of where sources come from — if the release moves, both routes move with it.
+fn prepare_checkout(root: &Path, report: &mut impl FnMut(&str, &str)) -> Result<(), Problem> {
+    prepare_checkout_with(root, report, |root| {
+        let version = crate::deployment_release::resolve_version(root).map_err(|error| {
+            Problem::with(
+                "The CCP-Bot version to download could not be resolved.".to_string(),
+                error,
+            )
+        })?;
+        crate::deployment::fetch(root, &version).map_err(|error| {
+            Problem::with(format!("CCP-Bot {version} could not be downloaded."), error)
+        })
+    })
+}
+
+/// The same fetch, with the download itself replaceable so a test can fail it on purpose. What the
+/// test needs to prove is the message a person reads when a machine is offline, not the network.
+fn prepare_checkout_with(
+    root: &Path,
+    report: &mut impl FnMut(&str, &str),
+    download: impl FnOnce(&Path) -> Result<(), Problem>,
+) -> Result<(), Problem> {
+    report(
+        "checkout",
+        "Downloading CCP-Bot itself (once, then reused)…",
+    );
+    download(root)
+}
+
 /// Runs one `bun` command in the checkout and fails on a non-zero exit.
 fn run_bun(bun: &Path, working: &Path, arguments: &[&str]) -> Result<(), Problem> {
     let output = quiet::command(bun)
@@ -1136,7 +1177,14 @@ pub fn start(
     bun: Option<PathBuf>,
     mut report: impl FnMut(&str, &str),
 ) -> Result<Started, Problem> {
-    if !root.join("package.json").is_file() {
+    // Nobody is handed a project folder they do not have. A machine that has never installed CCP-Bot
+    // this way has an empty folder, and asking that person to "get a checkout" first is exactly the
+    // prerequisite screen this mode exists to remove. So the sources are fetched once, from the same
+    // published release the container route uses, and every later run finds them already there.
+    if !checkout_ready(root) {
+        prepare_checkout(root, &mut report)?;
+    }
+    if !checkout_ready(root) {
         return Err(Problem::with(
             "Local mode needs a CCP-Bot checkout.".to_string(),
             format!("{} has no package.json", root.display()),
@@ -1609,12 +1657,44 @@ mod tests {
         assert!(detail.contains("connection refused"), "{detail}");
     }
 
-    /// Local mode runs the server from a checkout, so there has to be one.
+    /// A folder that already holds the sources is one local mode runs; an empty one is not — and the
+    /// difference is a single file, which is why the check is not a directory listing.
     #[test]
-    fn local_mode_needs_a_checkout() {
-        let root = scratch("no-checkout");
-        let error = start(&root, &root, None, |_, _| {}).expect_err("no checkout, no start");
-        assert!(error.said.contains("checkout"), "{}", error.said);
+    fn a_folder_with_package_json_is_a_checkout() {
+        let root = scratch("is-checkout");
+        assert!(!checkout_ready(&root), "an empty folder is not a checkout");
+        std::fs::write(root.join("package.json"), "{}").expect("a package.json");
+        assert!(
+            checkout_ready(&root),
+            "a folder with the manifest is a checkout"
+        );
+        let _ = std::fs::remove_dir_all(&root);
+    }
+
+    /// A machine that has never installed CCP-Bot this way has an empty folder, so the first run
+    /// fetches the sources — and when that fetch fails, the person is told what failed rather than
+    /// being sent to find a checkout of their own.
+    #[test]
+    fn an_empty_folder_is_filled_from_the_release_and_told_when_that_fails() {
+        let root = scratch("fetch-checkout");
+        let mut steps: Vec<String> = Vec::new();
+        let error = prepare_checkout_with(
+            &root,
+            &mut |step: &str, _| steps.push(step.to_string()),
+            |_| {
+                Err(Problem::with(
+                    "CCP-Bot v0.0.0 could not be downloaded.".to_string(),
+                    "offline".to_string(),
+                ))
+            },
+        )
+        .expect_err("no download, no checkout");
+        assert_eq!(steps, vec!["checkout".to_string()]);
+        assert!(
+            error.said.contains("could not be downloaded"),
+            "{}",
+            error.said
+        );
         let _ = std::fs::remove_dir_all(&root);
     }
 
@@ -1818,5 +1898,39 @@ mod tests {
             children.push(bot);
         }
         stop(&root, &mut children).expect("stopping the local stack");
+    }
+
+    /// The first run of a machine that has never installed CCP-Bot this way: an empty folder, and
+    /// the sources arrive from the published release. This is the difference between "install and
+    /// use" and "install, then go and find a checkout", so it is measured against the real release
+    /// rather than a stub.
+    #[test]
+    #[ignore = "downloads the published release from GitHub"]
+    fn live_an_empty_folder_is_filled_from_the_release() {
+        let root = std::env::temp_dir().join("ccpbot-local-empty-checkout");
+        let _ = std::fs::remove_dir_all(&root);
+        std::fs::create_dir_all(&root).expect("an empty folder");
+        assert!(!checkout_ready(&root), "the folder starts empty");
+
+        prepare_checkout(&root, &mut |step, detail| println!("[{step}] {detail}"))
+            .expect("the sources should arrive");
+
+        assert!(checkout_ready(&root), "the manifest arrived");
+        assert!(root.join("server").is_dir(), "the server sources arrived");
+        assert!(
+            root.join(BOT_ENTRY).is_file(),
+            "the built-in Bot arrived with the rest"
+        );
+        println!(
+            "downloaded {} into {}",
+            std::fs::read_to_string(root.join("package.json"))
+                .expect("the manifest")
+                .lines()
+                .find(|line| line.contains("\"version\""))
+                .unwrap_or("version unknown")
+                .trim(),
+            root.display()
+        );
+        let _ = std::fs::remove_dir_all(&root);
     }
 }
