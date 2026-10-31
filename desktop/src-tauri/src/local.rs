@@ -1207,6 +1207,23 @@ fn tail_of(path: &Path, lines: usize) -> String {
     written[start..].join("\n")
 }
 
+/// Every log this run wrote, for a failure that has to explain itself on a machine nobody can look
+/// at afterwards.
+///
+/// The same reasoning as the computer's own failure carrying its log, one level up: a test that
+/// dies on a runner is deleted together with the runner, so the reason it died has to travel in the
+/// text. Read with `tail_of`, the way the database and the computer are.
+pub fn logs_on_failure(root: &Path) -> String {
+    ["server", "bot", "computer", "postgres"]
+        .iter()
+        .map(|name| {
+            let path = log_file(root, name);
+            format!("===== {} =====\n{}", path.display(), tail_of(&path, 40))
+        })
+        .collect::<Vec<String>>()
+        .join("\n")
+}
+
 /// Starts the cluster on the loopback address, and waits for it to accept connections.
 pub fn start_postgres(root: &Path, port: u16) -> Result<(), Problem> {
     if postgres_running(root) {
@@ -2314,6 +2331,23 @@ mod tests {
         let _ = std::fs::remove_dir_all(&root);
     }
 
+    /// A live test that dies on a runner takes the logs with it, so this block is what has to
+    /// explain the death: it names every log, reads the one that was written, and says so honestly
+    /// where there is nothing to read.
+    #[test]
+    fn a_failure_message_carries_the_logs_this_run_wrote() {
+        let root = scratch("failure-logs");
+        std::fs::create_dir_all(logs_folder(&root)).expect("the logs folder");
+        std::fs::write(log_file(&root, "server"), "one\ntwo\nthree\n").expect("a log");
+
+        let carried = logs_on_failure(&root);
+        assert!(carried.contains("local-server.log"), "{carried}");
+        assert!(carried.contains("three"), "{carried}");
+        assert!(carried.contains("local-computer.log"), "{carried}");
+        assert!(carried.contains("nothing to read"), "{carried}");
+        let _ = std::fs::remove_dir_all(&root);
+    }
+
     /// The extension is fetched once and placed once; a server that already has it is left alone.
     #[test]
     fn the_deployment_mints_its_secrets_and_reuses_them() {
@@ -2989,7 +3023,12 @@ mod tests {
             println!("[{step}] {detail}");
             steps.push(step.to_string());
         })
-        .expect("the local stack should start");
+        .unwrap_or_else(|problem| {
+            panic!(
+                "the local stack should start: {problem:?}\n\n{}",
+                logs_on_failure(&root)
+            )
+        });
 
         // The store, not the file: the Bot answered with this key, and it did so without the key ever
         // being written where anybody can read it.
@@ -3177,7 +3216,12 @@ mod tests {
             println!("[{step}] {detail}");
             steps.push((step.to_string(), detail.to_string()));
         })
-        .expect("the local stack should start");
+        .unwrap_or_else(|problem| {
+            panic!(
+                "the local stack should start: {problem:?}\n\n{}",
+                logs_on_failure(&root)
+            )
+        });
 
         assert!(
             bot_dependencies_installed(&root),

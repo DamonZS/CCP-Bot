@@ -9885,7 +9885,12 @@ fn main() {
                 println!("[{step}] {detail}");
                 steps.push(step.to_string());
             })
-            .expect("the local stack should start");
+            .unwrap_or_else(|problem| {
+                panic!(
+                    "the local stack should start: {problem:?}\n\n{}",
+                    crate::local::logs_on_failure(&root)
+                )
+            });
         assert!(steps.iter().any(|step| step == "ready"), "{steps:?}");
         assert!(steps.iter().any(|step| step == "bot"), "{steps:?}");
 
@@ -10063,7 +10068,12 @@ fn main() {
             crate::local::start(&root, &cache, None, Some(&credential), |step, detail| {
                 println!("[{step}] {detail}");
             })
-            .expect("the local stack should start");
+            .unwrap_or_else(|problem| {
+                panic!(
+                    "the local stack should start: {problem:?}\n\n{}",
+                    crate::local::logs_on_failure(&root)
+                )
+            });
         let owned = started_host_processes(&started);
         crate::stack::record_host_processes(&root, &owned).expect("the ownership record");
 
