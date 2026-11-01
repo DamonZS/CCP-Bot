@@ -658,8 +658,8 @@ fn started_host_processes(started: &local::Started) -> Vec<(&'static str, u32)> 
 }
 
 #[tauri::command]
-async fn local_start(
-    app: tauri::AppHandle,
+async fn local_start<R: tauri::Runtime>(
+    app: tauri::AppHandle<R>,
     request: Option<LocalStartRequest>,
 ) -> Result<LocalStatus, Problem> {
     let named = request.as_ref().and_then(|request| request.root.as_deref());
@@ -708,7 +708,18 @@ async fn local_start(
     })
     .await
     .map_err(|error| Problem::plain(format!("The local start did not finish: {error}")))?;
-    let started = outcome?;
+    let started = match outcome {
+        Ok(started) => started,
+        Err(problem) => {
+            // A step is a thing that is running, and this run is not: the window draws a ticking row
+            // from this value alone (`desktop/src/LocalRun.tsx`), so leaving the last one behind
+            // leaves it ticking a step that has already given up. Measured on a clean install: the
+            // Bot step failed and the row went on saying "In progress" with a spinner and a timer.
+            let shell = app.state::<Shell>();
+            *shell.local_step.lock().unwrap() = (String::new(), String::new());
+            return Err(problem);
+        }
+    };
     let owned = started_host_processes(&started);
     {
         let shell = app.state::<Shell>();
@@ -7674,6 +7685,45 @@ mod tests {
             named
         );
         assert_eq!(shell.selected_root.lock().unwrap().as_ref(), Some(&named));
+    }
+
+    /// A start that fails must not leave its step behind.
+    ///
+    /// The window draws the ticking row from this one value alone (`desktop/src/LocalRun.tsx`), so a
+    /// step left by a run that has already given up keeps saying "In progress" with a spinner. A
+    /// clean 0.4.2 install showed exactly that: the Bot step failed and the row went on ticking. The
+    /// refusal here happens before anything is downloaded, so this test runs in milliseconds.
+    #[test]
+    fn a_local_start_that_fails_leaves_no_step_behind() {
+        let app = tauri::test::mock_builder()
+            .manage(Shell::default())
+            .build(tauri::test::mock_context(tauri::test::noop_assets()))
+            .unwrap();
+        let root = temp_root("ccpbot-local-start-failure-clears-the-step");
+        let shell = app.state::<Shell>();
+        *shell.local_step.lock().unwrap() =
+            ("bot".to_string(), "Starting the built-in Bot…".to_string());
+
+        let request = LocalStartRequest {
+            root: Some(root.display().to_string()),
+            ..LocalStartRequest::default()
+        };
+        let problem = match tauri::async_runtime::block_on(local_start(
+            app.handle().clone(),
+            Some(request),
+        )) {
+            Ok(_) => panic!("a folder with no model answer is refused before it starts"),
+            Err(problem) => problem,
+        };
+        assert!(
+            problem.said.contains("waiting for a model"),
+            "unexpected refusal: {problem:?}"
+        );
+
+        let (step, detail) = shell.local_step.lock().unwrap().clone();
+        assert_eq!(step, "", "the failed run left a step ticking");
+        assert_eq!(detail, "");
+        let _ = std::fs::remove_dir_all(&root);
     }
 
     #[test]

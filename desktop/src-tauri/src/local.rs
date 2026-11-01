@@ -301,22 +301,80 @@ pub fn database_url(port: u16) -> String {
     format!("postgres://{DATABASE_USER}@127.0.0.1:{port}/{DATABASE_NAME}")
 }
 
-/// A port nothing is listening on, asked of the operating system rather than guessed.
+/// The first port this machine hands out to outgoing connections, so the line this mode stays
+/// below.
+///
+/// Windows draws its ephemeral ports from here up — `netsh int ipv4 show dynamicport tcp` on the
+/// machine this was measured on answered `start port : 49152`, `number of ports : 16384` — and
+/// every connection every program makes takes a port from the same pool. A port from that range is
+/// therefore a port something else may take at any moment: measured on a clean install, the Bot was
+/// given one of them, lost it to an outgoing connection while its own dependencies were still
+/// installing, and exited with `EADDRINUSE` two minutes after the port had been probed and let go.
+const DYNAMIC_PORT_START: u16 = 49152;
+
+/// How many ports below the dynamic range to try before giving up on finding one of our own.
+const PORT_ATTEMPTS: u16 = 64;
+
+/// Whether this is a port this mode is willing to hand to a child: below the range the machine
+/// draws outgoing connections from, and in the registered range above the privileged ports.
+fn port_is_ours(port: u16) -> bool {
+    port > 0 && port < DYNAMIC_PORT_START
+}
+
+/// The one question that can be answered about a port right now, and the one a remembered port has
+/// to answer again on every start: a port that was free when it was written down may not be free
+/// now, because the pool it came from is handed out on a first-come basis.
+fn port_is_free(port: u16) -> bool {
+    TcpListener::bind(("127.0.0.1", port)).is_ok()
+}
+
+/// A port of this mode's own: below the range the machine hands to outgoing connections, and one
+/// nothing is listening on.
+///
+/// Chosen by trying ports rather than asked for, because asking the operating system for a port
+/// (`bind` to `0`) is exactly how a run ends up with one from the range being avoided.
 pub fn free_port() -> Result<u16, Problem> {
-    let listener = TcpListener::bind(("127.0.0.1", 0)).map_err(|error| {
-        Problem::with(
-            "Local mode could not find a free port.",
-            format!("binding 127.0.0.1:0 failed: {error}"),
-        )
-    })?;
-    let port = listener.local_addr().map_err(|error| {
-        Problem::with(
-            "Local mode could not find a free port.",
-            format!("the bound socket has no address: {error}"),
-        )
-    })?;
-    drop(listener);
-    Ok(port.port())
+    free_port_besides(&[])
+}
+
+/// The ports this folder has already written down for the other two children.
+///
+/// The three ports are asked for one after another, before any of the children is running, so a
+/// choice that only looks at what is listening right now answers "free" three times in a row and
+/// hands the database, the Bot and the computer the same number: measured, and the Bot lost that
+/// race — `EADDRINUSE` on the port the database had taken a moment later.
+fn ports_remembered_for_the_others(root: &Path, mine: &Path) -> Vec<u16> {
+    [
+        port_file(root),
+        bot_port_file(root),
+        computer_port_file(root),
+    ]
+    .into_iter()
+    .filter(|file| file.as_path() != mine)
+    .filter_map(|file| {
+        std::fs::read_to_string(&file)
+            .ok()
+            .and_then(|text| text.trim().parse::<u16>().ok())
+            .filter(|port| *port > 0)
+    })
+    .collect()
+}
+
+/// The first of this mode's own ports, skipping the ones it is told to leave alone.
+fn free_port_besides(avoid: &[u16]) -> Result<u16, Problem> {
+    let first = DYNAMIC_PORT_START - PORT_ATTEMPTS;
+    for port in first..DYNAMIC_PORT_START {
+        if !avoid.contains(&port) && port_is_free(port) {
+            return Ok(port);
+        }
+    }
+    Err(Problem::with(
+        "Local mode could not find a port of its own.".to_string(),
+        format!(
+            "every port from {first} to {} is taken, or inside the range this machine hands out to outgoing connections.",
+            DYNAMIC_PORT_START - 1
+        ),
+    ))
 }
 
 /// The database port: the one used before if there is one, a new one otherwise.
@@ -335,30 +393,52 @@ pub fn remembered_port(root: &Path) -> Option<u16> {
         .filter(|port| *port > 0)
 }
 
-pub fn database_port(root: &Path) -> Result<u16, Problem> {
-    let file = port_file(root);
-    if let Ok(text) = std::fs::read_to_string(&file) {
-        if let Ok(port) = text.trim().parse::<u16>() {
-            if port > 0 {
-                return Ok(port);
-            }
-        }
-    }
-    let port = free_port()?;
+/// Whether a remembered port can still be handed to a child.
+///
+/// Two ways it cannot: it is inside the range the machine hands to outgoing connections, which is
+/// how the Bot came to be given a port an outgoing connection had taken; or something is listening
+/// on it now. Either way the run picks a new port and writes it down where the old one was — the
+/// same file `.env` is written from on every start — so a folder that remembers one of those ports
+/// heals itself on its next start, with nothing to do by hand.
+fn remembered_port_is_usable(port: u16) -> bool {
+    port_is_ours(port) && port_is_free(port)
+}
+
+/// Writes a chosen port where the next start reads it again.
+fn write_port(file: &Path, port: u16, what: &str) -> Result<(), Problem> {
     if let Some(parent) = file.parent() {
         std::fs::create_dir_all(parent).map_err(|error| {
             Problem::with(
-                "Local mode could not store the database port.",
+                format!("Local mode could not store the {what} port."),
                 format!("creating {} failed: {error}", parent.display()),
             )
         })?;
     }
-    std::fs::write(&file, format!("{port}\n")).map_err(|error| {
+    std::fs::write(file, format!("{port}\n")).map_err(|error| {
         Problem::with(
-            "Local mode could not store the database port.",
+            format!("Local mode could not store the {what} port."),
             format!("writing {} failed: {error}", file.display()),
         )
-    })?;
+    })
+}
+
+pub fn database_port(root: &Path) -> Result<u16, Problem> {
+    let file = port_file(root);
+    if let Some(port) = remembered_port(root) {
+        // A cluster this folder already has running is left on the port it is running on: it is
+        // this folder's database, and moving the number now would leave it up under a port nothing
+        // knows about — including the stop that is meant to end it.
+        if postgres_running(root) {
+            return Ok(port);
+        }
+        if remembered_port_is_usable(port)
+            && !ports_remembered_for_the_others(root, &file).contains(&port)
+        {
+            return Ok(port);
+        }
+    }
+    let port = free_port_besides(&ports_remembered_for_the_others(root, &file))?;
+    write_port(&file, port, "database")?;
     Ok(port)
 }
 
@@ -374,26 +454,23 @@ pub fn remembered_bot_port(root: &Path) -> Option<u16> {
         .filter(|port| *port > 0)
 }
 
+/// The port the Bot is started on: the one used before if it is still usable, a new one otherwise.
 pub fn bot_port(root: &Path) -> Result<u16, Problem> {
-    if let Some(port) = remembered_bot_port(root) {
-        return Ok(port);
-    }
-    let port = free_port()?;
     let file = bot_port_file(root);
-    if let Some(parent) = file.parent() {
-        std::fs::create_dir_all(parent).map_err(|error| {
-            Problem::with(
-                "Local mode could not store the Bot port.",
-                format!("creating {} failed: {error}", parent.display()),
-            )
-        })?;
+    if let Some(port) = remembered_bot_port(root) {
+        // A port this folder's own Bot is answering on is this folder's port, running: asking again
+        // while it is up must not move the number `.env` was written from. Measured: without this, a
+        // second question during a run re-picked the port and left `MANAGED_AGENT_AG_UI_URL` naming
+        // the port the Bot was no longer on.
+        if health_status(&bot_address(port)).is_ok()
+            || (remembered_port_is_usable(port)
+                && !ports_remembered_for_the_others(root, &file).contains(&port))
+        {
+            return Ok(port);
+        }
     }
-    std::fs::write(&file, format!("{port}\n")).map_err(|error| {
-        Problem::with(
-            "Local mode could not store the Bot port.",
-            format!("writing {} failed: {error}", file.display()),
-        )
-    })?;
+    let port = free_port_besides(&ports_remembered_for_the_others(root, &file))?;
+    write_port(&file, port, "Bot")?;
     Ok(port)
 }
 
@@ -503,26 +580,22 @@ pub fn remembered_computer_port(root: &Path) -> Option<u16> {
         .filter(|port| *port > 0)
 }
 
+/// The port the computer is started on: the one used before if it is still usable, a new one
+/// otherwise.
 pub fn computer_port(root: &Path) -> Result<u16, Problem> {
-    if let Some(port) = remembered_computer_port(root) {
-        return Ok(port);
-    }
-    let port = free_port()?;
     let file = computer_port_file(root);
-    if let Some(parent) = file.parent() {
-        std::fs::create_dir_all(parent).map_err(|error| {
-            Problem::with(
-                "Local mode could not store the computer's port.",
-                format!("creating {} failed: {error}", parent.display()),
-            )
-        })?;
+    if let Some(port) = remembered_computer_port(root) {
+        // A computer this folder started is answering on its port: the same reasoning as the Bot's
+        // above, and the same measurement.
+        if health_status(&computer_address(port)).is_ok()
+            || (remembered_port_is_usable(port)
+                && !ports_remembered_for_the_others(root, &file).contains(&port))
+        {
+            return Ok(port);
+        }
     }
-    std::fs::write(&file, format!("{port}\n")).map_err(|error| {
-        Problem::with(
-            "Local mode could not store the computer's port.",
-            format!("writing {} failed: {error}", file.display()),
-        )
-    })?;
+    let port = free_port_besides(&ports_remembered_for_the_others(root, &file))?;
+    write_port(&file, port, "computer's")?;
     Ok(port)
 }
 
@@ -1550,6 +1623,21 @@ pub fn fetch(address: &str, path: &str) -> Result<(u16, String), String> {
     Ok((status, body))
 }
 
+/// What a Bot that never answered is reported with: the address it was told to listen on, what was
+/// wrong the last time it was probed, and what the Bot itself logged.
+///
+/// The log is the part that matters once the child has already stopped — a Bot that exits says why
+/// on its way out (`EADDRINUSE`, a missing module), and no other file prints that.
+fn bot_did_not_answer(address: &str, last: &str, log: &Path) -> Problem {
+    Problem::with(
+        "The built-in Bot did not answer.".to_string(),
+        format!(
+            "{address} never answered /health. Last time: {last}\n\nThe Bot's log:\n{}",
+            tail_of(log, 80)
+        ),
+    )
+}
+
 /// Waits for the interface to answer, and says what was wrong the last time it did not.
 ///
 /// The probe is passed in so the waiting itself can be tested: the loop is the part that gets
@@ -1557,10 +1645,31 @@ pub fn fetch(address: &str, path: &str) -> Result<(u16, String), String> {
 /// does not need a server on the machine to be exercised.
 pub fn wait_for_health(
     timeout: Duration,
+    probe: impl FnMut() -> Result<u16, String>,
+) -> Result<u16, Problem> {
+    wait_for_health_or_stopped(timeout, probe, || None)
+}
+
+/// The same wait, told the one thing the probe cannot know: whether the process it is waiting for
+/// is still there.
+///
+/// A child that stopped while its port was being probed is never going to answer, and waiting out
+/// the rest of the budget says nothing a person can use. Measured on a clean install: the Bot lost
+/// its port to an outgoing connection, exited with `EADDRINUSE`, and the run spent its whole ninety
+/// seconds before reporting a port that stayed silent.
+fn wait_for_health_or_stopped(
+    timeout: Duration,
     mut probe: impl FnMut() -> Result<u16, String>,
+    mut stopped: impl FnMut() -> Option<String>,
 ) -> Result<u16, Problem> {
     let started = Instant::now();
     loop {
+        if let Some(reason) = stopped() {
+            return Err(Problem::with(
+                "CCP-Bot started but its interface never passed the health check.".to_string(),
+                reason,
+            ));
+        }
         // The reason is recomputed on every attempt and the one from the last attempt is the one
         // reported: an early "connection refused" says very little about a stack that has since
         // got as far as answering the wrong thing.
@@ -1873,6 +1982,79 @@ fn run_bun(bun: &Path, working: &Path, arguments: &[&str]) -> Result<(), Problem
     ))
 }
 
+/// Ends one process by pid, together with everything it started.
+///
+/// The children a start creates are handed to the caller once the stack is up, so what is left for
+/// a run that failed half-way is the pids it wrote down. On Windows `taskkill /T` walks the tree,
+/// and on Unix the child leads the group `in_its_own_group` gave it — the direct kill is for the
+/// case where it is not a group leader.
+fn end_process_tree(pid: u32) {
+    #[cfg(windows)]
+    {
+        let pid = pid.to_string();
+        let _ = quiet::command("taskkill")
+            .args(["/PID", pid.as_str(), "/T", "/F"])
+            .output();
+    }
+    #[cfg(unix)]
+    {
+        let pid = pid as i32;
+        unsafe {
+            libc::killpg(pid, libc::SIGKILL);
+            libc::kill(pid, libc::SIGKILL);
+        }
+    }
+}
+
+/// What a start owns from the moment it starts owning processes, so that a start which fails
+/// half-way gives them back instead of leaving them on the machine.
+///
+/// Measured on a clean install: the Bot step failed after the database had been started, and the
+/// run left the database up and the window still showing a step in progress, with nothing that
+/// would ever stop them — the handles that could have been ended were in a call that had already
+/// returned. Nothing is written down as owned until the whole stack is up, so a failed start leaves
+/// no record either.
+struct Owned {
+    root: PathBuf,
+    pids: Vec<u32>,
+    /// Set once the stack is up, when the children belong to the caller.
+    released: bool,
+}
+
+impl Owned {
+    fn new(root: &Path) -> Self {
+        Self {
+            root: root.to_path_buf(),
+            pids: Vec::new(),
+            released: false,
+        }
+    }
+
+    /// Remembers a child as this run's, from the moment it is started.
+    fn add(&mut self, child: &Child) {
+        self.pids.push(child.id());
+    }
+
+    /// The stack is up: the processes are the caller's now, and this must not end them.
+    fn release(mut self) {
+        self.released = true;
+    }
+}
+
+impl Drop for Owned {
+    fn drop(&mut self) {
+        if self.released {
+            return;
+        }
+        for pid in self.pids.drain(..) {
+            end_process_tree(pid);
+        }
+        // The services go first and the database last, the way `stop` does it: the database is the
+        // one this run started first and the one everything else was talking to.
+        let _ = stop_postgres(&self.root);
+    }
+}
+
 /// Starts the whole local stack, and only returns once the interface answers.
 ///
 /// The order is not arbitrary: the database has to be up before the schema can be applied, the
@@ -1930,6 +2112,11 @@ pub fn start(
     let workspace = workspace_folder(root);
     report("database", "Starting the database…");
     start_postgres(root, port)?;
+    // From here on this run owns processes, and a failure below has to take them with it: the
+    // database has just been started by this call — `create_database` failing is one of those
+    // failures — and every child that follows is started by this call too. A successful start ends
+    // in `release()`, which hands the processes to `Started`.
+    let mut owned = Owned::new(root);
     create_database(root, port)?;
     // The model's keys go in before `write_env`, which owns only its own keys and keeps every other
     // line: the model choice and the runtime's own addresses are the two halves of the same file the
@@ -1982,22 +2169,35 @@ pub fn start(
     let bot = match bot {
         Some(bot_port) => {
             report("bot", "Starting the built-in Bot…");
-            let child = start_service(
+            let mut child = start_service(
                 &bun,
                 root,
                 &bot_arguments(),
                 &log_file(root, "bot"),
                 &bot_environment(bot_port, &secrets),
             )?;
+            owned.add(&child);
             let address = bot_address(bot_port);
-            let status =
-                wait_for_health(BOT_TIMEOUT, || health_status(&address)).map_err(|problem| {
-                    let last = problem.detail.unwrap_or_default();
-                    Problem::with(
-                        "The built-in Bot did not answer.".to_string(),
-                        format!("{address} never answered /health. Last time: {last}"),
-                    )
-                })?;
+            let status = wait_for_health_or_stopped(
+                BOT_TIMEOUT,
+                || health_status(&address),
+                // A Bot that has stopped is never going to answer, and what it said before it
+                // stopped is in its own log. This is the same treatment the computer gets, and it is
+                // what makes a port this machine took away visible at once: measured on a clean
+                // install, the Bot exited with `EADDRINUSE` and the run still spent ninety seconds
+                // waiting for a port that was already silent.
+                || match child.try_wait() {
+                    Ok(Some(status)) => Some(format!("the Bot stopped on its own ({status})")),
+                    _ => None,
+                },
+            )
+            .map_err(|problem| {
+                bot_did_not_answer(
+                    &address,
+                    &problem.detail.unwrap_or_default(),
+                    &log_file(root, "bot"),
+                )
+            })?;
             report(
                 "bot",
                 &format!("The built-in Bot is answering (/health {status})."),
@@ -2034,6 +2234,7 @@ pub fn start(
                 &log_file(root, "computer"),
                 &computer_environment(root, computer_port, &secrets, &workspace),
             )?;
+            owned.add(&child);
             let address = computer_address(computer_port);
             let status = wait_for_health(COMPUTER_TIMEOUT, || health_status(&address)).map_err(
                 |problem| {
@@ -2080,6 +2281,7 @@ pub fn start(
         // demanded it — the server now says `intelligence-absent` and runs on this machine's tables.
         &secrets,
     )?;
+    owned.add(&server);
     // The worker is handed its three settings and the model's keys, the way compose hands its one
     // environment to every service: it does not read the deployment's configuration, and the less
     // this process holds the less a mistake in it can spend.
@@ -2105,6 +2307,7 @@ pub fn start(
         &log_file(root, "worker"),
         &worker_environment,
     )?;
+    owned.add(&worker);
     let address = SERVER_ADDRESS.to_string();
     let status = wait_for_health(HEALTH_TIMEOUT, || health_status(&address))?;
     report(
@@ -2119,6 +2322,9 @@ pub fn start(
         Some((port, child)) => (Some(port), Some(child)),
         None => (None, None),
     };
+    // The stack is up: the children belong to the caller from here on, and this run must not end
+    // them when it returns.
+    owned.release();
     Ok(Started {
         address,
         database_port: port,
@@ -2256,6 +2462,69 @@ mod tests {
                 .trim(),
             first.to_string()
         );
+        let _ = std::fs::remove_dir_all(&root);
+    }
+
+    /// The Bot was given a port out of the pool this machine hands to outgoing connections, lost it
+    /// to one of them, and exited with `EADDRINUSE` before it ever answered. Ports this mode hands
+    /// out stay below that pool, and a folder that remembers one from inside it is given a new one —
+    /// which is also how a folder that already had one heals itself on its next start.
+    #[test]
+    fn ports_come_from_below_the_range_this_machine_hands_out() {
+        let root = scratch("ports-of-our-own");
+        let port = database_port(&root).expect("a port");
+        assert!(
+            port_is_ours(port),
+            "{port} is not a port of this mode's own"
+        );
+        assert!(port_is_free(port), "{port} is not free");
+
+        // Remembered by a build that picked inside the pool: the run picks a new one and writes it
+        // down where the old one was, so the next start finds the new one.
+        std::fs::write(port_file(&root), format!("{DYNAMIC_PORT_START}\n")).expect("an old port");
+        let chosen = database_port(&root).expect("a port of its own");
+        assert!(port_is_ours(chosen), "{chosen}");
+        assert_eq!(
+            std::fs::read_to_string(port_file(&root))
+                .expect("the port file")
+                .trim(),
+            chosen.to_string()
+        );
+
+        // The Bot and the computer are handed ports the same way, so a folder that remembers one of
+        // those is healed the same way.
+        for file in [bot_port_file(&root), computer_port_file(&root)] {
+            if let Some(parent) = file.parent() {
+                std::fs::create_dir_all(parent).expect("a folder for the port file");
+            }
+            std::fs::write(&file, format!("{DYNAMIC_PORT_START}\n")).expect("an old port");
+        }
+        assert!(port_is_ours(bot_port(&root).expect("a port of its own")));
+        assert!(port_is_ours(
+            computer_port(&root).expect("a port of its own")
+        ));
+
+        // A port something else is listening on is not handed on either, even one inside this mode's
+        // own range. Held at the top of that range on purpose: ports are picked from the bottom up,
+        // so holding the last one cannot disturb a port another start — or another test running
+        // beside this one — has just written down and is about to read back.
+        let busy = DYNAMIC_PORT_START - 1;
+        let held = TcpListener::bind(("127.0.0.1", busy))
+            .unwrap_or_else(|error| panic!("holding 127.0.0.1:{busy} failed: {error}"));
+        assert!(
+            port_is_ours(busy),
+            "{busy} has to be inside this mode's range"
+        );
+        assert!(
+            !remembered_port_is_usable(busy),
+            "{busy} is held by something else, so it is not a port to hand on"
+        );
+        std::fs::write(port_file(&root), format!("{busy}\n")).expect("a busy port");
+        let chosen = database_port(&root).expect("another port");
+        assert_ne!(chosen, busy, "a busy port was handed to a child");
+        assert!(port_is_free(chosen), "{chosen} has to be free");
+        drop(held);
+
         let _ = std::fs::remove_dir_all(&root);
     }
 
@@ -2453,6 +2722,105 @@ mod tests {
             child.try_wait().expect("asking after it").is_some(),
             "the killed helper is reaped, not left behind"
         );
+    }
+
+    /// A Bot that has already stopped is reported at once, naming the address it was given and what
+    /// its own log said. On a clean install the Bot lost its port to an outgoing connection and
+    /// exited with `EADDRINUSE`, and the run spent its whole ninety-second budget waiting for a port
+    /// whose process had been gone for most of it.
+    #[test]
+    fn a_bot_that_stopped_is_reported_at_once_with_its_log() {
+        let root = scratch("stopped-bot");
+        let log = log_file(&root, "bot");
+        std::fs::create_dir_all(log.parent().expect("the logs folder")).expect("the logs folder");
+        std::fs::write(
+            &log,
+            "error: Failed to start server. Is port 56246 in use?\n syscall: \"listen\"\n",
+        )
+        .expect("the Bot's log");
+
+        #[cfg(windows)]
+        let mut child = quiet::command("cmd")
+            .args(["/c", "exit", "3"])
+            .stdin(Stdio::null())
+            .stdout(Stdio::null())
+            .stderr(Stdio::null())
+            .spawn()
+            .expect("a child that stops");
+        #[cfg(not(windows))]
+        let mut child = quiet::command("/bin/sh")
+            .args(["-c", "exit 3"])
+            .stdin(Stdio::null())
+            .stdout(Stdio::null())
+            .stderr(Stdio::null())
+            .spawn()
+            .expect("a child that stops");
+        // Reaped here, so asking about it below is not a race: `try_wait` answers with the status it
+        // already has.
+        let _ = child.wait();
+
+        let address = bot_address(free_port().expect("a port nothing answers on"));
+        let started = Instant::now();
+        let error = wait_for_health_or_stopped(
+            BOT_TIMEOUT,
+            || health_status(&address),
+            || match child.try_wait() {
+                Ok(Some(status)) => Some(format!("the Bot stopped on its own ({status})")),
+                _ => None,
+            },
+        )
+        .expect_err("a Bot that has stopped");
+        let problem = bot_did_not_answer(&address, &error.detail.unwrap_or_default(), &log);
+        let detail = problem.detail.unwrap_or_default();
+        assert!(detail.contains(&address), "{detail}");
+        assert!(detail.contains("stopped on its own"), "{detail}");
+        assert!(detail.contains("Is port 56246 in use?"), "{detail}");
+        assert!(
+            started.elapsed() < BOT_TIMEOUT / 10,
+            "reported after {:?}: a Bot that stopped has to be noticed at once, not at the end of the budget",
+            started.elapsed()
+        );
+        let _ = std::fs::remove_dir_all(&root);
+    }
+
+    /// A start that fails half-way takes its processes with it. On a clean install the Bot step
+    /// failed after the database had been started, and the run left the database, the Bot and the
+    /// computer behind: nothing pointed at them any more, and nothing would ever stop them.
+    #[test]
+    fn a_start_that_failed_ends_what_it_started() {
+        let root = scratch("failed-start");
+        #[cfg(windows)]
+        let mut child = quiet::command("cmd")
+            .args(["/c", "ping", "-n", "30", "127.0.0.1"])
+            .stdin(Stdio::null())
+            .stdout(Stdio::null())
+            .stderr(Stdio::null())
+            .spawn()
+            .expect("a process this run owns");
+        #[cfg(not(windows))]
+        let mut child = quiet::command("/bin/sleep")
+            .args(["30"])
+            .stdin(Stdio::null())
+            .stdout(Stdio::null())
+            .stderr(Stdio::null())
+            .spawn()
+            .expect("a process this run owns");
+        let pid = child.id();
+        {
+            let mut owned = Owned::new(&root);
+            owned.add(&child);
+            // Dropped without `release`, the way a start that failed drops it.
+        }
+        let mut ended = false;
+        for _ in 0..40 {
+            if child.try_wait().expect("asking after it").is_some() {
+                ended = true;
+                break;
+            }
+            std::thread::sleep(Duration::from_millis(50));
+        }
+        assert!(ended, "process {pid} outlived the start that owned it");
+        let _ = std::fs::remove_dir_all(&root);
     }
 
     /// A live test that dies on a runner takes the logs with it, so this block is what has to
@@ -3302,6 +3670,109 @@ mod tests {
         crate::deployment::fetch(root, version).map_err(|error| {
             Problem::with(format!("CCP-Bot {version} could not be downloaded."), error)
         })
+    }
+
+    /// The window's own case, measured: the port this folder remembers is held by somebody else when
+    /// the run starts. The operating system hands the very same numbers to its outgoing connections
+    /// (pit 19), so a remembered port being taken is not a hypothetical. What is watched here is that
+    /// the run notices, remembers a different port, and reaches `/health` on it — rather than handing
+    /// the Bot a port that is taken and then reporting the Bot's death as a mystery.
+    #[test]
+    #[ignore = "starts the whole local stack"]
+    fn live_a_held_bot_port_is_replaced_and_the_bot_still_answers() {
+        let root = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+            .parent()
+            .and_then(|path| path.parent())
+            .expect("the checkout above src-tauri")
+            .to_path_buf();
+        let cache = std::env::temp_dir().join("ccpbot-local-cache");
+        let credential = crate::env::ModelCredential::OpenAi {
+            api_key: "sk-local-placeholder-for-a-desktop-run".to_string(),
+        };
+        let remembered = bot_port(&root).expect("the Bot port this folder remembers");
+        let held = std::net::TcpListener::bind(("127.0.0.1", remembered)).unwrap_or_else(|error| {
+            panic!("the remembered Bot port {remembered} could be held: {error}")
+        });
+        let started = start(&root, &cache, None, Some(&credential), |step, detail| {
+            println!("[{step}] {detail}");
+        })
+        .unwrap_or_else(|problem| {
+            panic!(
+                "the local stack should start: {problem:?}\n\n{}",
+                logs_on_failure(&root)
+            )
+        });
+        let chosen = started.bot_port.expect("this release ships a built-in Bot");
+        assert_ne!(
+            chosen, remembered,
+            "the run handed the Bot the port that was already taken"
+        );
+        assert_eq!(
+            bot_port(&root).expect("the port read back"),
+            chosen,
+            "the folder does not remember the port the run actually used"
+        );
+        let status = health_status(&bot_address(chosen))
+            .unwrap_or_else(|error| panic!("the Bot answers on {chosen}: {error}"));
+        println!(
+            "the remembered Bot port {remembered} was held; the run picked {chosen} and /health \
+             answered {status}"
+        );
+        drop(held);
+        let mut children = vec![started.server, started.worker];
+        if let Some(bot) = started.bot {
+            children.push(bot);
+        }
+        if let Some(computer) = started.computer {
+            children.push(computer);
+        }
+        stop(&root, &mut children).expect("stopping the local stack");
+    }
+
+    /// The failure the window has to recover from, measured: the Bot exits instead of answering (no
+    /// model answer is given and none is in the folder — the state a machine is in when the Bot
+    /// cannot start). What is watched is that the run says so with the Bot's own log, at once rather
+    /// than after the ninety-second budget, and that it takes back the database it started.
+    #[test]
+    #[ignore = "starts the whole local stack"]
+    fn live_a_bot_that_says_nothing_is_reported_at_once_and_leaves_nothing_running() {
+        let root = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+            .parent()
+            .and_then(|path| path.parent())
+            .expect("the checkout above src-tauri")
+            .to_path_buf();
+        let cache = std::env::temp_dir().join("ccpbot-local-cache");
+        let began = std::time::Instant::now();
+        let failure = match start(&root, &cache, None, None, |step, detail| {
+            println!("[{step}] {detail}");
+        }) {
+            Ok(_) => panic!("a run with nothing to answer with is refused by the Bot itself"),
+            Err(problem) => problem,
+        };
+        let elapsed = began.elapsed();
+        println!("the run failed after {elapsed:?}: {failure:?}");
+        assert_eq!(failure.said, "The built-in Bot did not answer.");
+        let detail = failure.detail.unwrap_or_default();
+        assert!(
+            detail.contains("stopped on its own"),
+            "the run did not notice the Bot had exited: {detail}"
+        );
+        assert!(
+            detail.contains("is not set"),
+            "the Bot's own log is not in the detail: {detail}"
+        );
+        assert!(
+            elapsed < BOT_TIMEOUT / 3,
+            "the run waited {elapsed:?} instead of reporting the exit"
+        );
+        assert!(
+            !postgres_running(&root),
+            "the database this run started is still running"
+        );
+        assert!(
+            !crate::stack::host_pids_path(&root).exists(),
+            "a failed run left a record claiming a stack is up"
+        );
     }
 
     /// The first run of a machine that has never installed CCP-Bot this way: an empty folder, and
