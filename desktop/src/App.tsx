@@ -686,6 +686,8 @@ export function App() {
     };
   }, [localBusy, localPicked]);
 
+  
+
   /*
    * Starts the local stack, then hands the window over.
    *
@@ -1234,7 +1236,13 @@ export function App() {
           root={root}
           chosen={model}
           returning={returningToInstallation}
-          busy={busy}
+          /*
+           * A local run started from this screen is a start like any other: minutes of work, and the
+           * screen has to say so. It is reported through `localBusy`, which is why it is folded into
+           * the same flag the container route uses — a button that stays solid over a start already
+           * running answers a second click with nothing at all.
+           */
+          busy={busy || localBusy}
           onChoose={(choice) => {
             recordSetupEvent(modelChoiceEvent(choice));
             setModel(choice);
@@ -1246,6 +1254,8 @@ export function App() {
             setStep(returningToInstallation ? "connect" : "install");
           }}
         />
+        {/* What that start is doing, in the same rows the other screens use. */}
+        {localBusy && <SetupProgress steps={steps} />}
         {displayedFailure && <Failure problem={displayedFailure} />}
       </main>
     );
@@ -1704,8 +1714,12 @@ export function App() {
               // start without one is answered for where it runs: `server_environment` in `local.rs`
               // stands in on this computer, and the server decides for itself what a connection it
               // was not given means. Waiting here would only hide that answer.
+              //
+              // A run on this computer reports itself through `localBusy`, not `busy`, and it can
+              // last minutes: a button left solid over one answers the second click with nothing.
               disabled={
                 busy ||
+                localBusy ||
                 signingIn ||
                 !installationReady ||
                 !modelCanStart() ||

@@ -3512,6 +3512,48 @@ test("a first run on this computer starts with the model alone", async () => {
   );
 });
 
+test("a start already running on this computer leaves its button nothing to do", async () => {
+  const root = "/tmp/local-start-already-running";
+  const view = await enterLocalFirstRunSetup(root);
+  const started = deferred<unknown>();
+  const containerHandlers = invokeHandler;
+  invokeHandler = async (command, args) => {
+    if (command === "local_start") return started.promise;
+    if (command === "local_status")
+      return localInstallationStatus({
+        wanted: true,
+        step: "dependencies",
+        step_detail: "Installing the Bot's dependencies…",
+      });
+    if (command === "show_ccpbot") return null;
+    return containerHandlers(command, args);
+  };
+  await userEvent.click(await view.findByRole("radio", { name: /OpenAI/ }));
+  await userEvent.type(view.getByLabelText("OpenAI API key"), "model-only-key");
+  await userEvent.click(view.getByRole("button", { name: "Continue" }));
+
+  await userEvent.click(
+    await view.findByRole("button", { name: "Start CCP-Bot" }),
+  );
+  expect(
+    invokeCalls.filter((call) => call.command === "local_start"),
+  ).toHaveLength(1);
+
+  // Minutes can pass here, and a run on this computer reports itself through `localBusy` rather
+  // than `busy` — so the button that starts one is the one that has to read it, or the second
+  // click is answered with nothing at all.
+  expect(view.getByRole("button", { name: "Start CCP-Bot" })).toHaveProperty(
+    "disabled",
+    true,
+  );
+  await userEvent.click(view.getByRole("button", { name: "Start CCP-Bot" }));
+  expect(
+    invokeCalls.filter((call) => call.command === "local_start"),
+  ).toHaveLength(1);
+
+  started.resolve(localInstallationStatus({ wanted: true, step: "ready" }));
+});
+
 test("a local start on this computer says which step it is working on", async () => {
   const root = "/tmp/slow-local-first-run";
   const view = await enterLocalFirstRunSetup(root);
@@ -3543,6 +3585,7 @@ test("a local start on this computer says which step it is working on", async ()
 });
 
 test.each([
+  ["checkout", "CCP-Bot"],
   ["database", "Database"],
   ["ready", "Answering"],
 ])(
@@ -3612,6 +3655,66 @@ test("the container route starts on a model key without a connection", async () 
     model: { provider: "openai", login: "api-key", apiKey: "model-only-key" },
   });
 });
+
+test("a local start from the refresh screen says what it is doing", async () => {
+  const root = "/tmp/refreshing-local-root";
+  /*
+   * A machine already set up this way, restarted: the launch record is what makes this the refresh
+   * screen, and the saved OpenAI key is what lights its Continue up — the state the click that did
+   * nothing was made in.
+   */
+  setupRootConfiguration(root, async () => ({
+    ...savedOpenAiConfiguration(),
+    launch: { harness: { id: "langgraph" } },
+  }));
+  const started = deferred<unknown>();
+  const containerHandlers = invokeHandler;
+  invokeHandler = async (command, args) => {
+    if (command === "local_start") return started.promise;
+    if (command === "local_status")
+      return localInstallationStatus({
+        wanted: true,
+        step: "database",
+        step_detail:
+          "Preparing the local database (downloaded once, then reused)…",
+      });
+    if (command === "show_ccpbot") return null;
+    return containerHandlers(command, args);
+  };
+
+  const view = await renderApp();
+  expect(
+    await view.findByRole("heading", { name: "Refresh your AI connection" }),
+  ).toBeTruthy();
+  // The row opens on the key it already holds, and says so — this is the screen as the machine
+  // shows it, lede and all.
+  await userEvent.click(await view.findByRole("radio", { name: /OpenAI/ }));
+  expect(
+    view.getByText("A saved OpenAI API key will be used."),
+  ).toBeTruthy();
+  expect(view.getByRole("button", { name: "Continue" })).toHaveProperty(
+    "disabled",
+    false,
+  );
+  await userEvent.click(view.getByRole("button", { name: "Continue" }));
+
+  // Minutes of work start here, so the screen says so, in the rows the other screens use — and the
+  // button that cannot do anything while a start runs is the one that looks like it cannot.
+  expect(await view.findByRole("listitem", { name: "Database" })).toBeTruthy();
+  expect(view.getByText("In progress")).toBeTruthy();
+  expect(view.getByRole("button", { name: "Continue" })).toHaveProperty(
+    "disabled",
+    true,
+  );
+  await userEvent.click(view.getByRole("button", { name: "Continue" }));
+  expect(
+    invokeCalls.filter((call) => call.command === "local_start"),
+  ).toHaveLength(1);
+
+  started.resolve(localInstallationStatus({ wanted: true, step: "ready" }));
+});
+
+
 
 test("a window reopened on a running local stack shows it without starting it again", async () => {
   const root = "/tmp/running-local-root";

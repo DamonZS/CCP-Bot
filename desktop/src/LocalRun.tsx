@@ -42,6 +42,7 @@ export type LocalStatus = {
 
 /** What the local step names mean, for the row that says which one is running. */
 const STEP_LABELS: Record<string, string> = {
+  checkout: "CCP-Bot",
   runtime: "Runtime",
   database: "Database",
   dependencies: "Dependencies",
