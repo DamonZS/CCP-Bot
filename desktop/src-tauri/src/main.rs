@@ -3665,17 +3665,29 @@ fn already_configured_for_root(root: String) -> AlreadyConfigured {
                 values.contains_key("INTELLIGENCE_API_KEY"),
             ),
             model_api_keys: SavedModelApiKeys {
+                // A key that lives in this machine's vault has been given, and the file's presence
+                // is enough to say so — it is never opened, never decrypted
+                // (`ccpbot_desktop_lib::vault::stored`). Measured on a real install: the refresh
+                // screen came back with `Continue` grey because a keyed vault leaves no line in
+                // `.env` for the check above to find, so the person gave the same key twice.
                 openai: hint(
                     Category::OpenAiApiKey,
-                    values.contains_key("OPENAI_API_KEY"),
+                    values.contains_key("OPENAI_API_KEY")
+                        || ccpbot_desktop_lib::vault::stored(&root, "OPENAI_API_KEY"),
                 ),
                 anthropic: hint(
                     Category::AnthropicApiKey,
-                    values.contains_key("ANTHROPIC_API_KEY"),
+                    values.contains_key("ANTHROPIC_API_KEY")
+                        || ccpbot_desktop_lib::vault::stored(&root, "ANTHROPIC_API_KEY"),
                 ),
+                // A URL is a claim about where the model answers, so a key alone must not tick this
+                // one: the endpoint has to be named, and then either the file's key or the vault's.
                 compatible: values
                     .get("OPENAI_BASE_URL")
-                    .is_some_and(|url| intent.has_compatible_key_for(url))
+                    .is_some_and(|url| {
+                        intent.has_compatible_key_for(url)
+                            || ccpbot_desktop_lib::vault::stored(&root, "COMPATIBLE_CREDENTIAL")
+                    })
                     .then_some(true),
             },
             model_sessions: SavedModelSessions {
@@ -5567,6 +5579,86 @@ mod tests {
                 assert!(!configured.values.contains_key("CLAUDE_CODE_OAUTH_TOKEN"));
             }
         }
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    /// A key that lives in this machine's vault counts as given: the file's presence answers it, and
+    /// a keyed vault leaves no line in `.env` for the other half of the check to find. Measured on a
+    /// real install — the refresh screen came back with `Continue` grey, so the person gave the same
+    /// key twice. The file is only looked at, never opened, never decrypted (`vault::stored`).
+    #[test]
+    fn a_key_in_the_vault_counts_as_already_given() {
+        let root = temp_root("vault-counts-as-given");
+        std::fs::create_dir_all(&root).unwrap();
+        std::fs::write(
+            root.join(".env"),
+            "INTELLIGENCE_API_URL=https://synthetic.example\n",
+        )
+        .unwrap();
+        let extension = if cfg!(target_os = "windows") {
+            "dpapi"
+        } else {
+            "secret"
+        };
+        let stored_key = root
+            .join(".secrets")
+            .join(format!("OPENAI_API_KEY.{extension}"));
+
+        let before = already_configured_for_root(root.to_string_lossy().into_owned());
+        assert_eq!(before.saved.model_api_keys.openai, None);
+        assert_eq!(before.saved.model_api_keys.anthropic, None);
+
+        // No key material at all: the file's presence is the whole answer this gives.
+        std::fs::create_dir_all(root.join(".secrets")).unwrap();
+        std::fs::write(&stored_key, b"not a key").unwrap();
+        let given = already_configured_for_root(root.to_string_lossy().into_owned());
+        assert_eq!(given.saved.model_api_keys.openai, Some(true));
+        assert_eq!(given.saved.model_api_keys.anthropic, None);
+        assert!(!given.values.contains_key("OPENAI_API_KEY"));
+
+        // Forgetting it brings the question back.
+        std::fs::remove_file(&stored_key).unwrap();
+        let forgotten = already_configured_for_root(root.to_string_lossy().into_owned());
+        assert_eq!(forgotten.saved.model_api_keys.openai, None);
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    /// The whole path a person walks, on a real vault: the wizard hands the key over, the product
+    /// stores it the way the model screen stores it (`vault::remember`), and the next visit to the
+    /// setup screen asks the reader — which must answer yes from the vault file alone, and must go
+    /// back to asking once the key is forgotten.
+    #[test]
+    #[ignore = "stores a real secret through the platform's own vault"]
+    fn live_a_key_the_vault_holds_is_reported_as_given() {
+        let root = temp_root("vault-given-live");
+        std::fs::create_dir_all(&root).unwrap();
+        std::fs::write(
+            root.join(".env"),
+            "INTELLIGENCE_API_URL=https://synthetic.example\n",
+        )
+        .unwrap();
+
+        ccpbot_desktop_lib::vault::remember(&root, "OPENAI_API_KEY", "sk-synthetic-for-this-exam")
+            .unwrap();
+        let given = already_configured_for_root(root.to_string_lossy().into_owned());
+        println!(
+            "stored through the vault: openai={:?} anthropic={:?} values_carry_the_key={}",
+            given.saved.model_api_keys.openai,
+            given.saved.model_api_keys.anthropic,
+            given.values.contains_key("OPENAI_API_KEY")
+        );
+        assert_eq!(given.saved.model_api_keys.openai, Some(true));
+        assert_eq!(given.saved.model_api_keys.anthropic, None);
+        assert!(!given.values.contains_key("OPENAI_API_KEY"));
+
+        ccpbot_desktop_lib::vault::forget(&root, "OPENAI_API_KEY").unwrap();
+        let forgotten = already_configured_for_root(root.to_string_lossy().into_owned());
+        println!(
+            "after forgetting it: openai={:?}",
+            forgotten.saved.model_api_keys.openai
+        );
+        assert_eq!(forgotten.saved.model_api_keys.openai, None);
+
         std::fs::remove_dir_all(root).unwrap();
     }
 
