@@ -6,6 +6,14 @@ afterwards, and does not when only the code moved.
 
 Newest first. `Unreleased` is what is on `main` and not yet tagged.
 
+## 0.4.4 - a run on this computer asks for one thing, and refuses what cannot work
+
+**The local route stops offering a CopilotKit connection.** The wizard's last screen and the refresh screen a returning person sees showed a black *Sign in to CopilotKit* button, *Use a saved connection*, and two ways to point the deployment at an Intelligence server. A run on this computer needs none of them: it keeps its conversations in its own database, and the model is the only thing it asks you for. Those screens now show the model choice and one line saying exactly that. A connection you saved in that folder is not advertised there either. The container route keeps its connection screen, where the connection is part of the story.
+
+**A folder that cannot be a folder is refused at the field.** A Chinese IME can turn every `\` in a typed path into `、`, and the field used to accept the result in silence: the wizard moved on and the run reported progress for nine minutes while nothing was written where the person asked — the whole deployment went into the folder the app happened to be launched from instead. The field now says why a value cannot be a folder (*That is not a full path …*), keeps the way forward disabled, and the driver refuses the same shapes before it writes anything. A real absolute path still passes, and the reason is shown next to the button rather than as a dead end.
+
+**A run on this computer no longer needs the release's image list.** The image manifest inside a release is the container route's business, but every install fetched it and failed without it — so for the few minutes between a release's installers appearing and its manifest being attached, a fresh install on Windows or macOS could not fetch its own sources. A run on this computer now fetches what it needs and nothing else; the container route still insists on the manifest, because it cannot start without it.
+
 ## 0.4.3 - the port a run picks stays that run's
 
 **The built-in Bot no longer loses its port to somebody else's connection.** A run chose the ports for
