@@ -1305,11 +1305,14 @@ export function App() {
     );
   }
 
-  if (!running && returningToInstallation && !refreshIntelligence) {
+  if (!running && returningToInstallation && (!refreshIntelligence || localPicked)) {
     /*
      * A machine set up for local mode gets the local screen, which carries its own Start and Stop
      * and says what the two processes and the database are doing. The container route's Start button
      * would be a promise this machine cannot keep: there is no engine here to start anything with.
+     *
+     * A run on this computer never comes through here to refresh a connection either — it has none
+     * to refresh, and the container's refresh screen is the one screen this route must not show.
      */
     if (localPicked) {
       return (
@@ -1417,23 +1420,30 @@ export function App() {
         <h1>
           {running && !displayedFailure
             ? t("CCP-Bot is running")
-            : returningToInstallation
-              ? "Refresh your CopilotKit connection"
-              : localPicked
-                ? "Run CCP-Bot on this computer"
+            : localPicked
+              ? "Run CCP-Bot on this computer"
+              : returningToInstallation
+                ? "Refresh your CopilotKit connection"
                 : t("Start CCP-Bot")}
         </h1>
         <p className="lede">
           {running && !displayedFailure
             ? t("The stack is up. CCP-Bot is in this window; the menu bar has it too, and stops it.")
-            : returningToInstallation
-              ? "Update this connection to reopen your existing CCP-Bot."
-              : localPicked
-                ? "Installation is complete. This stack runs on this computer, and the model you chose is enough to start it — a CopilotKit connection is optional here."
+            : localPicked
+              ? t("This stack runs on this computer and keeps its conversations in its own database, so no CopilotKit connection is needed.")
+              : returningToInstallation
+                ? "Update this connection to reopen your existing CCP-Bot."
                 : t("Installation is complete. Start CCP-Bot — a CopilotKit connection is optional.")}
         </p>
 
-        {!running && (
+        {/*
+          The connection form belongs to the container route. A run on this computer has nowhere to
+          put a platform connection and nothing that would use one, so offering a sign-in here — or
+          reporting one this root already holds — would be a promise this route does not keep. What a
+          local deployment can be pointed at lives in its own `.env`, which the wizard says nothing
+          about; `docs/local-mode.md` has the one paragraph.
+        */}
+        {!running && !localPicked && (
           <fieldset className="connection-form" disabled={busy}>
             {/*
             Sign in on the main path; paste behind the disclosure.
@@ -1559,9 +1569,7 @@ export function App() {
             ) : (
               <>
                 <p className="lede">
-                  {localPicked
-                    ? t("Optional on this computer: connect CopilotKit to keep conversations there. CCP-Bot starts without it.")
-                    : t("CCP-Bot keeps your conversations in CopilotKit. Sign in and it sets the rest up for you.")}
+                  {t("CCP-Bot keeps your conversations in CopilotKit. Sign in and it sets the rest up for you.")}
                 </p>
                 <div className="row connection-actions">
                   <button

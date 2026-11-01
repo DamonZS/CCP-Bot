@@ -81,6 +81,8 @@ CCP-Bot 桌面端一路走来都是「容器里的栈」：它自己挑一个容
 - **没有连接就是没有连接**：本机路线一个 Intelligence 键都不写、也不放进子进程环境，server 因此走上面那条「三项全缺」的分支；`env::compose` 那边同理——向导没给连接时那四个键根本不进 compose 的 map（`insert_if_given` 的「空白不是值」，与模型键共用同一条规则），`.env` 里也不会留下四行空值装成一个半配好的连接。
 - **人自己的连接永远赢**：`.env` 里有非空的 `INTELLIGENCE_API_KEY` 或 `CPK_INTELLIGENCE_API_KEY`（向导签到或粘贴 key 时写的就是它们）时，起来的就是那个连接，本机路线一个字都不动它（`write_env` 只写自己拥有的键、其余行原样保留）。
 
+本机路线的界面**不提供**任何连接入口：没有 CopilotKit 登录、没有「使用已保存的连接」、没有指向自有 Intelligence 服务器或组织登录的入口，也不提这份部署碰巧存过一个连接——它只说清「这套栈在这台电脑上运行，对话保存在它自己的数据库里」。想给这份部署接上连接的人改的是这份部署自己的 `<root>/.env`：写进 `INTELLIGENCE_API_URL`、`INTELLIGENCE_GATEWAY_WS_URL` 和 `INTELLIGENCE_API_KEY`（或 `CPK_INTELLIGENCE_API_KEY`）三行即可 —— server 由 `<root>/server` 用 `--env-file=../.env` 启动，起来时自己读那个文件（向导拿到连接时写的也是它，`write_intelligence`）。应用里没有第二个写这三行的地方：`server/src` 只读不写、产品应用也没有写部署配置的页面，所以这就是唯一的落点。
+
 依据：`local::tests::live_start_serves_the_interface_on_this_machine` 现在**不写任何 Intelligence 配置**，也不自己往 `.env` 里写模型密钥：它把模型屏的答案（`ModelCredential::OpenAi { api_key: … }`）交给 `start()` 的 `model` 参数，整条栈照常起到 `/health` 200（见下方实测证据；它交出去的那把 key 落在 `<root>/.secrets`，不进 `.env`）；模型这条线由两条单测钉住：`a_model_choice_reaches_the_store_and_not_the_file`（key 在凭据库里、不在文件里，别人手写的那一行活着）、`a_run_with_nothing_to_answer_with_is_refused_before_it_starts`（空文件夹里既没有凭据也没有 keyless 端点就拒绝；凭据库里有 key、或文件里有非空的 `OPENAI_BASE_URL` 就放行）。Intelligence 那条线的判据现在是三条：`a_run_on_this_computer_writes_no_connection_of_its_own`（`write_env` 一个 Intelligence 键都不写；人自己写进去的连接，后续 `write_env` 也不动）、`env::tests::a_connection_nobody_configured_is_not_written_at_all`（容器路线：向导没给连接时那四个键不在 compose 的 map 里），加上这条 live 用例跑完现场看两件事——`<root>/.env` 里没有任何 `INTELLIGENCE_` 行、`logs/local-server.log` 里出现 `"intelligence-absent"`。
 
 ## 技术约束

@@ -286,6 +286,7 @@ export const ZH_CN: Record<string, string> = {
   "This account cannot install Windows components": "该账号无法安装 Windows 组件",
   "This installation is already configured or has its original encryption key. Its data cannot be reset here.": "这次安装已配置完成或已持有原有加密密钥，因此无法在此重置数据。",
   "This installation's saved encryption key is missing, invalid, or public. Restore its original private key from backup, or get help preserving its saved data. CCP-Bot will not replace the key automatically.": "这次安装保存的加密密钥缺失、无效或属于公开示例。请从备份恢复原有私钥，或寻求帮助以保留已有数据。CCP-Bot 不会自动替换该密钥。",
+  "This stack runs on this computer and keeps its conversations in its own database, so no CopilotKit connection is needed.": "这套栈就在这台电脑上运行，对话保存在它自己的数据库里，不需要连接 CopilotKit。",
   "This step fetches nothing. The first Start prepares the runtime, the portable database, the interface and its schema itself, then serves them from this folder.": "这一步不下载任何内容。首次启动时它会自行准备运行时、便携数据库、界面及其数据结构，然后从该文件夹提供服务。",
   "To keep that data instead, do not start. Restore the previous installation’s folder": "若想保留这些数据，请不要启动。还原此前安装的文件夹",
   "Unpacking the portable database failed.": "解压便携式数据库失败。",

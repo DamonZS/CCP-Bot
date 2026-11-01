@@ -200,5 +200,6 @@
   "They answer questions, use the tools you connect, and can work in a browser for you.",
   "Set up CCP-Bot",
   "Takes a few minutes. CCP-Bot installs what it needs first, then asks you to sign in to the AI plan you already have.",
-  "Installation is complete. Start CCP-Bot — a CopilotKit connection is optional."
+  "Installation is complete. Start CCP-Bot — a CopilotKit connection is optional.",
+  "This stack runs on this computer and keeps its conversations in its own database, so no CopilotKit connection is needed."
 ]

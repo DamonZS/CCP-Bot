@@ -3475,11 +3475,12 @@ test("a first run on this computer starts with the model alone", async () => {
   expect(
     view.getByRole("heading", { name: "Run CCP-Bot on this computer" }),
   ).toBeTruthy();
-  // The connection is offered below, and never numbered as a step that has to be taken.
+  // The connection screen belongs to the container route: this run has no sign-in to offer, and the
+  // connection is never numbered as a step that has to be taken.
   expect(view.queryByText(/Step \d of 4/)).toBeNull();
   expect(
     view.getByText(
-      "Optional on this computer: connect CopilotKit to keep conversations there. CCP-Bot starts without it.",
+      "This stack runs on this computer and keeps its conversations in its own database, so no CopilotKit connection is needed.",
     ),
   ).toBeTruthy();
   expect(view.getByRole("button", { name: "Start CCP-Bot" })).toHaveProperty(
@@ -3510,6 +3511,89 @@ test("a first run on this computer starts with the model alone", async () => {
       invokeCalls.filter((call) => call.command === "show_ccpbot"),
     ).toHaveLength(1),
   );
+});
+
+test("a run on this computer offers no CopilotKit connection at all", async () => {
+  const root = "/tmp/local-without-a-connection";
+  // This root holds an Intelligence connection in its vault (the fixture's `saved` says so), which is
+  // exactly the state that used to put a form — or a saved-connection notice — on this screen.
+  setupRootConfiguration(root, async () => savedOpenAiConfiguration());
+  const containerHandlers = invokeHandler;
+  invokeHandler = async (command, args) => {
+    if (command === "local_status") return localInstallationStatus();
+    if (command === "local_start")
+      return localInstallationStatus({ wanted: true, step: "ready" });
+    if (command === "show_ccpbot") return null;
+    return containerHandlers(command, args);
+  };
+  const view = await renderApp();
+  await userEvent.click(
+    view.getByRole("button", { name: "Run it on this computer instead" }),
+  );
+  await userEvent.click(view.getByRole("button", { name: "Continue" }));
+  await userEvent.click(view.getByRole("button", { name: "Continue" }));
+  // The model screen's own Continue: the key this root holds is already counted as given, so the
+  // model screen opens armed and one click carries the choice to the screen that starts the stack.
+  await userEvent.click(view.getByRole("button", { name: "Continue" }));
+
+  expect(
+    view.getByRole("heading", { name: "Run CCP-Bot on this computer" }),
+  ).toBeTruthy();
+  // A run on this computer has nowhere to put a platform connection, so the wizard does not offer
+  // one: no form at all, nothing to sign in to, nothing to reuse, no server of your own, no
+  // organization, and no notice about a connection this root happens to hold. Only the honest line
+  // says the word CopilotKit, and only to say it is not needed.
+  expect(view.container.querySelector(".connection-form")).toBeNull();
+  expect(
+    view.queryByText("A saved CopilotKit connection will be checked when you start."),
+  ).toBeNull();
+  expect(view.queryByText("Connected to CopilotKit.")).toBeNull();
+  expect(view.queryByRole("button", { name: "Sign in to CopilotKit" })).toBeNull();
+  expect(
+    view.queryByRole("button", { name: "Sign in to CopilotKit again" }),
+  ).toBeNull();
+  expect(view.queryByRole("button", { name: "Use a saved connection" })).toBeNull();
+  expect(view.queryByText("Point at your own Intelligence server")).toBeNull();
+  expect(view.queryByText("Sign in through your organization")).toBeNull();
+  expect(
+    view.getByText(
+      "This stack runs on this computer and keeps its conversations in its own database, so no CopilotKit connection is needed.",
+    ),
+  ).toBeTruthy();
+  expect(view.getByRole("button", { name: "Start CCP-Bot" })).toHaveProperty(
+    "disabled",
+    false,
+  );
+});
+
+test("a run on this computer is never sent to the container's connection screen", async () => {
+  const root = "/tmp/local-refresh-connection";
+  setupRootConfiguration(root, async () => ({
+    ...savedOpenAiConfiguration(),
+    launch: { harness: { id: "langgraph" } },
+  }));
+  const containerHandlers = invokeHandler;
+  invokeHandler = async (command, args) => {
+    // The previous run left a connection problem behind, which the shell reports before anything
+    // else. On a container root that opens the refresh screen and its "Change CopilotKit
+    // connection" button; a folder that runs this stack as programs has no connection to refresh.
+    if (command === "last_failure")
+      return {
+        said: "That saved CopilotKit connection is no longer available. Sign in again or enter a project key.",
+        connection: "intelligence",
+      };
+    if (command === "local_status") return localInstallationStatus({ wanted: true });
+    if (command === "show_ccpbot") return null;
+    return containerHandlers(command, args);
+  };
+
+  const view = await renderApp();
+
+  expect(
+    await view.findByRole("button", { name: "Start on this computer" }),
+  ).toBeTruthy();
+  expect(view.queryByText("Change CopilotKit connection")).toBeNull();
+  expect(view.container.querySelector(".connection-form")).toBeNull();
 });
 
 test("a start already running on this computer leaves its button nothing to do", async () => {
