@@ -83,6 +83,43 @@ function defaultToLocal(found: EngineStatus | null, here: LocalStatus | null) {
 }
 
 /**
+ * Why this cannot be the folder a run writes into, or null when it can.
+ *
+ * The same shape the driver requires: `local::require_an_absolute_root` asks `Path::is_absolute`,
+ * which is false for `CCP-Bot-043` and for `C：、Users、…`, where a full-width colon is not a drive
+ * separator and Windows resolves the whole thing against the folder the app was launched from.
+ * Measured 2026-11-01: a Chinese IME turned every backslash into `、`, and one run wrote a 1.4 GB
+ * deployment into that folder, 28,224 files, while the screen went on saying the Bot was starting.
+ *
+ * There is no "warning" here on purpose. What cannot be a folder is refused at the field, before
+ * anything starts, because the person is looking at the field when they can still fix it.
+ */
+function rootProblem(value: string): string | null {
+  if (value.trim() === "") return t("Choose where CCP-Bot lives.");
+  if (value !== value.trim()) {
+    return t("A folder path cannot start or end with a space.");
+  }
+  // A drive-qualified path, a UNC share, or a path that starts at the filesystem root. Only the
+  // first two are absolute on Windows; all three are absolute on macOS or Linux.
+  const windows = /^[A-Za-z]:[\\/]/.test(value) || /^\\\\[^\\/]/.test(value);
+  if (!windows && !value.startsWith("/")) {
+    return /[、：]/.test(value)
+      ? t("That is not a full path — a path uses \\ and :, but this one has 、 and ：. Type it again, or pick the folder.")
+      : t("That is not a full path. Give a folder that says where it is, such as C:\\Users\\you\\CCP-Bot.");
+  }
+  if ([...value].some((character) => character.charCodeAt(0) < 0x20)) {
+    return t("A folder path cannot contain control characters.");
+  }
+  if (windows && /[<>"|?*]/.test(value)) {
+    return t("Windows cannot have < > \" | ? * in a folder name.");
+  }
+  if (windows && /\.$/.test(value)) {
+    return t("Windows leaves out a folder name that ends with a dot.");
+  }
+  return null;
+}
+
+/**
  * What the last screen offers to ask, mirroring `ask::SUGGESTED`.
  *
  * Two copies of one sentence, and a test in `ask.rs` pins what it has to contain. The window needs
@@ -297,6 +334,8 @@ export function App() {
     localPicked ||
     (preparation?.key === installationKey && preparation.status === "complete");
   const returningToInstallation = savedLaunch.current === installationKey;
+  // Shown beside the field and beside Start, and what keeps both from going on: see `rootProblem`.
+  const rootIssue = rootProblem(root);
   /*
    * Whether this folder's stack is up: the marker says it runs that way here, and the answer on the
    * port says it is running. The marker alone is what the welcome button used to follow, which left
@@ -1196,6 +1235,11 @@ export function App() {
               onBlur={(event) => loadConfiguredRoot(event.target.value)}
               spellCheck={false}
             />
+            {rootIssue && (
+              <p className="footnote" role="alert" style={{ margin: "0.35rem 0 0" }}>
+                {rootIssue}
+              </p>
+            )}
           </div>
           <SetupProgress steps={steps} />
           {displayedFailure && <Failure problem={displayedFailure} />}
@@ -1222,6 +1266,9 @@ export function App() {
             {installationReady ? (
               <button
                 type="button"
+                // A folder that cannot be a folder is not carried to the next screen: the driver
+                // refuses it there, and this screen is where the person can still fix it.
+                disabled={busy || rootIssue != null}
                 onClick={() => {
                   setSteps([]);
                   setStep("model");
@@ -1232,7 +1279,7 @@ export function App() {
             ) : (
               <button
                 type="button"
-                disabled={busy || !root.trim()}
+                disabled={busy || rootIssue != null}
                 onClick={install}
               >
                 {busy
@@ -1710,6 +1757,11 @@ export function App() {
             </button>
           </details>
         )}
+        {!running && rootIssue && (
+          <p className="footnote" role="alert">
+            {rootIssue}
+          </p>
+        )}
         <div className="row">
           {!running && (
             <button
@@ -1769,13 +1821,16 @@ export function App() {
               //
               // A run on this computer reports itself through `localBusy`, not `busy`, and it can
               // last minutes: a button left solid over one answers the second click with nothing.
+              //
+              // And a folder that cannot be a folder is not started: the driver refuses it, so this
+              // button would only be a click that does nothing — the reason is above it instead.
               disabled={
                 busy ||
                 localBusy ||
                 signingIn ||
                 !installationReady ||
                 !modelCanStart() ||
-                root.trim() === ""
+                rootIssue != null
               }
             >
               {busy ? t("Working…") : t("Start CCP-Bot")}

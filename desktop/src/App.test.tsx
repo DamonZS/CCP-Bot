@@ -3466,6 +3466,98 @@ test("the container route still prepares its installation at Step 2", async () =
   ).toBeTruthy();
 });
 
+test("a location that cannot be a folder is refused where it is typed", async () => {
+  const root = "/tmp/location-refused";
+  setupRootConfiguration(root, async () => emptyConfiguration());
+  const view = await renderApp();
+  await userEvent.click(
+    view.getByRole("button", { name: "Run it on this computer instead" }),
+  );
+  await userEvent.click(view.getByRole("button", { name: "Continue" }));
+
+  const field = view.getByLabelText("Where CCP-Bot lives");
+  const typing = userEvent.setup({ document: view.container.ownerDocument });
+  // The exact string a Chinese IME produced on 0.4.3, kept as a literal: this is the case that put a
+  // whole deployment inside the folder the app was launched from, so the suite has to hold it.
+  await typing.clear(field);
+  await typing.type(field, "C：、Users、Damon、CCP-Bot-043");
+
+  expect(view.getByRole("alert").textContent).toContain("not a full path");
+  expect(view.getByRole("button", { name: "Continue" })).toHaveProperty(
+    "disabled",
+    true,
+  );
+  // Refused means refused: no run is started for it and the next screen is not reached.
+  await userEvent.click(view.getByRole("button", { name: "Continue" }));
+  expect(
+    invokeCalls.filter((call) => call.command === "local_start"),
+  ).toHaveLength(0);
+  expect(view.queryByRole("heading", { name: "Connect your AI" })).toBeNull();
+
+  // A folder that says where it is still passes.
+  await typing.clear(field);
+  await typing.type(field, "C:\\Users\\Damon\\CCP-Bot-043");
+  expect(view.queryByRole("alert")).toBeNull();
+  expect(view.getByRole("button", { name: "Continue" })).toHaveProperty(
+    "disabled",
+    false,
+  );
+});
+
+test("a location that is not a path at all is refused too", async () => {
+  const root = "/tmp/location-relative";
+  setupRootConfiguration(root, async () => emptyConfiguration());
+  const view = await renderApp();
+  await userEvent.click(
+    view.getByRole("button", { name: "Run it on this computer instead" }),
+  );
+  await userEvent.click(view.getByRole("button", { name: "Continue" }));
+
+  const field = view.getByLabelText("Where CCP-Bot lives");
+  const typing = userEvent.setup({ document: view.container.ownerDocument });
+  // The friendly costume of the same hole: Windows resolves this against the folder the app was
+  // launched from, which is how 1.4 GB ended up where nobody asked for it.
+  await typing.clear(field);
+  await typing.type(field, "CCP-Bot-043");
+
+  expect(view.getByRole("alert").textContent).toContain(
+    "such as C:\\Users\\you\\CCP-Bot",
+  );
+  expect(view.getByRole("button", { name: "Continue" })).toHaveProperty(
+    "disabled",
+    true,
+  );
+});
+
+test("the container route refuses the same location", async () => {
+  const root = "/tmp/container-refused-location";
+  setupRootConfiguration(root, async () => emptyConfiguration());
+  const view = await renderApp();
+  await enterInstallation(view);
+
+  const field = view.getByLabelText("Where CCP-Bot lives");
+  const typing = userEvent.setup({ document: view.container.ownerDocument });
+  await typing.clear(field);
+  await typing.type(field, "C：、Users、Damon、CCP-Bot-043");
+  expect(view.getByRole("alert").textContent).toContain("not a full path");
+  expect(view.getByRole("button", { name: "Install CCP-Bot" })).toHaveProperty(
+    "disabled",
+    true,
+  );
+  await userEvent.click(view.getByRole("button", { name: "Install CCP-Bot" }));
+  expect(
+    invokeCalls.filter((call) => call.command === "prepare_installation"),
+  ).toHaveLength(0);
+
+  await typing.clear(field);
+  await typing.type(field, "/tmp/container-location-fixed");
+  expect(view.queryByRole("alert")).toBeNull();
+  expect(view.getByRole("button", { name: "Install CCP-Bot" })).toHaveProperty(
+    "disabled",
+    false,
+  );
+});
+
 test("a first run on this computer starts with the model alone", async () => {
   const view = await enterLocalFirstRunSetup("/tmp/local-first-run");
   await userEvent.click(await view.findByRole("radio", { name: /OpenAI/ }));
