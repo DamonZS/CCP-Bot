@@ -689,6 +689,26 @@ export function App() {
   
 
   /*
+   * The keyboard way out, the same way as the menu bar's.
+   *
+   * The window menu's own shortcut never reaches this window on Windows: the key arrives at the
+   * page and the menu's accelerator does not fire (`docs/local-mode.md`, pit 18). So the key is
+   * read here and handed to the command the menu item runs, rather than a second way of shutting
+   * down: whatever `Quit` does, this does.
+   */
+  useEffect(() => {
+    function onKeyDown(event: KeyboardEvent) {
+      if (!(event.ctrlKey || event.metaKey) || event.altKey || event.shiftKey) {
+        return;
+      }
+      if (event.key.toLowerCase() !== "q") return;
+      invoke("quit_ccpbot").catch((error) => recoverFromStart(error));
+    }
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [recoverFromStart]);
+
+  /*
    * Starts the local stack, then hands the window over.
    *
    * The same handover as the container route and for the same reason: `show_ccpbot` is what turns

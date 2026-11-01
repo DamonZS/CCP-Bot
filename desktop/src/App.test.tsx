@@ -3716,6 +3716,44 @@ test("a local start from the refresh screen says what it is doing", async () => 
 
 
 
+test("Ctrl+Q quits the way the menu item does", async () => {
+  const root = "/tmp/keyboard-quit-root";
+  setupRootConfiguration(root, async () => emptyConfiguration());
+  const containerHandlers = invokeHandler;
+  invokeHandler = async (command, args) => {
+    if (command === "local_status") return localInstallationStatus();
+    if (command === "quit_ccpbot") return null;
+    return containerHandlers(command, args);
+  };
+
+  const view = await renderApp();
+
+  // The key on its own is just a letter. With Ctrl — or Cmd, where the menu bar dispatches its own
+  // shortcut — it is the way out, and it goes to the command the menu item runs.
+  fireEvent.keyDown(window, { key: "q" });
+  expect(invokeCalls.some((call) => call.command === "quit_ccpbot")).toBe(false);
+  fireEvent.keyDown(window, { key: "q", ctrlKey: true });
+  await waitFor(() =>
+    expect(invokeCalls).toContainEqual({ command: "quit_ccpbot" }),
+  );
+  // Quitting is not stopping: the menu's Quit and this key are one command, and neither of them is
+  // the Stop the running screen offers.
+  expect(
+    invokeCalls.some(
+      (call) => call.command === "stop_stack" || call.command === "local_stop",
+    ),
+  ).toBe(false);
+
+  invokeCalls.length = 0;
+  fireEvent.keyDown(window, { key: "q", metaKey: true });
+  await waitFor(() =>
+    expect(invokeCalls).toContainEqual({ command: "quit_ccpbot" }),
+  );
+
+  // Nothing here was left mid-render by the key: the window it happened in is still its own screen.
+  expect(view.getByRole("button", { name: "Set up CCP-Bot" })).toBeTruthy();
+});
+
 test("a window reopened on a running local stack shows it without starting it again", async () => {
   const root = "/tmp/running-local-root";
   // No launch record: the local route writes none, so this is the half that used to fall through to

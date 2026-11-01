@@ -20,6 +20,7 @@ use ccpbot_desktop_lib::{
 };
 
 const QUIT_CLEANUP_NOTICE_FILE: &str = ".ccpbot-quit-cleanup-notice";
+/// The macOS menu's own shortcut for quitting the app; see [`quit_menu_accelerator`].
 const QUIT_MENU_ACCELERATOR: &str = "CmdOrCtrl+KeyQ";
 const QUIT_CLEANUP_NOTICE_LIMIT: usize = 16 * 1024;
 use serde::{Deserialize, Serialize};
@@ -4521,8 +4522,27 @@ fn chose(app: &tauri::AppHandle, item: &str) {
     }
 }
 
+/// What a key pressed inside the window calls.
+///
+/// The window's own keyboard path and the menu items end at the same command, so a person who
+/// presses Quit's key and a person who clicks Quit get one behaviour, and the same exit handler
+/// stops whatever the run started.
+#[tauri::command]
+fn quit_ccpbot(app: tauri::AppHandle) {
+    chose(&app, "quit");
+}
+
+/// The window menu's own shortcut, on the platform whose menu dispatches it.
+///
+/// Measured on Windows: the key reaches the page and this accelerator never fires, so this build
+/// does not put it in the menu (`docs/local-mode.md`, pit 18). macOS keeps it — its menu bar owns
+/// key equivalents, and `Cmd+Q` is dispatched there rather than by a message loop.
 fn quit_menu_accelerator() -> Option<&'static str> {
-    Some(QUIT_MENU_ACCELERATOR)
+    if cfg!(target_os = "macos") {
+        Some(QUIT_MENU_ACCELERATOR)
+    } else {
+        None
+    }
 }
 
 /// The Recorder host install's real side effects on this computer.
@@ -4752,6 +4772,7 @@ fn main() {
             stop_stack,
             show_ccpbot,
             show_setup,
+            quit_ccpbot,
             already_running,
             last_failure,
             default_root,
@@ -5085,7 +5106,12 @@ mod tests {
 
     #[test]
     fn quit_menu_uses_the_standard_quit_shortcut() {
-        assert_eq!(quit_menu_accelerator(), Some("CmdOrCtrl+KeyQ"));
+        let expected = if cfg!(target_os = "macos") {
+            Some(QUIT_MENU_ACCELERATOR)
+        } else {
+            None
+        };
+        assert_eq!(quit_menu_accelerator(), expected);
     }
 
     #[test]
