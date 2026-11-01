@@ -3779,6 +3779,65 @@ test("a local start from the refresh screen says what it is doing", async () => 
 
 
 
+test("a start on the refresh screen says it is working before a step is named", async () => {
+  const root = "/tmp/refreshing-before-a-step";
+  /*
+   * The same machine as the test above, but the moment it is looked at is the click: the machine has
+   * not named a step yet. That is the first frame of every start and the whole of a warm one.
+   */
+  setupRootConfiguration(root, async () => ({
+    ...savedOpenAiConfiguration(),
+    launch: { harness: { id: "langgraph" } },
+  }));
+  const started = deferred<unknown>();
+  // The machine names its first step only after the start is under way: before that it has nothing
+  // to say, which is exactly the window this row covers. The wizard's own status calls happen
+  // earlier and are not counted.
+  let running = false;
+  let askedWhileRunning = 0;
+  const containerHandlers = invokeHandler;
+  invokeHandler = async (command, args) => {
+    if (command === "local_start") {
+      running = true;
+      return started.promise;
+    }
+    if (command === "local_status") {
+      if (!running) return localInstallationStatus({ wanted: true });
+      askedWhileRunning += 1;
+      return localInstallationStatus(
+        askedWhileRunning === 1
+          ? { wanted: true }
+          : {
+              wanted: true,
+              step: "runtime",
+              step_detail: "Preparing the local runtime…",
+            },
+      );
+    }
+    if (command === "show_ccpbot") return null;
+    return containerHandlers(command, args);
+  };
+
+  const view = await renderApp();
+  expect(
+    await view.findByRole("heading", { name: "Refresh your AI connection" }),
+  ).toBeTruthy();
+  await userEvent.click(await view.findByRole("radio", { name: /OpenAI/ }));
+  await userEvent.click(view.getByRole("button", { name: "Continue" }));
+
+  // A start that shows nothing is the one that looks broken: the row is there from the click.
+  expect(await view.findByRole("listitem", { name: "CCP-Bot" })).toBeTruthy();
+  expect(view.getByText("In progress")).toBeTruthy();
+  // And the machine's own name for the step it is on takes over as soon as it says one — one row,
+  // not a second one beside it.
+  expect(
+    await view.findByRole("listitem", { name: "Runtime" }, { timeout: 4000 }),
+  ).toBeTruthy();
+  expect(view.queryByRole("listitem", { name: "CCP-Bot" })).toBeNull();
+
+  started.resolve(localInstallationStatus({ wanted: true, step: "ready" }));
+});
+
 test("Ctrl+Q quits the way the menu item does", async () => {
   const root = "/tmp/keyboard-quit-root";
   setupRootConfiguration(root, async () => emptyConfiguration());

@@ -729,7 +729,18 @@ export function App() {
     setLocalBusy(true);
     localRunOver.current = false;
     setFailure(null);
-    setSteps([]);
+    // What is on screen between this click and the machine's first answer. A warm run is seconds
+    // long end to end, so without this row the screen a person watches a start on can say nothing
+    // for as long as the start lasts. The name is the one this route's own first step maps to, taken
+    // from the same table as every other row, so it is the name the machine itself would give it.
+    setSteps([
+      {
+        step: localStepLabel("checkout"),
+        ok: false,
+        running: true,
+        detail: "",
+      },
+    ]);
     setLocalPicked(true);
     try {
       const found = await invoke<LocalStatus>("local_start", {
