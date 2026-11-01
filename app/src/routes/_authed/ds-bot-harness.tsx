@@ -18,7 +18,17 @@ import { Component, useCallback, useEffect, useMemo, useRef, useState, useSyncEx
 import type { ComponentType, ReactNode } from "react";
 import * as React from "react";
 import { createPortal } from "react-dom";
-import clientUrl from "../../../vendor/ds-bot/client.js?url";
+
+/*
+ * The bundle is referred to by URL rather than imported. `?url` is a Vite-only spelling, and bun's
+ * test runner reads it as a module import: the vendored bundle has no default export, so the whole
+ * interface suite died with "Missing 'default' export in module '…/client.js?url'" on Linux. A URL
+ * keeps a verbatim third-party file out of every bundler, which is what it wants anyway.
+ */
+const clientUrl = new URL(
+  "../../../vendor/ds-bot/client.js",
+  import.meta.url,
+).href;
 
 type Source<T> = {
   getSnapshot: () => T;
