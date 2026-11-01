@@ -13,7 +13,14 @@ import type { Hono } from "hono";
 import type { AppVariables } from "../src/auth/guards";
 import { createBotChannelRoutes } from "../src/bot-channel";
 import type { BotChannelDocument } from "../src/bot-channel/document";
-import { errorCode, fail, invalid, ok, refusal } from "../src/bot-channel/envelope";
+import {
+  type BotEnvelope,
+  errorCode,
+  fail,
+  invalid,
+  ok,
+  refusal,
+} from "../src/bot-channel/envelope";
 import { KEEPALIVE, createBotFeed, frame } from "../src/bot-channel/feed";
 
 const USER = "bot-channel-test-user";
@@ -134,13 +141,27 @@ async function post(
   routes: Hono<{ Variables: AppVariables }>,
   endpoint: string,
   payload: unknown = {},
-): Promise<{ status: number; body: { ok: boolean; value?: unknown; error?: { code: string; message: string } } }> {
+): Promise<{ status: number; body: BotEnvelope }> {
   const response = await routes.request("/", {
     method: "POST",
     headers: { "content-type": "application/json", cookie: "session=abc" },
     body: JSON.stringify({ endpoint, payload }),
   });
-  return { status: response.status, body: (await response.json()) as never };
+  return {
+    status: response.status,
+    body: (await response.json()) as BotEnvelope,
+  };
+}
+
+/**
+ * The payload of an answer these tests expect to be `ok`.
+ *
+ * `BotEnvelope` is a union, so `value` is not readable until the answer is narrowed. A refusal here
+ * fails the test with the code it carried instead of with a missing property.
+ */
+function valueOf(body: BotEnvelope): unknown {
+  if (!body.ok) throw new Error(`Expected an ok answer, got ${body.error.code}`);
+  return body.value;
 }
 
 describe("the envelope", () => {
@@ -238,7 +259,7 @@ describe("the routes", () => {
   test("answers state with this deployment's own roster and conversations", async () => {
     const { routes } = stub();
     const { body } = await post(routes, "state");
-    const value = body.value as Record<string, unknown>;
+    const value = valueOf(body) as Record<string, unknown>;
     expect(value.revision).toBe(3);
     expect(value.workspaceId).toBe(`ccpbot:${USER}`);
     expect(value.mainBotId).toBe(BOT);
@@ -258,7 +279,7 @@ describe("the routes", () => {
   test("short-circuits a state the client already has", async () => {
     const { routes } = stub();
     const { body } = await post(routes, "state", { since: 3 });
-    const value = body.value as Record<string, unknown>;
+    const value = valueOf(body) as Record<string, unknown>;
     expect(value.unchanged).toBe(true);
     expect(value.revision).toBe(3);
     expect(value.bots).toBeUndefined();

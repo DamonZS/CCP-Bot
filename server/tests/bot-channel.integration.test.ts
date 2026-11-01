@@ -18,11 +18,9 @@ import { HttpAgent } from "@ag-ui/client";
 import { AGUIMock } from "@copilotkit/aimock/agui";
 import { eq, sql } from "drizzle-orm";
 import { createAgentProfileStore } from "../src/agents/profile-store";
-import {
-  createBotChannel,
-  createBotChannelRoutes,
-} from "../src/bot-channel";
+import { createBotChannel, createBotChannelRoutes } from "../src/bot-channel";
 import { readDocument } from "../src/bot-channel/document";
+import type { BotEnvelope } from "../src/bot-channel/envelope";
 import { loadConfig } from "../src/config";
 import { mountCopilotRuntime } from "../src/copilot";
 import { createDatabase } from "../src/db/client";
@@ -37,7 +35,9 @@ const other = `${prefix}-other`;
 const conversation = `${prefix}-conversation`;
 
 const database = createDatabase(testDatabaseUrl(), TEST_POOL);
-const profileStore = createAgentProfileStore(database);
+// No managed-agent endpoint: this deployment's roster is served from its own rows, and the store's
+// second argument only decides whether customer agents are dialled at all.
+const profileStore = createAgentProfileStore(database, undefined);
 const threadStore = createThreadStore(database);
 const mock = new AGUIMock();
 let mockUrl = "";
@@ -125,12 +125,19 @@ async function post(
   });
   return {
     status: response.status,
-    body: (await response.json()) as {
-      ok: boolean;
-      value?: never;
-      error?: { code: string; message: string };
-    },
+    body: (await response.json()) as BotEnvelope,
   };
+}
+
+/**
+ * The payload of an answer these tests expect to be `ok`.
+ *
+ * `BotEnvelope` is a union, so `value` is not readable until the answer is narrowed. A refusal here
+ * fails the test with the code it carried instead of with a missing property.
+ */
+function valueOf(body: BotEnvelope): unknown {
+  if (!body.ok) throw new Error(`Expected an ok answer, got ${body.error.code}`);
+  return body.value;
 }
 
 /** The frames a subscriber is sent, in order, read the way `EventSource` reads them. */
@@ -180,7 +187,7 @@ describe("DS-Bot's routes over this deployment's own data", () => {
 
     expect(status).toBe(200);
     expect(body.ok).toBe(true);
-    const value = body.value as unknown as {
+    const value = valueOf(body) as unknown as {
       workspaceId: string;
       bots: { id: string; name: string; sessionId: string }[];
       revision: number;
@@ -235,7 +242,7 @@ describe("DS-Bot's routes over this deployment's own data", () => {
     await waitFor(() => followed.frames.some((f) => f.event === "revision"));
 
     const state = await post(ownerChannel.routes, "state", {});
-    expect((state.body.value as unknown as { prefs: unknown }).prefs).toEqual(
+    expect((valueOf(state.body) as unknown as { prefs: unknown }).prefs).toEqual(
       document.prefs,
     );
     followed.stop();
@@ -266,7 +273,7 @@ describe("DS-Bot's routes over this deployment's own data", () => {
 
   test("a message reaches the agent and its answer streams and lands in the conversation", async () => {
     const state = await post(ownerChannel.routes, "state", {});
-    const value = state.body.value as unknown as {
+    const value = valueOf(state.body) as unknown as {
       bots: { id: string; sessionId: string }[];
     };
     const sessionId = value.bots.find((bot) => bot.id === botId)?.sessionId ?? "";
@@ -319,7 +326,7 @@ describe("DS-Bot's routes over this deployment's own data", () => {
     const { body } = await post(ownerChannel.routes, "chat", { botId });
 
     expect(body.ok).toBe(true);
-    const value = body.value as unknown as {
+    const value = valueOf(body) as unknown as {
       sessionId: string;
       items: { kind: string; text: string }[];
       cursor: unknown;
@@ -333,7 +340,7 @@ describe("DS-Bot's routes over this deployment's own data", () => {
 
   test("state short-circuits when the client already has this revision", async () => {
     const first = await post(ownerChannel.routes, "state", {});
-    const revision = (first.body.value as unknown as { revision: number })
+    const revision = (valueOf(first.body) as unknown as { revision: number })
       .revision;
 
     const { body } = await post(ownerChannel.routes, "state", {
@@ -341,7 +348,7 @@ describe("DS-Bot's routes over this deployment's own data", () => {
     });
 
     expect(body.ok).toBe(true);
-    const value = body.value as unknown as {
+    const value = valueOf(body) as unknown as {
       unchanged?: boolean;
       revision: number;
       bots?: unknown;
@@ -355,7 +362,7 @@ describe("DS-Bot's routes over this deployment's own data", () => {
     const stranger = channelFor(other);
     const state = await post(stranger.routes, "state", {});
     expect(
-      (state.body.value as unknown as { bots: { id: string }[] }).bots.map(
+      (valueOf(state.body) as unknown as { bots: { id: string }[] }).bots.map(
         (bot) => bot.id,
       ),
     ).not.toContain(botId);
@@ -392,7 +399,7 @@ async function conversationOf(
   routes: ReturnType<typeof channelFor>["routes"],
 ): Promise<string> {
   const { body } = await post(routes, "state", {});
-  const value = body.value as unknown as {
+  const value = valueOf(body) as unknown as {
     bots: { id: string; sessionId: string }[];
   };
   return value.bots.find((bot) => bot.id === botId)?.sessionId ?? "";
