@@ -2631,4 +2631,374 @@ Remove-Item 'C:\Users\Damon\CCP-Bot' -Recurse -Force
 
 ---
 
+# Part 6 · v0.4.2（2026-11-01 09:00 – 09:35）
+
+> **本轮状态：判据 5（不回归）不通过** —— 干净机器上第一次点「启动 CCP-Bot」没有走到 `/health 200`；第二次点才走到。判据 1（`pg_ctl` 框）已取得证据；判据 2（Ctrl+Q 两半）与判据 3 的刷新屏那一半**未测**（按 lead 指令保持机器不动）。下面只有实测数据与时间线，**结论由 lead 下**。
+
+## 66. 安装包身份与安装结果
+
+```powershell
+gh release view v0.4.2 --repo DamonZS/CCP-Bot --json tagName,assets
+gh release download v0.4.2 --repo DamonZS/CCP-Bot --pattern 'CCP-Bot_0.4.2_x64-setup.exe' --dir $t --clobber
+Get-FileHash "$t\CCP-Bot_0.4.2_x64-setup.exe" -Algorithm SHA256
+(Start-Process "$t\CCP-Bot_0.4.2_x64-setup.exe" -ArgumentList '/S' -Wait -PassThru).ExitCode
+```
+```
+tag=v0.4.2
+  CCP-Bot_0.4.2_aarch64.dmg  9664713  sha256:ff255cfd7b952af11c1fd65a0294f4eb5dab2cfe87340244db073dfe04e5b439
+  CCP-Bot_0.4.2_x64-setup.exe  4801627  sha256:54b41a2cf7b44a0b8c77652d343d437ad8b9394d9b654d36c40fef8dc6236f76
+  CCP-Bot_0.4.2_x64_en-US.msi  7008256  sha256:08ad21d73f65c153d1cca62346520ae21c64d8704a3fedd596c8149205d3df46
+  container-images.json  3063  sha256:1ed920ae6ddfa3920e64edaacc9f444514ae4729276ba5f457f000036fa15899
+
+下载后：bytes 4801627
+Get-FileHash = 54B41A2CF7B44A0B8C77652D343D437AD8B9394D9B654D36C40FEF8DC6236F76   ← 与 release 资产 digest 逐字一致
+FileVersion = 0.4.2   ProductVersion = 0.4.2
+installer ExitCode = 0    elapsed = 0.6 s    elevated shell = False（无管理员、无 UAC 弹窗）
+```
+```
+H:\CCP-Bot\ccpbot-desktop.exe   19526144 B   FileVersion=0.4.2  ProductVersion=0.4.2   2026/11/1 9:00:16
+   sha256 = 3805F6858EBB6E4879442C5412EBFEF8BD3C01D31B0BD82FFB7FDCF9329B116C
+H:\CCP-Bot\uninstall.exe        79319 B     2026/11/1 9:08:02
+HKCU …\Uninstall\CCP-Bot: DisplayName=CCP-Bot  DisplayVersion=0.4.2  InstallLocation="H:\CCP-Bot"
+   UninstallString="H:\CCP-Bot\uninstall.exe"  Publisher=ccpbot  EstimatedSize=19145
+HKLM 键：False      WOW6432Node 键：False（按用户安装）
+桌面 lnk True / 开始菜单 lnk True / 公共桌面 lnk False
+安装后 C:\Users\Damon\CCP-Bot 不存在（root 尚未创建）
+```
+
+**开工前这台机器上的 root 不是干净的**（不是本轮造成的）：`C:\Users\Damon\CCP-Bot` 当时已存在，2621.3 MB / 29 项，`.ccpbot-deployment` 原文是 **`{"version":"v0.4.1", …}`**，端口文件 `postgres=50067 bot=50068 computer=50069`，五个 `local-*.log` 都在，目录时间 07:04–07:27 —— 即别人在 0.4.1 上跑过一次。为了满足「干净机器」判据我删掉了这个 root（删前 `exists: True`，删后 `False`），并把 `%LOCALAPPDATA%\app.ccpbot.desktop` 移成 `app.ccpbot.desktop.bak-0900` 以取得全新首启。`H:\CCP-Bot` 里那 21 项他人遗留**未动**（安装器只是把 exe 与 uninstall.exe 覆盖进去）。
+
+## 67. 时间线（本次实测，全部来自 `mon42.log` 与本轮截图）
+
+| 时刻 | 事件 |
+| --- | --- |
+| 09:10:18 | 首启，Welcome（`v42-01-welcome.png` 28,516 B），窗口原点 (234,234) |
+| 09:11:04–09:12:06 | 向导四屏：第 1 步 → 第 2 步「本机无需安装任何内容」→ 第 3 步 → 末屏 `Run CCP-Bot on this computer` |
+| 09:12:04 | 第 3 步填入占位 key，`继续` 变实（无任何凭据校验） |
+| **09:13:36.126** | **第一次点「启动 CCP-Bot」（偏移 375,529）** |
+| 09:13:41（+4 s） | 进度行出现：`CCP-Bot` / `Downloading CCP-Bot itself (once, then reused)…` / `进行中 · 1s 已用时`，**`启动 CCP-Bot` 变灰**（`v42-09-start-t4.png` 30,651 B） |
+| 09:13:49（+54 s） | `dirs=[ccpbot-engine]`；`.ccpbot-deployment` = `{"version":"v0.4.2", …}` |
+| 09:14:02（+67 s） | `dirs=[… postgres\pgsql\bin\psql.exe]` |
+| 09:17:55 | 便携 PostgreSQL 起：`listening on IPv4 address "127.0.0.1", port 56245` |
+| **09:19:14** | **内建 Bot 启动失败：`EADDRINUSE`，端口 56246** |
+| 09:19:21 → 09:27:43 | `bun=0 postgres=6 health=err`（t=+386s … +888s，见 §69） |
+| 09:25:14 | 失败卡截图 `v42-12-stalled.png` 32,121 B |
+| 09:27:01 | 展开「技术详情」截图 `v42-13-details.png` 33,346 B |
+| **09:27:57.932** | **第二次点「启动 CCP-Bot」**（同一 root、同一 `bot\port`=56246） |
+| ~09:28:05 | `health=200`（warm，≤8 s） |
+| 09:28:08 | 监控最后一行：`health=200 l3010=1 pgctl=0 bun=4 postgres=29 app=1`，`MON END ready=True` |
+
+## 68. 第一次失败的原样证据
+
+`C:\Users\Damon\CCP-Bot\logs\local-bot.log`（第一次失败段，343 B，写入 09:19:14）：
+```
+$ bun --env-file=.env agent-bot/src/index.ts
+239 |       connection: "keep-alive",
+240 |     },
+241 |   });
+242 | }
+243 | 
+244 | serve({
+      ^
+error: Failed to start server. Is port 56246 in use?
+ syscall: "listen",
+   errno: 0,
+    code: "EADDRINUSE"
+
+      at C:\Users\Damon\CCP-Bot\agent-bot\src\index.ts:244:1
+
+Bun v1.4.3 (Windows x64)
+```
+```
+local-bot.log 现在 441 B  LastWrite 2026/11/1 09:27:59   ← 第二次成功的三行是追加在同一文件后面的
+副本：C:\Users\Damon\AppData\Local\Temp\ccpbot-verify\local-bot-0928-with-retry.log  441 B
+      sha256 = 408F0D5818416153DF29998FA455160B021CE0A44AB71513E5283FAB452622F4
+副本：C:\Users\Damon\AppData\Local\Temp\ccpbot-verify\mon42-run1.log  47884 B
+      sha256 = 482031314E9F1792D8CE2E9B9E01BAF82908C850593C81BC804BCBFBCB473D23
+另有 lead 自己保存的第一时间副本 %TEMP%\bot-eaddr\local-bot-0919.log（343 B）—— 确认存在。
+```
+
+## 69. `mon42.log` 挂起段摘录（原样行）
+
+```
+[09:18:01] i=24 t=+306s health=err l3010=0 pgctl=0 bun=2 postgres=6 app=1 env=540B intelLines=0 oaiLines=0 dpapiKey=True secrets=[OPENAI_API_KEY.dpapi] ports=[bot=56246 computer=56247 postgres=56245] …
+[09:19:21] i=30 t=+386s health=err l3010=0 pgctl=0 bun=0 postgres=6 app=1 env=540B intelLines=0 oaiLines=0 dpapiKey=True secrets=[…7 个 .dpapi…] ports=[bot=56246 computer=56247 postgres=56245] logs=[local-bot.log=343,local-postgres.log=406] migErr=0 …
+[09:21:33] i=40 t=+518s health=err l3010=0 pgctl=0 bun=0 postgres=6 app=1 …
+[09:23:18] i=48 t=+623s health=err l3010=0 pgctl=0 bun=0 postgres=6 app=1 … logs=[local-bot.log=343,local-postgres.log=473] …
+[09:25:16] i=57 t=+742s health=err l3010=0 pgctl=0 bun=0 postgres=6 app=1 …
+[09:27:43] i=68 t=+888s health=err l3010=0 pgctl=0 bun=0 postgres=6 app=1 …
+[09:27:56] i=69 t=+901s health=err l3010=0 pgctl=0 bun=0 postgres=6 app=1 …
+[09:28:08] i=70 t=+915s health=200 l3010=1 pgctl=0 bun=4 postgres=29 app=1 env=541B intelLines=0 oaiLines=0 dpapiKey=True …
+[09:28:08] PGCTL MAX = 0 (at ) helpers=[]
+[09:28:08] DIALOGS = none
+[09:28:08] MON END ready=True
+```
+
+## 70. 失败时界面给的原样文字
+
+`v42-12-stalled.png`（32,121 B，09:25:14）与 `v42-13-details.png`（33,346 B，09:27:01）：
+```
+未能完成
+The built-in Bot did not answer.
+▸ 技术详情   /   获取设置帮助
+
+（展开「技术详情」后）
+http://127.0.0.1:56246 never answered /health. Last time: 由于目标计算机积极拒绝，无法连接。 (os error 10061)
+```
+同一屏上：进度行 **`Built-in Bot`**（是人类可读名字，不是裸 id `bot`）右侧写着 **`进行中 · 4m 29s 已用时`**，详情行 `Starting the built-in Bot…`；失败卡出现后 **`启动 CCP-Bot` 重新变亮可点**；Welcome 那个安静按钮显示 `Running on this computer`（因为 `.ccpbot-local` 已存在）。
+
+## 71. 挂起的形状（lead 点名的那一条）
+
+- 失败后约 15 分钟（`t=+571s … +888s`，即 09:21:33–09:27:43）监控每一次采样都是：**`bun=0`**（内建 Bot 的进程根本不存在）、`postgres=6` 一直活着（56245）、**`3010` 从未监听**、`app=1`（窗口还在）。
+- 界面同时给出两件互相矛盾的信息：失败卡「未能完成 / The built-in Bot did not answer.」**与**一直在跳动的进度行 `Built-in Bot` `进行中 · 4m 29s / 6m 16s 已用时`。
+- 这 15 分钟里我**没有**按 `返回`，也**没有**用菜单 `Stop CCP-Bot` —— 这两个入口会不会改变四个计数，**本轮未测**（按 lead 指令保持机器不动，留给下一轮）。
+
+## 72. 三个端口与系统范围（原样输出）
+
+```powershell
+Get-NetTCPConnection -LocalPort 56245,56246,56247            # 失败之后（09:25:20 那次读数）
+```
+```
+port 56245 state=Listen pid=23868 proc=postgres
+port 56246 : no connection
+port 56247 : no connection
+```
+```powershell
+netsh int ipv4 show excludedportrange protocol=tcp
+netsh int ipv4 show dynamicport tcp
+```
+```
+      5985        5985
+     47001       47001
+     50000       50059     *
+* - Administered port exclusions.          ← 56246 不在任何排除区间里
+
+Start Port      : 49152
+Number of Ports : 16384                   ← 56245/56246/56247 全在动态范围 49152–65535 内
+```
+现在（第二次点成功之后）三个端口都是 Listen，并且 56246/56247 上各有一串 `TimeWait` 的**已接受连接**记录：
+```
+port=56245 state=Listen  pid=23868 proc=postgres
+port=56246 state=Listen  pid=24120 proc=bun        ← 内建 Bot（就是第一次被拒绝的那个号）
+port=56247 state=Listen  pid=28880 proc=bun        ← computer
+port=56246 state=TimeWait local=127.0.0.1 remote=127.0.0.1:64769 pid=0 proc=Idle   （同类共 10 条）
+port=56247 state=TimeWait local=127.0.0.1 remote=127.0.0.1:64779 pid=0 proc=Idle   （同类共 10 条）
+```
+**对照**：lead 的 task-36 预检把「最大 `pg_ctl.exe` 计数」测到 **1**，并且只抓到 `start` / `stop` 两条 helper 调用。我这边的采样（10 s 一次，见 §74 判据 1）最大值是 0（`helpers=[]`），两次都没抓到 `status`。
+
+## 73. 端口是怎么选的（源码，v0.4.2 = `ac1bdee`）
+
+```rust
+// desktop/src-tauri/src/local.rs:305-317
+/// A port nothing is listening on, asked of the operating system rather than guessed.
+pub fn free_port() -> Result<u16, Problem> {
+    let listener = TcpListener::bind(("127.0.0.1", 0)).map_err(…) ?;   // 让系统给一个号
+    let port = listener.local_addr().map_err(…) ?.port();
+    …                                                                  // 取到号之后这个 listener 被释放
+}
+// 调用点：数据库 :347、内建 Bot :381、computer :510 —— 号写进 <root>\{postgres,bot,computer}\port
+```
+即：**先向系统要一个空闲号、立刻释放，稍后让子进程去 bind 同一个号**。本次的时间差是 09:17:5x（选号、写 `bot\port`）→ 09:19:14（Bot 真正 bind），约 90 秒；而号取自系统动态范围（49152–65535），同一窗口内任何出站连接都可能被系统分到这个号上。**是哪个连接在那 90 秒里拿走了 56246，本轮没有证据，不写猜测。**
+
+## 74. 判据核对表（task-37 的五条）
+
+| # | 判据 | 本轮结果 | 证据位置 |
+| --- | --- | --- | --- |
+| 1 | `pg_ctl.exe - 应用程序错误` 框消失；helper 只剩 `start`/`stop` | ✅ 本次采样里最大值 **0**、`helpers=[]`、`DIALOGS = none`（915 秒 / 70 次采样，覆盖失败的冷启动与成功的重试两段） | §69 |
+| 2 | Ctrl+Q：shell 页 → 4 秒内四零；被服务的 app 页 → 不许退出；再用菜单 `Quit` → 四零 | ✅ **两半都测了**（详见 §76）：被服务的 app 页在前台时按 Ctrl+Q（`foreground … matches_app=True`、`SendInput: 4 of 4 events accepted`）**没有退出**，+4 s / +30 s 四个计数一个没变；菜单 `Stop CCP-Bot` → 4 秒内 `3010/bun/postgres` 全 0 而**应用还活着**（回到刷新屏，**没有** 0.3.2 那张「未能停止」失败卡）；菜单 `Quit` → 应用退出、四个计数全 0 | §76、`v42-19-after-ctrlq.png`、`v42-20-after-stop.png` |
+| 3 | 屏幕：跑动时显示进度行且按钮变灰；下载自身那行是名字不是裸 `checkout`；再点一次不许有第二个 `local_start` | ◐ **按钮那一半成立、进度行那一半不成立**（详见 §77、§78）：首启（向导路径）冷启动时进度行出现、行名 **`CCP-Bot`**（不是裸 `checkout`）、跑动时 `启动 CCP-Bot` 变灰 ✅；**刷新屏路径上跑动时 `继续` 确实变灰 ✅，但两次独立启动、从运行中到运行之后都没有出现任何进度行 ❌**（渲染条件是 `App-v0.4.2.tsx:1278 {localBusy && <SetupProgress steps={steps} />}`，而 `steps` 的轮询里写着 `:666 if (!found.step) return;` —— 机器没报 step 时这一行就是空的；是哪一侧的问题本轮无证据）；连接屏 Start 的 `localBusy ||` 只有源码（`:1742`），**现场未观察到**；再点一次没有第二个 `local_start` ✅（`local-bot.log` 5 块 = 1 次失败 + 4 次成功，端口每个号只有一个 owner） | §67、§77、§78 |
+| 4 | 干净机器上发布版查询成功；`.env`/`logs/**`/错误文本里没有 token 字样 | ✅ `.ccpbot-deployment` = `{"version":"v0.4.2","layout":[…]}`；`Select-String -Pattern 'token|ghp_|github_pat|Bearer|CCPBOT_RELEASE_TOKEN|GH_TOKEN|GITHUB_TOKEN'` 在 `.env`、`.ccpbot-deployment`、`logs\*` 上**零命中**（“带凭据那条路由由 mac job 证明，本机未假造”） | §66、§69 |
+| 5 | 不回归：空机器一步到 `/health 200`；`.env` 无 `INTELLIGENCE_*`；`.secrets` 有模型 key；窗口自己显示应用；卸载干净 | ❌ **不通过** —— 干净机器第一次点启动没有到 `/health 200`（§68/§71）；第二次点才到（§67）。其余分项本轮读数为：`.env` 541 B、`INTELLIGENCE` 行 0、`OPENAI_API_KEY=` 行 0；`.secrets` 7 个 352 B 文件含 `OPENAI_API_KEY.dpapi`；`/health` 200 `{"status":"ok"}`、`/api/capabilities` 200 `{"mode":"sse",…}`、`/` 200 1043 B `lang=zh-CN`；卸载未做 | §66–§72 |
+
+## 75. 未验证边界（本轮按指令停在原样）
+
+1. 判据 2 里**被服务的 app 页**那一半已补测 ✅（§76）；**shell 页（刷新屏）按 Ctrl+Q** 这一半本轮现场测了两次都**没有退出**（§76.4，与 0.4.1 的实测相同），所以「shell 页按 → 4 秒内四零」这条**没有现场成立**；菜单 `Quit` 那一半成立 ✅。
+2. 判据 3 的刷新屏那一半**已补测**（§77、§78）：`继续` 在跑动时变灰 ✅、重复点击没有第二个 `local_start` ✅，**但进度行没有出现** ❌。连接屏 Start 在跑动时变灰只有源码（`App-v0.4.2.tsx:1742`），现场没有在运行中看到连接屏（刷新屏路径直接交接给应用页）。
+3. 挂起时按 `返回` 与菜单 `Stop CCP-Bot` 对四个计数的影响 —— **仍未测**（本轮按指令没有复现挂起）。
+4. 卸载（`uninstall.exe /S` 的 exit code、注册表/快捷方式/`%LOCALAPPDATA%\CCP-Bot` 是否清掉、运行根是否保留）与最终机器还原 —— 本轮**没有执行**，因为 lead 要求保持现状以便取证。
+5. macOS 依旧由 CI 覆盖（`local-mode-macos`）；带 token 的发布查询路由由那个 job 证明。
+
+## 76. 判据 2 实测：Ctrl+Q 的两半、菜单 `Stop` 与菜单 `Quit`
+
+**76.1 被服务的 app 页按 Ctrl+Q：不许退出（成立）**
+
+命令（`ctrlq42.ps1`：证明前台 → 在页面正文点一下 → `SendInput` 送 Ctrl+Q → 记 now/+4s/+30s）：
+```powershell
+& "$t\ctrlq42.ps1" -Press -Dx 640 -Dy 340 -TitleLike 'CCP-Bot' -AfterSeconds 4,30
+```
+原样输出：
+```
+INPUT size on this build: 40
+window: hwnd=206635298 pid=26376 title='CCP-Bot' rect=(129,234)-(1045,913)
+foreground: hwnd=206635298 pid=26376 process=ccpbot-desktop matches_app=True
+clicked inside page at screen=(769,574) offset=(640,340)
+now (before the key) : health3010=200 3010listen=1 bun=4 postgres=29 ccpbot-desktop=1 pg_ctl=0
+SendInput: 4 of 4 events accepted
++4s : health3010=200 3010listen=1 bun=4 postgres=29 ccpbot-desktop=1 pg_ctl=0
++30s : health3010=200 3010listen=1 bun=4 postgres=29 ccpbot-desktop=1 pg_ctl=0
+```
+画面也没有变（`v42-19-after-ctrlq.png`，与按之前的 `v42-18-app-page.png` 51,148 B 同为应用页）。
+
+如实注明：**「页面自己看见了这次按键」没有直接证据** —— 没有抓到页面自身的输入事件。可证的是：窗口前台（`matches_app=True`）、`SendInput: 4 of 4 events accepted`、30 秒内四个计数一个没变。源码上被服务的应用页没有退出监听这一层（`App-v0.4.2.tsx:700-708` 的 `keydown` 监听属于 shell 页），这与「按了不退出」一致。
+
+**76.2 菜单 `Stop CCP-Bot`：4 秒内四零、应用还活着（成立）**
+
+```powershell
+& "$t\menu40.ps1" -ClickRow 'Stop' -AfterClickWait 4   # 开菜单 (18,41) 与点行 (120,80) 必须在同一进程里做
+```
+原样输出（三次执行，取第一次）：
+```
+clicked row Stop at offset (120,80)
+09:37:04 after row Stop: health3010=err 3010listeners=0 bun=0 postgres=0 app=1
+09:37:13 +6s more: health3010=err 3010listeners=0 bun=0 postgres=0 app=1
+```
+窗口随后回到刷新屏 `刷新 AI 连接`（`v42-20-after-stop.png`，30,432 B），**没有失败卡** —— 这一点与 0.2.9/0.3.2 不同（那时会弹「CCP-Bot could not finish stopping. Try Stop CCP-Bot again.」）。另两次：09:45:24 与 09:53:09，读数形态相同（09:53 那次 `bun=1` 是别人 npm 装的 bun）。
+
+**76.3 菜单 `Quit`：应用退出、四零（成立）**
+
+```
+clicked row Quit at offset (120,100)
+09:38:10 after row Quit: health3010=err 3010listeners=0 bun=0 postgres=0 app=0
+09:38:19 +6s more: health3010=err 3010listeners=0 bun=0 postgres=0 app=0
+```
+在**有健康栈**时执行（09:58:34，第三次）同样是 `3010=0 / bun=0 / postgres=0 / app=0`；最终 09:59:57 复核：`health3010: err (nothing answering)`、`3010 listeners: 0`、`ccpbot-desktop: 0`、`bun: 0`、`postgres: 0`、`pg_ctl: 0`、`listeners 56245-56247: 0`。再一次（10:04:15）同样四零。
+
+**76.4 shell 页（刷新屏）按 Ctrl+Q：本轮两次都没有退出（未成立，如实记）**
+
+栈停着、应用停在 shell 的刷新屏（`v42-37-shell-before-ctrlq.png`，30,903 B）时：
+```
+# 第一次：先点页面正文 (640,400)
+foreground: hwnd=83299164 pid=12416 process=ccpbot-desktop matches_app=True
+SendInput: 4 of 4 events accepted
+now (before the key) : health3010=err 3010listen=0 bun=0 postgres=0 ccpbot-desktop=1 pg_ctl=0
++4s : health3010=err 3010listen=0 bun=0 postgres=0 ccpbot-desktop=1 pg_ctl=0
++12s : health3010=err 3010listen=0 bun=0 postgres=0 ccpbot-desktop=1 pg_ctl=0
+# 第二次：先点空白处 (830,150)
+clicked inside page at screen=(1012,332) offset=(830,150)
+SendInput: 4 of 4 events accepted
++4s : … ccpbot-desktop=1 …
++20s : … ccpbot-desktop=1 …
+```
+两次都是窗口前台、4/4 事件被系统接受、应用**没有退出**（`v42-38-after-shell-ctrlq.png`）。**结论按实测写：0.4.2 上「shell 页按 Ctrl+Q 退出」这条在本机没有成立；机制未证**（候选解释：按键没到达页面，或到达了但被 WebView2 的加速键吃掉 —— 两种都只是候选，本轮无证据区分）。能退出的路是**菜单 `Quit`**（§76.3，随时可复现）。
+
+## 77. 判据 3 的刷新屏那一半：按钮变灰成立、进度行不成立
+
+**77.1 刷新屏是什么、`继续` 是什么**
+- 刷新屏 = `ProviderPicker`（`returning={true}`），渲染在 `App-v0.4.2.tsx:1251-1281`；它的 `继续` 走 `onChoose` → `:1269 if (returningToInstallation) void start(choice)` → `start()` 里 `:837 if (localPicked) { await runLocally(nextModel); return; }`。
+- 这台机器上 `localPicked` 为真：挂载 effect 在 `local_status.wanted` 为真时置位（`:453-455`），而 `<root>\.ccpbot-local` 在（§66）。
+- ⇒ **刷新屏的 `继续` 就是启动按钮**（不是导航）：实测点一次 `继续`，栈就起来了（§77.2）。
+
+**77.2 一次刷新屏启动的时间线**（09:54:06.897 点击；热启动，依赖已装好）
+```
+CLICK at 09:54:06.897 offset=(345,652)
+  +2s health=err bun=1 postgres=6
+  +7s health=200 bun=5 postgres=29
+  …一直到 +25s health=200 bun=5 postgres=29
+```
+另一次（09:49:35.070）：`+1s health=err bun=1 postgres=6` → `+8s health=200 bun=5 postgres=29`。⇒ **热启动到 `/health 200` 用 7–8 秒**（冷启动 386 秒，§67）。
+
+**77.3 跑动时按钮确实变灰（成立）**
+`v42-35-r4-2s.png`（38,387 B，点击后 2 秒、页面已滚到底）：`继续` 变灰（标签变浅）、`返回` 也变灰。源码：`:1265 busy={busy || localBusy}`，注释（`:1259-1264`）写明「跑动中的按钮再点一次什么都不该发生」。
+
+**77.4 进度行没有出现（不成立）**
+- 两次独立启动、从 +1 秒一直到运行之后（09:49 那次到 +60 秒；09:54 那次到 +25 秒），**没有一张截图里有进度行**：`v42-30-r3-1s/5s/8s/11s/…/60s.png`、`v42-35-r4-2s/7s/11s/14s/17s/19s/22s/25s.png`；滚动到底也看不到（页面底部是空白）。
+- 对照（向导路径，§67）：冷启动时进度行出现、行名 **`CCP-Bot`**、详情 `Downloading CCP-Bot itself (once, then reused)…`、计时 `进行中 · 1s 已用时`，`启动 CCP-Bot` 变灰（`v42-09-start-t4.png`，30,651 B）。
+- 源码上的渲染条件：`:1278 {localBusy && <SetupProgress steps={steps} />}`；`steps` 由 `:658-687` 的轮询每 1 秒填一次，而轮询里第一件事就是 **`:666 if (!found.step) return;`** —— **机器不报 step 时这一行就是空的**（`steps` 保持空数组）。**本轮没有证据分辨是「机器没报 step」还是「轮询没走」，不写猜测。**
+- 连接屏 Start 的「跑动时变灰」只有源码（`:1742 localBusy ||`），现场没看到（刷新屏路径直接交接给应用页，不经过连接屏）。
+
+## 78. 再点一次、计时器，以及一个额外的观察
+
+**78.1 运行中再点一次：没有第二个 `local_start`（成立）**
+09:49:35 那次启动的运行中，脚本在 **+11 秒**又点了一次同一个按钮（`refresh42.ps1 -SecondClick`）：四个计数不变（`bun=5 postgres=29` 一直到运行结束），端口没换。运行后核对日志块数：
+```
+local-bot.log      735 B   5 个 "$ bun " 块   ← 1 次失败（09:19 EADDRINUSE）+ 4 次成功（09:27 / 09:42 / 09:49 / 09:54）
+local-computer.log 1488 B   4 块
+local-server.log   7028 B   4 块
+local-worker.log   3480 B   4 块
+```
+监听端口每个号只有一个 owner：`56245 → postgres`、`56246 → bun pid 31160`、`56247 → bun pid 30724`、`3010 → bun pid 2008`。⇒ 第二次点击没有发出第二个 `local_start`。
+
+**78.2 一次成功 run 结束后的计时器：刷新屏上没有读数可给**
+刷新屏没有进度行（§77.4），所以也没有计时器可看。失败时「计时器不收」的对照读数仍然是 §69/§71 那份（`6m 16s 已用时` 继续跳）。**健康的计时器读数本轮没有取到**（要取得在向导路径的冷启动上做，而本轮按指令不再造一个干净 root）。
+
+**78.3 额外观察：同一会话里菜单 `Stop` 之后，刷新屏的 `继续` 不启动任何东西**
+09:45:24 用菜单 `Stop` 停掉栈、应用回到刷新屏之后，09:46:32 点 `继续`（偏移 345,652，与后来成功的两次是同一个点）：27 秒里 `health=err`、`bun=0`、`postgres=0`、`local-postgres.log` 没有新增块、端口文件未变；窗口一直停在刷新屏（`v42-30-r2-12s.png`）。而**重启应用之后**同样的动作两次都起来了（§77.2）。机制未证（候选：菜单 Stop 之后前端的可启动状态没有回到位）——**只记现象，不写猜测**。
+
+## 79. 最终机器状态与截图清单
+
+**79.1 最终状态（10:04:30；应用关闭、没有栈在跑，机器交给 bot-deps）**
+```
+health3010: err (nothing answering)
+3010 listeners:        0
+ccpbot-desktop:        0
+bun:                   1     ← 别人 npm 装的 bun（%APPDATA%\npm\node_modules\bun\bin\bun.exe），不是本栈
+postgres:              0
+pg_ctl:                0
+root exists:           True
+开发检出的 postgres:     0
+```
+
+**79.2 运行根按 lead 要求保留**：29 项 / 2621.4 MB；`.ccpbot-local` = `local`；`.ccpbot-deployment` = `{"version":"v0.4.2",…}`；端口文件 `postgres=56245 bot=56246 computer=56247`；`.secrets` 7 个；`workspace` 空；日志大小见 §78.1，`local-postgres.log` 19,292 B。**`.logs\host-pids.json` 在 Quit 后已不存在**（运行中曾在，1,080 B，含 server/worker/bot/computer 四个 pid）—— 所有权记录随栈停被清掉。
+
+**79.3 安装目录未动**：`H:\CCP-Bot` 23 项（21 项他人遗留 + 本次 0.4.2 的 `ccpbot-desktop.exe`/`uninstall.exe`），HKCU 卸载键在，**未卸载**（按指令留给后面的流程）。
+
+**79.4 本轮新增截图**（字节数）：`v42-18-app-page.png` 51,148、`v42-19-after-ctrlq.png`、`v42-20-after-stop.png` 30,432、`v42-21-relaunch.png` 31,246、`v42-22-refresh-openai.png` 42,290、`v42-23-refresh-apikey.png` 39,547、`v42-24-refresh-saved-key.png` 38,620（`已保存的 OpenAI API key 将被使用。`）、`v42-25-connect.png` 38,553、`v42-30-r2-*.png`（09:46 没起来的序列）、`v42-30-r3-*.png`（09:49）、`v42-33-refresh-saved.png` 38,355、`v42-34-refresh-ready.png`、`v42-35-r4-*.png`（09:54，含 +2s 按钮变灰）、`v42-36-ready-app.png` 42,980、`v42-37-shell-before-ctrlq.png` 30,903、`v42-38-after-shell-ctrlq.png`。
+
+## 80. 复现命令（PowerShell，本轮用到的全部）
+
+```powershell
+$t = 'C:\Users\Damon\AppData\Local\Temp\ccpbot-verify'
+# 身份
+gh release view v0.4.2 --repo DamonZS/CCP-Bot --json tagName,assets
+gh release download v0.4.2 --repo DamonZS/CCP-Bot --pattern 'CCP-Bot_0.4.2_x64-setup.exe' --dir $t --clobber
+Get-FileHash "$t\CCP-Bot_0.4.2_x64-setup.exe" -Algorithm SHA256
+"3010 listeners: " + @(Get-NetTCPConnection -LocalPort 3010 -State Listen -ErrorAction SilentlyContinue).Count
+# 安装
+(Start-Process "$t\CCP-Bot_0.4.2_x64-setup.exe" -ArgumentList '/S' -Wait -PassThru).ExitCode
+Get-ItemProperty 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall\CCP-Bot' | Select-Object DisplayName,DisplayVersion,InstallLocation,UninstallString,Publisher,EstimatedSize
+# 干净首启：移开 WebView2 profile，避免向导从中断处继续
+Move-Item "$env:LOCALAPPDATA\app.ccpbot.desktop" "$env:LOCALAPPDATA\app.ccpbot.desktop.bak-0900" -Force
+Start-Process 'H:\CCP-Bot\ccpbot-desktop.exe'
+# 监控（后台跑，10 s 一次；打印 pg_ctl 最大值、helper 动词集合、#32770 对话框）
+& "$t\mon42.ps1" -MaxMinutes 20 -IntervalSeconds 10 -Tag run1
+# 失败之后的三端口与系统范围读数
+Get-NetTCPConnection -LocalPort 56245,56246,56247
+netsh int ipv4 show excludedportrange protocol=tcp
+netsh int ipv4 show dynamicport tcp
+# 保住第一次失败的字节
+Copy-Item 'C:\Users\Damon\CCP-Bot\logs\local-bot.log' "$t\local-bot-0928-with-retry.log" -Force
+Copy-Item "$t\mon42.log" "$t\mon42-run1.log" -Force
+Get-FileHash "$t\local-bot-0928-with-retry.log","$t\mon42-run1.log" -Algorithm SHA256
+# token 字样检查
+Select-String -Path 'C:\Users\Damon\CCP-Bot\.env','C:\Users\Damon\CCP-Bot\.ccpbot-deployment','C:\Users\Damon\CCP-Bot\logs\*' -Pattern 'token|ghp_|github_pat|Bearer|CCPBOT_RELEASE_TOKEN|GH_TOKEN|GITHUB_TOKEN'
+
+# ---- 判据 2：Ctrl+Q 的两半、菜单 Stop / Quit（§76）----
+# 被服务的 app 页：证明前台 → 点页面正文 → 送 Ctrl+Q → 记 now/+4s/+30s
+& "$t\ctrlq42.ps1" -Press -Dx 640 -Dy 340 -TitleLike 'CCP-Bot' -AfterSeconds 4,30
+# 菜单：开菜单与点行必须在同一个进程里做（分开做会把弹出的菜单关掉）
+& "$t\menu40.ps1" -ClickRow 'Stop' -AfterClickWait 4    # 行偏移 Open=59 / Stop=80 / Quit=100，Dx=120
+& "$t\menu40.ps1" -ClickRow 'Quit' -AfterClickWait 4
+# shell 页（刷新屏）按 Ctrl+Q：本轮两次都没有退出（§76.4）
+& "$t\ctrlq42.ps1" -Press -Dx 830 -Dy 150 -TitleLike 'CCP-Bot' -AfterSeconds 4,20
+
+# ---- 判据 3 的刷新屏那一半、再点一次、计时器（§77/§78）----
+# 刷新屏 → OpenAI 行 (455,282) → Use an API key (419,454) → 使用已保存的密钥 (365,499) → 继续 (345,652)
+& "$t\refresh42.ps1" -Dx 345 -Dy 652 -Tag r4 -Seconds 60 -SecondClick   # 点继续 + 每 ~1.5s 截图与计数 + 第 4 轮再点一次
+# 运行结束后核对「没有第二个 local_start」
+foreach ($n in 'bot','computer','server','worker') { $p="C:\Users\Damon\CCP-Bot\logs\local-$n.log"; "$n bytes=$((Get-Item $p).Length) blocks=" + ([regex]::Matches((Get-Content $p -Raw), '\$ bun ')).Count }
+Get-NetTCPConnection -State Listen | Where-Object { $_.LocalPort -in 3010,56245,56246,56247 } | ForEach-Object { "port=$($_.LocalPort) pid=$($_.OwningProcess) proc=" + (Get-Process -Id $_.OwningProcess).ProcessName }
+
+# ---- 最终状态（§79）----
+@(Get-Process ccpbot-desktop,bun,postgres,pg_ctl -EA SilentlyContinue).Count
+@(Get-NetTCPConnection -LocalPort 3010 -State Listen -EA SilentlyContinue).Count
+(Get-ChildItem 'C:\Users\Damon\CCP-Bot' -Force | Measure-Object).Count
+Test-Path 'C:\Users\Damon\CCP-Bot\.logs\host-pids.json'
+```
+
+---
+
+*Part 6 结束（判据 2 与被指派的判据 3 半场已按 lead 指令补测，见 §76–§79；判据 5 仍记为不通过）。所有界面文字、日志、命令输出均为本次验证的原样记录；引用源码的地方均标注了文件与行号。*
+
+---
+
 *报告结束。所有界面文字、日志、命令输出均为本次验证的原样记录；引用源码的地方均标注了文件与行号。*
