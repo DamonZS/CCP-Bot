@@ -136,11 +136,20 @@ function refused(status: number, error: string): Response {
 /** One host-server instance owns refresh; agents use only its separate local bearer. */
 export function createProviderOAuthProxy(
   file: string,
-  options: { fetch?: Fetch } = {},
+  options: {
+    fetch?: Fetch;
+    /**
+     * This platform's real credential lock (`lockProviderCredentials`) unless a caller injects one.
+     * The seam exists so a test of the concurrency semantics does not depend on whether a Windows
+     * subprocess finishes compiling C# inside the 15 s deadline that lock allows itself.
+     */
+    lock?: (file: string) => Promise<() => Promise<void>>;
+  } = {},
 ): ModelProviderProxy {
   if (!isAbsolute(file))
     throw new Error("The model OAuth file must be absolute.");
   const requestProvider = options.fetch ?? fetch;
+  const lockProvider = options.lock ?? lockProviderCredentials;
   const refreshes = new Map<string, Promise<ModelOAuthRecord>>();
 
   async function refresh(
@@ -149,7 +158,7 @@ export function createProviderOAuthProxy(
     const pending = refreshes.get(previous.sessionId);
     if (pending) return pending;
     const work = (async () => {
-      const unlock = await lockProviderCredentials(file);
+      const unlock = await lockProvider(file);
       try {
         const current = await readRecord(file);
         if (current.sessionId !== previous.sessionId)

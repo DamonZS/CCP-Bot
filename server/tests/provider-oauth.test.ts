@@ -23,7 +23,10 @@ import {
   type ModelOAuthRecord,
   mountProviderOAuthProxy,
 } from "../src/provider-oauth";
-import { lockProviderCredentials } from "../src/provider-oauth-lock";
+import {
+  CredentialLockUnavailable,
+  lockProviderCredentials,
+} from "../src/provider-oauth-lock";
 
 const cleanup: (() => Promise<void> | void)[] = [];
 afterEach(async () => {
@@ -54,6 +57,7 @@ function record(overrides: Partial<ModelOAuthRecord> = {}): ModelOAuthRecord {
 async function fixture(
   current: ModelOAuthRecord,
   handler: (request: Request) => Response | Promise<Response>,
+  options: { lock?: (file: string) => Promise<() => Promise<void>> } = {},
 ) {
   const root = await mkdtemp(join(tmpdir(), "ccpbot-model-oauth-"));
   cleanup.push(() => rm(root, { recursive: true, force: true }));
@@ -71,6 +75,7 @@ async function fixture(
         destinations.push(url.href);
         return fetch(new URL(url.pathname, server.url), init);
       },
+      ...(options.lock ? { lock: options.lock } : {}),
     }),
   );
   mountDesktopConnectionFailure(app, "test-host-token");
@@ -149,31 +154,67 @@ test("xAI uses the existing compatible model endpoint without Google quota heade
   expect(f.destinations).toEqual(["https://api.x.ai/v1/chat/completions"]);
 });
 
+/**
+ * The one-refresh rule is what this test drives, not this platform's file lock: the real lock is a
+ * Windows subprocess that compiles C# before it answers, and a loaded runner can spend the lock's
+ * whole 15 s deadline on that compile (provider-oauth-lock.ts:153). This mutex serializes the way the
+ * real lock does and counts how often it was taken; the four tests at the end of this file keep
+ * exercising the real one.
+ */
+function countingLock() {
+  let tail: Promise<void> = Promise.resolve();
+  const counter = { taken: 0 };
+  return {
+    counter,
+    lock: async (): Promise<() => Promise<void>> => {
+      counter.taken++;
+      let release: () => void = () => {};
+      const held = new Promise<void>((resolve) => {
+        release = resolve;
+      });
+      const previous = tail;
+      tail = held;
+      await previous;
+      return async () => {
+        release();
+      };
+    },
+  };
+}
+
 test("concurrent requests refresh once and persist the rotated pair before forwarding", async () => {
   let refreshes = 0;
-  const f = await fixture(record({ expiresAt: 1 }), async (request) => {
-    if (new URL(request.url).pathname === "/token") {
-      refreshes++;
-      const body = new URLSearchParams(await request.text());
-      expect(body.get("grant_type")).toBe("refresh_token");
-      expect(body.get("refresh_token")).toBe("provider-refresh-token");
-      expect(body.get("client_id")).toBe("desktop-client");
-      expect(body.get("client_secret")).toBe("desktop-client-secret");
-      await Bun.sleep(20);
-      return Response.json({
-        access_token: "rotated-access",
-        refresh_token: "rotated-refresh",
-        expires_in: 3600,
-      });
-    }
-    expect(request.headers.get("authorization")).toBe("Bearer rotated-access");
-    const saved = JSON.parse(await readFile(f.file, "utf8"));
-    expect(saved.refreshToken).toBe("rotated-refresh");
-    return new Response(
-      'data: {"candidates":[{"content":{"parts":[{"text":"Refreshed"}]},"finishReason":"STOP"}]}\n\n',
-      { headers: { "content-type": "text/event-stream" } },
-    );
-  });
+  const lock = countingLock();
+  const f = await fixture(
+    record({ expiresAt: 1 }),
+    async (request) => {
+      if (new URL(request.url).pathname === "/token") {
+        refreshes++;
+        const body = new URLSearchParams(await request.text());
+        expect(body.get("grant_type")).toBe("refresh_token");
+        expect(body.get("refresh_token")).toBe("provider-refresh-token");
+        expect(body.get("client_id")).toBe("desktop-client");
+        expect(body.get("client_secret")).toBe("desktop-client-secret");
+        await Bun.sleep(20);
+        return Response.json({
+          access_token: "rotated-access",
+          refresh_token: "rotated-refresh",
+          expires_in: 3600,
+        });
+      }
+      // Reached only after the rotated pair is on disk: the handler reads the file the proxy wrote.
+      expect(request.headers.get("authorization")).toBe(
+        "Bearer rotated-access",
+      );
+      const saved = JSON.parse(await readFile(f.file, "utf8"));
+      expect(saved.refreshToken).toBe("rotated-refresh");
+      return new Response(
+        'data: {"candidates":[{"content":{"parts":[{"text":"Refreshed"}]},"finishReason":"STOP"}]}\n\n',
+        { headers: { "content-type": "text/event-stream" } },
+      );
+    },
+    { lock: lock.lock },
+  );
   const responses = await Promise.all(Array.from({ length: 8 }, () => f.ask()));
   expect(responses.map((response) => response.status)).toEqual(
     Array(8).fill(200),
@@ -192,6 +233,34 @@ test("concurrent requests refresh once and persist the rotated pair before forwa
     expect((await stat(f.file)).mode & 0o777).toBe(0o600);
   expect((await f.ask()).status).toBe(200);
   expect(refreshes).toBe(1);
+  // The seam makes this visible: the single flight inside the proxy takes the lock exactly once, so
+  // a change that lets concurrent callers race for it fails here as well as at the refresh count.
+  expect(lock.counter.taken).toBe(1);
+});
+
+test("an unavailable credential lock refuses every concurrent request without forwarding", async () => {
+  const f = await fixture(
+    record({ expiresAt: 1 }),
+    () => new Response("must not be called"),
+    {
+      lock: async () => {
+        throw new CredentialLockUnavailable(
+          "Could not acquire credential lock.",
+        );
+      },
+    },
+  );
+  const responses = await Promise.all(Array.from({ length: 8 }, () => f.ask()));
+  for (const response of responses) {
+    expect(response.status).toBe(503);
+    expect(await response.text()).toContain(
+      "The model credential store is busy or unavailable. Try again.",
+    );
+  }
+  expect(f.destinations).toEqual([]);
+  expect(JSON.parse(await readFile(f.file, "utf8")).refreshToken).toBe(
+    "provider-refresh-token",
+  );
 });
 
 test("invalid Google requests are rejected before forwarding the provider bearer", async () => {

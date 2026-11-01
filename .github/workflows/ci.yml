@@ -139,6 +139,16 @@ jobs:
       - name: Install
         run: bun install --frozen-lockfile
       - name: Server tests that read files and need no database
+        # provider-oauth.test.ts is deliberately not here. Its two real-lock tests
+        # measure a Windows subprocess against clocks of their own (a 15 s kill
+        # timer inside provider-oauth-lock.ts, and 10 s / 20 s budgets in the
+        # tests). Run 41286588413 shows what that means on an oversubscribed
+        # runner: the lock never said "locked" in time, all eight concurrent
+        # requests answered 503, and a gate that is about Windows paths and
+        # naming went red for load. That file runs in `bun run test:server:sharded`
+        # like the rest of the suite; its concurrency case no longer touches the
+        # real lock at all (the proxy takes an injectable one), so what is left
+        # here is only the timing of a subprocess we cannot schedule.
         run: >-
           bun test --timeout 20000
           server/tests/brokered-provenance.test.ts
@@ -154,7 +164,6 @@ jobs:
           server/tests/migration-reach.test.ts
           server/tests/openai-compatible-endpoint.test.ts
           server/tests/production-loader-boundary.test.ts
-          server/tests/provider-oauth.test.ts
           server/tests/schema.test.ts
           server/tests/standalone.test.ts
           server/tests/tenant-package-agent-files.test.ts
