@@ -1241,6 +1241,27 @@ pub fn remember(root: &Path) -> Result<(), Problem> {
         })
 }
 
+/// Whether this folder can be the folder a run writes into.
+///
+/// A root is a folder this run creates, fills and comes back to, so it has to be a path that says
+/// where it is. `Path::is_absolute` is false for `CCP-Bot-043` and for `C：、Users、…`, where a
+/// full-width colon is not a drive separator, and Windows then resolves such a path against the
+/// process's own working directory. Measured 2026-11-01: one typo in the window's location field put
+/// a whole 1.4 GB deployment inside the folder the app happened to be launched from, 28,224 files,
+/// while the screen went on saying the Bot was starting. Nothing is written before this check.
+pub fn require_an_absolute_root(root: &Path) -> Result<(), Problem> {
+    if root.is_absolute() {
+        return Ok(());
+    }
+    Err(Problem::with(
+        "CCP-Bot cannot use that folder.".to_string(),
+        format!(
+            "{} is not a full path. Give a folder that says where it is, such as C:\\Users\\you\\CCP-Bot.",
+            root.display()
+        ),
+    ))
+}
+
 /// Forgets it, for a folder that should go back to the container route.
 pub fn forget(root: &Path) -> Result<(), Problem> {
     match std::fs::remove_file(marker(root)) {
@@ -2073,6 +2094,7 @@ pub fn start(
     model: Option<&crate::env::ModelCredential>,
     mut report: impl FnMut(&str, &str),
 ) -> Result<Started, Problem> {
+    require_an_absolute_root(root)?;
     // Nobody is handed a project folder they do not have. A machine that has never installed CCP-Bot
     // this way has an empty folder, and asking that person to "get a checkout" first is exactly the
     // prerequisite screen this mode exists to remove. So the sources are fetched once, from the same
@@ -3445,6 +3467,36 @@ mod tests {
         );
 
         let _ = std::fs::remove_dir_all(&tmp);
+    }
+
+    /// A folder a run writes into has to say where it is: Windows resolves a path that is not
+    /// absolute against the process's own working directory, so a typo in the window's field lands
+    /// the whole deployment inside whatever folder the app was launched from.
+    #[test]
+    fn a_root_that_does_not_say_where_it_is_is_refused() {
+        for named in ["CCP-Bot-043", "C：、Users、Damon、CCP-Bot-043"] {
+            let refused = require_an_absolute_root(Path::new(named))
+                .expect_err("a path that is not absolute cannot name a folder");
+            assert!(
+                refused.said.contains("cannot use that folder"),
+                "the sentence names the folder: {}",
+                refused.said
+            );
+            assert!(
+                refused
+                    .detail
+                    .as_deref()
+                    .unwrap_or_default()
+                    .contains("not a full path"),
+                "the detail says what is wrong: {:?}",
+                refused.detail
+            );
+        }
+
+        assert!(
+            require_an_absolute_root(&std::env::temp_dir()).is_ok(),
+            "a path that says where it is passes"
+        );
     }
 
     /// A run with nothing to answer with is refused before it starts: the sentence a person reads

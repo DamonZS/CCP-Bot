@@ -664,6 +664,9 @@ async fn local_start<R: tauri::Runtime>(
 ) -> Result<LocalStatus, Problem> {
     let named = request.as_ref().and_then(|request| request.root.as_deref());
     let root = local_start_root(&app, named);
+    // Before the marker, before the connection, before anything is written: a folder a run cannot
+    // write into must be refused while the person is still looking at the field that named it.
+    local::require_an_absolute_root(&root)?;
     local::remember(&root)?;
     let connection = request.unwrap_or_default();
     let model = connection.model;
