@@ -6,6 +6,51 @@ afterwards, and does not when only the code moved.
 
 Newest first. `Unreleased` is what is on `main` and not yet tagged.
 
+## 0.4.3 - the port a run picks stays that run's
+
+**The built-in Bot no longer loses its port to somebody else's connection.** A run chose the ports for
+the database, the Bot and the computer when it began, and bound them two minutes later, once the
+first-run downloads had finished. On Windows those numbers come from the same range the operating
+system hands to every outgoing connection, and if one of them took a port in between, the Bot exited
+with `EADDRINUSE` and the run stopped at that step — on a clean install the first **Start** could fail
+with nothing on the screen to explain it. Ports are now chosen outside that range; a remembered port
+that falls inside it, or is already held, is picked again when a run starts and everything that names
+it is rewritten — the `postgres/port`, `bot/port` and `computer/port` files and the `.env` lines that
+point at them — so a folder that already remembered an in-band port heals itself the next time it
+runs.
+
+**A process that dies is reported at once, with its own log.** The wait for a service only watched its
+address, so a child that had already exited still burned the whole ninety-second budget before the
+window said *The built-in Bot did not answer.*, and the reason sat in `logs/local-bot.log` where nobody
+looks. The wait now notices the process is gone, fails immediately, and carries the tail of that
+process's own log into the message.
+
+**A start that failed ends what it started.** A run that gave up half-way used to leave its database
+running and its children alive, with nothing on disk recording that they belonged to a start that was
+already over — and the next start had to reason about what it found. Everything a start begins is now
+ended when that start fails, in the order it began it, and the honest answer is left behind: no
+ownership record, no marker, nothing reported as still running.
+
+**The window stops counting a run that has already ended.** The failed step used to keep ticking on
+screen while the failure was already known, so one screen could say *in progress — 6m 16s* and *the
+built-in Bot did not answer* at the same time. When a run ends, the step it ended on stops being
+reported as running, and an answer that arrives late cannot put it back.
+
+**A start says something before the machine says anything.** Pressing *Continue* on the refresh screen
+used to leave the screen exactly as it was until the first report came back — several seconds in which
+a person cannot tell whether their click landed. The step that is about to run is now on screen from
+the first moment, named the way the machine names it.
+
+**A key you already gave counts as given.** Stop the stack, come back, and the refresh screen used to
+open with *Continue* grey and a `Use the saved … key` control waiting to be ticked, because the key had
+gone into this machine's vault and left no line in `.env` for the screen to find — so the same key had
+to be given a second time, in four steps, to do what should be one click. The screen now reads what the
+machine already holds and opens ready: the row chosen, *A saved … key will be used* on the ledger, and
+one click on *Continue* to start. A named endpoint outranks a bare key, because a keyless endpoint's
+placeholder is written into the settings as if it were a key; a choice the deployment did record is
+never second-guessed; and only the key's presence is looked at — the file is never opened and never
+decrypted — so taking it away brings the question back exactly as before.
+
 ## 0.4.2 - what it starts, it finishes
 
 **A run on this computer starts fewer processes, and finishes the ones it must.** The window asks the local stack how it is every second, and that question used to start a `pg_ctl status` helper per poll — hundreds over one start — and one of them could sit in the loader with a `pg_ctl.exe - 应用程序错误` box on the desktop that blocked nothing and looked like a crash. The question is now answered without starting anything: the database's own `postmaster.pid` and the port it was told to use. The two helpers that are unavoidable, `start` and `stop`, get a time budget; past it they are killed and reaped, and the machine is asked what actually happened instead of the helper's word being taken for it.
