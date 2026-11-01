@@ -6,6 +6,16 @@ afterwards, and does not when only the code moved.
 
 Newest first. `Unreleased` is what is on `main` and not yet tagged.
 
+## 0.4.2 - what it starts, it finishes
+
+**A run on this computer starts fewer processes, and finishes the ones it must.** The window asks the local stack how it is every second, and that question used to start a `pg_ctl status` helper per poll — hundreds over one start — and one of them could sit in the loader with a `pg_ctl.exe - 应用程序错误` box on the desktop that blocked nothing and looked like a crash. The question is now answered without starting anything: the database's own `postmaster.pid` and the port it was told to use. The two helpers that are unavoidable, `start` and `stop`, get a time budget; past it they are killed and reaped, and the machine is asked what actually happened instead of the helper's word being taken for it.
+
+**The keyboard way out works, and the menu stops advertising one that does not.** Pressing Ctrl+Q quits through the same command the menu's `Quit` runs, so the same exit handler stops whatever the run started. On Windows the menu's own accelerator never fires — measured: the key reaches the page, the accelerator does not — so this build no longer puts one in the menu where it cannot work. macOS keeps it, where the menu bar itself dispatches it.
+
+**The screens during a run say what is happening.** The refresh screen used to render nothing while a run was already starting and left its Continue button live, so the second click was swallowed and the screen looked dead. The connect screen's Start had the same hole. And the step that downloads CCP-Bot itself had no name in the window, so that row showed the raw id the server reports. All three now say what they are doing and stay quiet while they do it.
+
+**Asking GitHub for this build's own release may carry a token.** Anonymous requests are counted per address, sixty an hour, and an address is rarely yours alone: a CI runner, an office NAT or a phone hotspot can spend it before you get there, and the first run of a fresh folder then reports `403 Forbidden` while looking for its own version. Setting `CCPBOT_RELEASE_TOKEN`, `GH_TOKEN` or `GITHUB_TOKEN` raises the limit to the account's. The token goes only into a request header, only to GitHub's own hosts, and never into `.env`, a log or an error message. With none of the three set the request is exactly what it was.
+
 ## 0.4.1 - memory and knowledge of its own
 
 A deployment with no CopilotKit connection had nowhere to keep what it learned. This release builds that: memories and documents are embedded and searched on this machine's own database, and the search no longer has to be a substring match to find something.

@@ -6,7 +6,7 @@ type: application
 version: 0.1.13
 # The CCP-Bot release this chart's default image tag points at. Kept equal to package.json's version
 # (the last version published) by the release workflow, and CI refuses a tree where they have drifted.
-appVersion: "0.4.1"
+appVersion: "0.4.2"
 home: https://github.com/DamonZS/CCP-Bot
 sources:
   - https://github.com/DamonZS/CCP-Bot
