@@ -1,6 +1,6 @@
 # CCP-Bot 安装包实机验证报告
 
-同一台机器上按同一套判据跑了五轮，五轮的结论都保留：
+同一台机器上按同一套判据跑了七轮，七轮的结论都保留：
 
 | 部分 | 安装包 | 时间 | 一句话 |
 | --- | --- | --- | --- |
@@ -9,6 +9,8 @@
 | **Part 3 · v0.3.2** | `CCP-Bot_0.3.2_x64-setup.exe` | 2026-10-31 23:36–2026-11-01 00:45 | **空机器一次成功**：8 分 21 秒到 `/health` 200，窗口自己就能显示应用；装完只需要一个模型 key |
 | **Part 4 · v0.4.0** | `CCP-Bot_0.4.0_x64-setup.exe` | 2026-11-01 04:50–05:31 | **空机器一次成功**：6 分 16 秒到 `/health` 200，零 CopilotKit 配置可启动；模型 key 进凭据库；X 只隐藏、Quit 干净停、kill 后重启认得出来 |
 | **Part 5 · v0.4.1** | `CCP-Bot_0.4.1_x64-setup.exe` | 2026-11-01 05:47–06:20 | **迁移 0071 干净跑通（72）**；无 embedding 端点时**不是** `memory-embedding-absent` 而是「有端点、调用失败 → 词法回退仍命中」；一次成功 6 分 35 秒到 `/health` 200，窗口自己显示应用、Quit 4 秒内全 0；`pg_ctl` 对话框与残留、`Ctrl+Q` 无效仍在 |
+| **Part 6 · v0.4.2** | `CCP-Bot_0.4.2_x64-setup.exe` | 2026-11-01 09:00–09:35 | **判据 5 不通过**：真机冷启动一次死在 `EADDRINUSE`（端口 56245–56247 落在系统动态范围内），界面挂 15 分钟装作在跑；其余判据部分通过（进度行**出现得晚**而不是不出现，见 `## 81. Corrections`） |
+| **Part 7 · v0.4.3** | `CCP-Bot_0.4.3_x64-setup.exe` | 2026-11-01 13:50–16:45 | **判据 2/3 通过**：空机器自己建根、388 秒到 `/health` 200，端口换到安全区（49088/49089/49090），记忆里的带内端口 24 秒内自愈；**判据 5 的两半不成立**（刷新屏与向导屏按 `Ctrl+Q` 都不退出）；判据 4 未验到；字段可写坏成相对路径的事故与「新根里出现用户凭据」两条按原样记录 |
 
 验证机器：本机 Windows x64，用户 `Damon`，已装 Docker 29.8.2，`gh` CLI 已登录
 验证方式：下载官方 Release 资产 → 静默安装 → 双击启动 → 走完向导 → 观察进程、端口、`<root>\logs\local-*.log` 与界面文字
@@ -3011,6 +3013,318 @@ Test-Path 'C:\Users\Damon\CCP-Bot\.logs\host-pids.json'
 - 更正落点：§77.4 的标题与正文各加了一行指向本条；§74 判据 3 那一行的进度行结论已改为指向本条。
 
 *Part 6 结束（判据 2 与被指派的判据 3 半场已按 lead 指令补测，见 §76–§81；判据 5 仍记为不通过）。所有界面文字、日志、命令输出均为本次验证的原样记录；引用源码的地方均标注了文件与行号。*
+
+---
+
+# Part 7 · v0.4.3（2026-11-01 13:50 – 16:45）
+
+> 本轮只验 0.4.3 新修的那几件事 + 一次不回归确认，不重跑 Part 4 那份 6 分 16 秒的逐屏时间线。所有命令都是本机原样执行，所有输出都是原样粘贴；截图都给了文件名与字节数，便于复核。
+> 本轮所有产物（脚本、截图、监控日志、现场笔记）都在 `C:\Users\Damon\AppData\Local\Temp\ccpbot-verify\`；现场笔记是 `part7-notes.md`。
+
+## 82. 一句话结论
+
+| 判据 | 结果 | 一句话 |
+| --- | --- | --- |
+| 1 安装包身份 | ✅ | `CCP-Bot_0.4.3_x64-setup.exe` **4,804,340 B**，`Get-FileHash` 与 release 资产 digest 逐字一致；`/S` ExitCode **0**，0.6 秒，无管理员 |
+| 2 干净机器一次成功 | ✅ | 应用**自己**建根（`.ccpbot-local` 14:34:27），**388 秒（6 分 28 秒）**到 `/health 200`；端口 **49088 / 49089 / 49090** 全在动态范围之外 |
+| 3 记住的端口自愈 | ✅ | 根里预置的 56245/56246/56247 → **24 秒内**全部改写成 49088/49089/49090，三个 `*/port` 文件与三条 `.env` 行同步 |
+| 4 失效快报 + 自带日志尾巴 | ⏸ **未验到** | 占住 3010 后屏幕立刻进 `Database` 行、计时器走动、Start 变灰，但 4 分钟内没走到 server 步骤（还在解压便携 PostgreSQL），失败卡与日志尾巴都没出现；部分旁证见 §89 |
+| 5 退出三分 | ❌ **两半不成立** | 应用页按 Ctrl+Q 不退出 ✅（设计如此）；**刷新屏与向导屏按 Ctrl+Q 也没退出**（前台证据齐全，见 §90）；菜单 `Quit` → 4 秒四零 ✅；菜单 `Stop` → 4 秒四零且应用仍活 ✅，同会话 `继续` 把整栈起回来 |
+| 6 屏幕说真话 | ✅（一半） | 进度行立刻出现且 `启动 CCP-Bot` 变灰（`v43-51-c4-failure.png`）；行名是人读的 `Database`；首次静默时长未单独测、计数器在运行结束后的行为未测 |
+| 7 已保存的 key 认账 | ✅ | `已保存的 OpenAI API key 将被使用。` 一次点击即启动，全程没有解密、只有在场证据 |
+| 8 卸载与还原 | ✅ | 卸载 ExitCode **0**，注册表/快捷方式/`%LOCALAPPDATA%\CCP-Bot`/Chrome 宿主键全清；运行根按设计保留 **7,759.8 MB**（已改名留证，见 §92） |
+
+**边缘结论**：0.4.3 把 0.4.2 那条「真机上第一次冷启动会卡在 `EADDRINUSE` 上、界面装作在跑」的判据 5 **没有复现**（本轮两次真机启动都一次到 `/health 200`，见 §84/§87），但那一条通过与否不归本轮判——0.4.2 的 Part 6 已按实测记为不通过。
+
+## 83. 安装包身份与安装结果
+
+```powershell
+PS> gh release view v0.4.3 --json tagName,publishedAt,isDraft,assets
+v0.4.3   isDraft=false
+CCP-Bot_0.4.3_aarch64.dmg      9,660,753
+CCP-Bot_0.4.3_x64-setup.exe    4,804,340   sha256:08b084ff8775bf1eeb5da77606b8552c3bff9b4bf0cb72f62034f9f4ee74ddc7
+CCP-Bot_0.4.3_x64_en-US.msi    7,008,256
+container-images.json              3,063
+```
+
+```powershell
+PS> gh release download v0.4.3 --pattern 'CCP-Bot_0.4.3_x64-setup.exe' --dir "$env:TEMP\ccpbot-verify" --clobber
+PS> (Get-Item "$env:TEMP\ccpbot-verify\CCP-Bot_0.4.3_x64-setup.exe").Length
+4804340
+PS> (Get-FileHash "$env:TEMP\ccpbot-verify\CCP-Bot_0.4.3_x64-setup.exe" -Algorithm SHA256).Hash
+08B084FF8775BF1EBB5DA77606B8552C3BFF9B4BF0CB72F62034F9F4EE74DDC7
+PS> (Get-Item "$env:TEMP\ccpbot-verify\CCP-Bot_0.4.3_x64-setup.exe").VersionInfo.ProductVersion
+0.4.3
+
+PS> $p = Start-Process "$env:TEMP\ccpbot-verify\CCP-Bot_0.4.3_x64-setup.exe" -ArgumentList '/S' -Wait -PassThru
+PS> "ExitCode: $($p.ExitCode)"
+ExitCode: 0
+```
+
+安装落点与注册表（输出原样）：
+
+```
+HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall\CCP-Bot
+  DisplayName      : CCP-Bot
+  DisplayVersion   : 0.4.3
+  InstallLocation  : "H:\CCP-Bot"
+  UninstallString  : "H:\CCP-Bot\uninstall.exe"
+  Publisher        : ccpbot
+  EstimatedSize    : 19173
+HKLM / WOW6432Node : 都不存在（按用户安装）
+桌面快捷方式 True / 开始菜单 True / 公共桌面 False
+H:\CCP-Bot\ccpbot-desktop.exe  19,536,384 B  ProductVersion 0.4.3
+H:\CCP-Bot\uninstall.exe           79,319 B
+```
+
+## 84. 三次启动的时间线
+
+| 时刻 | 场景 | 到 `/health 200` | 说明 |
+| --- | --- | --- | --- |
+| 14:20:24–14:21:12 | **字段事故**（见 §93.1） | 从未 | 位置字段被 IME 改坏成 `C：、Users、Damon、CCP-Bot-043`，应用按相对路径在**检出目录**里建了一整套部署（28,224 文件 / 1,397,043,708 B），界面计时器走了九分钟 |
+| 14:34:27 → **14:40:55** | 判据 2：空机器冷启动 | **388 秒（6 分 28 秒）** | 根由应用自己建；端口 49088/49089/49090 |
+| 15:55:53.559 → **15:56:09.803** | 判据 3 重做 + 判据 7 | **16.2 秒** | 根已配置（记忆里的端口在带内），刷新屏一次点击 |
+| 16:29:44.304 | 判据 4：占住 3010 强制造失效 | 从未（见 §89） | 屏幕进 `Database` 行、Start 变灰；4 分钟内仍在解压便携 PostgreSQL |
+
+判据 2 的采样（`mon43b.log` 片段，原样）：
+
+```
+[14:34:27] root exists: True (created by the app)  3010=0 bun=0 postgres=0
+[14:34:31] .ccpbot-deployment = {"version":"v0.4.3", ...} 228 B
+[14:40:55] health=200 {"status":"ok"}  l3010=1 bun=4 pg=29 ports=[49088 49089 49090] band=[3/3 <49152]
+```
+
+## 85. 向导逐屏原样文字（0.4.3）
+
+- `v43-40-wizard5c.png`（**26,249 B**，sha256 `f0493e5b8c9854bbc47bc117ad634707fe7a8eaf63fe534cb82abf4269b0b3ea`）：`你自己的 AI 同事，就在这台电脑上。` / `它们回答问题，使用你连接的各类工具，还能替你在浏览器里工作。` / `设置 CCP-Bot` / `需要几分钟。CCP-Bot 会先安装所需内容，然后请你登录你已有的 AI 方案。` / 脚下 `改为在本机运行`
+- 第 1 屏：`第 1 步，共 4 步` / `你的第一个 Bot` / `▸ 选择 Agent 框架` / `返回` + `继续`
+- 第 2 屏：`第 2 步，共 4 步` / **`本机无需安装任何内容`** / `这一步不下载任何内容。首次启动时它会自行准备运行时、便携数据库、界面及其数据结构，然后从该文件夹提供服务。`（无 Docker 脚注、无镜像拉取行）
+- 第 3 屏：`第 3 步，共 4 步` / `连接你的 AI` / 四行 OpenAI / Anthropic / Google Gemini / xAI + **`Any OpenAI-compatible endpoint`**（`Base URL`、`模型名称`、`API key，如果端点需要的话` 三个输入框）；`继续` 在没选服务商前是灰的
+- 末屏（`v43-51-c4-failure.png`，**30,132 B**，sha256 `4adcd2629ece4e3c91ce513e57020d30655371f7d0edecc04efd32121423f2b2`）：`Run CCP-Bot on this computer` / `Installation is complete. … a CopilotKit connection is optional here.` / `在本机为可选操作：连接 CopilotKit，把对话保存在那里。不连接也能启动 CCP-Bot。` / `登录 CopilotKit` + `使用已保存的连接` / 三个折叠项 / 页脚 `返回` + `启动 CCP-Bot`
+- **语言混排仍在**：末屏标题与首段英文、其余中文（Part 5 已记录，0.4.3 未变）。
+- 本轮驱动这个向导用的是 **UI Automation**（脚本 `$env:TEMP\ccpbot-verify\uia43.ps1`：按控件名 `Invoke`/`Select`/用 `ValuePattern` 写 Edit），**没有向任何输入框 SendKeys** —— 这是对 §93.1 那次事故的直接规避。
+
+## 86. 判据 1：安装（原样输出见 §83）
+
+四条全中：`/S` ExitCode 0、0.6 秒、非管理员（`elevated shell: False`）、落 `H:\CCP-Bot`；HKCU `DisplayVersion 0.4.3`，HKLM 无键。
+
+## 87. 判据 2：空机器一次成功（✅）
+
+- 起点：根不存在、`3010 listeners: 0`、`ccpbot-desktop / postgres / pg_ctl: 0`（我先把 WebView2 配置目录挪开，保证是「这台机器没见过」的画面）。
+- 应用**自己**建根：`.ccpbot-local` 14:34:27、`.ccpbot-deployment` 14:34:31（`{"version":"v0.4.3", …}`，228 B），**没有人手工 `mkdir`**。
+- **388 秒**到 `/health 200`（点击时刻见 §84），body `{"status":"ok"}`；`/api/capabilities` = `{"mode":"sse","durableHistory":false,"generativeUi":true,"selfHostBanner":true,"localEvaluation":true,"transcription":false,"voice":false,"authProviders":[],"ssoConfigured":false,"ssoRequired":false}`；`GET /` 200（1043 B）。
+- 端口一致性（四个监听 + 三个 port 文件 + 三条 `.env` 行）：
+
+```
+127.0.0.1:49088  postgres
+:::49089         bun   (bot)
+:::49090         bun   (computer)
+:::3010          bun   (server)
+postgres\port = 49088   bot\port = 49089   computer\port = 49090
+DATABASE_URL=postgres://ccpbot@127.0.0.1:49088/ccpbot
+MANAGED_AGENT_AG_UI_URL=http://127.0.0.1:49089
+AGENT_COMPUTER_URL=http://127.0.0.1:49090
+```
+
+- `logs\local-server.log`（1,553 B）里有 `{"type":"intelligence-absent","mode":"sse", …}`、`No identity provider is configured, so every request is treated as dev@ccpbot.local (administrator). …` 与 `CCP-Bot server listening on http://127.0.0.1:3010`。
+- **三条端口全在动态范围之外**（49088/49089/49090 < 49152）—— 这正是 0.4.2 那条 `EADDRINUSE` 的成因（56245–56247 落在 49152–65535 内，会被系统临时端口抢走），0.4.3 换到了安全区。
+- 窗口自己显示应用页：`v43-32-run3b-window.png`（**36,643 B**，sha256 `00E2D4E661D41946AA81B5359B2C343B1195D1CD871D1623B6230F0BB1D5DBC6`）= `选择一个 Bot 或创建你自己的` + 四张卡片。
+
+## 88. 判据 3：记住的端口自愈（✅），以及一次「复制件」失败的正确归因
+
+**预置（带内、故意非法）** —— 在应用自己建的根上把三个端口改回 0.4.2 那组，并同步三个 `*/port` 与三条 `.env` 行：
+
+```
+postgres\port = 56245   bot\port = 56246   computer\port = 56247
+.env bytes = 687（DATABASE_URL / MANAGED_AGENT_AG_UI_URL / AGENT_COMPUTER_URL 都指这三个）
+```
+
+**一次点击之后（`继续` 15:55:53.559）**：
+
+```
++6 s   postgres\port = 49088
++24 s  ports=[49088 49089 49090]  band=[postgres<49152 bot<49152 computer<49152]  .env=541 B
+       DATABASE_URL=…:49088   MANAGED_AGENT_AG_UI_URL=…:49089   AGENT_COMPUTER_URL=…:49090
+```
+
+六个值的前后对照因此是：`56245→49088`、`56246→49089`、`56247→49090`（三个 port 文件与三条 `.env` 行各自同步，采样见 `mon43b.log` 的 `run3b` 段）。**16.2 秒**后 `/health 200`。
+
+**中途那次失败（记录下来，但它不是产品缺陷）**：我先用 `robocopy` 把用户备份的根复制成新根（`/E /XD postgres\data`）来跑同一条判据，端口自愈**照样通过**（689→541 B），但 server 子进程随后死在
+
+```
+error: Cannot find package 'reflect-metadata' from 'C:\Users\Damon\CCP-Bot\server\node_modules\@copilotkit\runtime\dist\v2\index.mjs'
+```
+
+归因（三条都验过）：① `bun.lock` 在三个根里都写了 `reflect-metadata`（两次），实际副本在 `node_modules\.bun\@copilotkit+runtime@1.83.0+c056a78b1b4847d3\node_modules\reflect-metadata`；② `server\node_modules` 的递归文件数：**备份 10 个 vs 复制件 27,823 个** —— `robocopy /E` 把 Bun 的 `.bun` 链接树**展开成了真目录**，运行时的同级依赖因此解析不到；③ 备份自己的 `logs\local-server.log` 里 `reflect-metadata` 命中 **0** 次、`server listening on` **6** 次（它反复跑通过），复制件的日志里 1 次。⇒ **是复制手法的产物，不是 0.4.3 的缺陷**；我把那份复制件（6,933,071,097 B）的日志快照到 `%TEMP%\ccpbot-verify\run3-copyroot-logs\` 后删掉，改用**改名**（不是复制）把应用自己建的根放进默认路径做同一条判据。
+
+## 89. 判据 4：失效快报 + 自带日志尾巴（⏸ 未验到）
+
+做法：用一个独立的 PowerShell 进程占住 3010（`TcpListener`，`hold3010.ps1`），再用 UI Automation 把向导驱动到末屏、调用 `启动 CCP-Bot`（**16:29:44.304**）。读数：
+
+```
+[16:29:49] +3s   health=err 3010=1(我占的) bun=0 postgres=0 app=1 pg_ctl=0 host-pids.json=False logs=(空)
+[16:30:49] +33s  health=err 3010=1        bun=0 postgres=0 app=1 pg_ctl=0 host-pids.json=False
+[16:31:43] +60s  health=err 3010=1        bun=1 postgres=0 app=1 pg_ctl=0 host-pids.json=False
+[16:33:57] +72s（第二轮采样）同上，logs=(空)
+[16:34:24] +90s  同上
+```
+
+同刻的窗口（`v43-51-c4-failure.png`）显示末屏已进入运行态：转轮 + **`Database`** + 右对齐 **`进行中 · 1m 58s 已用时`** + 详情 `Preparing the local database (downloaded once, then reused)…`，并且 **`启动 CCP-Bot` 已变灰**。查它的子进程才看清卡在哪：
+
+```
+powershell.exe -NoProfile -NonInteractive -Command "Expand-Archive -LiteralPath 'C:\Users\Damon\CCP-Bot\ccpbot-engine\postgresql-17.6-1-windows-x64-binaries.zip' -DestinationPath 'C:\Users\Damon\CCP-Bot\postgres' -Force"
+```
+
+⇒ 这四分钟里应用一直在**解压便携 PostgreSQL**，根本没走到 server 那一步，所以「3010 被占 → 失效快报 + 日志尾巴」这条**没有被触发，属于未验到**，不是通过也不是失败。要做成需要引擎先解压到就绪（同一个根第二次启动即可），再占住 3010 —— 本轮时间窗用尽前没做到。
+
+**部分旁证（另一条路径上的同类行为，可参考但不等价）**：判据 3 那次 server 子进程因 `reflect-metadata` 死掉时，`bun=1 / postgres=0 / pg_ctl=0`，`<root>\.logs\host-pids.json` **不存在**，`logs\local-server.log` 里留着那行 `Cannot find package` ⇒「失败的启动会把自己起的东西收干净」与「它留下了自己的日志」这两点在实测中都成立；但**当时界面怎么报、报得多快、`技术详情` 里有没有那行日志，我没有读数**（那条路径上没截到失败卡）。
+
+## 90. 判据 5：退出三分（❌ 两半不成立，细节如下）
+
+**(a) 被服务的应用页按 Ctrl+Q 不许退出 —— ✅ 成立**：
+
+```
+INPUT size on this build: 40
+procedure: page-body click first = yes at offset=(820,200)
+foreground before the press: hwnd=13635350 pid=32260 process=ccpbot-desktop matches_app=True
+SendInput: 4 of 4 events accepted (Ctrl down, Q down, Q up, Ctrl up)
+now   : health3010=200 3010listen=1 bun=4 postgres=29 ccpbot-desktop=1 pg_ctl=0
++4s   : health3010=200 3010listen=1 bun=4 postgres=29 ccpbot-desktop=1 pg_ctl=0
++30s  : health3010=200 3010listen=1 bun=4 postgres=29 ccpbot-desktop=1 pg_ctl=0
+```
+
+**(b) 刷新屏按 Ctrl+Q 该退出 —— ❌ 实测不退**。栈先由菜单 `Stop` 停下（`16:01:05`，四零、应用仍活），拍下按键当刻的画面再发键：
+
+```
+v43-35-refresh-before-ctrlq.png  39,178 B
+sha256 F97C9824884A1FA4EFF47A3D96DE39548B13D3E3F95F55F41EB9873D0BA30A74
+画面：刷新 AI 连接 / 使用受支持的订阅方案或 API key 连接你的服务商。/ 已保存的 OpenAI API key 将被使用。
+foreground before the press: hwnd=13635350 pid=32260 process=ccpbot-desktop matches_app=True
+SendInput: 4 of 4 events accepted
++4s : health3010=err 3010listen=0 bun=0 postgres=0 ccpbot-desktop=1 pg_ctl=0
++30s: 同上（ccpbot-desktop=1）
+```
+
+随后用另一支脚本（先 `AttachThreadInput` 抢前台、在页面里点一下、再 `SendInput`）**再试一次**：前台确证 `process=ccpbot-desktop matches_app=True`、4/4 事件被接受，`ccpbot-desktop` 仍然是 1；`SendKeys '^q'` 也一样不退。
+
+**(c) 向导屏按 Ctrl+Q 该退出 —— ❌ 实测不退**。把根与配置目录都挪开（`root: False  profile: False`）后启动，首屏是向导 Welcome（`v43-40-wizard5c.png`），按键当刻：
+
+```
+foreground before the press: hwnd=855548 pid=32640 process=ccpbot-desktop matches_app=True
+SendInput: 4 of 4 events accepted (Ctrl down, Q down, Q up, Ctrl up)
++5s : ccpbot-desktop=1 3010=0 bun=1(别人的) postgres=0
++13s: ccpbot-desktop=1
+```
+
+⇒ 0.4.3 的这次修复（`8d22a85`：Windows 菜单不再显示该快捷键、改由 webview 的 keydown 调 `quit_ccpbot`）在本机**两个 shell 屏上都没有生效**；(a) 的半场成立，可能是因为监听器与产品行为在那半场恰好一致。**我能给出的最强证据就是上面这些**：前台是应用窗口、`SendInput` 4/4 被接受、按键当刻的画面就是那两个屏；我没法证明「webview 的 DOM 确实收到了这次 keydown」（没有插桩），这一点如实写在 §94。
+
+**(d) 菜单 `Quit` —— ✅ 4 秒内四零**：
+
+```
+16:14:41 after row Quit: health3010=err 3010listeners=0 bun=1 postgres=0 app=0
+16:14:51 +6s more:       同上（bun=1 是别人的 bun.exe）
+16:05:53 / 16:06:02 复测：health3010=err 3010listeners=0 bun=1 postgres=0 app=1
+   ↑ 这一次菜单点击被另一个前台窗口吃掉，应用没退（见 §93.4）
+```
+
+**(e) 菜单 `Stop` —— ✅ 4 秒内四零、应用仍活；同会话 `继续` 把整栈起回来**：
+
+```
+15:58:57 after row Stop: health3010=err 3010listeners=0 bun=0 postgres=0 app=1
+15:58:57 +6s more:       同上
+点击 继续（15:59:09.981）后 12 秒：3010 listeners=1 bun=4 postgres=29 app=1（端口不变 49088/49089/49090）
+```
+
+⇒ 0.4.2 记录过的「同会话里 `继续` 什么也不做」在 0.4.3 上**没有复现**（本轮的一条正面读数）；窗口随后显示应用页 `欢迎来到 CCP-Bot`（`v43-34-after-continue.png`，35,935 B）。
+
+## 91. 判据 6 / 判据 7
+
+**6（屏幕说真话）**：`v43-51-c4-failure.png` 证明「点下去之后屏幕会说自己正在干什么」：进度行带着人读的名字 `Database`、右对齐计时 `进行中 · 1m 58s 已用时`、详情 `Preparing the local database (downloaded once, then reused)…`，同时 **`启动 CCP-Bot` 变灰**（运行中不能再点一次）。刷新屏路径的进度行在 Part 6 的 `## 81. Corrections` 里已经更正过（出现得晚，但不是不出现）。**没测的**：从点击到第一行之间的静默长度（这一轮没有 500 ms 采样器）、运行结束之后计数器是否立刻停。
+
+**7（已保存的 key 认账）**：`已保存的 OpenAI API key 将被使用。` + `继续` 可点 ⇒ 一次点击启动，全程没有让我输入凭据、也没有解密动作（我只按在场与字节数记录：`<root>\.secrets\OPENAI_API_KEY.dpapi` 392 B）。
+
+## 92. 判据 8：卸载与机器还原
+
+```powershell
+PS> (Start-Process 'H:\CCP-Bot\uninstall.exe' -ArgumentList '/S' -Wait -PassThru).ExitCode
+0
+PS> Test-Path 'HKLM:\Software\Microsoft\Windows\CurrentVersion\Uninstall\CCP-Bot'            # False
+PS> Test-Path 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall\CCP-Bot'            # False
+PS> Test-Path "$env:USERPROFILE\Desktop\CCP-Bot.lnk"                                         # False
+PS> Test-Path "$env:APPDATA\Microsoft\Windows\Start Menu\Programs\CCP-Bot.lnk"                # False
+PS> Test-Path 'C:\Users\Public\Desktop\CCP-Bot.lnk'                                          # False
+PS> Test-Path "$env:LOCALAPPDATA\CCP-Bot"                                                    # False
+PS> Test-Path 'HKCU:\Software\Google\Chrome\NativeMessagingHosts\app.ccpbot.recorder'        # False
+PS> Test-Path 'H:\CCP-Bot'            # True（21 项别人的遗留；本次安装的 exe 与卸载器已删）
+PS> @(Get-Process ccpbot-desktop,bun,postgres,pg_ctl -EA SilentlyContinue).Count             # 0
+PS> @(Get-NetTCPConnection -LocalPort 3010 -State Listen -EA SilentlyContinue).Count         # 0
+```
+
+**保留的东西（按设计）**：运行根 = **7,759.8 MB**（卸载器不动它）。为把用户原来的根还回去，我在收尾时把它改名成 `C:\Users\Damon\CCP-Bot-043-fresh` **留作证据**，默认路径 `C:\Users\Damon\CCP-Bot` 现在**不存在**（lead 可以把 `C:\Users\Damon\CCP-Bot.bak-part7` 放回去）。
+
+> **Lead 补记（本轮之后，2026-11-01 17:00 左右实测）。** 上面那句所描述的世界已经不存在了 —— 收尾期间**有我们之外的进程在反复改名/搬动**这几个目录（两次相隔几分钟的探测之间路径就变了，用户自己的根一度被套进两层备份里）。lead 把用户自己的根从缠结里提出来放回原位，测试副本整体挪到 `C:\Users\Damon\CCP-Bot-test-roots-1618`（5,138.1 MB）。**as-built 现状（只读复核过）**：`C:\Users\Damon\CCP-Bot` **存在**且是用户自己的根 —— 29 项、2,621.7 MB、`.ccpbot-deployment` = `{"version":"v0.4.2", …}`、`postgres\data` 1,823 个文件（用户自己的库）、`.secrets` 7 个、`*/port` = 49088 / 49089 / 49090；`C:\Users\Damon\CCP-Bot.bak-part7` **不存在**（它在 lead 恢复之前就已改回 `C:\Users\Damon\CCP-Bot`），`-043-fresh` 与 `-043` 也不存在。所以**不需要再改名任何东西**；复核只需跑 §92 里那一行清单命令。配置目录那一节里「哪一套是你的」这个问题随本轮结束作废：`%LOCALAPPDATA%\app.ccpbot.desktop` 就是 14:08:01 挪开的那一套被放回原位之后的当前在用目录。
+
+**配置目录**：`%LOCALAPPDATA%` 下现有 9 套 `app.ccpbot.desktop*`（我这轮新加的是 `.bak-verify-part7`）。lead 说要还回 `…bak-part7`，但**本机上没有这个名字的目录**；我把 `…bak-part7-run1`（14:08:01 挪开的那一套，即本轮开始前在用的那一套）放回了原位 `%LOCALAPPDATA%\app.ccpbot.desktop`。哪一套才是 lead 指的那一个，请确认后我再动（其余几套一律没碰）。
+
+## 93. 未解问题与侧发现
+
+1. **字段缺陷（两半都写在这里）**：位置字段接受了 `C：、Users、Damon、CCP-Bot-043`（IME 把两个 `\` 都转成了 `、`，全角冒号也换了）；界面随后报 `CCP-Bot` → `Database` 并让计时器走了**九分钟**，而应用把该串当**相对路径**按进程工作目录解析，在 `D:\Project\CCP-Bot\C：、Users、Damon、CCP-Bot-043` 下真的建了一整套部署（**28,224 文件 / 1,397,043,708 B**，14:20:24 建、14:21:12 最后写；`.ccpbot-local` 与 v0.4.3 的 `.ccpbot-deployment` 都在，没有 `.env` / `.secrets`）。lead 已核实、把顶层快照到 `%TEMP%\mangled-root-snapshot.txt` 后删除；护栏 + 字段校验走 0.4.4。
+2. **新根里冒出用户自己的模型配置，来源不明**：判据 2 那个「应用自己新建」的根里，`.env`（666 B）带着 `BOT_MODEL` / `AGENT_BOT_MODEL=deepseek-v4.1-flash-1017`、`OPENAI_BASE_URL=https://qianfan.baidubce.com/v2/tokenplan/personal`，`.secrets` 里还多出一个 **392 B** 的 `OPENAI_API_KEY.dpapi`（其余六个都是 352 B）。我查过 `%APPDATA%\app.ccpbot.desktop`（0 项）、`HKCU:\Software\ccpbot\CCP-Bot`（只有一个无名 `String` = `H:\CCP-Bot`）、新根里没有 `.ccpbot-saved.json`、我的 shell 环境里所有模型变量都是 `<unset>` —— **没找到来源**。blob 从未解密（只记在场与字节数）。
+3. **窗口与截图**：应用把给它服务的那个 1920x1023 页窗一直报成 `visible=False`，并把自己的 shell 窗停到 `(-32000,-32000)`（托盘态）；`PrintWindow` 拿到的是黑帧（`lit=1446`），把 shell 窗恢复后才拍得到真正的界面（`v43-27-shell-restored.png`，**168,857 B**，sha256 `259718F84D65597B2502874D2AE699F77E18AA2C0125FF426091B09FF71568BB`）。
+4. **我的实例自己退不出去**：菜单 `Quit` 的点击有两次被别的前台窗口（Edge / Weixin）吃掉，`Ctrl+Q` 三个屏都不生效，最后我用 `Stop-Process` 结束**我自己的**测试实例（用户的栈从头到尾没被我 kill 过）；这也算判据 5(b)(c) 的旁证。
+5. **`pg_ctl` 侧**：判据 2 的整段冷启动里 `pg_ctl` 计数最大值 **0**、没有 `#32770` 对话框（这是 `3aa0f36` 修复的正面读数）；但判据 3 之后的收尾里仍然出现过 **2 个**残留与一次 `pg_ctl.exe - 应用程序错误`（`hwnd=84216006`，关掉后立刻又冒 `hwnd=84281542`），与 0.4.3 之前观察到的形态一致。
+6. **首屏由什么决定，与之前的说法不符**：「配置好的根在场 + 配置目录挪开」→ 首屏是**向导 Welcome**；把配置目录放回来（`.bak-part7-run1`）再启动，仍然 Welcome（`v43-47-c4-screen.png` 与 `v43-40-wizard5c.png` **逐字节相同**，都是 26,249 B）。Part 7 早期把「刷新屏 + 自动起栈」记成「根决定」的性质，**本轮没有得到支持**；要一句话结论得专门定一轮。
+
+## 94. 未验证边界
+
+- **判据 4 未验到**（原因见 §89）：占住 3010 的那次启动在四分钟窗口内还在解压便携 PostgreSQL，没有走到 server 步骤。
+- **判据 5(b)(c) 的不通过有一处无法排除的仪控疑点**：我证明了前台是应用窗口、`SendInput` 4/4 被系统接受、按键当刻的画面就是那两个屏，但**没有插桩证明 webview 的 DOM 收到了那次 keydown**（例如同一次会话里某个按键在页面上产生了可见效果）。要让这条钉死，建议下一轮用「先在页面上按一个必然有可见反应的键（如 Tab 后拍图），再按 Ctrl+Q」补一根钉子。
+- **判据 6 的两个小项未测**：点击到第一行之间的静默长度；运行结束后计数器是否立即停。
+- **应用内 `Stop` 按钮**（不是菜单项）本轮没有单独复测（Quit/Stop 之后到不了运行中的界面）。
+- **macOS 不验**：本机没有 Mac；mac 的本机进程路线由 CI 覆盖 —— `local-mode-macos` 工作流 run **41240143297**（master，success，`macos-26-arm64`）。**不跑本地打包**，只验 CI 产物。
+
+## 95. 复现命令
+
+```powershell
+# 1) 资产身份
+gh release view v0.4.3 --json tagName,isDraft,assets
+gh release download v0.4.3 --pattern 'CCP-Bot_0.4.3_x64-setup.exe' --dir "$env:TEMP\ccpbot-verify" --clobber
+(Get-Item "$env:TEMP\ccpbot-verify\CCP-Bot_0.4.3_x64-setup.exe").Length                       # 4804340
+(Get-FileHash "$env:TEMP\ccpbot-verify\CCP-Bot_0.4.3_x64-setup.exe" -Algorithm SHA256).Hash
+
+# 2) 安装（按用户、静默）
+$p = Start-Process "$env:TEMP\ccpbot-verify\CCP-Bot_0.4.3_x64-setup.exe" -ArgumentList '/S' -Wait -PassThru; $p.ExitCode
+
+# 3) 干净机器：先把配置目录挪开，再启动，量到 /health 200 的秒数
+Move-Item "$env:LOCALAPPDATA\app.ccpbot.desktop" "$env:LOCALAPPDATA\app.ccpbot.desktop.bak-verify" -Force
+Start-Process 'H:\CCP-Bot\ccpbot-desktop.exe'
+# 向导（本轮用 UI Automation，别用 SendKeys）：改为在本机运行 -> 继续 -> 继续 -> 第 3 屏选服务商/兼容端点 -> 继续 -> 启动 CCP-Bot
+while ($true) { try { (Invoke-WebRequest http://127.0.0.1:3010/health -UseBasicParsing -TimeoutSec 2).StatusCode } catch { 'err' }; Start-Sleep -Seconds 10 }
+
+# 4) 端口一致性
+Get-NetTCPConnection -State Listen | Where-Object LocalPort -in 3010,49088,49089,49090
+Get-Content 'C:\Users\Damon\CCP-Bot\postgres\port','C:\Users\Damon\CCP-Bot\bot\port','C:\Users\Damon\CCP-Bot\computer\port'
+Select-String -Path 'C:\Users\Damon\CCP-Bot\.env' -Pattern 'DATABASE_URL|MANAGED_AGENT_AG_UI_URL|AGENT_COMPUTER_URL'
+Get-Content 'C:\Users\Damon\CCP-Bot\logs\local-server.log' | Select-String 'intelligence-absent|server listening'
+
+# 5) 记忆/知识库的降级仍按词法命中
+Invoke-RestMethod -Method Post -Uri http://127.0.0.1:3010/api/memory -ContentType 'application/json' -Body '{"content":"0.4.3 复验：便携 PostgreSQL 端口写在 postgres\\port。"}'
+Invoke-RestMethod http://127.0.0.1:3010/api/memory
+Invoke-RestMethod -Method Post -Uri http://127.0.0.1:3010/api/knowledge/documents -ContentType 'application/json' -Body '{"title":"0.4.3 降级验证文档","text":"紫色风筝第七码头","source":"verify-0.4.3"}'
+Invoke-RestMethod 'http://127.0.0.1:3010/api/knowledge/search?q=%E7%B4%AB%E8%89%B2%E9%A3%8E%E7%AD%9D'    # 命中，score 0.5
+
+# 6) 退出：应用页 Ctrl+Q 不许退；刷新屏/向导屏 Ctrl+Q 应退；菜单 Quit / Stop 各自读数
+#    脚本：$env:TEMP\ccpbot-verify\ctrlq43.ps1（含 INPUT size 自证与前台证明）、quit43.ps1、
+#          menu40.ps1 -ClickRow Quit|Stop、uia43.ps1（UI Automation 驱动向导）
+
+# 7) 卸载
+(Start-Process 'H:\CCP-Bot\uninstall.exe' -ArgumentList '/S' -Wait -PassThru).ExitCode
+Test-Path 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall\CCP-Bot'; Test-Path 'H:\CCP-Bot'
+```
+
+---
+
+*Part 7 结束（判据 1/2/3/6/7/8 通过，判据 5 的 (b)(c) 两半不成立，判据 4 未验到；字段缺陷与「新根里的用户凭据」两条按原样记录）。所有界面文字、日志、命令输出均为本次验证的原样记录；引用源码的地方均标注了文件与行号。*
 
 ---
 
