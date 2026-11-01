@@ -132,6 +132,34 @@ export function recordedModel(held: HeldConfiguration): ModelChoice | null {
 }
 
 /**
+ * The connection this machine already holds, for a deployment that never recorded one.
+ *
+ * A run on this computer saves the credential without writing the record `recordedModel` reads, so
+ * a returning deployment came back with nothing chosen and `Continue` grey: the person gave the same
+ * key a second time. Nothing is guessed when a choice WAS recorded — a kind this build cannot drive
+ * has to leave the screen as it was. An address outranks a bare key, because a named endpoint's key
+ * is written into the file as the placeholder a keyless server ignores, which would otherwise read
+ * here as an OpenAI key.
+ */
+function storedModel(held: HeldConfiguration): ModelChoice | null {
+  if (held.saved?.model != null) return null;
+  const stored = held.saved?.modelApiKeys;
+  if (stored?.compatible === true && held.OPENAI_BASE_URL) {
+    return recordedModel({
+      ...held,
+      saved: { ...held.saved, model: "compatible-endpoint" },
+    });
+  }
+  if (stored?.openai === true) {
+    return { provider: "openai", login: "api-key", saved: true };
+  }
+  if (stored?.anthropic === true) {
+    return { provider: "anthropic", login: "api-key", saved: true };
+  }
+  return null;
+}
+
+/**
  * Connect a model.
  *
  * Plans remain the default wherever supported. Google and xAI use the same endpoint credential
@@ -160,7 +188,7 @@ export function ProviderPicker({
   returning?: boolean;
   busy?: boolean;
 }) {
-  const initialChoice = chosen ?? recordedModel(held);
+  const initialChoice = chosen ?? recordedModel(held) ?? storedModel(held);
   const [reuse, setReuse] = useState(
     initialChoice?.saved
       ? { provider: initialChoice.provider, login: initialChoice.login }

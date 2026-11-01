@@ -3838,6 +3838,65 @@ test("a start on the refresh screen says it is working before a step is named", 
   started.resolve(localInstallationStatus({ wanted: true, step: "ready" }));
 });
 
+test("a returning deployment whose key is stored opens on a startable screen", async () => {
+  const root = "/tmp/stored-key-returning";
+  /*
+   * The scene the four-step recipe was measured on: the key was given once, this machine holds it,
+   * and no choice was ever recorded for it — a run on this computer saves the credential without
+   * writing that record. The screen has to come back startable, because the person has nothing left
+   * to give.
+   */
+  setupRootConfiguration(root, async () => ({
+    values: {},
+    saved: {
+      intelligenceApiKey: true,
+      modelApiKeys: { openai: true, anthropic: false, compatible: null },
+      modelSessions: { openai: false, anthropic: false },
+    },
+    launch: { harness: { id: "langgraph" } },
+  }));
+  const containerHandlers = invokeHandler;
+  invokeHandler = async (command, args) => {
+    if (command === "local_status") return localInstallationStatus({ wanted: true });
+    if (command === "local_start")
+      return localInstallationStatus({ wanted: true, step: "ready" });
+    if (command === "show_ccpbot") return null;
+    return containerHandlers(command, args);
+  };
+
+  const view = await renderApp();
+  expect(
+    await view.findByRole("heading", { name: "Refresh your AI connection" }),
+  ).toBeTruthy();
+  // The row, the way in, and the value: all chosen by the machine, because the machine is what holds
+  // them. This is the whole difference between four clicks and none.
+  expect(
+    (view.getByRole("radio", { name: /OpenAI/ }) as HTMLInputElement).checked,
+  ).toBe(true);
+  expect(view.getByText("A saved OpenAI API key will be used.")).toBeTruthy();
+  // Nothing left to tick: the control that used to be the third click is not on screen when the key
+  // it would arm is already the one being used.
+  expect(
+    view.queryByRole("button", { name: "Use a saved OpenAI API key" }),
+  ).toBeNull();
+  const start = view.getByRole("button", { name: "Continue" });
+  expect(start).toHaveProperty("disabled", false);
+
+  // One click, and it is this stack that is asked to start.
+  await userEvent.click(start);
+  await waitFor(() =>
+    expect(
+      invokeCalls.filter((call) => call.command === "local_start"),
+    ).toHaveLength(1),
+  );
+  expect(getLocalStartPayload().request.model).toEqual({
+    provider: "openai",
+    login: "api-key",
+    saved: true,
+  });
+  expect(invokeCalls.some((call) => call.command === "start_stack")).toBe(false);
+});
+
 test("Ctrl+Q quits the way the menu item does", async () => {
   const root = "/tmp/keyboard-quit-root";
   setupRootConfiguration(root, async () => emptyConfiguration());
