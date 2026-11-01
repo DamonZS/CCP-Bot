@@ -3624,6 +3624,69 @@ test.each([
   },
 );
 
+test("a local run that failed does not go back to counting", async () => {
+  const root = "/tmp/local-run-that-failed";
+  const view = await enterLocalFirstRunSetup(root);
+  const started = deferred<unknown>();
+  /*
+   * The window asks `local_status` once a second while a run is in flight, and an answer asked for
+   * during the run can land after it has ended. The first ask is answered — the run is on the
+   * Built-in Bot step — and the ones after it are held back, so they arrive late on purpose. That
+   * is the order the real 0.4.2 install saw: the Bot never answered, `local_start` came back with
+   * the failure, and an answer still on its way put the row back to "in progress" with nothing
+   * left to correct it.
+   */
+  const late = deferred<unknown>();
+  let asked = 0;
+  const containerHandlers = invokeHandler;
+  invokeHandler = async (command, args) => {
+    if (command === "local_start") return started.promise;
+    if (command === "local_status") {
+      asked += 1;
+      if (asked === 1)
+        return localInstallationStatus({
+          wanted: true,
+          step: "bot",
+          step_detail: "Starting the built-in Bot…",
+        });
+      return late.promise;
+    }
+    return containerHandlers(command, args);
+  };
+  await userEvent.click(await view.findByRole("radio", { name: /OpenAI/ }));
+  await userEvent.type(view.getByLabelText("OpenAI API key"), "model-only-key");
+  await userEvent.click(view.getByRole("button", { name: "Continue" }));
+  await userEvent.click(view.getByRole("button", { name: "Start CCP-Bot" }));
+
+  // While the run is going, the row names the step and counts.
+  expect(await view.findByRole("listitem", { name: "Built-in Bot" })).toBeTruthy();
+  expect(view.getByText("Starting the built-in Bot…")).toBeTruthy();
+  expect(view.getByText("In progress")).toBeTruthy();
+  await waitFor(() => expect(asked).toBeGreaterThan(1), { timeout: 3000 });
+
+  // The Bot never answers, so the run is over: the step that failed says so, and nothing counts.
+  started.reject({ said: "The built-in Bot did not answer." });
+  expect(await view.findByText("Failed")).toBeTruthy();
+  expect(view.queryByText("In progress")).toBeNull();
+  expect(view.queryByText(/elapsed/)).toBeNull();
+  expect(view.queryByText("Starting the built-in Bot…")).toBeNull();
+
+  // The answer asked for while the run was still going arrives now, still describing that step. It
+  // is about a run nobody is running, and the row must not start counting again beside a card that
+  // has already said the run failed.
+  late.resolve(
+    localInstallationStatus({
+      wanted: true,
+      step: "bot",
+      step_detail: "Starting the built-in Bot…",
+    }),
+  );
+  await new Promise((resolve) => setTimeout(resolve, 1200));
+  expect(view.queryByText("In progress")).toBeNull();
+  expect(view.queryByText(/elapsed/)).toBeNull();
+  expect(view.getByText("Failed")).toBeTruthy();
+});
+
 test("the container route starts on a model key without a connection", async () => {
   setupRootConfiguration("/tmp/container-without-a-connection", async () =>
     emptyConfiguration(),

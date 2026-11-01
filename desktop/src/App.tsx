@@ -105,6 +105,15 @@ export function App() {
   const [local, setLocal] = useState<LocalStatus | null>(null);
   const [localPicked, setLocalPicked] = useState(false);
   const [localBusy, setLocalBusy] = useState(false);
+  /*
+   * Whether the local run the poll is asking about is still going.
+   *
+   * The window asks `local_status` once a second while a run is in flight, and an answer asked for
+   * during the run can land after it has ended. A row written then has nothing left to correct it:
+   * a failed run would go back to saying "in progress" and count forever beside its failure card.
+   * A run that is over has said its last word about steps.
+   */
+  const localRunOver = useRef(true);
   const [instruction, setInstruction] = useState("");
   const [root, setRoot] = useState("");
   const [reuseIntelligence, setReuseIntelligence] = useState(false);
@@ -663,7 +672,8 @@ export function App() {
         .then((found) => {
           if (!active) return;
           setLocal(found);
-          if (!found.step) return;
+          // Too late to describe a run that is over: the row written here would tick forever.
+          if (!found.step || localRunOver.current) return;
           // One row, updated in place: this is a run working through a list of steps, not a log.
           // The name is the one `LocalRun` shows for the same id — one table, from where it already
           // lives — because this row and that screen describe the same run. The detail beside it
@@ -717,6 +727,7 @@ export function App() {
   async function runLocally(nextModel: ModelChoice | null = model) {
     if (localBusy) return;
     setLocalBusy(true);
+    localRunOver.current = false;
     setFailure(null);
     setSteps([]);
     setLocalPicked(true);
@@ -748,6 +759,7 @@ export function App() {
       await invoke("show_ccpbot");
     } catch (error) {
       const problem = asProblem(error);
+      localRunOver.current = true;
       setFailure(problem);
       // The row stops claiming to be working on something the moment nothing is.
       setSteps((current) => settleProgress(current, problem));
@@ -755,6 +767,7 @@ export function App() {
       // attention, which the failure sentence alone does not.
       setLocal(await invoke<LocalStatus>("local_status").catch(() => null));
     } finally {
+      localRunOver.current = true;
       setLocalBusy(false);
     }
   }
