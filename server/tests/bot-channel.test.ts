@@ -159,7 +159,7 @@ async function post(
  * `BotEnvelope` is a union, so `value` is not readable until the answer is narrowed. A refusal here
  * fails the test with the code it carried instead of with a missing property.
  */
-function valueOf(body: BotEnvelope): unknown {
+function payloadOf(body: BotEnvelope): unknown {
   if (!body.ok) throw new Error(`Expected an ok answer, got ${body.error.code}`);
   return body.value;
 }
@@ -259,7 +259,7 @@ describe("the routes", () => {
   test("answers state with this deployment's own roster and conversations", async () => {
     const { routes } = stub();
     const { body } = await post(routes, "state");
-    const value = valueOf(body) as Record<string, unknown>;
+    const value = payloadOf(body) as Record<string, unknown>;
     expect(value.revision).toBe(3);
     expect(value.workspaceId).toBe(`ccpbot:${USER}`);
     expect(value.mainBotId).toBe(BOT);
@@ -279,7 +279,7 @@ describe("the routes", () => {
   test("short-circuits a state the client already has", async () => {
     const { routes } = stub();
     const { body } = await post(routes, "state", { since: 3 });
-    const value = valueOf(body) as Record<string, unknown>;
+    const value = payloadOf(body) as Record<string, unknown>;
     expect(value.unchanged).toBe(true);
     expect(value.revision).toBe(3);
     expect(value.bots).toBeUndefined();
