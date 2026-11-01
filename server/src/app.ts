@@ -103,6 +103,7 @@ import {
 import type { MemoryIngestion } from "./memory/ingestion";
 import { createKnowledgeRoutes } from "./memory/knowledge/routes";
 import { createMemoryRoutes } from "./memory/routes";
+import { createBotChannelRoutes, type BotChannelDeps } from "./bot-channel";
 import type { MemoryStore } from "./memory/store";
 import { parsePageLimit } from "./paging";
 import { createPasswordRoutes, createSignInRoutes } from "./passwords/routes";
@@ -453,6 +454,14 @@ export function createApp(
      * nothing to say about one. Minting needs neither.
      */
     threads?: ThreadStore;
+    /**
+     * DS-Bot's own channel (`bot-channel/routes.ts`): one POST that always answers 200 with
+     * `{ok,…}`, and the feed its client follows. Absent, nothing about it is mounted — the same
+     * shape `memory` and `threads` above use. It is a development surface until the port reaches
+     * parity (`docs/ds-bot-phase1.md`), which is why it is a field here and not a route this
+     * deployment always has.
+     */
+    botChannel?: BotChannelDeps;
     proactive?: { store: ProactiveStore; engine: ProactiveEngine };
     responsibilities?: {
       store: ResponsibilityStore;
@@ -1745,6 +1754,17 @@ export function createApp(
     app.route(
       "/api/knowledge",
       createKnowledgeRoutes(coworker.memory.store.knowledge, requireUser),
+    );
+  }
+  if (coworker?.botChannel) {
+    /*
+     * DS-Bot's two routes, behind the same middleware as `/api/memory` and `/api/threads`: the
+     * channel takes its actor from `context.var.actor`, so a signed-in person can only ever reach
+     * their own Bots and their own conversations.
+     */
+    app.route(
+      "/api/bot",
+      createBotChannelRoutes(coworker.botChannel, requireUser),
     );
   }
   if (coworker?.responsibilities) {

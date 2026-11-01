@@ -35,4 +35,4 @@ What was verified about the DS-Bot checkout on 2026-11-01 (read-only inspection)
 
 | Source (DS-Bot) | Destination (this repository) | Changed? |
 |---|---|---|
-| — | — | _none yet — this table is filled in as files are ported_ |
+| `ds-bot/client.js` (generated bundle, 1,146,111 bytes, sha256 `cef1e2808ef4767defd97d18641750f8f0523c34b5a42b65dc8f59fcbe996fed`) | `app/vendor/ds-bot/client.js` | No — byte for byte, so it keeps its own generated header and needs no adapted-from notice |

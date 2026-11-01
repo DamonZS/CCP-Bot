@@ -82,6 +82,7 @@ import { createRoleRepository } from "./auth/guards";
 import { createIdentityProviderStore } from "./auth/identity-provider-store";
 import { createOrganizationAuth } from "./auth/organization";
 import { organizationUserStore } from "./auth/organization-store";
+import { createBotChannel } from "./bot-channel";
 import { ccpbotAddress } from "./browser/address";
 import { botBrowserNetwork } from "./browser/bot-browser";
 import { personBrowserEgressPolicy } from "./browser/egress";
@@ -2663,6 +2664,19 @@ const identityGithubCallback =
       })
     : undefined;
 
+/*
+ * DS-Bot's channel, served from this deployment's own data: the Bots are `agentProfileStore`'s, the
+ * conversations are `threadStore`'s, and a turn goes through the same runtime the browser's own
+ * `/api/copilotkit` request does — the request that arrives here is forwarded with its cookies, so
+ * the actor `identifyActor` resolves is the person who asked and nobody else. See bot-channel/.
+ */
+const botChannel = createBotChannel({
+  database,
+  agents: agentProfileStore,
+  threads: threadStore,
+  handler: copilotRuntime.handler,
+});
+
 const app = createApp(
   config,
   auth,
@@ -2898,6 +2912,7 @@ const app = createApp(
     memory: { store: personalMemoryStore, ingestion: memoryIngestion },
     // What `/api/threads` answers with when there is no platform to ask. See threads/store.ts.
     threads: threadStore,
+    botChannel,
     proactive: { store: proactiveStore, engine: proactiveEngine },
     responsibilities: {
       store: responsibilityStore,
