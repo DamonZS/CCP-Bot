@@ -3672,11 +3672,84 @@ mod tests {
         })
     }
 
+    /// A run that is up, taken down when the exam ends. An assertion that fails before `stop`, or a panic
+    /// anywhere after `start` returned, would otherwise leave the whole stack running — measured: a
+    /// failed exam left 5 `bun` and 29 `postgres` processes and 3010 listening, and that stack
+    /// inherited the pipeline's stdout, so a `Tee-Object` on the test never saw end-of-file and had to
+    /// be killed.
+    struct TakesItDown {
+        root: PathBuf,
+        children: Vec<Child>,
+    }
+
+    impl TakesItDown {
+        fn adopt(root: &Path, started: Started) -> Self {
+            let mut children = vec![started.server, started.worker];
+            if let Some(bot) = started.bot {
+                children.push(bot);
+            }
+            if let Some(computer) = started.computer {
+                children.push(computer);
+            }
+            Self {
+                root: root.to_path_buf(),
+                children,
+            }
+        }
+    }
+
+    impl Drop for TakesItDown {
+        fn drop(&mut self) {
+            let _ = stop(&self.root, &mut self.children);
+        }
+    }
+
+    /// The model answers this machine has stored, moved out of the way for the length of an exam and
+    /// put back when it ends — including when it panics, so a failing exam cannot lose somebody's key.
+    ///
+    /// Existence only: the files are renamed, never opened, never decrypted. Both folder names the
+    /// vault has used are looked at, and only the keys this build's `MODEL_KEYS` names.
+    struct AnswersOutOfTheWay {
+        moved: Vec<(PathBuf, PathBuf)>,
+    }
+
+    impl AnswersOutOfTheWay {
+        fn move_aside(root: &Path) -> Self {
+            let mut moved = Vec::new();
+            for folder in [".secrets", ".dpapi"] {
+                for key in crate::env::MODEL_KEYS {
+                    let file = root.join(folder).join(format!("{key}.dpapi"));
+                    if !file.is_file() {
+                        continue;
+                    }
+                    let hidden = file.with_extension("dpapi-out-of-the-way");
+                    if std::fs::rename(&file, &hidden).is_ok() {
+                        moved.push((file, hidden));
+                    }
+                }
+            }
+            println!("moved {} stored model answers aside", moved.len());
+            Self { moved }
+        }
+    }
+
+    impl Drop for AnswersOutOfTheWay {
+        fn drop(&mut self) {
+            for (file, hidden) in &self.moved {
+                let _ = std::fs::rename(hidden, file);
+            }
+        }
+    }
+
     /// The window's own case, measured: the port this folder remembers is held by somebody else when
     /// the run starts. The operating system hands the very same numbers to its outgoing connections
     /// (pit 19), so a remembered port being taken is not a hypothetical. What is watched here is that
     /// the run notices, remembers a different port, and reaches `/health` on it — rather than handing
     /// the Bot a port that is taken and then reporting the Bot's death as a mystery.
+    ///
+    /// A stack this exam started is taken down when the exam ends, whatever the assertions decide: a
+    /// failing exam that leaves one running holds the pipeline's stdout open, and the machine comes
+    /// back with bun and postgres processes and 3010 listening (measured).
     #[test]
     #[ignore = "starts the whole local stack"]
     fn live_a_held_bot_port_is_replaced_and_the_bot_still_answers() {
@@ -3703,6 +3776,8 @@ mod tests {
             )
         });
         let chosen = started.bot_port.expect("this release ships a built-in Bot");
+        // Whatever the assertions below decide, the stack this exam started is taken down with it.
+        let running = TakesItDown::adopt(&root, started);
         assert_ne!(
             chosen, remembered,
             "the run handed the Bot the port that was already taken"
@@ -3719,14 +3794,7 @@ mod tests {
              answered {status}"
         );
         drop(held);
-        let mut children = vec![started.server, started.worker];
-        if let Some(bot) = started.bot {
-            children.push(bot);
-        }
-        if let Some(computer) = started.computer {
-            children.push(computer);
-        }
-        stop(&root, &mut children).expect("stopping the local stack");
+        // The stack is taken down by `running` when this exam ends, whichever way it ends.
     }
 
     /// The failure the window has to recover from, measured: the Bot exits instead of answering (no
@@ -3742,11 +3810,24 @@ mod tests {
             .expect("the checkout above src-tauri")
             .to_path_buf();
         let cache = std::env::temp_dir().join("ccpbot-local-cache");
+        // The exam arranges its own precondition rather than asking the operator to hide a key:
+        // measured on this checkout, `.secrets/OPENAI_API_KEY.dpapi` is recalled by
+        // `start(…, None, …)` and the Bot quite correctly starts, so a run that is supposed to find
+        // a Bot which cannot start needs the machine's stored answers out of the way. Renamed, never
+        // opened, and put back when the exam ends — including when it panics.
+        let answers_out_of_the_way = AnswersOutOfTheWay::move_aside(&root);
         let began = std::time::Instant::now();
         let failure = match start(&root, &cache, None, None, |step, detail| {
             println!("[{step}] {detail}");
         }) {
-            Ok(_) => panic!("a run with nothing to answer with is refused by the Bot itself"),
+            Ok(started) => {
+                // The Bot started after all: this exam fails, and the stack it started is this
+                // exam's to take down — a failed exam that leaves one running holds the pipeline's
+                // stdout open (measured: a `Tee-Object` on this test never saw end-of-file).
+                let _running = TakesItDown::adopt(&root, started);
+                let _answers = &answers_out_of_the_way;
+                panic!("a run with nothing to answer with is refused by the Bot itself")
+            }
             Err(problem) => problem,
         };
         let elapsed = began.elapsed();
