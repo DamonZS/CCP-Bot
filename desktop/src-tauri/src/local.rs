@@ -1940,7 +1940,10 @@ fn prepare_checkout(root: &Path, report: &mut impl FnMut(&str, &str)) -> Result<
                 error,
             )
         })?;
-        crate::deployment::fetch(root, &version).map_err(|error| {
+        // A run on this computer starts ordinary processes and never opens the release's image
+        // manifest, which is attached minutes after the installers: demanding it here failed a first
+        // run over a file this route never read.
+        crate::deployment::fetch(root, &version, false).map_err(|error| {
             Problem::with(format!("CCP-Bot {version} could not be downloaded."), error)
         })
     })
@@ -3667,7 +3670,8 @@ mod tests {
 
     /// The fetch both of those exams do, for the version they decided on.
     fn fetch_sources(root: &Path, version: &str) -> Result<(), Problem> {
-        crate::deployment::fetch(root, version).map_err(|error| {
+        // The exams take the local route, which needs the tree and nothing else.
+        crate::deployment::fetch(root, version, false).map_err(|error| {
             Problem::with(format!("CCP-Bot {version} could not be downloaded."), error)
         })
     }

@@ -56,8 +56,9 @@ pub fn resolve_version(root: &Path) -> Result<String, String> {
 /// "This version has no release" and "the lookup failed" are two different answers, and are not
 /// treated as one here: a rate limit, an offline machine or a 5xx is reported as it arrived, so
 /// nobody is sent to a different version by a network problem. A release counts as published when
-/// the lookup the fetcher itself will need — the release's image manifest — answers, so a tag that
-/// exists without one is not counted.
+/// the release itself answers: the lookup is the release-by-tag endpoint, and the image manifest
+/// inside it is only the container route's business, so a tag whose manifest is not attached yet is
+/// still this build's release.
 fn resolve_version_of_this_build(
     own: &str,
     look_up: impl FnOnce(&str) -> Result<Vec<u8>, String>,
@@ -75,7 +76,8 @@ fn resolve_version_of_this_build(
 /// The live tests ask this before they download anything: while this version is not published there
 /// is nothing on GitHub that matches this tree's route, and a test that fetched the latest release
 /// instead would be measuring a version this code will never run. A lookup that failed is an error
-/// rather than a no.
+/// rather than a no. What it probes is the release itself, not the image manifest, so the minutes
+/// between the installers being attached and the manifest being attached still answer yes.
 pub fn own_release_is_published() -> Result<bool, String> {
     own_release_state(|tag| deployment::get(&deployment::images_url(tag)))
 }
@@ -264,7 +266,8 @@ mod tests {
         let root = scratch("release-live");
         let version = resolve_version(&root).expect("resolve this build's release");
         assert!(deployment::installed(&root).is_none());
-        deployment::fetch(&root, &version).expect("download the tagged deployment and manifest");
+        deployment::fetch(&root, &version, true)
+            .expect("download the tagged deployment and manifest");
         assert_eq!(deployment::installed(&root).unwrap().version, version);
         let images: deployment::Images =
             serde_json::from_slice(&std::fs::read(deployment::images_path(&root)).unwrap())

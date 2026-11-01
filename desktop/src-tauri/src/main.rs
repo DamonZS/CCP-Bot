@@ -1196,7 +1196,8 @@ async fn deployment_ready<R: tauri::Runtime>(
                 format!("Downloading CCP-Bot {version}."),
                 None,
             );
-            deployment::fetch(&target, &version)?;
+            // A container install cannot start without the release's image manifest.
+            deployment::fetch(&target, &version, true)?;
         }
         Ok::<_, String>(version)
     })

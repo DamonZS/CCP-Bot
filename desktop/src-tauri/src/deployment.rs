@@ -243,8 +243,27 @@ pub const ALSO_COPIED_FILES: [&str; 0] = [];
 ///
 /// The stamp is written last. Anything that fails before that leaves a directory without one, which
 /// `needs_fetch` treats as absent, so an interrupted download is retried rather than half-run.
-pub fn fetch(root: &Path, version: &str) -> Result<(), String> {
-    let body = get(&tarball_url(version)).map_err(|error| {
+///
+/// `images` says whether the caller reads the release's image manifest. A run on this computer
+/// starts ordinary processes and never opens it; a container install cannot start without it. A
+/// release gets its manifest minutes after its installers, so demanding it here made a first run
+/// on this computer fail over a file that route never reads.
+pub fn fetch(root: &Path, version: &str, images: bool) -> Result<(), String> {
+    fetch_with(root, version, images, &|url| get(url), &|folder, wanted| {
+        fetch_images(folder, wanted)
+    })
+}
+
+/// The fetch with the download and the manifest replaceable, so a test can drive both routes
+/// without a network: what a route demands is what is under test here, not GitHub.
+fn fetch_with(
+    root: &Path,
+    version: &str,
+    images: bool,
+    download: &dyn Fn(&str) -> Result<Vec<u8>, String>,
+    manifest: &dyn Fn(&Path, &str) -> Result<(), String>,
+) -> Result<(), String> {
+    let body = download(&tarball_url(version)).map_err(|error| {
         format!("could not fetch {version}: {error}. Is that a released version?")
     })?;
 
@@ -253,7 +272,9 @@ pub fn fetch(root: &Path, version: &str) -> Result<(), String> {
 
     unpack(root, &body)?;
 
-    fetch_images(root, version)?;
+    if images {
+        manifest(root, version)?;
+    }
 
     record(root, version).map_err(|error| format!("could not record the version: {error}"))
 }
@@ -646,6 +667,45 @@ mod tests {
             assert!(release_asset(body, "container-images.json").is_err());
         }
     }
+    /// The two routes do not need the same release: a run on this computer starts ordinary
+    /// processes and never opens the image manifest, while a container install cannot start
+    /// without it. A release gets its manifest minutes after its installers, so a release in that
+    /// window is usable here - measured: the macOS exam looked its own release up four minutes
+    /// before the manifest was attached and failed on a file its route never opened.
+    #[test]
+    fn a_run_on_this_computer_does_not_need_the_release_image_list() {
+        let root = std::env::temp_dir().join(format!("ccpbot-fetch-route-{}", std::process::id()));
+        let other =
+            std::env::temp_dir().join(format!("ccpbot-fetch-route-images-{}", std::process::id()));
+        std::fs::create_dir_all(&root).unwrap();
+        std::fs::create_dir_all(&other).unwrap();
+        let tree = tarball(&[("docker-compose.yml", b"services: {}\n")]);
+        let missing = |_: &Path, _: &str| {
+            Err("could not find the image list for v0.0.7: the release publishes no container-images.json".to_string())
+        };
+
+        fetch_with(&root, "v0.0.7", false, &|_| Ok(tree.clone()), &missing)
+            .expect("a run on this computer needs nothing but the tree");
+        assert_eq!(installed(&root).unwrap().version, "v0.0.7");
+        assert!(
+            !images_path(&root).exists(),
+            "a route that never reads the manifest must not fetch it"
+        );
+
+        let error = fetch_with(&other, "v0.0.7", true, &|_| Ok(tree.clone()), &missing)
+            .expect_err("a container install cannot start without the image list");
+        assert!(
+            error.contains("publishes no container-images.json"),
+            "{error}"
+        );
+        assert!(
+            installed(&other).is_none(),
+            "the stamp is written last, so a refused install leaves none"
+        );
+        std::fs::remove_dir_all(&root).unwrap();
+        std::fs::remove_dir_all(&other).unwrap();
+    }
+
     #[test]
     fn an_empty_directory_needs_fetching() {
         let dir = std::env::temp_dir().join(format!("ccpbot-dep-empty-{}", std::process::id()));
